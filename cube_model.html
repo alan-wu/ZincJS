@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - loaders - OBJ loader</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000;
+				color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				color: #fff;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+			}
+			#info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
+		</style>
+	</head>
+
+	<body>
+		<p id='myText'>Welcome to the site <b id='temp'>hi</b> </p> 
+		<script src="js/three.min.js"></script>
+		<script src="js/zinc_threejs_control.js"></script>
+		<script>
+
+			var animation = 0;
+			
+			var container, stats;
+
+			var camera, scene, renderer;
+
+			var tumble_rate = 1.5;
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+			var morphs = [];
+			var myGeometry = [];
+			var clock = new THREE.Clock();
+			var directionalLight = 0;
+			var duration = 10000;
+			var nearPlane = 0.0353321;
+			var farPlane = 12.6265;
+			var eyePosition = [0.5, -3.03321, 0.5];
+			var targetPosition = [0.5, 0.5, 0.5];
+			var upVector = [ 0, 0, 1];
+			var centroid = [0, 0, 0]
+			var timeEnabled = false;
+			var jsonFileName = 'my_models/colour_cube_3.json'
+			var zincCameraControls;
+			
+			init();
+			animate();
+			
+			function createDataText()
+			{
+				var text2 = document.getElementById('myText');
+				text2.style.position = 'absolute';
+				//text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+				text2.style.width = 100;
+				text2.style.height = 50;
+				text2.style.backgroundColor = "black";
+				text2.innerHTML = "Delta: 0";
+				text2.style.top = (window.innerHeight - 100) + 'px';
+				text2.style.left = 10 + 'px';		
+			}			
+
+			function setPositionOfObject(mesh)
+			{
+			
+				geometry = mesh.geometry;
+				geometry.computeBoundingBox();
+				
+				var centerX = 0.5 * ( geometry.boundingBox.min.x + geometry.boundingBox.max.x );
+				var centerY = 0.5 * ( geometry.boundingBox.min.y + geometry.boundingBox.max.y );
+				var centerZ = 0.5 * ( geometry.boundingBox.min.z + geometry.boundingBox.max.z );
+				centroid = [ centerX, centerY, centerZ]
+			}
+
+			function init() {
+				
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, nearPlane , farPlane);
+				camera.position = new THREE.Vector3(eyePosition[0], eyePosition[1], eyePosition[2]);
+				camera.target = new THREE.Vector3( targetPosition[0], targetPosition[1], targetPosition[2]  );
+				camera.up.set( upVector[0],  upVector[1], upVector[2]);
+				  
+				projector = new THREE.Projector();
+				scene = new THREE.Scene();
+				var ambient = new THREE.AmbientLight( 0x808080 );
+				scene.add( ambient );
+
+				directionalLight = new THREE.DirectionalLight( 0xe7e7e7 );
+				directionalLight.position.set( -31.3132 ,  -140.998 , 131.174);
+				scene.add( directionalLight );			
+				
+				var filename = jsonFileName
+				var loader = new THREE.JSONLoader( true );
+				loader.load( filename, function ( geometry ) {
+					//var material = new THREE.Material();
+					//var material = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
+
+					var material = new THREE.MeshLambertMaterial( { color: 0xffaa55, morphTargets: timeEnabled, morphNormals: timeEnabled, vertexColors: THREE.VertexColors });
+					var meshAnim = new THREE.MorphAnimMesh( geometry, material );
+					if (timeEnabled == true) {
+						meshAnim = new THREE.MorphAnimMesh( geometry, material );
+						geometry.computeMorphNormals(meshAnim);
+						meshAnim.duration = duration;
+						morphs.push( meshAnim );
+					} else {
+						meshAnim = new THREE.Mesh( geometry,material)
+					}
+				
+					setPositionOfObject(meshAnim);
+					scene.add( meshAnim );
+					
+					myGeometry.push ( geometry ) ;
+				} );
+
+				renderer = new THREE.WebGLRenderer();
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+
+				zincCameraControls = new ZincCameraControls( camera, renderer.domElement, renderer, scene )
+				window.addEventListener( 'resize', onWindowResize, false );
+
+			}
+
+			function onWindowResize() {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+			
+			function getColorsRGB(colors, index)
+			{
+				var index_in_colors = Math.floor(index/3);
+				var remainder = index%3;
+				var hex_value = 0;
+				if (remainder == 0)
+				{
+					hex_value = colors[index_in_colors].r
+				}
+				else if (remainder == 1)
+				{
+					hex_value = colors[index_in_colors].g
+				}
+				else if (remainder == 2)
+				{
+					hex_value = colors[index_in_colors].b
+				}
+				var mycolor = new THREE.Color(hex_value);
+				return [mycolor.r, mycolor.g, mycolor.b];
+				
+			}
+			
+			/* function to make sure each vertex got the right colour at the right time,
+				it will linearly interpolate colour between time steps */
+			function morphColorsToVertexColors( geometry, morph ) {
+				if ( morph && geometry.morphColors && geometry.morphColors.length ) {
+					var current_time = morph.time/morph.duration * (geometry.morphColors.length - 1)
+					var bottom_frame =  Math.floor(current_time)
+					var proportion = 1 - (current_time - bottom_frame)
+					var top_frame =  Math.ceil(current_time)
+					var bottomColorMap = geometry.morphColors[ bottom_frame ];
+					var TopColorMap = geometry.morphColors[ top_frame ];
+					for ( var i = 0; i < geometry.faces.length; i ++ ) {
+						var my_color1 = getColorsRGB(bottomColorMap.colors, geometry.faces[i].a);
+						var my_color2 = getColorsRGB(TopColorMap.colors, geometry.faces[i].a);
+						var resulting_color = [my_color1[0] * proportion + my_color2[0] * (1 - proportion),
+							my_color1[1] * proportion + my_color2[1] * (1 - proportion),
+							my_color1[2] * proportion + my_color2[2] * (1 - proportion)]
+						geometry.faces[i].vertexColors[0].setRGB(resulting_color[0], resulting_color[1], resulting_color[2])
+						my_color1 = getColorsRGB(bottomColorMap.colors, geometry.faces[i].b);
+						my_color2 = getColorsRGB(TopColorMap.colors, geometry.faces[i].b);
+						resulting_color = [my_color1[0] * proportion + my_color2[0] * (1 - proportion),
+							my_color1[1] * proportion + my_color2[1] * (1 - proportion),
+							my_color1[2] * proportion + my_color2[2] * (1 - proportion)]
+						geometry.faces[i].vertexColors[1].setRGB(resulting_color[0], resulting_color[1], resulting_color[2])
+						my_color1 = getColorsRGB(bottomColorMap.colors, geometry.faces[i].c);
+						my_color2 = getColorsRGB(TopColorMap.colors, geometry.faces[i].c);
+						resulting_color = [my_color1[0] * proportion + my_color2[0] * (1 - proportion),
+							my_color1[1] * proportion + my_color2[1] * (1 - proportion),
+							my_color1[2] * proportion + my_color2[2] * (1 - proportion)]
+						geometry.faces[i].vertexColors[2].setRGB(resulting_color[0], resulting_color[1], resulting_color[2])
+					}	
+				}
+			}
+	
+			function animate() {
+				requestAnimationFrame( animate );
+				render();
+			}
+	
+			var prevTime = Date.now();
+
+			function render() {
+
+				var delta = clock.getDelta();
+				zincCameraControls.update()
+				if (timeEnabled == true) {
+					if (typeof myGeometry[0] !== "undefined") {
+						morphColorsToVertexColors(myGeometry[0], morphs[0])
+						myGeometry[0].colorsNeedUpdate = true;
+					}
+					for ( var i = 0; i < morphs.length; i ++ ) {
+						morph = morphs[ i ];
+						morph.updateAnimation( 500 * delta );
+					}
+				}
+				renderer.render( scene, camera );
+
+			}
+
+
+		</script>
+
+	</body>
+</html>
