@@ -63,8 +63,10 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		} else if (len == 3) {
 			_this._state = STATE.TOUCH_PAN;
 			_this.targetTouchId = event.touches[0].identifier
-			_this.pointer_x = event.touches[0].clientX 
-			_this.pointer_y = event.touches[0].clientY				
+			_this.pointer_x = event.touches[0].clientX
+			_this.pointer_y = event.touches[0].clientY
+			_this.previous_pointer_x = _this.pointer_x
+			_this.previous_pointer_y= _this.pointer_y				
 		}
 	}
 	

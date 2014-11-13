@@ -26,7 +26,8 @@
 	</head>
 
 	<body>
-		<p id='myText'>Welcome to the site <b id='temp'>hi</b> </p> 
+		<p id='myText'>Welcome to the site <b id='temp'>hi</b> </p>
+		<button name="Reset View" value="OK" type="button" onclick="resetView()">Reset View</button>
 		<script src="js/three.min.js"></script>
 		<script src="js/zinc_threejs_control.js"></script>
 		<script>
@@ -58,11 +59,21 @@
 			init();
 			animate();
 			
+			function resetView()
+			{
+				camera.near = nearPlane;
+				camera.far = farPlane;
+				camera.position = new THREE.Vector3(eyePosition[0], eyePosition[1], eyePosition[2]);
+				camera.target = new THREE.Vector3( targetPosition[0], targetPosition[1], targetPosition[2]  );
+				camera.up.set( upVector[0],  upVector[1], upVector[2]);
+			}
+			
 			function createDataText()
 			{
 				var text2 = document.getElementById('myText');
 				text2.style.position = 'absolute';
 				//text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
+				text2.style.display="none"
 				text2.style.width = 100;
 				text2.style.height = 50;
 				text2.style.backgroundColor = "black";
@@ -89,9 +100,8 @@
 				document.body.appendChild( container );
 
 				camera = new THREE.PerspectiveCamera( 40, window.innerWidth / window.innerHeight, nearPlane , farPlane);
-				camera.position = new THREE.Vector3(eyePosition[0], eyePosition[1], eyePosition[2]);
-				camera.target = new THREE.Vector3( targetPosition[0], targetPosition[1], targetPosition[2]  );
-				camera.up.set( upVector[0],  upVector[1], upVector[2]);
+				resetView();
+				createDataText();
 				  
 				projector = new THREE.Projector();
 				scene = new THREE.Scene();
