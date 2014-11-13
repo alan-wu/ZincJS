@@ -12,11 +12,12 @@ This is an example on displaying threejs json file export from libZinc including
 Somewhere in the script you will find the following settings, alter them as required.
 
     var duration = 10000;
-    var nearPlane = 2.8173;
-    var farPlane = 1006.81;
-    var eyePosition = [-167.205, -152.21, -72.2929];
-    var targetPosition = [7.48795, 11.4056, 61.8574];
-    var upVector = [ 0.32263, 0.369883, -0.871261];
-    var jsonFileName = 'my_models/martyn_model_1.json'
+    var nearPlane = 0.0353321;
+    var farPlane = 12.6265;
+    var eyePosition = [0.5, -3.03321, 0.5];
+    var targetPosition = [[0.5, 0.5, 0.5];
+    var upVector = [ 0, 0, 1];
+    var timeEnabled = false;
+    var jsonFileName = 'my_models/colour_cube_3.json'
 
-Duration affects the length of the animation, nearPlane, farPlane, eyePosition, targetPosition(interest point) and upVector can be copy straight from the numbers from cmgui command windows after entering gfx list win 1, and jsonFileName is the name of the file export.
+Duration affects the length of the animation, nearPlane, farPlane, eyePosition, targetPosition(interest point) and upVector can be copy straight from the numbers from cmgui command windows after entering gfx list win 1, timeEnabled indicate eitehr there are time variations in this model, and jsonFileName is the name of the file export.
