@@ -53,7 +53,7 @@
 			var upVector = [ 0, 0, 1];
 			var centroid = [0, 0, 0]
 			var timeEnabled = false;
-			var jsonFileName = 'my_models/colour_cube_3.json'
+			var jsonFileName = ['my_models/colour_cube_3.json'];
 			var zincCameraControls;
 			
 			init();
@@ -112,28 +112,30 @@
 				directionalLight.position.set( -31.3132 ,  -140.998 , 131.174);
 				scene.add( directionalLight );			
 				
-				var filename = jsonFileName
-				var loader = new THREE.JSONLoader( true );
-				loader.load( filename, function ( geometry ) {
-					//var material = new THREE.Material();
-					//var material = new THREE.MeshBasicMaterial({ vertexColors: THREE.VertexColors });
-
-					var material = new THREE.MeshLambertMaterial( { color: 0xffaa55, morphTargets: timeEnabled, morphNormals: timeEnabled, vertexColors: THREE.VertexColors });
-					var meshAnim = new THREE.MorphAnimMesh( geometry, material );
-					if (timeEnabled == true) {
-						meshAnim = new THREE.MorphAnimMesh( geometry, material );
-						geometry.computeMorphNormals(meshAnim);
-						meshAnim.duration = duration;
-						morphs.push( meshAnim );
-					} else {
-						meshAnim = new THREE.Mesh( geometry,material)
-					}
-				
-					setPositionOfObject(meshAnim);
-					scene.add( meshAnim );
+				var num_of_inputs = jsonFileName.length;
+				for (var i = 0; i < num_of_inputs; i++)
+				{
+					var filename = jsonFileName[i]
+					var loader = new THREE.JSONLoader( true );
+					loader.load( filename, function ( geometry ) {
+						var material = new THREE.MeshLambertMaterial( { color: 0xffaa55, morphTargets: timeEnabled, morphNormals: timeEnabled, vertexColors: THREE.VertexColors });
+						material.side = THREE.DoubleSide;
+						var meshAnim = new THREE.MorphAnimMesh( geometry, material );
+						if (timeEnabled == true) {
+							meshAnim = new THREE.MorphAnimMesh( geometry, material );
+							geometry.computeMorphNormals(meshAnim);
+							meshAnim.duration = duration;
+							morphs.push( meshAnim );
+						} else {
+							meshAnim = new THREE.Mesh( geometry,material)
+						}
 					
-					myGeometry.push ( geometry ) ;
-				} );
+						setPositionOfObject(meshAnim);
+						scene.add( meshAnim );
+						
+						myGeometry.push ( geometry ) ;
+					} );
+				}
 
 				renderer = new THREE.WebGLRenderer();
 				renderer.setSize( window.innerWidth, window.innerHeight );
