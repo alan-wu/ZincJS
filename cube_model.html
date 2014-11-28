@@ -53,7 +53,9 @@
 			var upVector = [ 0, 0, 1];
 			var centroid = [0, 0, 0]
 			var timeEnabled = false;
+			var morphColour = [false];
 			var jsonFileName = ['my_models/colour_cube_3.json'];
+			var modelsColours=[0xffaa55]
 			var zincCameraControls;
 			
 			init();
@@ -111,14 +113,14 @@
 				directionalLight = new THREE.DirectionalLight( 0xe7e7e7 );
 				directionalLight.position.set( -31.3132 ,  -140.998 , 131.174);
 				scene.add( directionalLight );			
-				
+				var currentModelNo = 0;
 				var num_of_inputs = jsonFileName.length;
 				for (var i = 0; i < num_of_inputs; i++)
 				{
 					var filename = jsonFileName[i]
 					var loader = new THREE.JSONLoader( true );
 					loader.load( filename, function ( geometry ) {
-						var material = new THREE.MeshLambertMaterial( { color: 0xffaa55, morphTargets: timeEnabled, morphNormals: timeEnabled, vertexColors: THREE.VertexColors });
+						var material = new THREE.MeshLambertMaterial( { color: modelsColours[currentModelNo], morphTargets: timeEnabled, morphNormals: false, vertexColors: THREE.VertexColors });
 						material.side = THREE.DoubleSide;
 						var meshAnim = new THREE.MorphAnimMesh( geometry, material );
 						if (timeEnabled == true) {
@@ -134,6 +136,7 @@
 						scene.add( meshAnim );
 						
 						myGeometry.push ( geometry ) ;
+						++currentModelNo;
 					} );
 				}
 
@@ -142,6 +145,7 @@
 				container.appendChild( renderer.domElement );
 
 				zincCameraControls = new ZincCameraControls( camera, renderer.domElement, renderer, scene )
+				zincCameraControls.setDirectionalLight(directionalLight);
 				window.addEventListener( 'resize', onWindowResize, false );
 
 			}
@@ -221,18 +225,24 @@
 
 				var delta = clock.getDelta();
 				zincCameraControls.update()
-				if (timeEnabled == true) {
-					if (typeof myGeometry[0] !== "undefined") {
-						morphColorsToVertexColors(myGeometry[0], morphs[0])
-						myGeometry[0].colorsNeedUpdate = true;
-					}
-					for ( var i = 0; i < morphs.length; i ++ ) {
-						morph = morphs[ i ];
-						morph.updateAnimation( 500 * delta );
+				/* the following check make sure all models are loaded and synchonised */
+				if (myGeometry.length == jsonFileName.length) {
+					if (timeEnabled == true) {		
+						for ( var i = 0; i < myGeometry.length; i ++ ) {
+							if (morphColour[i] == true) {
+								if (typeof myGeometry[i] !== "undefined") {
+									morphColorsToVertexColors(myGeometry[i], morphs[i])
+									myGeometry[i].colorsNeedUpdate = true;
+								}
+							}
+						}
+						for ( var i = 0; i < morphs.length; i ++ ) {
+							morph = morphs[ i ];
+							morph.updateAnimation( 500 * delta );
+						}
 					}
 				}
 				renderer.render( scene, camera );
-
 			}
 
 
