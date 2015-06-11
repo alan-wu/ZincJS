@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en" style="height:100%">
+	<head>
+		<title>Simple Zinc export animation</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				font-family: Monospace;
+				background-color: #000;
+				color: #fff;
+				margin: 0px;
+				overflow: hidden;
+			}
+			#info {
+				color: #fff;
+				position: absolute;
+				top: 10px;
+				width: 100%;
+				text-align: center;
+				z-index: 100;
+				display:block;
+			}
+			#info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
+		</style>
+	</head>
+
+	<body style="height:100%">
+
+		<p id='myText'>General Zinc to WebGL animation - ThreeJS export <b id='temp'>hi</b> </p>
+		<button name="Reset View" value="OK" type="button" onclick="resetView()">Reset View</button>
+		<script src="js/three.min.js"></script>
+		<script src="js/zinc_threejs_control.js"></script>
+		<script src="js/zinc_3js_renderer.js"></script>
+		<script>
+		
+			container = document.createElement( 'div' );
+			document.body.appendChild( container );
+			container.style.height = "100%"
+			function processGetParameters(name)
+			{
+   				if(name=(new RegExp('[?&]'+encodeURIComponent(name)+'=([^&]*)')).exec(location.search))
+      			return decodeURIComponent(name[1]);
+			}
+
+			zincRenderer = new Zinc.Renderer(container, window);
+			jsonFilePrefix = processGetParameters("inputprefix")
+
+			zincRenderer.initialiseVisualisation();
+			zincRenderer.loadFromViewURL(jsonFilePrefix)
+			zincRenderer.animate();
+
+		</script>
+
+	</body>
+</html>

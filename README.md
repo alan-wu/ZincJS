@@ -18,6 +18,8 @@ Somewhere in the script you will find the following settings, alter them as requ
     var targetPosition = [[0.5, 0.5, 0.5];
     var upVector = [ 0, 0, 1];
     var timeEnabled = false;
-    var jsonFileName = 'my_models/colour_cube_3.json'
+	
 
 Duration affects the length of the animation, nearPlane, farPlane, eyePosition, targetPosition(interest point) and upVector can be copy straight from the numbers from cmgui command windows after entering gfx list win 1, timeEnabled indicate eitehr there are time variations in this model, and jsonFileName is the name of the file export.
+
+There are also new ways to input data, append the following "?inputprefix=my_models/newfoot" and "?inputprefix=my_models/newheart" after zinc_webgl_sample.html on the browser to view the foot and heart model respectively.  
