@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '1' };
+var Zinc = { REVISION: '2' };
 
 Zinc.Renderer = function (containerIn, window) {
 
@@ -14,9 +14,11 @@ Zinc.Renderer = function (containerIn, window) {
 
 	tumble_rate = 1.5;
 	morphs = [];
+	//myGeometry contains a tuple of the threejs mesh, timeEnabled and morphColour flag
 	myGeometry = [];
 	clock = new THREE.Clock();
-	directionalLight = 0;
+	this.directionalLight = undefined;
+	this.ambient = undefined;
 	duration = 3000;
 	nearPlane = 10.0353320682268;
 	farPlane = 12.6264735624;
@@ -24,8 +26,8 @@ Zinc.Renderer = function (containerIn, window) {
 	targetPosition = [0.5, 0.5, 0.5];
 	upVector = [ 0.0, 1.0, 0.0];
 	centroid = [0, 0, 0]
-	timeEnabled = false;
-	morphColour = [false];
+	timeEnabled = [];
+	morphColour = [];
 	defaultColour=0x7F1F1A
 	defaultOpacity=1.0
 	zincCameraControls = undefined;
@@ -58,6 +60,7 @@ Zinc.Renderer = function (containerIn, window) {
 	this.loadModelsURL = function(urls, colours, opacities)
 	{
 		var number = urls.length;
+		var previous_number = num_inputs;
 		num_inputs += number
         for (var i = 0; i < number; i++)
         {
@@ -69,8 +72,38 @@ Zinc.Renderer = function (containerIn, window) {
         		colour = colours[i]
         	if (opacities != undefined && opacities[i] != undefined)
         		opacity = opacities[i]
-        	loader.load( filename, meshloader(i, colour, opacity)); 
+        	localTimeEnabled = 0
+        	console.log(timeEnabled.length, num_inputs)
+        	if (timeEnabled.length == num_inputs)
+        	{
+        		
+        		localTimeEnabled = timeEnabled[previous_number + i]
+        	}
+        	localMorphColour = 0
+        	if (morphColour.length == num_inputs)
+        		localMorphColour = morphColour[previous_number + i]        	
+        	loader.load( filename, meshloader(i, colour, opacity, localTimeEnabled, localMorphColour)); 
         }
+	}
+	
+	loadView = function(viewData)
+	{
+        nearPlane = viewData.nearPlane
+        farPlane = viewData.farPlane
+        eyePosition = viewData.eyePosition
+        targetPosition = viewData.targetPosition
+        upVector = viewData.upVector
+        
+        if (viewData.numberOfResources != undefined && viewData.timeEnabled != undefined)
+        {
+        	console.log(viewData.timeEnabled)
+        	timeEnabled = timeEnabled.concat(viewData.timeEnabled)
+        	console.log(timeEnabled)
+        }
+        if (viewData.morphColour != undefined)
+        	morphColour = morphColour.concat(viewData.morphColour)
+        
+        _this.resetView()
 	}
 	
 	this.loadViewURL = function(url)
@@ -79,12 +112,7 @@ Zinc.Renderer = function (containerIn, window) {
 		xmlhttp.onreadystatechange = function() {
 		    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
 		        var viewData = JSON.parse(xmlhttp.responseText);
-		        nearPlane = viewData.nearPlane
-		        farPlane = viewData.farPlane
-		        eyePosition = viewData.eyePosition
-		        targetPosition = viewData.targetPosition
-		        upVector = viewData.upVector
-		        _this.resetView()
+		        loadView(viewData);
 		    }
 		}
 		requestURL = url
@@ -98,14 +126,7 @@ Zinc.Renderer = function (containerIn, window) {
 		xmlhttp.onreadystatechange = function() {
 		    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
 		        var viewData = JSON.parse(xmlhttp.responseText);
-		        nearPlane = viewData.nearPlane
-		        farPlane = viewData.farPlane
-		        eyePosition = viewData.eyePosition
-		        targetPosition = viewData.targetPosition
-		        upVector = viewData.upVector
-		        if (viewData.numberOfResources != undefined && viewData.timeEnabled == 1) 
-		        	timeEnabled = true
-		        _this.resetView()
+		        loadView(viewData);
 		        var urls = []
 		        var filename_prefix = jsonFilePrefix + "_"
 		        for (var i = 0; i < viewData.numberOfResources; i++)
@@ -147,27 +168,28 @@ Zinc.Renderer = function (containerIn, window) {
 		centroid = [ centerX, centerY, centerZ]
 	}
 	
-	meshloader = function(modelId, colour, opacity) {
+	meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour) {
 	    return function(geometry){
 	    	isTransparent = false;
     			if (1.0 > opacity)
     				isTransparent = true;
-				var material = new THREE.MeshLambertMaterial( { color: colour, morphTargets: timeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
+				var material = new THREE.MeshLambertMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
 				material.side = THREE.DoubleSide;
-				var meshAnim = new THREE.MorphAnimMesh( geometry, material );
-				if (timeEnabled == true) {
+				var meshAnim = undefined;
+				if (localTimeEnabled == true) {
 					meshAnim = new THREE.MorphAnimMesh( geometry, material );
 					geometry.computeMorphNormals(meshAnim);
 					meshAnim.duration = duration;
-					morphs.push( meshAnim );
+					
 				} else {
 					meshAnim = new THREE.Mesh( geometry,material)
 				}
-			
+				morphs.push( meshAnim );
+				
 				setPositionOfObject(meshAnim);
 				scene.add( meshAnim );
 				
-				myGeometry.push ( geometry ) ;
+				myGeometry.push ( [geometry, localTimeEnabled, localMorphColour] ) ;
 		}
 	
 	}
@@ -180,23 +202,23 @@ Zinc.Renderer = function (containerIn, window) {
 		  
 		projector = new THREE.Projector();
 		scene = new THREE.Scene();
-		var ambient = new THREE.AmbientLight( 0x202020 );
-		scene.add( ambient );
+		_this.ambient = new THREE.AmbientLight( 0x202020 );
+		scene.add( _this.ambient );
 
-		directionalLight = new THREE.DirectionalLight( 0xA0A0A0  );
-		directionalLight.position.set( eyePosition[0], eyePosition[1], eyePosition[2] );
-		scene.add( directionalLight );			
+		_this.directionalLight = new THREE.DirectionalLight( 0x777777  );
+		_this.directionalLight.position.set( eyePosition[0], eyePosition[1], eyePosition[2] );
+		scene.add( _this.directionalLight );			
 
 		renderer = new THREE.WebGLRenderer();
 		renderer.setSize( container.clientWidth, container.clientHeight );
 		container.appendChild( renderer.domElement );
 		renderer.setClearColor( 0xffffff, 1);
 		zincCameraControls = new ZincCameraControls( _this.camera, renderer.domElement, renderer, scene )
-		zincCameraControls.setDirectionalLight(directionalLight);
+		zincCameraControls.setDirectionalLight(_this.directionalLight);
 
 	}
 	
-	this.getColorsRGB = function(colors, index)
+	getColorsRGB = function(colors, index)
 	{
 		var index_in_colors = Math.floor(index/3);
 		var remainder = index%3;
@@ -220,7 +242,7 @@ Zinc.Renderer = function (containerIn, window) {
 	
 	/* function to make sure each vertex got the right colour at the right time,
 		it will linearly interpolate colour between time steps */
-	this.morphColorsToVertexColors = function( geometry, morph ) {
+	morphColorsToVertexColors = function( geometry, morph ) {
 		if ( morph && geometry.morphColors && geometry.morphColors.length ) {
 			var current_time = morph.time/morph.duration * (geometry.morphColors.length - 1)
 			var bottom_frame =  Math.floor(current_time)
@@ -264,20 +286,19 @@ Zinc.Renderer = function (containerIn, window) {
 		zincCameraControls.update()
 		/* the following check make sure all models are loaded and synchonised */
 		if (myGeometry.length == num_inputs) {
-			if (timeEnabled == true) {		
-				for ( var i = 0; i < myGeometry.length; i ++ ) {
-					if (morphColour[i] == true) {
-						if (typeof myGeometry[i] !== "undefined") {
-							morphColorsToVertexColors(myGeometry[i], morphs[i])
-							myGeometry[i].colorsNeedUpdate = true;
-						}
-					}
-				}
-				for ( var i = 0; i < morphs.length; i ++ ) {
+			for ( var i = 0; i < myGeometry.length; i ++ ) {
+				/* check if morphColour flag is set */
+				if (myGeometry[i][1] == 1) {
 					morph = morphs[ i ];
 					morph.updateAnimation( 500 * delta );
 				}
-			}
+				if (myGeometry[i][2] == 1) {
+					if (typeof myGeometry[i][0] !== "undefined") {
+						morphColorsToVertexColors(myGeometry[i][0], morphs[i])
+						myGeometry[i][0].colorsNeedUpdate = true;
+					}
+				}
+			}	
 		}
 		renderer.render( scene, _this.camera );
 	}
