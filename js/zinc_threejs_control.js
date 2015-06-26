@@ -251,9 +251,9 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			_this.touchZoomDistanceStart = _this.touchZoomDistanceEnd;
 		}
 	
-		var text2 = document.getElementById('myText');
-		myString = 'Delta: ' + delta;
-		text2.innerHTML = myString;
+	//	var text2 = document.getElementById('myText');
+	//	myString = 'Delta: ' + delta;
+	//	text2.innerHTML = myString;
 	
 		return delta;
 	}

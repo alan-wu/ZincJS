@@ -140,21 +140,7 @@ Zinc.Renderer = function (containerIn, window) {
 		requestURL = jsonFilePrefix + "_view.json"
 		xmlhttp.open("GET", requestURL, true);
 		xmlhttp.send();
-	}
-	
-	createDataText = function ()
-	{
-		var text2 = document.getElementById('myText');
-		text2.style.position = 'absolute';
-		//text2.style.zIndex = 1;    // if you still don't see the label, try uncommenting this
-		text2.style.display="none"
-		text2.style.width = 100;
-		text2.style.height = 50;
-		text2.style.backgroundColor = "black";
-		text2.innerHTML = "Delta: 0";
-		text2.style.top = (container.clientHeight - 100) + 'px';
-		text2.style.left = 10 + 'px';		
-	}			
+	}	
 
 	setPositionOfObject = function(mesh)
 	{
