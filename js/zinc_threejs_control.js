@@ -317,6 +317,11 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		_this.directionalLight = directionalLightIn;
 	};
 	
+	this.updateDirectionalLight = function() {
+		if (_this.directionalLight != 0)
+			_this.directionalLight.position = _this.cameraObject.position.clone();
+	}
+	
 	this.update = function () {
 
 		if ((_this._state === STATE.ROTATE) || (_this._state === STATE.TOUCH_ROTATE)){
