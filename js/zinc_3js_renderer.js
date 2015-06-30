@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '3' };
+var Zinc = { REVISION: '4' };
 
 Zinc.Geometry = function () {
 	this.geometry = undefined;
@@ -148,8 +148,6 @@ Zinc.Renderer = function (containerIn, window) {
 	targetPosition = [0.5, 0.5, 0.5];
 	upVector = [ 0.0, 1.0, 0.0];
 	centroid = [0, 0, 0]
-	timeEnabled = [];
-	morphColour = [];
 	this.defaultColour=0x7F1F1A
 	defaultOpacity=1.0
 	zincCameraControls = undefined;
@@ -185,7 +183,7 @@ Zinc.Renderer = function (containerIn, window) {
 			zincCameraControls.updateDirectionalLight()
 	}
 	
-	this.loadModelsURL = function(urls, colours, opacities)
+	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour)
 	{
 		var number = urls.length;
 		var previous_number = num_inputs;
@@ -200,16 +198,12 @@ Zinc.Renderer = function (containerIn, window) {
         		colour = colours[i]
         	if (opacities != undefined && opacities[i] != undefined)
         		opacity = opacities[i]
-        	localTimeEnabled = 0
-        	console.log(timeEnabled.length, num_inputs)
-        	if (timeEnabled.length == num_inputs)
-        	{
-        		
-        		localTimeEnabled = timeEnabled[previous_number + i]
-        	}
-        	localMorphColour = 0
-        	if (morphColour.length == num_inputs)
-        		localMorphColour = morphColour[previous_number + i]        	
+        	var localTimeEnabled = 0
+        	if (timeEnabled != undefined && timeEnabled[i] != undefined)
+        		localTimeEnabled = timeEnabled[i]
+        	var localMorphColour = 0
+        	if (morphColour != undefined && morphColour[i] != undefined)
+        		localMorphColour = morphColour[i]        	
         	loader.load( filename, meshloader(previous_number + i, colour, opacity, localTimeEnabled, localMorphColour)); 
         }
 	}
@@ -221,16 +215,6 @@ Zinc.Renderer = function (containerIn, window) {
         eyePosition = viewData.eyePosition
         targetPosition = viewData.targetPosition
         upVector = viewData.upVector
-        
-        if (viewData.numberOfResources != undefined && viewData.timeEnabled != undefined)
-        {
-        	console.log(viewData.timeEnabled)
-        	timeEnabled = timeEnabled.concat(viewData.timeEnabled)
-        	console.log(timeEnabled)
-        }
-        if (viewData.morphColour != undefined)
-        	morphColour = morphColour.concat(viewData.morphColour)
-        
         _this.resetView()
 	}
 	
@@ -262,7 +246,7 @@ Zinc.Renderer = function (containerIn, window) {
 		        	var filename = filename_prefix + (i + 1) + ".json"
 		        	urls.push(filename)
 		        }
-		        _this.loadModelsURL(urls, undefined, undefined)
+		        _this.loadModelsURL(urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour)
 		    }
 		}
 		requestURL = jsonFilePrefix + "_view.json"
