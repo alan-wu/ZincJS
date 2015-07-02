@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '5' };
+var Zinc = { REVISION: '6' };
 
 Zinc.Geometry = function () {
 	this.geometry = undefined;
@@ -23,9 +23,10 @@ Zinc.Geometry = function () {
 	
 	this.setMorphTime = function(time){
 		var TargetTime = 0;
-		if (time > _this.morph.duration)
+		_this.morph.time = time
+		if (_this.morph.time > _this.morph.duration)
 			_this.morph.time = morph.duration
-		if (time < 0.0)
+		if (_this.morph.time < 0.0)
 			_this.morph.time = 0.0
 		if (_this.timeEnabled == 1)
 			_this.morph.updateAnimation( 0.0 );
@@ -295,7 +296,9 @@ Zinc.Renderer = function (containerIn, window) {
 		centroid = [ centerX, centerY, centerZ]
 	}
 	
-	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external = true) {
+	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external) {
+		if (external == undefined)
+			external = true	
 		if (external)
 			num_inputs++;
     	isTransparent = false;
