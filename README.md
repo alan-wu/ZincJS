@@ -3,7 +3,7 @@ Web-based-Zinc-Visualisation
 
 Example html and javascript to visualise Zinc to ThreeJS export.
 
-First user is required to output the json files from CMGUI/zinc.
+Here is a short instructions on how to get simple models from CMGUI/Zinc showing on web brwoser quickly.
 
 For Cmgui users:
 ----------------
