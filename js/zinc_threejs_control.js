@@ -58,9 +58,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			var dx = event.touches[ 0 ].clientX - event.touches[ 1 ].clientX;
 			var dy = event.touches[ 0 ].clientY - event.touches[ 1 ].clientY;
 			_this.touchZoomDistanceEnd = _this.touchZoomDistanceStart = Math.sqrt( dx * dx + dy * dy );
-			var text2 = document.getElementById('myText');
-			var myString = 'pinchstart ' + _this.touchZoomDistanceStart;
-			text2.innerHTML = myString;
 		} else if (len == 3) {
 			_this._state = STATE.TOUCH_PAN;
 			_this.targetTouchId = event.touches[0].identifier
@@ -83,9 +80,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 				var dx = event.touches[ 0 ].clientX - event.touches[ 1 ].clientX;
 				var dy = event.touches[ 0 ].clientY - event.touches[ 1 ].clientY;
 				_this.touchZoomDistanceEnd = Math.sqrt( dx * dx + dy * dy )
-				var text2 = document.getElementById('myText');
-				var myString = 'pinchmove ' + _this.touchZoomDistanceEnd;
-				text2.innerHTML = myString;
 				flyZoom()
 				_this.renderer.render( _this.scene, _this.cameraObject );
 			}
@@ -95,9 +89,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 					if (event.touches[i].identifier == _this.targetTouchId) {
 						_this.pointer_x = event.touches[0].clientX 
 						_this.pointer_y = event.touches[0].clientY
-						var text2 = document.getElementById('myText');
-						var myString = 'translate ' + _this.pointer_x + ' ' + _this.pointer_y;
-						text2.innerHTML = myString;
 						translate()
 						_this.renderer.render( scene, _this.cameraObject );
 					}
@@ -250,10 +241,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			delta = -1.0 * (_this.touchZoomDistanceEnd - _this.touchZoomDistanceStart);
 			_this.touchZoomDistanceStart = _this.touchZoomDistanceEnd;
 		}
-	
-	//	var text2 = document.getElementById('myText');
-	//	myString = 'Delta: ' + delta;
-	//	text2.innerHTML = myString;
+
 	
 		return delta;
 	}
@@ -323,7 +311,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 	this.update = function () {
-
 		if ((_this._state === STATE.ROTATE) || (_this._state === STATE.TOUCH_ROTATE)){
 			tumble()
 		} else if (_this._state === STATE.PAN){

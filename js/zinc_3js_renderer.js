@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '6' };
+var Zinc = { REVISION: '7' };
 
 Zinc.Geometry = function () {
 	this.geometry = undefined;
@@ -41,6 +41,27 @@ Zinc.Geometry = function () {
 		}
 	}
 	
+	this.calculateUVs = function() {
+		_this.geometry.computeBoundingBox();
+		var max = _this.geometry.boundingBox.max,
+		    min = _this.geometry.boundingBox.min;
+		var offset = new THREE.Vector2(0 - min.x, 0 - min.y);
+		var range = new THREE.Vector2(max.x - min.x, max.y - min.y);
+		_this.geometry.faceVertexUvs[0] = [];
+		for (var i = 0; i < _this.geometry.faces.length ; i++) {
+		    var v1 = _this.geometry.vertices[_this.geometry.faces[i].a];
+		    var v2 = _this.geometry.vertices[_this.geometry.faces[i].b];
+		    var v3 = _this.geometry.vertices[_this.geometry.faces[i].c];
+		    geometry.faceVertexUvs[0].push(
+		        [
+		            new THREE.Vector2((v1.x + offset.x)/range.x ,(v1.y + offset.y)/range.y),
+		            new THREE.Vector2((v2.x + offset.x)/range.x ,(v2.y + offset.y)/range.y),
+		            new THREE.Vector2((v3.x + offset.x)/range.x ,(v3.y + offset.y)/range.y)
+		        ]);
+		}
+		geometry.uvsNeedUpdate = true;	
+	}
+	
 	this.setWireframe = function(wireframe) {
 		_this.morph.material.wireframe = wireframe
 	}
@@ -52,6 +73,11 @@ Zinc.Geometry = function () {
 	
 	this.setColour= function(colour) {
 		_this.morph.material.color = colour
+		_this.geometry.colorsNeedUpdate = true;
+	}
+	
+	this.setMaterial=function(material) {
+		_this.morph.material = material;
 		_this.geometry.colorsNeedUpdate = true;
 	}
 	
@@ -169,7 +195,9 @@ Zinc.Renderer = function (containerIn, window) {
 	/* default animation update rate, rate is 500 and duration is default to 3000, 6s to finish a full animation */
 	this.playRate = 500
 	startingId = 1000
-	
+	preRenderCallbackFunctions = {};
+	preRenderCallbackFunctions_id = 0;
+	var animated_id = undefined;
 	
 	var _this = this
 	
@@ -213,7 +241,7 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 
 	
-	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour)
+	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback)
 	{
 		var number = urls.length;
 		num_inputs += number
@@ -234,7 +262,7 @@ Zinc.Renderer = function (containerIn, window) {
         	var localMorphColour = 0
         	if (morphColour != undefined && morphColour[i] != undefined)
         		localMorphColour = morphColour[i]        	
-        	loader.load( filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour)); 
+        	loader.load( filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback)); 
         }
 	}
 	
@@ -262,7 +290,7 @@ Zinc.Renderer = function (containerIn, window) {
 		xmlhttp.send();
 	}
 	
-	this.loadFromViewURL = function(jsonFilePrefix)
+	this.loadFromViewURL = function(jsonFilePrefix, finishCallback)
 	{
 		var xmlhttp = new XMLHttpRequest();
 		xmlhttp.onreadystatechange = function() {
@@ -276,7 +304,7 @@ Zinc.Renderer = function (containerIn, window) {
 		        	var filename = filename_prefix + (i + 1) + ".json"
 		        	urls.push(filename)
 		        }
-		        _this.loadModelsURL(urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour)
+		        _this.loadModelsURL(urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback)
 		    }
 		}
 		requestURL = jsonFilePrefix + "_view.json"
@@ -286,7 +314,6 @@ Zinc.Renderer = function (containerIn, window) {
 
 	setPositionOfObject = function(mesh)
 	{
-	
 		geometry = mesh.geometry;
 		geometry.computeBoundingBox();
 		
@@ -296,7 +323,7 @@ Zinc.Renderer = function (containerIn, window) {
 		centroid = [ centerX, centerY, centerZ]
 	}
 	
-	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external) {
+	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback) {
 		if (external == undefined)
 			external = true	
 		if (external)
@@ -328,12 +355,15 @@ Zinc.Renderer = function (containerIn, window) {
 		newGeometry.modelId = modelId;
 		newGeometry.morph = meshAnim;	
 		myGeometry.push ( newGeometry ) ;
+		if (finishCallback != undefined && (typeof finishCallback == 'function'))
+			finishCallback(newGeometry);
+		
 		return newGeometry;
 	}
 	
-	meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour) {
+	meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback) {
 	    return function(geometry){
-	    	_this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false)
+	    	_this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, finishCallback)
 		}
 	}
 
@@ -369,8 +399,13 @@ Zinc.Renderer = function (containerIn, window) {
 	/* function to make sure each vertex got the right colour at the right time,
 		it will linearly interpolate colour between time steps */
 
+	this.stopAnimate = function () {
+		cancelAnimationFrame(animated_id);
+   		animated_id = undefined;
+	}
+
 	this.animate = function() {
-		requestAnimationFrame( _this.animate );
+		animated_id = requestAnimationFrame( _this.animate );
 		render();
 	}
 
@@ -382,9 +417,21 @@ Zinc.Renderer = function (containerIn, window) {
 		else
 			return 0.0;
 	}
+	
+	this.addPreRenderCallbackFunction = function(callbackFunction) {
+		preRenderCallbackFunctions_id = preRenderCallbackFunctions_id + 1;
+	
+		preRenderCallbackFunctions[preRenderCallbackFunctions_id] = callbackFunction;
+		return preRenderCallbackFunctions_id;
+	}
+	
+	this.removePreRenderCallbackFunction = function(id) {
+		if (id in preRenderCallbackFunctions) {
+   			delete preRenderCallbackFunctions[id];
+		}
+	}
 
 	render = function() {
-
 		var delta = clock.getDelta();
 		zincCameraControls.update()
 		/* the following check make sure all models are loaded and synchonised */
@@ -395,6 +442,11 @@ Zinc.Renderer = function (containerIn, window) {
 				zincGeometry.render(_this.playRate * delta, _this.playAnimation)
 			}	
 		}
+    	for (key in preRenderCallbackFunctions) {
+        	if (preRenderCallbackFunctions.hasOwnProperty(key)) {
+        		preRenderCallbackFunctions[key].call();
+        	}
+    	}
 		renderer.render( scene, _this.camera );
 	}
 	
@@ -429,7 +481,50 @@ Zinc.Renderer = function (containerIn, window) {
 	this.addToScene = function(object) {
 		scene.add(object)
 	}
-	
 		
 };
+
+//Convenient function
+function loadExternalFile(url, data, callback, errorCallback) {
+    // Set up an asynchronous request
+    var request = new XMLHttpRequest();
+    request.open('GET', url, true);
+
+    // Hook the event that gets called as the request progresses
+    request.onreadystatechange = function () {
+        // If the request is "DONE" (completed or failed)
+        if (request.readyState == 4) {
+            // If we got HTTP status 200 (OK)
+            if (request.status == 200) {
+                callback(request.responseText, data)
+            } else { // Failed
+                errorCallback(url);
+            }
+        }
+    };
+
+    request.send(null);    
+}
+
+function loadExternalFiles(urls, callback, errorCallback) {
+    var numUrls = urls.length;
+    var numComplete = 0;
+    var result = [];
+
+    // Callback for a single file
+    function partialCallback(text, urlIndex) {
+        result[urlIndex] = text;
+        numComplete++;
+
+        // When all files have downloaded
+        if (numComplete == numUrls) {
+            callback(result);
+        }
+    }
+
+    for (var i = 0; i < numUrls; i++) {
+    	loadExternalFile(urls[i], i, partialCallback, errorCallback);
+    }
+}
+
 
