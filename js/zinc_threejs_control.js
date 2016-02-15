@@ -7,7 +7,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 	this.renderer = renderer
 	this.scene = scene 
-	
+	this.tumble_rate = 1.5;
 	this.pointer_x = 0;
 	this.pointer_y = 0;
 	this.previous_pointer_x = 0;
@@ -204,7 +204,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 						}
 					}
 					var phi=Math.acos(d/radius)-0.5*Math.PI;
-					var angle=tumble_rate*tangent_dist/radius;
+					var angle=_this.tumble_rate*tangent_dist/radius;
 					var a = _this.cameraObject.position.clone();
 					a.sub(_this.cameraObject.target);
 					a.normalize();
@@ -241,7 +241,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			delta = -1.0 * (_this.touchZoomDistanceEnd - _this.touchZoomDistanceStart);
 			_this.touchZoomDistanceStart = _this.touchZoomDistanceEnd;
 		}
-
 	
 		return delta;
 	}
@@ -322,14 +321,31 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	};
 	
 	
-	if (this.domElement.addEventListener) {
-		this.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
-		this.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
-		this.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
-		this.domElement.addEventListener( 'touchstart', onDocumentTouchStart, false);
-		this.domElement.addEventListener( 'touchmove', onDocumentTouchMove, false);
-		this.domElement.addEventListener( 'touchend', onDocumentTouchEnd, false);
-		this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
-    }
-
+	
+	this.enable = function () {
+		enabled = true;
+		if (this.domElement.addEventListener) {
+			this.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
+			this.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
+			this.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
+			this.domElement.addEventListener( 'touchstart', onDocumentTouchStart, false);
+			this.domElement.addEventListener( 'touchmove', onDocumentTouchMove, false);
+			this.domElement.addEventListener( 'touchend', onDocumentTouchEnd, false);
+			this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
+	    }
+	}
+	
+	this.disable = function () {
+		enabled = false;
+		if (this.domElement.removeEventListener) {
+			this.domElement.removeEventListener( 'mousedown', onDocumentMouseDown, false );
+			this.domElement.removeEventListener( 'mousemove', onDocumentMouseMove, false );
+			this.domElement.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+			this.domElement.removeEventListener( 'touchstart', onDocumentTouchStart, false);
+			this.domElement.removeEventListener( 'touchmove', onDocumentTouchMove, false);
+			this.domElement.removeEventListener( 'touchend', onDocumentTouchEnd, false);
+			this.domElement.removeEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
+	    }
+	}
+	
 };
