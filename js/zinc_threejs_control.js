@@ -122,17 +122,16 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			var old_far = new THREE.Vector3(_this.previous_pointer_x, height - _this.previous_pointer_y,1.0);
 			var new_near = new THREE.Vector3(_this.pointer_x,height - _this.pointer_y,0.0);
 			var new_far = new THREE.Vector3(_this.pointer_x,height - _this.pointer_y,1.0);
-			projector.unprojectVector(old_near, _this.cameraObject);
-			projector.unprojectVector(old_far, _this.cameraObject);
-			projector.unprojectVector(new_near, _this.cameraObject);
-			projector.unprojectVector(new_far, _this.cameraObject);
+			old_near.unproject(_this.cameraObject);
+			old_far.unproject(_this.cameraObject);
+			new_near.unproject(_this.cameraObject);
+			new_far.unproject( _this.cameraObject);
 			var translate_rate = 0.002;
 			var dx=translate_rate*((1.0-fact)*(new_near.x-old_near.x) + fact*(new_far.x-old_far.x));
 			var dy=translate_rate*((1.0-fact)*(new_near.y-old_near.y) + fact*(new_far.y-old_far.y));
 			var dz=translate_rate*((1.0-fact)*(new_near.z-old_near.z) + fact*(new_far.z-old_far.z));
-			_this.cameraObject.position = new THREE.Vector3(_this.cameraObject.position.x - dx, _this.cameraObject.position.y - dy, _this.cameraObject.position.z - dz);
-			if (_this.directionalLight != 0)
-				_this.directionalLight.position = _this.cameraObject.position.clone();
+			_this.cameraObject.position.set(_this.cameraObject.position.x - dx, _this.cameraObject.position.y - dy, _this.cameraObject.position.z - dz);
+			_this.updateDirectionalLight();
 			_this.cameraObject.target = new THREE.Vector3(_this.cameraObject.target.x - dx, _this.cameraObject.target.y - dy, _this.cameraObject.target.z - dz);
 		}
 		_this.previous_pointer_x = _this.pointer_x
@@ -143,6 +142,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	{
 		a.normalize()
 		var v = _this.cameraObject.position.clone();
+		
 		v.sub(_this.cameraObject.target)
 		var rel_eye = v.clone()
 		v.normalize()
@@ -170,9 +170,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		eye_position.x = eye_position.x + a.x*rel_eyea + new_b.x*rel_eyeb+new_c.x*rel_eyec
 		eye_position.y = eye_position.y + a.y*rel_eyea + new_b.y*rel_eyeb+new_c.y*rel_eyec
 		eye_position.z = eye_position.z + a.z*rel_eyea + new_b.z*rel_eyeb+new_c.z*rel_eyec
-		_this.cameraObject.position = eye_position.clone()
-		if (_this.directionalLight != 0)
-			_this.directionalLight.position = _this.cameraObject.position.clone();
+		_this.cameraObject.position.set(eye_position.x, eye_position.y, eye_position.z);
+		_this.updateDirectionalLight();
 		_this.cameraObject.up.set(a.x*upa+new_b.x*upb+new_c.x*upc,
 					a.y*upa+new_b.y*upb+new_c.y*upc,
 					a.z*upa+new_b.z*upb+new_c.z*upc);
@@ -241,6 +240,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			delta = -1.0 * (_this.touchZoomDistanceEnd - _this.touchZoomDistanceStart);
 			_this.touchZoomDistanceStart = _this.touchZoomDistanceEnd;
 		}
+
 	
 		return delta;
 	}
@@ -263,9 +263,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 				eye_position.x = eye_position.x + a.x*dy*dist
 				eye_position.y = eye_position.y + a.y*dy*dist
 				eye_position.z = eye_position.z + a.z*dy*dist
-				_this.cameraObject.position = eye_position.clone()
-				if (_this.directionalLight != 0)
-					_this.directionalLight.position = _this.cameraObject.position.clone();
+				_this.cameraObject.position.set(eye_position.x, eye_position.y, eye_position.z);
+				_this.updateDirectionalLight();
 				var near_far_minimum_ratio = 0.00001;
 				if ((near_far_minimum_ratio * _this.cameraObject.far) <
 					(_this.cameraObject.near + dy*dist + _this.near_plane_fly_debt)) {
@@ -306,7 +305,9 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	
 	this.updateDirectionalLight = function() {
 		if (_this.directionalLight != 0)
-			_this.directionalLight.position = _this.cameraObject.position.clone();
+			_this.directionalLight.position.set(_this.cameraObject.position.x,
+					_this.cameraObject.position.y,
+					_this.cameraObject.position.z);
 	}
 	
 	this.update = function () {
@@ -319,8 +320,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		}
 		_this.cameraObject.lookAt( _this.cameraObject.target );
 	};
-	
-	
 	
 	this.enable = function () {
 		enabled = true;
@@ -348,4 +347,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	    }
 	}
 	
+	this.enable();
+
 };

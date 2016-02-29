@@ -1,12 +1,16 @@
-var Zinc = { REVISION: '8' };
+var Zinc = { REVISION: '9' };
 
 Zinc.Geometry = function () {
 	this.geometry = undefined;
+	this.mixer = undefined;
 	this.timeEnabled = false;
 	this.morphColour = false;
 	this.modelId = -1;
 	this.morph = undefined;
-	var _this = this
+	this.clipAction = undefined;
+	this.duration = 3000;
+	inbuildTime = 0;
+	var _this = this;
 	
 	this.setVisibility = function(visible) {
 		_this.morph.visible = visible
@@ -21,23 +25,42 @@ Zinc.Geometry = function () {
 		material.opacity = alpha
 	}
 	
+	this.getCurrentTime = function () {
+		if (_this.clipAction) {
+			var ratio = _this.clipAction.time / _this.clipAction._clip.duration;
+			return duration * ratio;
+		} else {
+			return inbuildTime;
+		}
+	}
+	
 	this.setMorphTime = function(time){
-		var TargetTime = 0;
-		_this.morph.time = time
-		if (_this.morph.time > _this.morph.duration)
-			_this.morph.time = morph.duration
-		if (_this.morph.time < 0.0)
-			_this.morph.time = 0.0
-		if (_this.timeEnabled == 1)
-			_this.morph.updateAnimation( 0.0 );
-		if (_this.morphColour == 1) {
-			if (typeof _this.geometry !== "undefined") {
-				if (_this.morph.material.vertexColors == THREE.VertexColors)
-				{
-					morphColorsToVertexColors(_this.geometry, _this.morph)
+		if (_this.clipAction){
+			var ratio = time / _this.duration;
+			var actualDuration = _this.clipAction._clip.duration;
+			_this.clipAction.time = ratio * actualDuration;
+			if (_this.clipAction.time > actualDuration)
+				_this.clipAction.time = actualDuration;
+			if (_this.clipAction.time < 0.0)
+				_this.clipAction.time = 0.0;
+			if (_this.timeEnabled == 1)
+				_this.mixer.update( 0.0 );
+			if (_this.morphColour == 1) {
+				if (typeof _this.geometry !== "undefined") {
+					if (_this.morph.material.vertexColors == THREE.VertexColors)
+					{
+						morphColorsToVertexColors(_this.geometry, _this.morph, _this.clipAction)
+					}
+					_this.geometry.colorsNeedUpdate = true;
 				}
-				_this.geometry.colorsNeedUpdate = true;
 			}
+		} else {
+			if (time > _this.duration)
+				inbuildTime = _this.duration;
+			else if (0 > time)
+				inbuildTime = 0;
+			else
+				inbuildTime = time;
 		}
 	}
 	
@@ -102,9 +125,14 @@ Zinc.Geometry = function () {
 		return [mycolor.r, mycolor.g, mycolor.b];
 	}
 	
-	morphColorsToVertexColors = function( geometry, morph ) {
-		if ( morph && geometry.morphColors && geometry.morphColors.length ) {
-			var current_time = morph.time/morph.duration * (geometry.morphColors.length - 1)
+	morphColorsToVertexColors = function( geometry, morph, clipAction ) {
+		if ( morph && geometry.morphColors && geometry.morphColors.length) {
+			var current_time = 0.0;
+			if (clipAction)
+				current_time = clipAction.time/clipAction._clip.duration * (geometry.morphColors.length - 1);
+			else
+				current_time = inbuildTime/_this.duration * (geometry.morphColors.length - 1);
+			console.log(geometry.morphColors.length)
 			var bottom_frame =  Math.floor(current_time)
 			var proportion = 1 - (current_time - bottom_frame)
 			var top_frame =  Math.ceil(current_time)
@@ -136,14 +164,15 @@ Zinc.Geometry = function () {
 	this.render = function(delta, playAnimation) {
 		if (playAnimation == true) 
 		{
-			if (_this.timeEnabled == 1) {
-				_this.morph.updateAnimation( delta );
+			if (_this.timeEnabled == 1) {		
+				_this.mixer.update( delta );
 			}
 			else {
-				var targetTime = _this.morph.time + delta;
-				if (targetTime > _this.morph.duration)
-					targetTime = targetTime - _this.morph.duration
-				_this.morph.time = targetTime
+				
+				var targetTime = inbuildTime + delta;
+				if (targetTime > _this.duration)
+					targetTime = targetTime - _this.duration
+				inbuildTime = targetTime;
 			}
 		}
 		if (_this.morphColour == 1) {
@@ -151,7 +180,7 @@ Zinc.Geometry = function () {
 				if (playAnimation == true) {
 					if (_this.morph.material.vertexColors == THREE.VertexColors)
 					{
-						morphColorsToVertexColors(_this.geometry, _this.morph)
+						morphColorsToVertexColors(_this.geometry, _this.morph, _this.clipAction)
 					}
 					_this.geometry.colorsNeedUpdate = true;
 				}
@@ -195,7 +224,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		_this.onWindowResize()
 		_this.camera.near = nearPlane;
 		_this.camera.far = farPlane;
-		_this.camera.position = new THREE.Vector3(eyePosition[0], eyePosition[1], eyePosition[2]);
+		_this.camera.position.set( eyePosition[0], eyePosition[1], eyePosition[2]);
 		_this.camera.target = new THREE.Vector3( targetPosition[0], targetPosition[1], targetPosition[2]  );
 		_this.camera.up.set( upVector[0],  upVector[1], upVector[2]);
 		_this.camera.aspect = container.clientWidth / container.clientHeight;
@@ -208,7 +237,6 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		_this.camera = new THREE.PerspectiveCamera( 40, container.clientWidth / container.clientHeight, nearPlane , farPlane);
 		_this.resetView();
 		  
-		projector = new THREE.Projector();
 		_this.ambient = new THREE.AmbientLight( 0x202020 );
 		scene.add( _this.ambient );
 	
@@ -249,15 +277,15 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         	var colour = Zinc.defaultMaterialColor;
         	var opacity = Zinc.defaultOpacity;
         	if (colours != undefined && colours[i] != undefined)
-        		colour = colours[i];
+        		colour = colours[i] ? true: false;
         	if (opacities != undefined && opacities[i] != undefined)
         		opacity = opacities[i];
         	var localTimeEnabled = 0;
         	if (timeEnabled != undefined && timeEnabled[i] != undefined)
-        		localTimeEnabled = timeEnabled[i];
+        		localTimeEnabled = timeEnabled[i] ? true: false;
         	var localMorphColour = 0;
         	if (morphColour != undefined && morphColour[i] != undefined)
-        		localMorphColour = morphColour[i];        	
+        		localMorphColour = morphColour[i] ? true: false;    	
         	loader.load( filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback)); 
         }
 	}
@@ -327,29 +355,31 @@ Zinc.Scene = function ( containerIn, rendererIn) {
     	isTransparent = false;
 		if (1.0 > opacity)
 			isTransparent = true;
+		console.log(localTimeEnabled)
 		var material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
 		material.side = THREE.DoubleSide;
-		var meshAnim = undefined;
-		meshAnim = new THREE.MorphAnimMesh( geometry, material );
-		geometry.computeMorphNormals(meshAnim);
-		meshAnim.duration = duration;
-		/*if (localTimeEnabled == true) {
-			meshAnim = new THREE.MorphAnimMesh( geometry, material );
-			geometry.computeMorphNormals(meshAnim);
-			meshAnim.duration = _this.duration;
-			
-		} else {
-			meshAnim = new THREE.Mesh( geometry,material)
-		}*/
+		var mesh = undefined;
+		mesh = new THREE.Mesh( geometry, material );
+		geometry.computeMorphNormals();
 		
-		setPositionOfObject(meshAnim);
-		scene.add( meshAnim );
+		setPositionOfObject(mesh);
+		scene.add( mesh );
 		var newGeometry = new Zinc.Geometry();
+		var mixer = new THREE.AnimationMixer(mesh);
+		var clipAction = undefined;
+		if (geometry.animations && geometry.animations[0] != undefined)
+		{
+			var action = THREE.AnimationClip.CreateFromMorphTargetSequence( 'zinc_animations', geometry.morphTargets, 30 );
+			var clipAction = mixer.clipAction( action ).setDuration(duration).play();
+		}
+		newGeometry.duration = 3000;
 		newGeometry.geometry = geometry;
 		newGeometry.timeEnabled = localTimeEnabled;
 		newGeometry.morphColour = localMorphColour;
 		newGeometry.modelId = modelId;
-		newGeometry.morph = meshAnim;	
+		newGeometry.morph = mesh;
+		newGeometry.mixer = mixer;
+		newGeometry.clipAction = clipAction;
 		zincGeometries.push ( newGeometry ) ;
 		if (finishCallback != undefined && (typeof finishCallback == 'function'))
 			finishCallback(newGeometry);
@@ -375,8 +405,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		var currentTime = 0;
 		if (zincGeometries[0] != undefined)
 		{
-			morph = zincGeometries[0].morph;
-			currentTime = morph.time/morph.duration;
+			var mixer = zincGeometries[0].mixer;
+			currentTime = zincGeometries[0].getCurrentTime();
 		}
 		return currentTime;
 	}
@@ -413,6 +443,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	}
 	
 	this.render = function(renderer) {
+		renderer.clear();
 		renderer.render( scene, _this.camera );
 	}
 	
@@ -439,7 +470,7 @@ Zinc.Renderer = function (containerIn, window) {
 	var clock = new THREE.Clock();
 	this.playAnimation = true
 	/* default animation update rate, rate is 500 and duration is default to 3000, 6s to finish a full animation */
-	var playRate = 500
+	var playRate = 500;
 	var preRenderCallbackFunctions = {};
 	var preRenderCallbackFunctions_id = 0;
 	var animated_id = undefined;
@@ -624,6 +655,7 @@ Zinc.Renderer = function (containerIn, window) {
 	
 	render = function() {
 		var delta = clock.getDelta();
+		console.log(delta)
 		currentScene.renderGeometries(playRate, delta, _this.playAnimation);
 		if (cameraOrtho != undefined && sceneOrtho != undefined) {
 			renderer.clearDepth();
