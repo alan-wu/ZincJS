@@ -12,11 +12,11 @@ For Cmgui users:
 
 2. Read in your files, set up the graphics and viewing windows.
 
-3. Export the json files using the following command gfx exporet threejs, there are few different options regarding the export, make sure you read the instruction using "gfx exporet threejs ?" command. Please note down the filename_prefix you have chosen here. The number of files output is determined by the number of surfaces group you have created.
+3. Export the json files using the following command gfx expore threejs, there are few different options regarding the export, make sure you read the instruction using "gfx exporet threejs ?" command. Please note down the filename_prefix you have chosen here. The number of files output is determined by the number of surfaces group you have created.
 
 4. Note down the values of eye point, interest point, upvector, near plane and far plane from the output of the "gfx list win 1" command.
 
-5. Copy the my_model/newheart_view.json file available here in the repository and rename it to [filename_prefix]_view.json ; Open the file and edit the values inside.
+5. Copy the model/newheart_view.json file available here in the repository and rename it to [filename_prefix]_view.json ; Open the file and edit the values inside.
 
 Example: if I have 3 different group of surfaces output under the prefix "new_models" with the following graphics windows
 settings:
@@ -44,16 +44,18 @@ Make sure all the json files are located in the same folder and now we should ha
 Using the sample page:
 ----------------------
 
-I have included a simple html page - zinc_webgl_sample.html which will display simple models.
+I have included a simple html page - multiscenes_example.html which will display simple models.
+You can also view the following page to see mroe WebGL based Zinc in action: http://sites.bioeng.auckland.ac.nz/webgl_zinc_collections/
 
-Append the following "?inputprefix=my_models/newfoot" or "?inputprefix=my_models/newheart" after zinc_webgl_sample.html on the browser to view the foot and heart model respectively.
-
-Alternatively, if you have your own set of models, specify the relative path and prefix of your files in the following format zinc_webgl_sample.html?inputprefix=[relativePath/prefix] .
-
+Use of ThreeJS:
+----------------
+This library wraps the ThreeJS library and provides a more Zinc-like experience to users.
+I have modified the ThreeJS backend slightly to fit my usage here, you can find the github repository of my ThreeJS fork here: https://github.com/alan-wu/three.js
+ 
 Basic controls:
 ---------------
 
 * Left click/single finger touch move: Rotate
-* Middle click/three finger touch move: Translater
+* Middle click/three finger touch move: Translate
 * Right click/two finger pinch: Zoom
 
