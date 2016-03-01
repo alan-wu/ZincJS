@@ -45,15 +45,6 @@ Zinc.Geometry = function () {
 				_this.clipAction.time = 0.0;
 			if (_this.timeEnabled == 1)
 				_this.mixer.update( 0.0 );
-			if (_this.morphColour == 1) {
-				if (typeof _this.geometry !== "undefined") {
-					if (_this.morph.material.vertexColors == THREE.VertexColors)
-					{
-						morphColorsToVertexColors(_this.geometry, _this.morph, _this.clipAction)
-					}
-					_this.geometry.colorsNeedUpdate = true;
-				}
-			}
 		} else {
 			if (time > _this.duration)
 				inbuildTime = _this.duration;
@@ -61,6 +52,15 @@ Zinc.Geometry = function () {
 				inbuildTime = 0;
 			else
 				inbuildTime = time;
+		}
+		if (_this.morphColour == 1) {
+			if (typeof _this.geometry !== "undefined") {
+				if (_this.morph.material.vertexColors == THREE.VertexColors)
+				{
+					morphColorsToVertexColors(_this.geometry, _this.morph, _this.clipAction)
+				}
+				_this.geometry.colorsNeedUpdate = true;
+			}
 		}
 	}
 	
@@ -132,7 +132,6 @@ Zinc.Geometry = function () {
 				current_time = clipAction.time/clipAction._clip.duration * (geometry.morphColors.length - 1);
 			else
 				current_time = inbuildTime/_this.duration * (geometry.morphColors.length - 1);
-			console.log(geometry.morphColors.length)
 			var bottom_frame =  Math.floor(current_time)
 			var proportion = 1 - (current_time - bottom_frame)
 			var top_frame =  Math.ceil(current_time)
@@ -355,7 +354,6 @@ Zinc.Scene = function ( containerIn, rendererIn) {
     	isTransparent = false;
 		if (1.0 > opacity)
 			isTransparent = true;
-		console.log(localTimeEnabled)
 		var material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
 		material.side = THREE.DoubleSide;
 		var mesh = undefined;
@@ -655,7 +653,6 @@ Zinc.Renderer = function (containerIn, window) {
 	
 	render = function() {
 		var delta = clock.getDelta();
-		console.log(delta)
 		currentScene.renderGeometries(playRate, delta, _this.playAnimation);
 		if (cameraOrtho != undefined && sceneOrtho != undefined) {
 			renderer.clearDepth();
