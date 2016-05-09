@@ -473,7 +473,9 @@ Zinc.Renderer = function (containerIn, window) {
 	var preRenderCallbackFunctions_id = 0;
 	var animated_id = undefined;
 	var cameraOrtho = undefined, sceneOrtho = undefined, logoSprite = undefined;
-	var sceneMap = new Map();
+	//var sceneMap = new Map();
+	var sceneMap = [];
+	//sceneMap = Map();
 	
 	var _this = this;
 	
@@ -500,18 +502,17 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	this.getSceneByName = function(name) {
-		return sceneMap.get(name);
+		return sceneMap[name];
 	}
 	
 	this.createScene = function (name) {
-		if (sceneMap.has(name)){
+		if (sceneMap[name] != undefined){
 			return undefined;
 		} else {
 			var new_scene = new Zinc.Scene(container, renderer)
-			sceneMap.set(name, new_scene);
+			sceneMap[name] = new_scene;
 			return new_scene;
 		}
-		
 	}
 	
 	updateOrthoScene = function() {
