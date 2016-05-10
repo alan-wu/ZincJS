@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '9' };
+var Zinc = { REVISION: '10' };
 
 Zinc.Geometry = function () {
 	this.geometry = undefined;
@@ -346,7 +346,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		centroid = [ centerX, centerY, centerZ]
 	}
 	
-	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback) {
+	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback, materials) {
 		if (external == undefined)
 			external = true	
 		if (external)
@@ -354,8 +354,15 @@ Zinc.Scene = function ( containerIn, rendererIn) {
     	isTransparent = false;
 		if (1.0 > opacity)
 			isTransparent = true;
-		var material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
-		material.side = THREE.DoubleSide;
+		var material = undefined;
+		if (materials && materials[0]) {
+			material = materials [0];
+			material.morphTargets = localTimeEnabled;
+			material.side = THREE.DoubleSide;
+		} else {
+			material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
+			material.side = THREE.DoubleSide;
+		}
 		var mesh = undefined;
 		mesh = new THREE.Mesh( geometry, material );
 		geometry.computeMorphNormals();
@@ -386,8 +393,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	}
 	
 	meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback) {
-	    return function(geometry){
-	    	_this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, finishCallback);
+	    return function(geometry, materials){
+	    	_this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, finishCallback, materials);
 	    }
 	}
 	
