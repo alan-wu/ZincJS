@@ -298,6 +298,59 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         upVector = viewData.upVector
         _this.resetView()
 	}
+
+	calculateViewFromCentreAndRadius = function(centreX, centreY, centreZ, radius, view_angle, clip_distance)
+	{
+		var eyex = eyePosition[0]-targetPosition[0];
+		var eyey = eyePosition[1]-targetPosition[1];
+		var eyez = eyePosition[2]-targetPosition[2];
+		var fact = 1.0/Math.sqrt(eyex*eyex+eyey*eyey+eyez*eyez);
+		var eyex = eyex * fact;
+		var eyey = eyey * fact;
+		var eyez = eyez * fact;
+		/* look at the centre of the sphere */
+		targetPosition[0]=centreX;
+		targetPosition[1]=centreY;
+		targetPosition[2]=centreZ;
+		/* shift the eye position to achieve the desired view_angle */
+		var eye_distance = Math.sqrt(2.0)*radius/Math.tan(view_angle*Math.PI/360.0);
+		eyePosition[0] = centreX + eyex*eye_distance;
+		eyePosition[1] = centreY + eyey*eye_distance;
+		eyePosition[2] = centreZ + eyez*eye_distance;
+		farPlane = eye_distance+clip_distance;
+		var nearClippingFactor = 0.95;
+		if (clip_distance > nearClippingFactor*eye_distance)
+		{
+			nearPlane = (1.0 - nearClippingFactor)*eye_distance;
+		}
+		else
+		{
+			nearPlane = eye_distance - clip_distance;
+		}
+	}
+
+	this.viewAll = function()
+	{
+		var boundingBox1 = undefined, boundingBox2 = undefined;
+		for ( var i = 0; i < zincGeometries.length; i ++ ) {
+			boundingBox2 = new THREE.Box3().setFromObject(zincGeometries[i].morph);
+			if (boundingBox1 == undefined) {
+				boundingBox1 = boundingBox2;
+			} else {
+				boundingBox1.union(boundingBox2);
+			}
+		}
+		if (boundingBox1) {
+			// enlarge radius to keep image within edge of window
+			var radius = boundingBox1.min.distanceTo(boundingBox1.max)/2.0;
+			var centreX = (boundingBox1.min.x + boundingBox1.max.x) / 2.0;
+			var centreY = (boundingBox1.min.y + boundingBox1.max.y) / 2.0;
+			var centreZ = (boundingBox1.min.z + boundingBox1.max.z) / 2.0;
+			var clip_factor = 4.0;
+			calculateViewFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor );
+			_this.resetView();
+		}
+	}
 	
 	this.loadViewURL = function(url)
 	{
@@ -346,7 +399,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		centroid = [ centerX, centerY, centerZ]
 	}
 	
-	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback, materials) {
+	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback, materialIn) {
 		if (external == undefined)
 			external = true	
 		if (external)
@@ -355,8 +408,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		if (1.0 > opacity)
 			isTransparent = true;
 		var material = undefined;
-		if (materials && materials[0]) {
-			material = materials [0];
+		if (materialIn) {
+			material = materialIn;
 			material.morphTargets = localTimeEnabled;
 			material.side = THREE.DoubleSide;
 		} else {
@@ -365,7 +418,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 		var mesh = undefined;
 		mesh = new THREE.Mesh( geometry, material );
-		geometry.computeMorphNormals();
+		
+		if (geometry instanceof THREE.Geometry ) {
+			geometry.computeMorphNormals();
+		}
 		
 		setPositionOfObject(mesh);
 		scene.add( mesh );
@@ -394,7 +450,11 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	
 	meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback) {
 	    return function(geometry, materials){
-	    	_this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, finishCallback, materials);
+	    	var material = undefined;
+	    	if (materials && materials[0]) {
+	    		material = materials[0];
+	    	}
+	    	_this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, finishCallback, material);
 	    }
 	}
 	
@@ -551,6 +611,10 @@ Zinc.Renderer = function (containerIn, window) {
 	
 	this.resetView = function()	{
 		currentScene.resetView();
+	}
+	
+	this.viewAll = function()	{
+		currentScene.viewAll();
 	}
 	
 	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback) {
