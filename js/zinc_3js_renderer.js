@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '10' };
+var Zinc = { REVISION: '11' };
 
 Zinc.Geometry = function () {
 	this.geometry = undefined;
@@ -9,7 +9,7 @@ Zinc.Geometry = function () {
 	this.morph = undefined;
 	this.clipAction = undefined;
 	this.duration = 3000;
-	inbuildTime = 0;
+	var inbuildTime = 0;
 	var _this = this;
 	
 	this.setVisibility = function(visible) {
@@ -167,11 +167,10 @@ Zinc.Geometry = function () {
 				_this.mixer.update( delta );
 			}
 			else {
-				
 				var targetTime = inbuildTime + delta;
 				if (targetTime > _this.duration)
 					targetTime = targetTime - _this.duration
-				inbuildTime = targetTime;
+					inbuildTime = targetTime;
 			}
 		}
 		if (_this.morphColour == 1) {
@@ -200,7 +199,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	this.directionalLight = undefined;
 	this.ambient = undefined;
 	this.camera = undefined;
-	duration = 3000;
+	var duration = 3000;
 	var nearPlane = 10.0353320682268;
 	var farPlane = 12.6264735624;
 	var eyePosition = [0.5, 0.5, 4.033206822678309];
@@ -210,6 +209,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	var zincCameraControls = undefined;
 	var num_inputs = 0;
 	var startingId = 1000;
+	this.sceneName = undefined;
 	
 	var _this = this;
 	
@@ -285,11 +285,11 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         	var localMorphColour = 0;
         	if (morphColour != undefined && morphColour[i] != undefined)
         		localMorphColour = morphColour[i] ? true: false;    	
-        	loader.load( filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback)); 
+        	loader.load( filename, _this.meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback)); 
         }
 	}
 	
-	loadView = function(viewData)
+	this.loadView = function(viewData)
 	{
         nearPlane = viewData.nearPlane
         farPlane = viewData.farPlane
@@ -299,7 +299,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         _this.resetView()
 	}
 
-	calculateViewFromCentreAndRadius = function(centreX, centreY, centreZ, radius, view_angle, clip_distance)
+	this.calculateViewFromCentreAndRadius = function(centreX, centreY, centreZ, radius, view_angle, clip_distance)
 	{
 		var eyex = eyePosition[0]-targetPosition[0];
 		var eyey = eyePosition[1]-targetPosition[1];
@@ -347,7 +347,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 			var centreY = (boundingBox1.min.y + boundingBox1.max.y) / 2.0;
 			var centreZ = (boundingBox1.min.z + boundingBox1.max.z) / 2.0;
 			var clip_factor = 4.0;
-			calculateViewFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor );
+			_this.calculateViewFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor );
 			_this.resetView();
 		}
 	}
@@ -358,7 +358,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		xmlhttp.onreadystatechange = function() {
 		    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
 		        var viewData = JSON.parse(xmlhttp.responseText);
-		        loadView(viewData);
+		        _this.loadView(viewData);
 		    }
 		}
 		requestURL = url
@@ -372,7 +372,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		xmlhttp.onreadystatechange = function() {
 		    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
 		        var viewData = JSON.parse(xmlhttp.responseText);
-		        loadView(viewData);
+		        _this.loadView(viewData);
 		        var urls = [];
 		        var filename_prefix = jsonFilePrefix + "_";
 		        for (var i = 0; i < viewData.numberOfResources; i++)
@@ -448,7 +448,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return newGeometry;
 	}
 	
-	meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback) {
+	this.meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback) {
 	    return function(geometry, materials){
 	    	var material = undefined;
 	    	if (materials && materials[0]) {
@@ -501,7 +501,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 			for ( var i = 0; i < zincGeometries.length; i ++ ) {
 				/* check if morphColour flag is set */
 				zincGeometry = zincGeometries[i] ;
-				zincGeometry.render(playRate * delta, playAnimation)
+				zincGeometry.render(playRate * delta, playAnimation);
 			}	
 		}
 		
@@ -540,9 +540,7 @@ Zinc.Renderer = function (containerIn, window) {
 	var preRenderCallbackFunctions_id = 0;
 	var animated_id = undefined;
 	var cameraOrtho = undefined, sceneOrtho = undefined, logoSprite = undefined;
-	//var sceneMap = new Map();
 	var sceneMap = [];
-	//sceneMap = Map();
 	
 	var _this = this;
 	
@@ -578,6 +576,7 @@ Zinc.Renderer = function (containerIn, window) {
 		} else {
 			var new_scene = new Zinc.Scene(container, renderer)
 			sceneMap[name] = new_scene;
+			new_scene.sceneName = name;
 			return new_scene;
 		}
 	}
@@ -653,7 +652,7 @@ Zinc.Renderer = function (containerIn, window) {
 
 	this.animate = function() {
 		animated_id = requestAnimationFrame( _this.animate );
-		render();
+		_this.render();
 	}
 
 	var prevTime = Date.now();
@@ -703,7 +702,6 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	createHUDSprites = function(logoSprite) {
-		
 		return function(texture){
 			texture.needsUpdate = true;
 			var material = new THREE.SpriteMaterial( { map: texture } );
@@ -723,7 +721,7 @@ Zinc.Renderer = function (containerIn, window) {
 				"images/abi_big_logo_transparent_small.png", undefined, createHUDSprites(logoSprite))
 	}
 	
-	render = function() {
+	this.render = function() {
 		var delta = clock.getDelta();
 		currentScene.renderGeometries(playRate, delta, _this.playAnimation);
 		if (cameraOrtho != undefined && sceneOrtho != undefined) {
