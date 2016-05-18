@@ -313,7 +313,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		targetPosition[1]=centreY;
 		targetPosition[2]=centreZ;
 		/* shift the eye position to achieve the desired view_angle */
-		var eye_distance = Math.sqrt(2.0)*radius/Math.tan(view_angle*Math.PI/360.0);
+		var eye_distance = radius/Math.tan(view_angle*Math.PI/360.0);
 		eyePosition[0] = centreX + eyex*eye_distance;
 		eyePosition[1] = centreY + eyey*eye_distance;
 		eyePosition[2] = centreZ + eyez*eye_distance;
