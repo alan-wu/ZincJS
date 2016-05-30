@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '11' };
+var Zinc = { REVISION: '12' };
 
 Zinc.Geometry = function () {
 	this.geometry = undefined;
@@ -210,8 +210,41 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	var num_inputs = 0;
 	var startingId = 1000;
 	this.sceneName = undefined;
+	this.progressMap = [];
+	var errorDownload = false;
 	
 	var _this = this;
+	
+	this.getDownloadProgress = function() {
+		var totalSize = 0;
+		var totalLoaded = 0;
+		var unknownFound = false;
+		
+		for (var key in _this.progressMap) {
+			var progress = _this.progressMap[key];
+			
+			totalSize += progress[1];
+			totalLoaded += progress[0];
+			
+			if (progress[1] == 0)
+				unknownFound = true;
+		}
+		if (unknownFound) {
+			totalSize = 0;
+		}
+		return [totalSize, totalLoaded, errorDownload];
+	}
+	
+	
+	this.onProgress = function(id) {
+	    return function(xhr){
+	    	_this.progressMap[id] = [xhr.loaded, xhr.total];
+	    }
+	}
+
+	this.onError = function ( xhr ) {
+		errorDownload = true;
+	};
 	
 	this.onWindowResize = function() {
 		_this.camera.aspect = container.clientWidth / container.clientHeight;
@@ -285,7 +318,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         	var localMorphColour = 0;
         	if (morphColour != undefined && morphColour[i] != undefined)
         		localMorphColour = morphColour[i] ? true: false;    	
-        	loader.load( filename, _this.meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback)); 
+        	loader.load( filename, _this.meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback),
+        			_this.onProgress(i), _this.onError); 
         }
 	}
 	
