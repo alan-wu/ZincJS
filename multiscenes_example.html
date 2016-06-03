@@ -31,10 +31,10 @@
 		<button name="Reset View" value="OK" type="button" onclick="resetView()">Reset View</button>
 		<button name="Jaw" value="jaw" type="button" onclick="loadMyModel(this.value)">Jaw</button>
 		<button name="Beating Heart" value="beating_heart" type="button" onclick="loadMyModel(this.value)">Beating Heart</button>
-		<button name="heart" value="newheart" type="button" onclick="loadMyModel(this.value)">Heart</button>
 		<button name="foot" value="newfoot" type="button" onclick="loadMyModel(this.value)">Foot</button>
 		<button name="skin" value="skin" type="button" onclick="loadMyModel(this.value)">Skin</button>
 		<button name="materials" value="materials" type="button" onclick="loadMyModel(this.value)">materials</button>
+		<button name="deforming_heart" value="deforming_heart" type="button" onclick="loadMyModel(this.value)">Deforming Heart</button>
 		<script src="js/three.min.js"></script>
 		<script src="js/zinc_threejs_control.js"></script>
 		<script src="js/zinc_3js_renderer.js"></script>
@@ -48,7 +48,7 @@
 			zincRenderer = new Zinc.Renderer(container, window);
 			Zinc.defaultMaterialColor = 0xFFFF9C
 			zincRenderer.initialiseVisualisation();
-			loadMyModel("newheart");
+			loadMyModel("deforming_heart");
 			zincRenderer.animate();
 			
 			function loadMyModel(model_name) {
