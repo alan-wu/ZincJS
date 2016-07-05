@@ -1,4 +1,207 @@
-var Zinc = { REVISION: '12' };
+var Zinc = { REVISION: '13' };
+
+Zinc.Glyph = function(geometry, materialIn, idIn)  {
+	var material = materialIn.clone();
+	material.vertexColors = THREE.FaceColors;
+	var mesh = new THREE.Mesh( geometry, material );
+	
+	this.id = idIn;
+	var _this = this;
+	
+	this.getMesh = function () {
+		return mesh;
+	}
+	
+	this.setColor = function (colorIn) {
+		mesh.material.color = colorIn
+		mesh.geometry.colorsNeedUpdate = true;
+	}
+	
+	this.setTransformation = function(position, axis1, axis2, axis3) {
+		mesh.matrix.elements[0] = axis1[0];
+		mesh.matrix.elements[1] = axis1[1];
+		mesh.matrix.elements[2] = axis1[2];
+		mesh.matrix.elements[3] = 0.0;
+		mesh.matrix.elements[4] = axis2[0];
+		mesh.matrix.elements[5] = axis2[1];
+		mesh.matrix.elements[6] = axis2[2];
+		mesh.matrix.elements[7] = 0.0;
+		mesh.matrix.elements[8] = axis3[0];
+		mesh.matrix.elements[9] = axis3[1];
+		mesh.matrix.elements[10] = axis3[2];
+		mesh.matrix.elements[11] = 0.0;
+		mesh.matrix.elements[12] = position[0];
+		mesh.matrix.elements[13] = position[1];
+		mesh.matrix.elements[14] = position[2];
+		mesh.matrix.elements[15] = 1.0;
+		mesh.matrixAutoUpdate = false;
+	}	
+}
+
+Zinc.Glyphset = function()  {
+	var glyphList = [];
+	var axis1s = undefined;
+	var axis2s = undefined;
+	var axis3s = undefined;
+	var positions = undefined;
+	var colors = undefined;
+	var numberOfTimeSteps = 0;
+	var numberOfVertices = 0;
+	var baseSize = [0, 0, 0];
+	var offset = [0, 0, 0];
+	var scaleFactors = [ 0, 0, 0 ];
+	this.duration = 3000;
+	var inbuildTime = 0;
+	this.ready = false;
+	var group = new THREE.Group();
+	var _this = this;
+	var morphColours = false;
+	var morphVertices = false;
+	
+	this.getGroup = function() {
+		return group;
+	}
+	
+	this.load = function(glyphsetData, glyphURL) {
+		axis1s = glyphsetData.axis1;
+		axis2s = glyphsetData.axis2;
+		axis3s = glyphsetData.axis3;
+		positions = glyphsetData.positions;
+		colors = glyphsetData.colors;
+		morphColours = glyphsetData.metadata.MorphColours;
+		morphVertices = glyphsetData.metadata.MorphVertices;
+		numberOfVertices = glyphsetData.metadata.number_of_vertices;
+		numberOfTimeSteps = glyphsetData.metadata.number_of_time_steps;
+		_this.baseSize = glyphsetData.metadata.base_size;
+		_this.offset = glyphsetData.metadata.offset;
+		_this.scaleFactors = glyphsetData.metadata.scale_factors;
+		var loader = new THREE.JSONLoader( true );
+		loader.load( glyphURL, meshloader());
+	}
+		
+	var updateGlyphsetTransformation = function(current_positions, current_axis1s, current_axis2s, current_axis3s) {
+		for (var i = 0; i < glyphList.length; i++) {
+			var glyph = glyphList[i];
+			var current_index = i * 3;
+			var position = [current_positions[current_index], current_positions[current_index+1],
+			                current_positions[current_index+2]];
+			var axis1 = [current_axis1s[current_index], current_axis1s[current_index+1],
+			             current_axis1s[current_index+2]];
+			var axis2 = [current_axis2s[current_index], current_axis2s[current_index+1],
+			             current_axis2s[current_index+2]];
+			var axis3 = [current_axis3s[current_index], current_axis3s[current_index+1],
+			             current_axis3s[current_index+2]];
+			glyph.setTransformation(position, axis1, axis2, axis3);
+		}
+	}
+	
+	var updateGlyphsetHexColors = function(current_colors) {
+		for (var i = 0; i < glyphList.length; i++) {
+			var glyph = glyphList[i];
+			var hex_values = current_colors[i];
+			var mycolor = new THREE.Color(hex_values);
+			glyph.setColor(mycolor);
+		}
+	}
+	
+	var updateMorphGlyphsets = function() {
+		var current_positions = [];
+		var current_axis1s = [];
+		var current_axis2s = [];
+		var current_axis3s = [];
+		var current_colors = [];
+		var current_time = inbuildTime/_this.duration * (numberOfTimeSteps - 1);
+		var bottom_frame =  Math.floor(current_time);
+		var proportion = 1 - (current_time - bottom_frame);
+		var top_frame =  Math.ceil(current_time);
+		if (morphVertices) {
+			var bottom_positions = positions[bottom_frame.toString()];
+			var top_positions = positions[top_frame.toString()];
+			var bottom_axis1 = axis1s[bottom_frame.toString()];
+			var top_axis1 = axis1s[top_frame.toString()];
+			var bottom_axis2 = axis2s[bottom_frame.toString()];
+			var top_axis2 = axis2s[top_frame.toString()];
+			var bottom_axis3 = axis3s[bottom_frame.toString()];
+			var top_axis3 = axis3s[top_frame.toString()];
+			
+			for (var i = 0; i < bottom_positions.length; i++) {
+				current_positions.push(proportion * bottom_positions[i] + (1.0 - proportion) * top_positions[i]);
+				current_axis1s.push(proportion * bottom_axis1[i] + (1.0 - proportion) * top_axis1[i]);
+				current_axis2s.push(proportion * bottom_axis2[i] + (1.0 - proportion) * top_axis2[i]);
+				current_axis3s.push(proportion * bottom_axis3[i] + (1.0 - proportion) * top_axis3[i]);
+			}
+		} else {
+			current_positions = positions["0"];
+			current_axis1s = axis1s["0"];
+			current_axis2s = axis2s["0"];
+			current_axis3s = axis3s["0"];
+		}
+		updateGlyphsetTransformation(current_positions, current_axis1s, current_axis2s, current_axis3s);
+		
+		if (colors != undefined) {
+			if (morphColours) {
+				var bottom_colors = colors[bottom_frame.toString()];
+				var top_colors = colors[top_frame.toString()];
+				for (var i = 0; i < bottom_colors.length; i++) {
+					current_colors.push(proportion * bottom_colors[i] + (1.0 - proportion) * top_colors[i]);
+				}
+			} else {
+				current_colors = colors["0"];
+			}
+			updateGlyphsetHexColors(current_colors);
+		}
+		
+	}
+	
+	var createGlyphs = function(geometry, material) {
+		for (var i = 0; i < numberOfVertices; i ++) {
+			var glyph = new Zinc.Glyph(geometry, material, i + 1);
+			glyphList[i] = glyph;
+			updateGlyphsetTransformation(positions["0"], axis1s["0"],
+					axis2s["0"], axis3s["0"]);
+			if (colors != undefined) {
+				updateGlyphsetHexColors(colors["0"]);
+			}
+			group.add(glyph.getMesh());
+		}
+		_this.ready = true;
+	}
+	
+	var meshloader = function() {
+	    return function(geometry, materials){
+	    	var material = undefined;
+	    	if (materials && materials[0]) {
+	    		material = materials[0];
+	    	}
+	    	createGlyphs(geometry, material);
+	    }
+	}
+	
+	this.setMorphTime = function (time) {
+		if (time > _this.duration)
+			inbuildTime = _this.duration;
+		else if (0 > time)
+			inbuildTime = 0;
+		else
+			inbuildTime = time;
+		if (morphColours || morphVertices) {
+			updateMorphGlyphsets();
+		}
+	}
+	
+	this.render = function(delta, playAnimation) {
+		if (playAnimation == true) 
+		{
+			var targetTime = inbuildTime + delta;
+			if (targetTime > _this.duration)
+				targetTime = targetTime - _this.duration
+				inbuildTime = targetTime;
+			if (morphColours || morphVertices) {
+				updateMorphGlyphsets();
+			}
+		}
+	}
+}
 
 Zinc.Geometry = function () {
 	this.geometry = undefined;
@@ -125,37 +328,39 @@ Zinc.Geometry = function () {
 		return [mycolor.r, mycolor.g, mycolor.b];
 	}
 	
-	morphColorsToVertexColors = function( geometry, morph, clipAction ) {
-		if ( morph && geometry.morphColors && geometry.morphColors.length) {
+	var morphColorsToVertexColors = function( targetGeometry, morph, clipAction ) {
+		if ( morph && targetGeometry.morphColors && targetGeometry.morphColors.length) {
 			var current_time = 0.0;
 			if (clipAction)
-				current_time = clipAction.time/clipAction._clip.duration * (geometry.morphColors.length - 1);
+				current_time = clipAction.time/clipAction._clip.duration * (targetGeometry.morphColors.length - 1);
 			else
-				current_time = inbuildTime/_this.duration * (geometry.morphColors.length - 1);
+				current_time = inbuildTime/_this.duration * (targetGeometry.morphColors.length - 1);
+			
 			var bottom_frame =  Math.floor(current_time)
 			var proportion = 1 - (current_time - bottom_frame)
 			var top_frame =  Math.ceil(current_time)
-			var bottomColorMap = geometry.morphColors[ bottom_frame ];
-			var TopColorMap = geometry.morphColors[ top_frame ];
-			for ( var i = 0; i < geometry.faces.length; i ++ ) {
-				var my_color1 = getColorsRGB(bottomColorMap.colors, geometry.faces[i].a);
-				var my_color2 = getColorsRGB(TopColorMap.colors, geometry.faces[i].a);
+			var bottomColorMap = targetGeometry.morphColors[ bottom_frame ];
+			var TopColorMap = targetGeometry.morphColors[ top_frame ];
+			
+			for ( var i = 0; i < targetGeometry.faces.length; i ++ ) {
+				var my_color1 = getColorsRGB(bottomColorMap.colors, targetGeometry.faces[i].a);
+				var my_color2 = getColorsRGB(TopColorMap.colors, targetGeometry.faces[i].a);
 				var resulting_color = [my_color1[0] * proportion + my_color2[0] * (1 - proportion),
 					my_color1[1] * proportion + my_color2[1] * (1 - proportion),
 					my_color1[2] * proportion + my_color2[2] * (1 - proportion)]
-				geometry.faces[i].vertexColors[0].setRGB(resulting_color[0], resulting_color[1], resulting_color[2])
-				my_color1 = getColorsRGB(bottomColorMap.colors, geometry.faces[i].b);
-				my_color2 = getColorsRGB(TopColorMap.colors, geometry.faces[i].b);
+				targetGeometry.faces[i].vertexColors[0].setRGB(resulting_color[0], resulting_color[1], resulting_color[2])
+				my_color1 = getColorsRGB(bottomColorMap.colors, targetGeometry.faces[i].b);
+				my_color2 = getColorsRGB(TopColorMap.colors, targetGeometry.faces[i].b);
 				resulting_color = [my_color1[0] * proportion + my_color2[0] * (1 - proportion),
 					my_color1[1] * proportion + my_color2[1] * (1 - proportion),
 					my_color1[2] * proportion + my_color2[2] * (1 - proportion)]
-				geometry.faces[i].vertexColors[1].setRGB(resulting_color[0], resulting_color[1], resulting_color[2])
-				my_color1 = getColorsRGB(bottomColorMap.colors, geometry.faces[i].c);
-				my_color2 = getColorsRGB(TopColorMap.colors, geometry.faces[i].c);
+				targetGeometry.faces[i].vertexColors[1].setRGB(resulting_color[0], resulting_color[1], resulting_color[2])
+				my_color1 = getColorsRGB(bottomColorMap.colors, targetGeometry.faces[i].c);
+				my_color2 = getColorsRGB(TopColorMap.colors, targetGeometry.faces[i].c);
 				resulting_color = [my_color1[0] * proportion + my_color2[0] * (1 - proportion),
 					my_color1[1] * proportion + my_color2[1] * (1 - proportion),
 					my_color1[2] * proportion + my_color2[2] * (1 - proportion)]
-				geometry.faces[i].vertexColors[2].setRGB(resulting_color[0], resulting_color[1], resulting_color[2])
+				targetGeometry.faces[i].vertexColors[2].setRGB(resulting_color[0], resulting_color[1], resulting_color[2])
 			}	
 		}
 	}
@@ -163,29 +368,31 @@ Zinc.Geometry = function () {
 	this.render = function(delta, playAnimation) {
 		if (playAnimation == true) 
 		{
-			if (_this.timeEnabled == 1) {		
+			if ((_this.clipAction) && (_this.timeEnabled == 1)) {
 				_this.mixer.update( delta );
 			}
 			else {
 				var targetTime = inbuildTime + delta;
 				if (targetTime > _this.duration)
 					targetTime = targetTime - _this.duration
-					inbuildTime = targetTime;
+				inbuildTime = targetTime;
 			}
-		}
-		if (_this.morphColour == 1) {
-			if (typeof _this.geometry !== "undefined") {
-				if (playAnimation == true) {
+			if (_this.morphColour == 1) {
+				if (typeof _this.geometry !== "undefined") {
+					
 					if (_this.morph.material.vertexColors == THREE.VertexColors)
 					{
-						morphColorsToVertexColors(_this.geometry, _this.morph, _this.clipAction)
+						var clipAction = undefined;
+						if (_this.clipAction && (_this.timeEnabled == 1))
+							clipAction = _this.clipAction;
+						morphColorsToVertexColors(_this.geometry, _this.morph, clipAction);
+						_this.geometry.colorsNeedUpdate = true;
 					}
-					_this.geometry.colorsNeedUpdate = true;
+					
 				}
-			}
+			}	
 		}
 	}
-	
 }
 
 Zinc.defaultMaterialColor = 0x7F1F1A;
@@ -195,6 +402,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	var container = containerIn;
 	//zincGeometries contains a tuple of the threejs mesh, timeEnabled, morphColour flag, unique id and morph
 	var zincGeometries = [];
+	var zincGlyphsets = [];
 	var scene = new THREE.Scene();
 	this.directionalLight = undefined;
 	this.ambient = undefined;
@@ -297,32 +505,6 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return startingId;
 	}
 	
-	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback)
-	{
-		var number = urls.length;
-		num_inputs += number;
-        for (var i = 0; i < number; i++)
-        {
-        	var modelId = nextAvailableInternalZincModelId();
-        	var filename = urls[i]
-        	var loader = new THREE.JSONLoader( true );
-        	var colour = Zinc.defaultMaterialColor;
-        	var opacity = Zinc.defaultOpacity;
-        	if (colours != undefined && colours[i] != undefined)
-        		colour = colours[i] ? true: false;
-        	if (opacities != undefined && opacities[i] != undefined)
-        		opacity = opacities[i];
-        	var localTimeEnabled = 0;
-        	if (timeEnabled != undefined && timeEnabled[i] != undefined)
-        		localTimeEnabled = timeEnabled[i] ? true: false;
-        	var localMorphColour = 0;
-        	if (morphColour != undefined && morphColour[i] != undefined)
-        		localMorphColour = morphColour[i] ? true: false;    	
-        	loader.load( filename, _this.meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback),
-        			_this.onProgress(i), _this.onError); 
-        }
-	}
-	
 	this.loadView = function(viewData)
 	{
         nearPlane = viewData.nearPlane
@@ -333,7 +515,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         _this.resetView()
 	}
 
-	this.calculateViewFromCentreAndRadius = function(centreX, centreY, centreZ, radius, view_angle, clip_distance)
+	var calculateViewFromCentreAndRadius = function(centreX, centreY, centreZ, radius, view_angle, clip_distance)
 	{
 		var eyex = eyePosition[0]-targetPosition[0];
 		var eyey = eyePosition[1]-targetPosition[1];
@@ -381,9 +563,88 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 			var centreY = (boundingBox1.min.y + boundingBox1.max.y) / 2.0;
 			var centreZ = (boundingBox1.min.z + boundingBox1.max.z) / 2.0;
 			var clip_factor = 4.0;
-			_this.calculateViewFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor );
+			calculateViewFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor );
 			_this.resetView();
 		}
+	}
+	
+	var loadGlyphset = function(glyphsetData, glyphurl)
+	{
+		var newGlyphset = new Zinc.Glyphset();
+        newGlyphset.duration = 3000;
+        newGlyphset.load(glyphsetData, glyphurl);
+        var group = newGlyphset.getGroup()
+        scene.add( group );
+        zincGlyphsets.push ( newGlyphset ) ;
+	}
+	
+	var onLoadGlyphsetReady = function(xmlhttp, glyphurl) {
+		return function() {
+			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+				var glyphsetData = JSON.parse(xmlhttp.responseText);
+	        	loadGlyphset(glyphsetData, glyphurl);
+			}
+		}
+	}
+	
+	this.loadGlyphsetURL = function(metaurl, glyphurl)
+	{
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl);
+		xmlhttp.open("GET", metaurl, true);
+		xmlhttp.send();
+	}
+	
+	var readMetadataItem = function(item, finishCallback) {
+		if (item) {
+			if (item.Type == "Surfaces") {
+				_this.loadModelsURL([item.URL], undefined, undefined, [item.MorphVertices], [item.MorphColours], finishCallback);
+			} else if (item.Type == "Glyph") {
+				_this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL);
+			}
+		}
+	}
+
+	this.loadMetadataURL = function(url, finishCallback) {
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function() {
+		    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+		        var metadata = JSON.parse(xmlhttp.responseText);
+		        var numberOfObjects = metadata.length;
+		        for (i=0; i < numberOfObjects; i++)
+		        	readMetadataItem(metadata[i], finishCallback)
+		    }
+		}
+		requestURL = url
+		xmlhttp.open("GET", url, true);
+		xmlhttp.send();			
+	}
+
+	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback)
+	{
+		var number = urls.length;
+		num_inputs += number;
+        for (var i = 0; i < number; i++)
+        {
+        	var modelId = nextAvailableInternalZincModelId();
+        	var filename = urls[i]
+        	var loader = new THREE.JSONLoader( true );
+        	var colour = Zinc.defaultMaterialColor;
+        	var opacity = Zinc.defaultOpacity;
+        	if (colours != undefined && colours[i] != undefined)
+        		colour = colours[i] ? true: false;
+        	if (opacities != undefined && opacities[i] != undefined)
+        		opacity = opacities[i];
+        	var localTimeEnabled = 0;
+        	if (timeEnabled != undefined && timeEnabled[i] != undefined)
+        		localTimeEnabled = timeEnabled[i] ? true: false;
+        	var localMorphColour = 0;
+        	if (morphColour != undefined && morphColour[i] != undefined)
+        		localMorphColour = morphColour[i] ? true: false;
+        	
+        	loader.load( filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback),
+        			_this.onProgress(i), _this.onError); 
+        }
 	}
 	
 	this.loadViewURL = function(url)
@@ -422,7 +683,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		xmlhttp.send();
 	}
 	
-	setPositionOfObject = function(mesh)
+	var setPositionOfObject = function(mesh)
 	{
 		geometry = mesh.geometry;
 		geometry.computeBoundingBox();
@@ -482,7 +743,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return newGeometry;
 	}
 	
-	this.meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback) {
+	var meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback) {
 	    return function(geometry, materials){
 	    	var material = undefined;
 	    	if (materials && materials[0]) {
@@ -515,6 +776,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 			zincGeometry = zincGeometries[i];
 			zincGeometry.setMorphTime(time);
 		}
+		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+			zincGlyphset = zincGlyphsets[i];
+			zincGlyphset.setMorphTime(time);
+		}
 	}
 	
 	this.getZincGeometryByID = function(id) {
@@ -538,7 +803,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 				zincGeometry.render(playRate * delta, playAnimation);
 			}	
 		}
-		
+		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+			zincGlyphset = zincGlyphsets[i];
+			zincGlyphset.render(playRate * delta, playAnimation);
+		}
 	}
 	
 	this.render = function(renderer) {
@@ -615,7 +883,7 @@ Zinc.Renderer = function (containerIn, window) {
 		}
 	}
 	
-	updateOrthoScene = function() {
+	var updateOrthoScene = function() {
 		if (logoSprite != undefined) {
 			var material = logoSprite.material;
 			if (material.map)
@@ -624,7 +892,7 @@ Zinc.Renderer = function (containerIn, window) {
 		}
 	}
 	
-	updateOrthoCamera = function() {
+	var updateOrthoCamera = function() {
 		if (cameraOrtho != undefined) {
 			cameraOrtho.left = - container.clientWidth / 2;
 			cameraOrtho.right = container.clientWidth / 2;
@@ -735,7 +1003,7 @@ Zinc.Renderer = function (containerIn, window) {
 		sceneOrtho.add(object)
 	}
 	
-	createHUDSprites = function(logoSprite) {
+	var createHUDSprites = function(logoSprite) {
 		return function(texture){
 			texture.needsUpdate = true;
 			var material = new THREE.SpriteMaterial( { map: texture } );
