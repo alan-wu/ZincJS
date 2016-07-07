@@ -40,69 +40,38 @@ We will focus on the exportWebGLJson function here.
 .. code:: python
 
    def exportWebGLJson(self):
-   
       '''
-      
       Export graphics into JSON format, one json export represents one
-      
       surface graphics.
-      
       '''
-      
       scene = self._default_region.getScene()
-      
       sceneSR = scene.createStreaminformationScene()
-      
       sceneSR.setIOFormat(sceneSR.IO_FORMAT_THREEJS)
-      
       ''' Get the total number of graphics in a scene/region that can be
       exported'''
-      
       number = sceneSR.getNumberOfResourcesRequired()
-      
       resources = []
-      
       '''Write out each graphics into a json file which can be rendered with
       our WebGL script'''
-      
       for i in range(number):
-      
          resources.append(sceneSR.createStreamresourceMemory())
-      
       scene.write(sceneSR)
-      
       '''Write out each resource into their own file'''
-      
       for i in range(number):
-      
          f = None
-        
          if i == 0:
-      
             f = open('html/' + self._prefix + '_' + 'metadata.json', 'w+')
-            
          else:
-         
             f = open('html/' + self._prefix + '_' + str(i) + '.json', 'w+')
-      
          buffer = resources[i].getBuffer()[1]
-      
          if i == 0:
-      
             for j in range(number-1):
-      
                replaceName = '' + self._prefix + '_' + str(j+2) + '.json'
-      
                old_name = 'memory_resource'+ '_' + str(j+2)
-      
                buffer = buffer.replace(old_name, replaceName)
-      
          f.write(buffer)
-      
          f.close()
-   
       ''' the following function exports the camera settings'''
-      
       self.exportViewJson()
 
 The function above exports all currently supported graphics from the
@@ -160,50 +129,29 @@ file:
 .. code:: html
 
    <body style="height:100%">
-   
       <p id='myText'>Basic Mesh WebGL Demo</p>
-      
       <button name="View All" value="OK" type="button"
       onclick="viewAll()">View All</button>
-      
       <script src="js/three.min.js"></script>
-      
       <script src="js/zinc_threejs_control.js"></script>
-      
       <script src="js/zinc_3js_renderer.js"></script>
-      
       <script>
-      
          container = document.createElement( 'div' );
-         
          document.body.appendChild( container );
-         
          container.style.height = "100%"
-         
          var zincRenderer = new Zinc.Renderer(container, window);
-         
          zincRenderer.initialiseVisualisation();
-         
          var scene = zincRenderer.createScene("BasicMesh");
-         
          scene.loadViewURL("BasicMesh_view.json");
-         
          scene.loadMetadataURL("BasicMesh_metadata.json");
-         
          zincRenderer.setCurrentScene(scene);
-         
          zincRenderer.animate();
          
          function viewAll()
-         
          {
-         
-         zincRenderer.viewAll()
-         
+            zincRenderer.viewAll()
          }
-      
       </script>
-   
    </body>
 
 The first two lines define the body block and display the text *Basic
