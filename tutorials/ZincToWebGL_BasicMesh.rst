@@ -49,11 +49,11 @@ We will focus on the exportWebGLJson function here.
       
       '''
       
-      scene = self.\_default\_region.getScene()
+      scene = self._default_region.getScene()
       
       sceneSR = scene.createStreaminformationScene()
       
-      sceneSR.setIOFormat(sceneSR.IO\_FORMAT\_THREEJS)
+      sceneSR.setIOFormat(sceneSR.IO_FORMAT_THREEJS)
       
       ''' Get the total number of graphics in a scene/region that can be
       exported'''
@@ -79,7 +79,7 @@ We will focus on the exportWebGLJson function here.
         
          if i == 0:
       
-            f = open('html/' + self.\_prefix + '\_' + 'metadata.json', 'w+')
+            f = open('html/' + self._prefix + '_' + 'metadata.json', 'w+')
             
          else:
          
@@ -91,11 +91,11 @@ We will focus on the exportWebGLJson function here.
       
             for j in range(number-1):
       
-               replaceName = '' + self.\_prefix + '\_' + str(j+2) + '.json'
+               replaceName = '' + self._prefix + '_' + str(j+2) + '.json'
       
-               old\_name = 'memory\_resource'+ '\_' + str(j+2)
+               old_name = 'memory_resource'+ '_' + str(j+2)
       
-               buffer = buffer.replace(old\_name, replaceName)
+               buffer = buffer.replace(old_name, replaceName)
       
          f.write(buffer)
       
