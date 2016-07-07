@@ -168,9 +168,9 @@ file:
       
       <script src="js/three.min.js"></script>
       
-      <script src="js/zinc\_threejs\_control.js"></script>
+      <script src="js/zinc_threejs_control.js"></script>
       
-      <script src="js/zinc\_3js\_renderer.js"></script>
+      <script src="js/zinc_3js_renderer.js"></script>
       
       <script>
       
@@ -186,9 +186,9 @@ file:
          
          var scene = zincRenderer.createScene("BasicMesh");
          
-         scene.loadViewURL("BasicMesh\_view.json");
+         scene.loadViewURL("BasicMesh_view.json");
          
-         scene.loadMetadataURL("BasicMesh\_metadata.json");
+         scene.loadMetadataURL("BasicMesh_metadata.json");
          
          zincRenderer.setCurrentScene(scene);
          
