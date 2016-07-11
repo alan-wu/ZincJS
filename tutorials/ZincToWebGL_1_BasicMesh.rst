@@ -5,7 +5,7 @@
 This document aims to help you to understand how graphics can be export
 from PyZinc into browser compatible WebGL.
 
-A number of tutorials has been included in this document – To proceed
+A number of tutorials has been included in this series – To proceed
 with the tutorials, you must have PyZinc installed in your system.
 
 ***Requirement:***
@@ -24,7 +24,7 @@ with the tutorials, you must have PyZinc installed in your system.
 -  Repository of Web based Visualisation for Opencmiss-Zinc: 
    https://github.com/alan-wu/Web-based-Zinc-Visualisation
 
-***Tutorial 1 – Basic Mesh:***
+***Tutorial 1a – Basic Mesh:***
 
 In this tutorial, the python script loads a cube model, creates a
 surface graphics and exports the surface into a format that is readable
@@ -113,7 +113,7 @@ folder – BasicMesh\_metadata.json, BasicMesh\_1.json and BasicMesh\_view.json.
 With these three files, we can now visualise the cube on your favourite
 browser. Yay!!!
 
-***Tutorial 2 – First html example:***
+***Tutorial 1b – First html example:***
 
 Here we have a very simple html page called basic\_mesh.html. You should
 see a cube when opening this page on browsers with WebGL support. This
