@@ -1,6 +1,10 @@
-****From OpenCMISS-PyZinc to WebGL:****
+From OpenCMISS-PyZinc to WebGL
+==============================
 
-***Introduction:***
+.. contents::
+
+Introduction
+------------
 
 This tutorial follows up from the first tutorial and show how texture
 is displayed using our WebGL library.
@@ -8,7 +12,8 @@ is displayed using our WebGL library.
 A number of tutorials has been included in this document – To proceed
 with the tutorials, you must have PyZinc installed in your system.
 
-***Requirement:***
+Requirements
+------------
 
 -  Browser with WebGL support. For more information, please visit:
    http://webglreport.com/ & http://caniuse.com/#feat=webgl .
@@ -26,7 +31,8 @@ with the tutorials, you must have PyZinc installed in your system.
    
 -  Familiar with the Python script used in Tutorial 1
 
-***Tutorial 2a – Basic Mesh:***
+Tutorial 2a – Materials And Texture:
+------------------------------------
 
 In this tutorial, the python script creates five 2D elements in five
 different regions and exports these surfaces with different materials.
@@ -95,7 +101,8 @@ to know that the location of the image specified here is relative to your
 html page. For your convenience, picture.png is included in the html folder
 already.
 
-***Tutorial 2b – Surfaces with texture example:***
+Tutorial 2b – Surfaces with texture example:
+--------------------------------------------
 
 Once again this is very similar to the html page used in the 
 basic\_mesh tutorial. However it reads in five metadata files into
