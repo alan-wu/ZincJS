@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '13' };
+var Zinc = { REVISION: '14' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -420,6 +420,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	this.sceneName = undefined;
 	this.progressMap = [];
 	var errorDownload = false;
+	var stereoEffectFlag = false;
+	var stereoEffect = undefined;
 	
 	var _this = this;
 	
@@ -811,7 +813,11 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	
 	this.render = function(renderer) {
 		renderer.clear();
-		renderer.render( scene, _this.camera );
+		if (stereoEffectFlag && stereoEffect) {
+			stereoEffect.render(scene, _this.camera);
+		}
+		else
+			renderer.render( scene, _this.camera );
 	}
 	
 	this.setInteractiveControlEnable = function(flag) {
@@ -820,6 +826,28 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		else
 			zincCameraControls.disable();
 	}
+	
+	this.getThreeJSScene = function() {
+		return scene;
+	}
+	
+	this.setStereoEffectEnable = function(stereoFlag) {
+		if (stereoFlag == true) {
+			if (!stereoEffect) {
+				stereoEffect = new THREE.StereoEffect( rendererIn );
+			}
+			stereoEffect.setSize( container.clientWidth, container.clientHeight );
+		}
+		else {
+			rendererIn.setSize( container.clientWidth, container.clientHeight );
+		}
+		stereoEffectFlag = stereoFlag;
+	}
+	
+	this.isStereoEffectEnable = function() {
+		return stereoEffectFlag;
+	}
+
 }
 
 Zinc.Renderer = function (containerIn, window) {
@@ -986,8 +1014,7 @@ Zinc.Renderer = function (containerIn, window) {
 	
 	this.getZincGeometryByID = function(id) {
 		return currentScene.getZincGeometryByID(id);
-	}
-	
+	}	
 	this.addToScene = function(object) {
 		currentScene.addObject(object)
 	}
@@ -1036,6 +1063,10 @@ Zinc.Renderer = function (containerIn, window) {
         	}
     	}
 		currentScene.render(renderer);
+	}
+	
+	this.getThreeJSRenderer = function () {
+		return renderer;
 	}
 		
 };
