@@ -46,7 +46,7 @@ In the script, the 2D elements are created in the create2DFiniteElement
 function materials are created in the createMaterial and
 createMaterialUsingImageField functions.
 
-This example is similar to the basic\_mesh example but we will take a breif 
+This example is similar to the basic\_mesh example but we will take a brief 
 look into the exportWebGLJson function here.
 
 .. code:: python
@@ -90,7 +90,7 @@ look into the exportWebGLJson function here.
 The function above exports the surfaces graphics from five different regions,
 all with different materials including one with a texture. 
 
-At the end, two files are exported - one metadata file and one graphics file
+At the end, 11 files are exported - one metadata file and one graphics file
 for each region in the html folder.
 
 If you take a look into the newly exported texture_1.json file in the html

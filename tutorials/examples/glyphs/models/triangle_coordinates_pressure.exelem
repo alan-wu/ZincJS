@@ -1,0 +1,46 @@
+ Group name: triangle
+  Shape.  Dimension=2, simplex(2)*simplex
+  #Scale factor sets= 1
+    l.simplex(2)*l.simplex, #Scale factors= 3
+  #Nodes= 3
+  #Fields=2
+ 1) coordinates, coordinate, rectangular cartesian, #Components=2
+   x.  l.simplex(2)*l.simplex, no modify, standard node based.
+     #Nodes= 3
+      1.  #Values=1
+       Value indices:     1
+       Scale factor indices:   1
+      2.  #Values=1
+       Value indices:     1
+      Scale factor indices:   2
+      3.  #Values=1
+       Value indices:     1
+       Scale factor indices:   3
+   y.  l.simplex(2)*l.simplex, no modify, standard node based.
+     #Nodes= 3
+      1.  #Values=1
+       Value indices:     1
+       Scale factor indices:   1
+      2.  #Values=1
+       Value indices:     1
+       Scale factor indices:   2
+      3.  #Values=1
+       Value indices:     1
+       Scale factor indices:   3
+ 2) pressure, field, rectangular cartesian, #Components=1
+   p.  l.simplex(2)*l.simplex, no modify, standard node based.
+     #Nodes= 3
+      1.  #Values=1
+       Value indices:     1
+       Scale factor indices:   1
+      2.  #Values=1
+       Value indices:     1
+      Scale factor indices:   2
+      3.  #Values=1
+       Value indices:     1
+       Scale factor indices:   3
+ Element:    1 0 0
+   Nodes:
+         1    2    3
+   Scale factors:
+       0.1000000000000000E+01   0.1000000000000000E+01   0.1000000000000000E+01

@@ -1,0 +1,49 @@
+ Group name: triangle
+  Shape.  Dimension=2, simplex(2)*simplex
+  #Scale factor sets= 0
+  #Nodes= 6
+  #Fields=1
+ 1) velocity, field, rectangular cartesian, #Components=2
+   u.  q.simplex(2)*q.simplex, no modify, standard node based.
+     #Nodes= 6
+      1.  #Values=1
+       Value indices:     1
+       Scale factor indices:   0
+      4.  #Values=1
+       Value indices:     1
+      Scale factor indices:   0
+      2.  #Values=1
+       Value indices:     1
+       Scale factor indices:   0
+      5.  #Values=1
+       Value indices:     1
+       Scale factor indices:   0
+      6.  #Values=1
+       Value indices:     1
+      Scale factor indices:   0
+      3.  #Values=1
+       Value indices:     1
+       Scale factor indices:   0
+   v.  q.simplex(2)*q.simplex, no modify, standard node based.
+     #Nodes= 6
+      1.  #Values=1
+       Value indices:     1
+       Scale factor indices:   0
+      4.  #Values=1
+       Value indices:     1
+       Scale factor indices:   0
+      2.  #Values=1
+       Value indices:     1
+       Scale factor indices:   0
+      5.  #Values=1
+       Value indices:     1
+       Scale factor indices:   0
+      6.  #Values=1
+       Value indices:     1
+      Scale factor indices:   0
+      3.  #Values=1
+       Value indices:     1
+       Scale factor indices:   0
+ Element:    1 0 0
+   Nodes:
+     1   2   3   4   5   6
