@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '14' };
+var Zinc = { REVISION: '15' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -150,7 +150,6 @@ Zinc.Glyphset = function()  {
 			}
 			updateGlyphsetHexColors(current_colors);
 		}
-		
 	}
 	
 	var createGlyphs = function(geometry, material) {
@@ -795,19 +794,29 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return null;
 	}
 	
+	var allGlyphsetsReady = function() {
+		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+			zincGlyphset = zincGlyphsets[i];
+			if (zincGlyphset.ready == false)
+				return false;
+		}
+		return true;
+		
+	}
+	
 	this.renderGeometries = function(playRate, delta, playAnimation) {
 		zincCameraControls.update();
 		/* the following check make sure all models are loaded and synchonised */
-		if (zincGeometries.length == num_inputs) {		
+		if (zincGeometries.length == num_inputs && allGlyphsetsReady()) {		
 			for ( var i = 0; i < zincGeometries.length; i ++ ) {
 				/* check if morphColour flag is set */
 				zincGeometry = zincGeometries[i] ;
 				zincGeometry.render(playRate * delta, playAnimation);
 			}	
-		}
-		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
-			zincGlyphset = zincGlyphsets[i];
-			zincGlyphset.render(playRate * delta, playAnimation);
+			for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+				zincGlyphset = zincGlyphsets[i];
+				zincGlyphset.render(playRate * delta, playAnimation);
+			}
 		}
 	}
 	

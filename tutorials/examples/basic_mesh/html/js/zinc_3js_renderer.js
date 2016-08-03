@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '13' };
+var Zinc = { REVISION: '15' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -150,7 +150,6 @@ Zinc.Glyphset = function()  {
 			}
 			updateGlyphsetHexColors(current_colors);
 		}
-		
 	}
 	
 	var createGlyphs = function(geometry, material) {
@@ -420,6 +419,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	this.sceneName = undefined;
 	this.progressMap = [];
 	var errorDownload = false;
+	var stereoEffectFlag = false;
+	var stereoEffect = undefined;
 	
 	var _this = this;
 	
@@ -793,25 +794,39 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return null;
 	}
 	
+	var allGlyphsetsReady = function() {
+		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+			zincGlyphset = zincGlyphsets[i];
+			if (zincGlyphset.ready == false)
+				return false;
+		}
+		return true;
+		
+	}
+	
 	this.renderGeometries = function(playRate, delta, playAnimation) {
 		zincCameraControls.update();
 		/* the following check make sure all models are loaded and synchonised */
-		if (zincGeometries.length == num_inputs) {		
+		if (zincGeometries.length == num_inputs && allGlyphsetsReady()) {		
 			for ( var i = 0; i < zincGeometries.length; i ++ ) {
 				/* check if morphColour flag is set */
 				zincGeometry = zincGeometries[i] ;
 				zincGeometry.render(playRate * delta, playAnimation);
 			}	
-		}
-		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
-			zincGlyphset = zincGlyphsets[i];
-			zincGlyphset.render(playRate * delta, playAnimation);
+			for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+				zincGlyphset = zincGlyphsets[i];
+				zincGlyphset.render(playRate * delta, playAnimation);
+			}
 		}
 	}
 	
 	this.render = function(renderer) {
 		renderer.clear();
-		renderer.render( scene, _this.camera );
+		if (stereoEffectFlag && stereoEffect) {
+			stereoEffect.render(scene, _this.camera);
+		}
+		else
+			renderer.render( scene, _this.camera );
 	}
 	
 	this.setInteractiveControlEnable = function(flag) {
@@ -820,6 +835,28 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		else
 			zincCameraControls.disable();
 	}
+	
+	this.getThreeJSScene = function() {
+		return scene;
+	}
+	
+	this.setStereoEffectEnable = function(stereoFlag) {
+		if (stereoFlag == true) {
+			if (!stereoEffect) {
+				stereoEffect = new THREE.StereoEffect( rendererIn );
+			}
+			stereoEffect.setSize( container.clientWidth, container.clientHeight );
+		}
+		else {
+			rendererIn.setSize( container.clientWidth, container.clientHeight );
+		}
+		stereoEffectFlag = stereoFlag;
+	}
+	
+	this.isStereoEffectEnable = function() {
+		return stereoEffectFlag;
+	}
+
 }
 
 Zinc.Renderer = function (containerIn, window) {
@@ -986,8 +1023,7 @@ Zinc.Renderer = function (containerIn, window) {
 	
 	this.getZincGeometryByID = function(id) {
 		return currentScene.getZincGeometryByID(id);
-	}
-	
+	}	
 	this.addToScene = function(object) {
 		currentScene.addObject(object)
 	}
@@ -1036,6 +1072,10 @@ Zinc.Renderer = function (containerIn, window) {
         	}
     	}
 		currentScene.render(renderer);
+	}
+	
+	this.getThreeJSRenderer = function () {
+		return renderer;
 	}
 		
 };
