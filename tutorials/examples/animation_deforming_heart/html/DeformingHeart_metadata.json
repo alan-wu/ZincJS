@@ -1,0 +1,47 @@
+[
+   {
+      "MorphColours" : false,
+      "MorphNormals" : false,
+      "MorphVertices" : true,
+      "Type" : "Surfaces",
+      "URL" : "DeformingHeart_1.json"
+   },
+   {
+      "GlyphGeometriesURL" : "DeformingHeart_3.json",
+      "MorphColours" : true,
+      "MorphNormals" : false,
+      "MorphVertices" : true,
+      "Type" : "Glyph",
+      "URL" : "DeformingHeart_2.json"
+   },
+   {
+      "MorphColours" : false,
+      "MorphNormals" : false,
+      "MorphVertices" : true,
+      "Type" : "Surfaces",
+      "URL" : "DeformingHeart_4.json"
+   },
+   {
+      "GlyphGeometriesURL" : "DeformingHeart_6.json",
+      "MorphColours" : true,
+      "MorphNormals" : false,
+      "MorphVertices" : true,
+      "Type" : "Glyph",
+      "URL" : "DeformingHeart_5.json"
+   },
+   {
+      "GlyphGeometriesURL" : "DeformingHeart_8.json",
+      "MorphColours" : true,
+      "MorphNormals" : false,
+      "MorphVertices" : true,
+      "Type" : "Glyph",
+      "URL" : "DeformingHeart_7.json"
+   },
+   {
+      "MorphColours" : false,
+      "MorphNormals" : false,
+      "MorphVertices" : true,
+      "Type" : "Surfaces",
+      "URL" : "DeformingHeart_9.json"
+   }
+]
