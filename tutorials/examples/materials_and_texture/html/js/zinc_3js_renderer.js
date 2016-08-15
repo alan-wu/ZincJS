@@ -337,8 +337,19 @@ Zinc.Glyphset = function()  {
 				var bottom_colors = colors[bottom_frame.toString()];
 				var top_colors = colors[top_frame.toString()];
 				for (var i = 0; i < bottom_colors.length; i++) {
+					var bot = new THREE.Color(bottom_colors[i]);
+					var top = new THREE.Color(top_colors[i]);
+					var resulting_color = new THREE.Color(bot.r * proportion + top.r * (1 - proportion),
+					                       bot.g * proportion + top.g * (1 - proportion),
+					                       bot.b * proportion + top.b * (1 - proportion));
+					current_colors.push(resulting_color.getHex());
+				}				
+				
+				/*
+				for (var i = 0; i < bottom_colors.length; i++) {
 					current_colors.push(proportion * bottom_colors[i] + (1.0 - proportion) * top_colors[i]);
 				}
+				*/
 			} else {
 				current_colors = colors["0"];
 			}
@@ -352,6 +363,7 @@ Zinc.Glyphset = function()  {
 			glyphList[i] = glyph;
 			group.add(glyph.getMesh());
 		}
+		
 		updateGlyphsetTransformation(positions["0"], axis1s["0"],
 				axis2s["0"], axis3s["0"], scales["0"]);
 		if (colors != undefined) {

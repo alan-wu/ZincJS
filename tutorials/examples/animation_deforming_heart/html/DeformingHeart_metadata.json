@@ -7,11 +7,10 @@
       "URL" : "DeformingHeart_1.json"
    },
    {
-      "GlyphGeometriesURL" : "DeformingHeart_3.json",
-      "MorphColours" : true,
+      "MorphColours" : false,
       "MorphNormals" : false,
       "MorphVertices" : true,
-      "Type" : "Glyph",
+      "Type" : "Surfaces",
       "URL" : "DeformingHeart_2.json"
    },
    {
@@ -19,29 +18,30 @@
       "MorphNormals" : false,
       "MorphVertices" : true,
       "Type" : "Surfaces",
+      "URL" : "DeformingHeart_3.json"
+   },
+   {
+      "GlyphGeometriesURL" : "DeformingHeart_5.json",
+      "MorphColours" : true,
+      "MorphNormals" : false,
+      "MorphVertices" : true,
+      "Type" : "Glyph",
       "URL" : "DeformingHeart_4.json"
    },
    {
-      "GlyphGeometriesURL" : "DeformingHeart_6.json",
+      "GlyphGeometriesURL" : "DeformingHeart_7.json",
       "MorphColours" : true,
       "MorphNormals" : false,
       "MorphVertices" : true,
       "Type" : "Glyph",
-      "URL" : "DeformingHeart_5.json"
+      "URL" : "DeformingHeart_6.json"
    },
    {
-      "GlyphGeometriesURL" : "DeformingHeart_8.json",
+      "GlyphGeometriesURL" : "DeformingHeart_9.json",
       "MorphColours" : true,
       "MorphNormals" : false,
       "MorphVertices" : true,
       "Type" : "Glyph",
-      "URL" : "DeformingHeart_7.json"
-   },
-   {
-      "MorphColours" : false,
-      "MorphNormals" : false,
-      "MorphVertices" : true,
-      "Type" : "Surfaces",
-      "URL" : "DeformingHeart_9.json"
+      "URL" : "DeformingHeart_8.json"
    }
 ]
