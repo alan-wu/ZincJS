@@ -26,7 +26,8 @@ import json
 
 class AnimationDeformingHeartDlg(QtGui.QWidget):
     '''
-    This example demonstrates how to read and export a simple mesh
+    This example demonstrates how to export animated objects from Zinc to
+    WebGL
     '''
     
     def __init__(self, parent=None):
@@ -63,17 +64,17 @@ class AnimationDeformingHeartDlg(QtGui.QWidget):
         self.createMaterial()
         '''Create spectrum which is used to colour the to be exported surfaces'''
         self.createSpectrum()
-        '''Create surface graphics which will be viewed and exported'''
+        '''Create glyph graphics which will be viewed and exported'''
         self.createGlyphGraphics()
         '''Create surface graphics which will be viewed and exported'''
         self.createSurfaceGraphics()
+        '''Create cylinders graphics showing the outlines of each elements'''
         self.createCylindeLineGraphics()
+        '''Create streamline graphics showing the deforming axes fibre'''
         self.createStreamlines()
         '''Export graphics into JSON format'''
-
         self.ui.sceneviewerwidget.graphicsInitialized.connect(self.exportWebGLJson)
         
-
     def timeChanged(self, value):
         self._timeKeeper.setTime(value/100.0)
         self.ui.sceneviewerwidget.updateGL()
@@ -246,7 +247,10 @@ class AnimationDeformingHeartDlg(QtGui.QWidget):
               
     def createSpectrum(self):
         spectrum_module = self._context.getSpectrummodule()
+        ''' create a spectrum with two components'''
         self.strainSpectrum = spectrum_module.createSpectrum()
+        ''' the first spectrum component shows negative strain with red.
+        The spectrum transitions from white to red as the magnitude increases.'''
         component1 = self.strainSpectrum.createSpectrumcomponent()
         component1.setColourReverse(True)
         component1.setRangeMaximum(0.0)
@@ -258,6 +262,8 @@ class AnimationDeformingHeartDlg(QtGui.QWidget):
         component1.setColourMaximum(1.0)
         component1.setColourMinimum(0.0)
         component1.setColourMappingType(component1.COLOUR_MAPPING_TYPE_WHITE_TO_RED)
+        ''' the first spectrum component shows positive strain with blue.
+        The spectrum transitions from white to blue as the magnitude increases.'''
         component2 = self.strainSpectrum.createSpectrumcomponent()
         component2.setColourReverse(False)
         component2.setRangeMaximum(0.5322)
@@ -286,15 +292,7 @@ class AnimationDeformingHeartDlg(QtGui.QWidget):
         By giving our material a unique name from other materials we can use the material module
         to get a handle to it at a later time.  Further if we set the managed flag the material
         module will manage the lifetime of the material for us.
-        '''
-        material_module = self._context.getMaterialmodule()
-        material_module.defineStandardMaterials()
-        material = material_module.createMaterial()
-        material.setName('bluey')
-        material.setManaged(True)
-        material.setAttributeReal3(Material.ATTRIBUTE_AMBIENT, [0.9, 0.9, 0.0])
-        material.setAttributeReal3(Material.ATTRIBUTE_DIFFUSE, [0.9, 0.9, 0.0])
-        
+        '''        
         material_module = self._context.getMaterialmodule()
         material_module.defineStandardMaterials()
         material = material_module.createMaterial()
@@ -307,7 +305,11 @@ class AnimationDeformingHeartDlg(QtGui.QWidget):
         # createMaterial end
         
     def createCylindeLineGraphics(self):
-        '''create cylinders which outline the shapes of the heart'''
+        '''
+        Create cylinders which outline the shapes of the heart
+        The circle divisions are reduced which consequently 
+        reduces the size of export considerably. 
+        '''
         scene = self._default_region.getScene()
         field_module = self._default_region.getFieldmodule()
         material_module = self._context.getMaterialmodule()
@@ -335,14 +337,13 @@ class AnimationDeformingHeartDlg(QtGui.QWidget):
     def createSurfaceGraphics(self):
         '''
         Create the surface graphics using the finite element field 'coordinates'.
-        We ibky create surfaces where xi3 = 0.
+        We only want to display surfaces where xi3 = 0.
         Here we colour the surfaces with the material 'copper'
         '''
         scene = self._default_region.getScene()
         field_module = self._default_region.getFieldmodule()
         material_module = self._context.getMaterialmodule()
         material = material_module.findMaterialByName('copper')
-        
         
         # We use the beginChange and endChange to wrap any immediate changes this will
         # streamline the rendering of the scene.
@@ -361,7 +362,8 @@ class AnimationDeformingHeartDlg(QtGui.QWidget):
     def createGlyphGraphics(self):
         '''
         Create the glyph graphics displaying strains.
-        Three sets of glyph are created, one for each axis
+        Three sets of glyph are created, one for each direction.
+        They are all coloured using the spectrum created earlier.
         '''
         scene = self._default_region.getScene()
         tm = self._context.getTessellationmodule()
@@ -425,7 +427,11 @@ class AnimationDeformingHeartDlg(QtGui.QWidget):
         # createSurfaceGraphics end
         
     def createStreamlines(self):
-        '''create streamlines which show the deformed fibre direction'''
+        '''
+        create streamlines as ribbon which show the direction of the 
+        deformed fibre direction. These ribbons start from the middle
+        of the element where the xi coordinate is [0.5, 0.5, 0.5]
+        '''
         scene = self._default_region.getScene()
         field_module = self._default_region.getFieldmodule()
         finite_element_field = field_module.findFieldByName('coordinates')
