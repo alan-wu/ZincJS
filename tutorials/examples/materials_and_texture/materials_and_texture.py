@@ -61,6 +61,46 @@ class MaterialsAndTextureDlg(QtGui.QWidget):
 
         ''' the following function exports the camera settings'''
         self.ui.sceneviewerwidget.graphicsInitialized.connect(self.exportWebGLJson)
+            
+        
+    def createMaterialUsingImageField(self):
+        '''
+        Create a material using an image.  Here we show how to make a material 
+        from an image on disk.  Using an image field and a material creates an
+        OpenGL texture which is very efficient for visualising 2D/3D images/image stacks.
+        '''
+        material_module = self._context.getMaterialmodule()
+        material = material_module.createMaterial()
+        material.setName('texture')
+        material.setManaged(True)
+        
+        # The filename of the image to use for the material 
+        image_name = 'picture.png'
+        # Get a handle to the default region
+        default_region = self._context.getDefaultRegion()
+        
+        # The field module allows us to create a field image to 
+        # store the image data into.
+        field_module = default_region.getFieldmodule()
+        
+        # Create an image field, we don't specify the domain here for this
+        # field even though it is a source field.  A temporary xi source field
+        # is created for us.
+        image_field = field_module.createFieldImage()
+        image_field.setName('texture')
+        
+        # Create a stream information object that we can use to read the 
+        # image file from disk
+        stream_information = image_field.createStreaminformationImage()
+        stream_information.setFileFormat(stream_information.FILE_FORMAT_PNG)
+        # We are reading in a file from the local disk so our resource is a file.
+        stream_information.createStreamresourceFile(image_name)
+        
+        # Actually read in the image file into the image field.
+        image_field.read(stream_information)
+        
+        material.setTextureField(1, image_field)
+        # createMaterialUsingImageField end
         
     def exportViewJson(self):
         '''Export sceneviewer parameters to JSON format'''
