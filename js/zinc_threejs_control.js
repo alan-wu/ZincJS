@@ -16,6 +16,14 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	this.touchZoomDistanceStart = 0;
 	this.touchZoomDistanceEnd = 0;
 	this.directionalLight = 0;
+	var duration = 3000;
+	var inbuildTime = 0;
+	var enablePath = false;
+	var cameraPath = undefined;
+	var numerOfCameraPoint = undefined;
+	var updateLightWithPathFlag = false;
+	var playRate = 500;
+	var deviceOrientationControl = undefined;
 	
 	this._state = STATE.NONE;
 	this.targetTouchId = -1;
@@ -310,16 +318,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 					_this.cameraObject.position.z);
 	}
 	
-	this.update = function () {
-		if ((_this._state === STATE.ROTATE) || (_this._state === STATE.TOUCH_ROTATE)){
-			tumble()
-		} else if (_this._state === STATE.PAN){
-			translate()
-		} else if (_this._state === STATE.ZOOM){
-			flyZoom()
-		}
-		_this.cameraObject.lookAt( _this.cameraObject.target );
-	};
 	
 	this.enable = function () {
 		enabled = true;
@@ -347,9 +345,242 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	    }
 	}
 	
+
+	var loadPath = function(pathData)
+	{
+		cameraPath = pathData.CameraPath;
+		numerOfCameraPoint = pathData.NumberOfPoints;
+	}
+	
+	this.loadPathURL = function(path_url, finishCallback)
+	{
+		var xmlhttp = new XMLHttpRequest();
+		xmlhttp.onreadystatechange = function() {
+		    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+		        var pathData = JSON.parse(xmlhttp.responseText);
+		        loadPath(pathData);
+		    }
+		}
+		requestURL = path_url;
+		xmlhttp.open("GET", requestURL, true);
+		xmlhttp.send();
+	}
+	
+	this.setPathDuration = function(durationIn) {
+		duration = durationIn;
+	}
+	
+	this.setTime = function(time) {
+		inbuildTime = time;
+	}
+	
+	this.setPlayRate = function(playRateIn) {
+		playRate = playRateIn;
+	}
+	 
+	var updateTime = function(delta) {
+		var targetTime = inbuildTime + delta;
+		if (targetTime > duration)
+			targetTime = targetTime - duration
+		inbuildTime = targetTime;
+	}
+	
+	this.getNumberOfTimeFrame = function() {
+		return numerOfCameraPoint;
+	}
+	
+	this.getCurrentTimeFrame = function() {
+		var current_time = inbuildTime/duration * (numerOfCameraPoint - 1);
+		var bottom_frame =  Math.floor(current_time);
+		var proportion = 1 - (current_time - bottom_frame);
+		var top_frame =  Math.ceil(current_time);
+		return [bottom_frame, top_frame, proportion];
+	}
+	
+	this.setCurrentTimeFrame = function(targetTimeFrame) {
+		inbuildTime = duration * targetTimeFrame / (numerOfCameraPoint - 1);
+		if (inbuildTime < 0.0)
+			inbuildTime = 0.0;
+		if (inbuildTime > duration)
+			inbuildTime = duration;	
+	}
+	
+	
+	var updatePath = function(delta)	{
+		if (enablePath) {
+			updateTime(delta);
+			if (cameraPath) {
+				var time_frame = _this.getCurrentTimeFrame();
+				var bottom_frame = time_frame[0];
+				var top_frame = time_frame[1];
+				var proportion = time_frame[2];
+	
+				var bot_pos = [cameraPath[bottom_frame*3], cameraPath[bottom_frame*3+1], cameraPath[bottom_frame*3+2]];
+				var top_pos = [cameraPath[top_frame*3], cameraPath[top_frame*3+1], cameraPath[top_frame*3+2]];
+				var current_positions = [];
+				for (var i = 0; i < bot_pos.length; i++) {
+					current_positions.push(proportion * bot_pos[i] + (1.0 - proportion) * top_pos[i]);
+				}
+				_this.cameraObject.position.set(current_positions[0], current_positions[1], current_positions[2]);
+				_this.cameraObject.target = new THREE.Vector3(top_pos[0], top_pos[1], top_pos[2]);
+				if (updateLightWithPathFlag) {
+					_this.directionalLight.position.set(current_positions[0], current_positions[1], current_positions[2]);
+					_this.directionalLight.target.position.set(top_pos[0], top_pos[1], top_pos[2]);
+				}					
+			}
+		}
+	}
+	
+	this.update = function (timeChanged) {
+		var delta = timeChanged * playRate;
+		updatePath(delta);
+		if (enabled) {
+			if ((_this._state === STATE.ROTATE) || (_this._state === STATE.TOUCH_ROTATE)){
+				tumble();
+			} else if (_this._state === STATE.PAN){
+				translate();
+			} else if (_this._state === STATE.ZOOM){
+				flyZoom();
+			}	
+		}
+		if (deviceOrientationControl) {
+			deviceOrientationControl.update();
+			//_this.directionalLight.target.position.set(_this.cameraObject.target.x, 
+			//	_this.cameraObject.target.y, _this.cameraObject.target.z);
+		} else {
+			_this.cameraObject.lookAt( _this.cameraObject.target );
+		}
+	};
+	
+	this.playPath = function () {
+		enablePath = true;
+	}
+	
+	this.stopPath = function () {
+		enablePath = false;
+	}
+	
+	this.isPlayingPath = function () {
+		return enablePath;
+	}
+	
+	this.enableDirectionalLightUpdateWithPath = function (flag) {
+		updateLightWithPathFlag = flag;
+	}
+	
+	this.enableDeviceOrientation = function() {
+		if (!deviceOrientationControl)
+			deviceOrientationControl = new ModifiedDeviceOrientationControls(_this.cameraObject);
+	}
+	
+	this.disableDeviceOrientation = function() {
+		if (deviceOrientationControl) {
+			deviceOrientationControl.dispose();
+			deviceOrientationControl = undefined;
+		}
+	}
+	
+	this.isDeviceOrientationEnabled = function() {
+		if (deviceOrientationControl) {
+			return true;
+		}
+		return false;
+	}
+	
 	this.enable();
 
 };
+
+
+/**
+ * @author mrdoob / http://mrdoob.com/
+ */
+
+THREE.StereoCameraZoomFixed = function () {
+
+	this.type = 'StereoCamera';
+
+	this.aspect = 1;
+
+	this.cameraL = new THREE.PerspectiveCamera();
+	this.cameraL.layers.enable( 1 );
+	this.cameraL.matrixAutoUpdate = false;
+
+	this.cameraR = new THREE.PerspectiveCamera();
+	this.cameraR.layers.enable( 2 );
+	this.cameraR.matrixAutoUpdate = false;
+
+};
+
+Object.assign( THREE.StereoCameraZoomFixed.prototype, {
+
+	update: ( function () {
+
+		var focus, fov, aspect, near, far, zoom;
+
+		var eyeRight = new THREE.Matrix4();
+		var eyeLeft = new THREE.Matrix4();
+
+		return function update( camera ) {
+
+			var needsUpdate = focus !== camera.focus || fov !== camera.fov ||
+												aspect !== camera.aspect * this.aspect || near !== camera.near ||
+												far !== camera.far || zoom !== camera.zoom;
+
+			if ( needsUpdate ) {
+
+				focus = camera.focus;
+				fov = camera.fov;
+				aspect = camera.aspect * this.aspect;
+				near = camera.near;
+				far = camera.far;
+				zoom = camera.zoom;
+
+				// Off-axis stereoscopic effect based on
+				// http://paulbourke.net/stereographics/stereorender/
+
+				var projectionMatrix = camera.projectionMatrix.clone();
+				var eyeSep = 0.064 / 2;
+				var eyeSepOnProjection = eyeSep * near / focus;
+				var ymax = near * Math.tan( THREE.Math.DEG2RAD * fov * 0.5 ) / camera.zoom;
+				var xmin, xmax;
+
+				// translate xOffset
+
+				eyeLeft.elements[ 12 ] = - eyeSep;
+				eyeRight.elements[ 12 ] = eyeSep;
+
+				// for left eye
+
+				xmin = - ymax * aspect + eyeSepOnProjection;
+				xmax = ymax * aspect + eyeSepOnProjection;
+
+				projectionMatrix.elements[ 0 ] = 2 * near / ( xmax - xmin );
+				projectionMatrix.elements[ 8 ] = ( xmax + xmin ) / ( xmax - xmin );
+
+				this.cameraL.projectionMatrix.copy( projectionMatrix );
+
+				// for right eye
+
+				xmin = - ymax * aspect - eyeSepOnProjection;
+				xmax = ymax * aspect - eyeSepOnProjection;
+
+				projectionMatrix.elements[ 0 ] = 2 * near / ( xmax - xmin );
+				projectionMatrix.elements[ 8 ] = ( xmax + xmin ) / ( xmax - xmin );
+
+				this.cameraR.projectionMatrix.copy( projectionMatrix );
+
+			}
+
+			this.cameraL.matrixWorld.copy( camera.matrixWorld ).multiply( eyeLeft );
+			this.cameraR.matrixWorld.copy( camera.matrixWorld ).multiply( eyeRight );
+
+		};
+
+	} )()
+
+} );
+
 
 
 /** the following StereoEffect is written by third party */
@@ -361,7 +592,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 */
 THREE.StereoEffect = function ( renderer ) {
 
-	var _stereo = new THREE.StereoCamera();
+	var _stereo = new THREE.StereoCameraZoomFixed();
 	_stereo.aspect = 0.5;
 
 	this.setSize = function ( width, height ) {
@@ -396,3 +627,117 @@ THREE.StereoEffect = function ( renderer ) {
 	};
 
 };
+
+/**
+ * @author richt / http://richt.me
+ * @author WestLangley / http://github.com/WestLangley
+ *
+ * W3C Device Orientation control (http://w3c.github.io/deviceorientation/spec-source-orientation.html)
+ */
+
+ModifiedDeviceOrientationControls = function ( object ) {
+
+	var scope = this;
+
+	this.object = object;
+	this.object.rotation.reorder( "YXZ" );
+
+	this.enabled = true;
+
+	this.deviceOrientation = {};
+	this.screenOrientation = 0;
+
+	var onDeviceOrientationChangeEvent = function ( event ) {
+
+		scope.deviceOrientation = event;
+
+	};
+
+	var onScreenOrientationChangeEvent = function () {
+
+		scope.screenOrientation = window.orientation || 0;
+
+	};
+
+	// The angles alpha, beta and gamma form a set of intrinsic Tait-Bryan angles of type Z-X'-Y''
+
+	var setObjectQuaternion = function () {
+
+		var zee = new THREE.Vector3( 0, 0, 1 );
+
+		var euler = new THREE.Euler();
+
+		var q0 = new THREE.Quaternion();
+
+		var q1 = new THREE.Quaternion( - Math.sqrt( 0.5 ), 0, 0, Math.sqrt( 0.5 ) ); // - PI/2 around the x-axis
+
+		return function ( cameraObject, alpha, beta, gamma, orient ) {
+			
+			var vector = new THREE.Vector3(0, 0, 1);
+			
+			vector.subVectors(cameraObject.target, cameraObject.position);
+
+			euler.set( beta, alpha, - gamma, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
+
+			var quaternion = new THREE.Quaternion();
+			
+			quaternion.setFromEuler( euler );                               // orient the device
+
+			quaternion.multiply( q1 );                                      // camera looks out the back of the device, not the top
+
+			quaternion.multiply( q0.setFromAxisAngle( zee, - orient ) );    // adjust for screen orientation
+			
+			vector.applyQuaternion(quaternion);
+				
+			vector.addVectors(cameraObject.position, vector);
+			
+			cameraObject.lookAt(vector);
+
+		}
+
+	}();
+
+	this.connect = function() {
+
+		onScreenOrientationChangeEvent(); // run once on load
+
+		window.addEventListener( 'orientationchange', onScreenOrientationChangeEvent, false );
+		window.addEventListener( 'deviceorientation', onDeviceOrientationChangeEvent, false );
+
+		scope.enabled = true;
+
+	};
+
+	this.disconnect = function() {
+
+		window.removeEventListener( 'orientationchange', onScreenOrientationChangeEvent, false );
+		window.removeEventListener( 'deviceorientation', onDeviceOrientationChangeEvent, false );
+
+		scope.enabled = false;
+
+	};
+
+	this.update = function () {
+
+		if ( scope.enabled === false ) return;
+
+		var alpha  = scope.deviceOrientation.alpha ? THREE.Math.degToRad( scope.deviceOrientation.alpha ) : 0; // Z
+		var beta   = scope.deviceOrientation.beta  ? THREE.Math.degToRad( scope.deviceOrientation.beta  ) : 0; // X'
+		var gamma  = scope.deviceOrientation.gamma ? THREE.Math.degToRad( scope.deviceOrientation.gamma ) : 0; // Y''
+		var orient = scope.screenOrientation       ? THREE.Math.degToRad( scope.screenOrientation       ) : 0; // O
+
+		setObjectQuaternion( scope.object, alpha, beta, gamma, orient );
+
+	};
+
+	this.dispose = function () {
+
+		this.disconnect();
+
+	};
+
+	this.connect();
+
+};
+
+

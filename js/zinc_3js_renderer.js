@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '16' };
+var Zinc = { REVISION: '17' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -400,7 +400,7 @@ Zinc.Glyphset = function()  {
 			var targetTime = inbuildTime + delta;
 			if (targetTime > _this.duration)
 				targetTime = targetTime - _this.duration
-				inbuildTime = targetTime;
+			inbuildTime = targetTime;
 			if (morphColours || morphVertices) {
 				updateMorphGlyphsets();
 			}
@@ -417,6 +417,7 @@ Zinc.Geometry = function () {
 	this.morph = undefined;
 	this.clipAction = undefined;
 	this.duration = 3000;
+	this.groupName = undefined;
 	var inbuildTime = 0;
 	var _this = this;
 	
@@ -436,7 +437,7 @@ Zinc.Geometry = function () {
 	this.getCurrentTime = function () {
 		if (_this.clipAction) {
 			var ratio = _this.clipAction.time / _this.clipAction._clip.duration;
-			return duration * ratio;
+			return _this.duration * ratio;
 		} else {
 			return inbuildTime;
 		}
@@ -627,7 +628,6 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	var errorDownload = false;
 	var stereoEffectFlag = false;
 	var stereoEffect = undefined;
-	
 	var _this = this;
 	
 	this.getDownloadProgress = function() {
@@ -775,6 +775,12 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
+	this.forEachGeometry = function(callbackFunction) {
+		for ( var i = 0; i < zincGeometries.length; i ++ ) {
+			callbackFunction(zincGeometries[i]);
+		}
+	}
+	
 	var loadGlyphset = function(glyphsetData, glyphurl)
 	{
 		var newGlyphset = new Zinc.Glyphset();
@@ -802,10 +808,29 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		xmlhttp.send();
 	}
 	
+	var loadMetaModel = function(url, timeEnabled, morphColour, groupName, finishCallback)
+	{
+		num_inputs += 1;
+        var modelId = nextAvailableInternalZincModelId();
+        var loader = new THREE.JSONLoader( true );
+        var colour = Zinc.defaultMaterialColor;
+        var opacity = Zinc.defaultOpacity;
+        var localTimeEnabled = 0;
+        if (timeEnabled != undefined)
+        	localTimeEnabled = timeEnabled ? true: false;
+        var localMorphColour = 0;
+        if (morphColour != undefined)
+        	localMorphColour = morphColour ? true: false;
+        
+        loader.load( url, meshloader(modelId, colour, opacity, localTimeEnabled,
+        		localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError); 
+	}
+	
+	
 	var readMetadataItem = function(item, finishCallback) {
 		if (item) {
 			if (item.Type == "Surfaces") {
-				_this.loadModelsURL([item.URL], undefined, undefined, [item.MorphVertices], [item.MorphColours], finishCallback);
+				loadMetaModel(item.URL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
 			} else if (item.Type == "Glyph") {
 				_this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL);
 			}
@@ -849,8 +874,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         	if (morphColour != undefined && morphColour[i] != undefined)
         		localMorphColour = morphColour[i] ? true: false;
         	
-        	loader.load( filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback),
-        			_this.onProgress(i), _this.onError); 
+        	loader.load( filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, undefined, 
+        			finishCallback), _this.onProgress(i), _this.onError); 
         }
 	}
 	
@@ -950,13 +975,14 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return newGeometry;
 	}
 	
-	var meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, finishCallback) {
+	var meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, groupName, finishCallback) {
 	    return function(geometry, materials){
 	    	var material = undefined;
 	    	if (materials && materials[0]) {
 	    		material = materials[0];
 	    	}
-	    	_this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, finishCallback, material);
+	    	var zincGeometry = _this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, finishCallback, material);
+	    	zincGeometry.groupName = groupName;
 	    }
 	}
 	
@@ -1011,7 +1037,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	}
 	
 	this.renderGeometries = function(playRate, delta, playAnimation) {
-		zincCameraControls.update();
+		zincCameraControls.update(delta);
 		/* the following check make sure all models are loaded and synchonised */
 		if (zincGeometries.length == num_inputs && allGlyphsetsReady()) {		
 			for ( var i = 0; i < zincGeometries.length; i ++ ) {
@@ -1042,8 +1068,20 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 			zincCameraControls.disable();
 	}
 	
+	this.getZincCameraControls = function () {
+		return zincCameraControls;
+	}
+	
 	this.getThreeJSScene = function() {
 		return scene;
+	}
+	
+	this.setDuration = function(durationIn) {
+		duration = durationIn;
+	}
+	
+	this.getDuration = function() {
+		return duration;
 	}
 	
 	this.setStereoEffectEnable = function(stereoFlag) {
@@ -1056,6 +1094,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		else {
 			rendererIn.setSize( container.clientWidth, container.clientHeight );
 		}
+		_this.camera.updateProjectionMatrix();
 		stereoEffectFlag = stereoFlag;
 	}
 	
