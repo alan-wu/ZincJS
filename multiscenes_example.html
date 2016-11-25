@@ -29,6 +29,7 @@
 
 		<p id='myText'>Zinc WebGL Demo </p>
 		<button name="Reset View" value="OK" type="button" onclick="resetView()">Reset View</button>
+		<button name="View All" value="OK" type="button" onclick="viewAll()">View All</button>
 		<button name="Jaw" value="jaw" type="button" onclick="loadMyModel(this.value)">Jaw</button>
 		<button name="Beating Heart" value="beating_heart" type="button" onclick="loadMyModel(this.value)">Beating Heart</button>
 		<button name="foot" value="newfoot" type="button" onclick="loadMyModel(this.value)">Foot</button>
@@ -66,7 +67,12 @@
 			
 			function resetView()
 			{
-				zincRenderer.resetView()
+				zincRenderer.resetView();
+			}
+			
+			function viewAll()
+			{
+				zincRenderer.viewAll();
 			}
 
 		</script>

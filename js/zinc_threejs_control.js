@@ -1,7 +1,16 @@
+ZincViewport = function () {
+	this.nearPlane = 0.1943;
+	this.farPlane = 7.8852;
+	this.eyePosition = [0.0, -3.88552, 0.0];
+	this.targetPosition = [0.0, 0.0, 0.0];
+	this.upVector = [ 0.0, 0.0, 1.0];
+	var _this = this;
+}
 
 ZincCameraControls = function ( object, domElement, renderer, scene ) {
 
 	var _this = this;
+	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2 };
 	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5 };
 	this.cameraObject = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
@@ -18,13 +27,14 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	this.directionalLight = 0;
 	var duration = 3000;
 	var inbuildTime = 0;
-	var enablePath = false;
 	var cameraPath = undefined;
 	var numerOfCameraPoint = undefined;
 	var updateLightWithPathFlag = false;
 	var playRate = 500;
 	var deviceOrientationControl = undefined;
-	
+	var defaultViewport = new ZincViewport();
+	var currentMode = MODE.DEFAULT;
+	var smoothCameraTransitionObject = undefined;
 	this._state = STATE.NONE;
 	this.targetTouchId = -1;
 	
@@ -404,10 +414,9 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		if (inbuildTime > duration)
 			inbuildTime = duration;	
 	}
-	
-	
+
 	var updatePath = function(delta)	{
-		if (enablePath) {
+		if (currentMode === MODE.PATH) {
 			updateTime(delta);
 			if (cameraPath) {
 				var time_frame = _this.getCurrentTimeFrame();
@@ -433,15 +442,25 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	
 	this.update = function (timeChanged) {
 		var delta = timeChanged * playRate;
-		updatePath(delta);
-		if (enabled) {
+		var controlEnabled = enabled;
+		if (currentMode === MODE.PATH)
+			updatePath(delta);
+		else if (currentMode === MODE.SMOOTH_CAMERA_TRANSITION && smoothCameraTransitionObject) {
+			smoothCameraTransitionObject.update(delta);
+			if (smoothCameraTransitionObject.isTransitionCompleted()) {
+				smoothCameraTransitionObject == undefined;
+				currentMode = MODE.DEFAULT;
+			}
+			controlEnabled = false;
+		}
+		if (controlEnabled && currentMode !== MODE.SMOOTH_CAMERA_TRANSITION) {
 			if ((_this._state === STATE.ROTATE) || (_this._state === STATE.TOUCH_ROTATE)){
 				tumble();
 			} else if (_this._state === STATE.PAN){
 				translate();
 			} else if (_this._state === STATE.ZOOM){
 				flyZoom();
-			}	
+			}
 		}
 		if (deviceOrientationControl) {
 			deviceOrientationControl.update();
@@ -453,15 +472,15 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	};
 	
 	this.playPath = function () {
-		enablePath = true;
+		currentMode = MODE.PATH;
 	}
 	
 	this.stopPath = function () {
-		enablePath = false;
+		currentMode = MODE.DEFAULT;
 	}
 	
 	this.isPlayingPath = function () {
-		return enablePath;
+		return (currentMode === MODE.PATH);
 	}
 	
 	this.enableDirectionalLightUpdateWithPath = function (flag) {
@@ -487,8 +506,188 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		return false;
 	}
 	
+	this.resetView = function() {
+		_this.cameraObject.near = defaultViewport.nearPlane;
+		_this.cameraObject.far = defaultViewport.farPlane;
+		_this.cameraObject.position.set( defaultViewport.eyePosition[0], defaultViewport.eyePosition[1],
+				defaultViewport.eyePosition[2]);
+		_this.cameraObject.target = new THREE.Vector3( defaultViewport.targetPosition[0],
+				defaultViewport.targetPosition[1], defaultViewport.targetPosition[2]  );
+		_this.cameraObject.up.set( defaultViewport.upVector[0],  defaultViewport.upVector[1],
+				defaultViewport.upVector[2]);
+		_this.cameraObject.updateProjectionMatrix();
+		_this.updateDirectionalLight();
+	}
+	
+	this.setDefaultCameraSettings = function(nearPlaneIn, farPlaneIn, eyePositionIn,
+			targetPositionIn, upVectorIn) {
+		if (nearPlaneIn)
+			defaultViewport.nearPlane = nearPlaneIn;
+		if (farPlaneIn)
+			defaultViewport.farPlane = farPlaneIn;
+		if (eyePositionIn)
+			defaultViewport.eyePosition = eyePositionIn;
+		if (targetPositionIn)
+			defaultViewport.targetPosition = targetPositionIn;
+		if (upVectorIn)
+			defaultViewport.upVector = upVectorIn;	
+	}
+	
+	this.setCurrentCameraSettings = function(newViewport) {
+		if (newViewport.nearPlane)
+			_this.cameraObject.near = newViewport.nearPlane;
+		if (newViewport.farPlane)
+			_this.cameraObject.far = newViewport.farPlane;
+		if (newViewport.eyePosition)
+			_this.cameraObject.position.set( newViewport.eyePosition[0], 
+					newViewport.eyePosition[1], newViewport.eyePosition[2]);
+		if (newViewport.targetPosition)
+			_this.cameraObject.target = new THREE.Vector3( newViewport.targetPosition[0],
+					newViewport.targetPosition[1], newViewport.targetPosition[2]  );
+		if (newViewport.upVector)
+			_this.cameraObject.up.set( newViewport.upVector[0], newViewport.upVector[1],
+					newViewport.upVector[2]);
+		_this.cameraObject.updateProjectionMatrix();
+		_this.updateDirectionalLight();
+	}
+	
+	this.getViewportFromCentreAndRadius = function(centreX, centreY, centreZ, radius, view_angle, clip_distance) {
+		var eyex = _this.cameraObject.position.x-_this.cameraObject.target.x;
+		var eyey = _this.cameraObject.position.y-_this.cameraObject.target.y;
+		var eyez = _this.cameraObject.position.z-_this.cameraObject.target.z;
+		var fact = 1.0/Math.sqrt(eyex*eyex+eyey*eyey+eyez*eyez);
+		eyex = eyex * fact;
+		eyey = eyey * fact;
+		eyez = eyez * fact;
+		/* look at the centre of the sphere */
+		var localTargetPosition = [centreX, centreY, centreZ];
+		/* shift the eye position to achieve the desired view_angle */
+		var eye_distance = radius/Math.tan(view_angle*Math.PI/360.0);
+		var localEyePosition = [ centreX + eyex*eye_distance,  centreY + eyey*eye_distance,
+		                    centreZ + eyez*eye_distance];
+		var localFarPlane = eye_distance+clip_distance;
+		var localNearPlane = 0.0;
+		var nearClippingFactor = 0.95;
+		if (clip_distance > nearClippingFactor*eye_distance)
+		{
+			localNearPlane = (1.0 - nearClippingFactor)*eye_distance;
+		}
+		else
+		{
+			localNearPlane = eye_distance - clip_distance;
+		}
+		var newViewport = new ZincViewport();
+		newViewport.nearPlane = localNearPlane;
+		newViewport.farPlane = localFarPlane;
+		newViewport.eyePosition = localEyePosition;
+		newViewport.targetPosition = localTargetPosition;
+		newViewport.upVector = [_this.cameraObject.up.x, _this.cameraObject.up.y,
+		                        _this.cameraObject.up.z];
+		
+		return newViewport;
+	}
+	
+	this.getDefaultViewport = function() {
+		return defaultViewport;
+	}
+	
+	this.getCurrentViewport = function() {
+		var currentViewport = new ZincViewport();
+		currentViewport.nearPlane = _this.cameraObject.near;
+		currentViewport.farPlane = _this.cameraObject.far;
+		currentViewport.eyePosition[0] = _this.cameraObject.position.x;
+		currentViewport.eyePosition[1] = _this.cameraObject.position.y;
+		currentViewport.eyePosition[2] = _this.cameraObject.position.z;
+		currentViewport.targetPosition[0] = _this.cameraObject.target.x;
+		currentViewport.targetPosition[1] = _this.cameraObject.target.y;
+		currentViewport.targetPosition[2] = _this.cameraObject.target.z;
+		currentViewport.upVector[0] = _this.cameraObject.up.x;
+		currentViewport.upVector[1] = _this.cameraObject.up.y;
+		currentViewport.upVector[2] = _this.cameraObject.up.z;
+		return currentViewport;
+	}
+	
+	this.getDefaultEyePosition = function() {
+		return eyePosition;
+	}
+	
+	this.getDefaultTargetPosition = function() {
+		return targetPosition;
+	}
+	
+	this.cameraTransition = function (startingViewport, endingViewport, durationIn) {
+		smoothCameraTransitionObject = new ZincSmoothCameraTransition(startingViewport, endingViewport,
+			_this, durationIn);
+	}
+	
+	this.enableCameraTransition = function () {
+		currentMode = MODE.SMOOTH_CAMERA_TRANSITION;
+	}
+	
+	this.pauseCameraTransition = function () {
+		currentMode = MODE.DEFAULT;
+	}
+	
+	this.isTransitioningCamera = function () {
+		return (currentMode === MODE.SMOOTH_CAMERA_TRANSITION);
+	}
+	
 	this.enable();
 
+};
+
+ZincSmoothCameraTransition = function (startingViewport, endingViewport, targetCameraIn, durationIn) {
+	var startingEyePosition = startingViewport.eyePosition;
+	var startingTargetPosition = startingViewport.targetPosition;
+	var endingEyePosition = endingViewport.eyePosition;
+	var endingTargetPosition = endingViewport.targetPosition;
+	var targetCamera = targetCameraIn;
+	var _this = this;
+	var duration = durationIn;
+	var inbuildTime = 0;
+	var enabled = true;
+	var updateLightWithPathFlag = true;
+	var completed = false;
+	targetCamera.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
+	targetCamera.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
+	
+	var updateTime = function(delta) {
+		var targetTime = inbuildTime + delta;
+		if (targetTime > duration)
+			targetTime = duration;
+		inbuildTime = targetTime;
+	}
+	
+	var updateCameraSettings = function () {
+		var ratio = inbuildTime / duration;
+		var eyePosition = [startingEyePosition[0] * (1.0 - ratio) + endingEyePosition[0] * ratio,
+		                   startingEyePosition[1] * (1.0 - ratio) + endingEyePosition[1] * ratio,
+		                   startingEyePosition[2] * (1.0 - ratio) + endingEyePosition[2] * ratio];
+		var targetPosition = [startingTargetPosition[0] * (1.0 - ratio) + endingTargetPosition[0] * ratio,
+		                      startingTargetPosition[1] * (1.0 - ratio) + endingTargetPosition[1] * ratio,
+		                      startingTargetPosition[2] * (1.0 - ratio) + endingTargetPosition[2] * ratio];
+		targetCamera.cameraObject.position.set( eyePosition[0], eyePosition[1], eyePosition[2]);
+		targetCamera.cameraObject.target = new THREE.Vector3( targetPosition[0], targetPosition[1], targetPosition[2]  );
+	}
+	
+	this.update = function (delta) {
+
+		if ( _this.enabled === false ) return;
+		
+		updateTime(delta);
+		
+		updateCameraSettings();
+		
+		if (inbuildTime == duration) {
+			completed = true;
+		}
+
+	}
+	
+	this.isTransitionCompleted = function () {
+		return completed;
+	}
+	
 };
 
 

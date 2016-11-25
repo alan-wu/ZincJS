@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '17' };
+var Zinc = { REVISION: '19' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -614,11 +614,6 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	this.ambient = undefined;
 	this.camera = undefined;
 	var duration = 3000;
-	var nearPlane = 10.0353320682268;
-	var farPlane = 12.6264735624;
-	var eyePosition = [0.5, 0.5, 4.033206822678309];
-	var targetPosition = [0.5, 0.5, 0.5];
-	var upVector = [ 0.0, 1.0, 0.0];
 	var centroid = [0, 0, 0];
 	var zincCameraControls = undefined;
 	var num_inputs = 0;
@@ -668,31 +663,22 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	
 	this.resetView = function()
 	{
-		_this.onWindowResize()
-		_this.camera.near = nearPlane;
-		_this.camera.far = farPlane;
-		_this.camera.position.set( eyePosition[0], eyePosition[1], eyePosition[2]);
-		_this.camera.target = new THREE.Vector3( targetPosition[0], targetPosition[1], targetPosition[2]  );
-		_this.camera.up.set( upVector[0],  upVector[1], upVector[2]);
-		_this.camera.aspect = container.clientWidth / container.clientHeight;
-		_this.camera.updateProjectionMatrix();
-		if (zincCameraControls != undefined)
-			zincCameraControls.updateDirectionalLight()
+		_this.onWindowResize();
+		zincCameraControls.resetView();
 	}
 	
 	setupCamera = function() {
-		_this.camera = new THREE.PerspectiveCamera( 40, container.clientWidth / container.clientHeight, nearPlane , farPlane);
-		_this.resetView();
+		_this.camera = new THREE.PerspectiveCamera( 40, container.clientWidth / container.clientHeight, 0.0, 10.0);
 		  
 		_this.ambient = new THREE.AmbientLight( 0x202020 );
-		scene.add( _this.ambient );
+		//scene.add( _this.ambient );
 	
 		_this.directionalLight = new THREE.DirectionalLight( 0x777777  );
-		_this.directionalLight.position.set( eyePosition[0], eyePosition[1], eyePosition[2] );
-		scene.add( _this.directionalLight );
+		//scene.add( _this.directionalLight );
 	
 		zincCameraControls = new ZincCameraControls( _this.camera, rendererIn.domElement, rendererIn, scene )
 		zincCameraControls.setDirectionalLight(_this.directionalLight);
+		zincCameraControls.resetView();
 	}
 	
 	setupCamera();
@@ -714,46 +700,12 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	
 	this.loadView = function(viewData)
 	{
-        nearPlane = viewData.nearPlane
-        farPlane = viewData.farPlane
-        eyePosition = viewData.eyePosition
-        targetPosition = viewData.targetPosition
-        upVector = viewData.upVector
-        _this.resetView()
+		zincCameraControls.setDefaultCameraSettings(viewData.nearPlane, viewData.farPlane, viewData.eyePosition,
+				viewData.targetPosition, viewData.upVector);
+		zincCameraControls.resetView();
 	}
-
-	var calculateViewFromCentreAndRadius = function(centreX, centreY, centreZ, radius, view_angle, clip_distance)
-	{
-		var eyex = eyePosition[0]-targetPosition[0];
-		var eyey = eyePosition[1]-targetPosition[1];
-		var eyez = eyePosition[2]-targetPosition[2];
-		var fact = 1.0/Math.sqrt(eyex*eyex+eyey*eyey+eyez*eyez);
-		var eyex = eyex * fact;
-		var eyey = eyey * fact;
-		var eyez = eyez * fact;
-		/* look at the centre of the sphere */
-		targetPosition[0]=centreX;
-		targetPosition[1]=centreY;
-		targetPosition[2]=centreZ;
-		/* shift the eye position to achieve the desired view_angle */
-		var eye_distance = radius/Math.tan(view_angle*Math.PI/360.0);
-		eyePosition[0] = centreX + eyex*eye_distance;
-		eyePosition[1] = centreY + eyey*eye_distance;
-		eyePosition[2] = centreZ + eyez*eye_distance;
-		farPlane = eye_distance+clip_distance;
-		var nearClippingFactor = 0.95;
-		if (clip_distance > nearClippingFactor*eye_distance)
-		{
-			nearPlane = (1.0 - nearClippingFactor)*eye_distance;
-		}
-		else
-		{
-			nearPlane = eye_distance - clip_distance;
-		}
-	}
-
-	this.viewAll = function()
-	{
+	
+	this.getBoundingBox = function() {
 		var boundingBox1 = undefined, boundingBox2 = undefined;
 		for ( var i = 0; i < zincGeometries.length; i ++ ) {
 			boundingBox2 = new THREE.Box3().setFromObject(zincGeometries[i].morph);
@@ -763,16 +715,26 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 				boundingBox1.union(boundingBox2);
 			}
 		}
-		if (boundingBox1) {
+		return boundingBox1;
+	}
+	
+	this.viewAllWithBoundingBox = function(boundingBox) {
+		if (boundingBox) {
 			// enlarge radius to keep image within edge of window
-			var radius = boundingBox1.min.distanceTo(boundingBox1.max)/2.0;
-			var centreX = (boundingBox1.min.x + boundingBox1.max.x) / 2.0;
-			var centreY = (boundingBox1.min.y + boundingBox1.max.y) / 2.0;
-			var centreZ = (boundingBox1.min.z + boundingBox1.max.z) / 2.0;
+			var radius = boundingBox.min.distanceTo(boundingBox.max)/2.0;
+			var centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
+			var centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
+			var centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
 			var clip_factor = 4.0;
-			calculateViewFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor );
-			_this.resetView();
+			var viewport= zincCameraControls.getViewportFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor );
+			
+			zincCameraControls.setCurrentCameraSettings(viewport);
 		}
+	}
+
+	this.viewAll = function() {
+		var boundingBox = _this.getBoundingBox();
+		_this.viewAllWithBoundingBox(boundingBox);
 	}
 	
 	this.forEachGeometry = function(callbackFunction) {
@@ -821,7 +783,6 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         var localMorphColour = 0;
         if (morphColour != undefined)
         	localMorphColour = morphColour ? true: false;
-        
         loader.load( url, meshloader(modelId, colour, opacity, localTimeEnabled,
         		localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError); 
 	}
@@ -969,9 +930,9 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		newGeometry.mixer = mixer;
 		newGeometry.clipAction = clipAction;
 		zincGeometries.push ( newGeometry ) ;
+		
 		if (finishCallback != undefined && (typeof finishCallback == 'function'))
 			finishCallback(newGeometry);
-		
 		return newGeometry;
 	}
 	
@@ -981,8 +942,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	    	if (materials && materials[0]) {
 	    		material = materials[0];
 	    	}
-	    	var zincGeometry = _this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, finishCallback, material);
+	    	var zincGeometry = _this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material);
 	    	zincGeometry.groupName = groupName;
+			if (finishCallback != undefined && (typeof finishCallback == 'function'))
+				finishCallback(zincGeometry);
 	    }
 	}
 	
@@ -1052,13 +1015,27 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
-	this.render = function(renderer) {
+	this.getThreeJSScene = function() {
+		return scene;
+	}
+	
+	this.render = function(renderer, additionalScenes) {
+		var fullScene = new THREE.Scene();
+		fullScene.add( _this.ambient );
+		fullScene.add( _this.directionalLight );
+		fullScene.add(scene);
+		if (additionalScenes !== undefined) {
+		    for(i = 0; i < additionalScenes.length; i++) {
+		        var sceneItem = additionalScenes[i];
+		        fullScene.add(sceneItem.getThreeJSScene());
+		    }
+		}
 		renderer.clear();
 		if (stereoEffectFlag && stereoEffect) {
-			stereoEffect.render(scene, _this.camera);
+			stereoEffect.render(fullScene, _this.camera);
 		}
 		else
-			renderer.render( scene, _this.camera );
+			renderer.render( fullScene, _this.camera );
 	}
 	
 	this.setInteractiveControlEnable = function(flag) {
@@ -1125,7 +1102,7 @@ Zinc.Renderer = function (containerIn, window) {
 	var animated_id = undefined;
 	var cameraOrtho = undefined, sceneOrtho = undefined, logoSprite = undefined;
 	var sceneMap = [];
-	
+	var additionalActiveScenes = [];
 	var _this = this;
 	
 	this.initialiseVisualisation = function() {
@@ -1143,9 +1120,13 @@ Zinc.Renderer = function (containerIn, window) {
 	
 	this.setCurrentScene = function(sceneIn) {
 		if (sceneIn) {
-			if (currentScene)
-				currentScene.setInteractiveControlEnable(false);
+			_this.removeActiveScene(sceneIn);
+			var oldScene = currentScene;
 			currentScene = sceneIn;
+			if (oldScene) {
+				oldScene.setInteractiveControlEnable(false);
+				_this.addActiveScene(oldScene);
+			}
 			currentScene.setInteractiveControlEnable(true);
 		}
 	}
@@ -1197,7 +1178,18 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	this.viewAll = function()	{
-		currentScene.viewAll();
+		if (currentScene) {	
+			var boundingBox = currentScene.getBoundingBox();
+			if (boundingBox) {
+			    for(i = 0; i < additionalActiveScenes.length; i++) {
+			        var boundingBox2 = additionalActiveScenes[i].getBoundingBox();
+			        if (boundingBox2) {
+			        	boundingBox.union(boundingBox2);
+			        }
+			    }
+				currentScene.viewAllWithBoundingBox(boundingBox);
+			}
+		}
 	}
 	
 	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback) {
@@ -1307,6 +1299,10 @@ Zinc.Renderer = function (containerIn, window) {
 	this.render = function() {
 		var delta = clock.getDelta();
 		currentScene.renderGeometries(playRate, delta, _this.playAnimation);
+	    for(i = 0; i < additionalActiveScenes.length; i++) {
+	        var sceneItem = additionalActiveScenes[i];
+	        sceneItem.renderGeometries(playRate, delta, _this.playAnimation);
+	    }
 		if (cameraOrtho != undefined && sceneOrtho != undefined) {
 			renderer.clearDepth();
 			renderer.render( sceneOrtho, cameraOrtho );
@@ -1316,14 +1312,68 @@ Zinc.Renderer = function (containerIn, window) {
         		preRenderCallbackFunctions[key].call();
         	}
     	}
-		currentScene.render(renderer);
+		currentScene.render(renderer, additionalActiveScenes);
 	}
 	
 	this.getThreeJSRenderer = function () {
 		return renderer;
 	}
-		
+	
+	this.isSceneActive = function (sceneIn) {
+		if (currentScene === sceneIn) {
+			return true;
+		} else {
+		    for(i = 0; i < additionalActiveScenes.length; i++) {
+		        var sceneItem = additionalActiveScenes[i];
+		        if (sceneItem === sceneIn)
+		        	return true;
+		    }
+		}
+
+	    return false;
+	} 
+	
+	this.addActiveScene = function(additionalScene) {
+		if (!_this.isSceneActive(additionalScene)) {
+			additionalActiveScenes.push(additionalScene);
+		}
+	}
+	
+	this.removeActiveScene = function(additionalScene) {
+	    for(i = 0; i < additionalActiveScenes.length; i++) {
+	        var sceneItem = additionalActiveScenes[i];
+	        if (sceneItem === additionalScene) {
+	        	additionalActiveScenes.splice(i, 1);
+	        	return;
+	        }
+	    }
+	   
+	}
+	
+	this.clearAllActiveScene = function() {
+		additionalActiveScenes.splice(0,additionalActiveScenes.length);
+	}
+	
+	this.transitionScene = function(endingScene, duration) {
+		if (currentScene) {
+			var currentCamera = currentScene.getZincCameraControls();
+			var boundingBox = endingScene.getBoundingBox();
+			if (boundingBox) {
+				var radius = boundingBox.min.distanceTo(boundingBox.max)/2.0;
+				var centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
+				var centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
+				var centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
+				var clip_factor = 4.0;
+				var endingViewport = currentCamera.getViewportFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor );
+				var startingViewport = currentCamera.getCurrentViewport();
+				currentCamera.cameraTransition(startingViewport, endingViewport, duration);
+				currentCamera.enableCameraTransition();
+			}
+		}
+	}
+
 };
+
 
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {
