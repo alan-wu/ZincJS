@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '19' };
+var Zinc = { REVISION: '20' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -10,6 +10,12 @@ Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	
 	this.getMesh = function () {
 		return mesh;
+	}
+	
+	this.getBoundingBox = function() {
+		if (mesh)
+			return new THREE.Box3().setFromObject(mesh);
+		return undefined;
 	}
 	
 	this.setColor = function (colorIn) {
@@ -382,6 +388,19 @@ Zinc.Glyphset = function()  {
 	    }
 	}
 	
+	this.getBoundingBox = function() {
+		var boundingBox1 = undefined, boundingBox2 = undefined;
+		for ( var i = 0; i < glyphList.length; i ++ ) {
+			boundingBox2 = glyphList[i].getBoundingBox();
+			if (boundingBox1 == undefined) {
+				boundingBox1 = boundingBox2;
+			} else {
+				boundingBox1.union(boundingBox2);
+			}
+		}
+		return boundingBox1;
+	}
+	
 	this.setMorphTime = function (time) {
 		if (time > _this.duration)
 			inbuildTime = _this.duration;
@@ -571,6 +590,12 @@ Zinc.Geometry = function () {
 		}
 	}
 	
+	this.getBoundingBox = function() {
+		if (_this.morph)
+			return new THREE.Box3().setFromObject(_this.morph);
+		return undefined;
+	}
+	
 	this.render = function(delta, playAnimation) {
 		if (playAnimation == true) 
 		{
@@ -708,7 +733,15 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	this.getBoundingBox = function() {
 		var boundingBox1 = undefined, boundingBox2 = undefined;
 		for ( var i = 0; i < zincGeometries.length; i ++ ) {
-			boundingBox2 = new THREE.Box3().setFromObject(zincGeometries[i].morph);
+			boundingBox2 = zincGeometries[i].getBoundingBox();
+			if (boundingBox1 == undefined) {
+				boundingBox1 = boundingBox2;
+			} else {
+				boundingBox1.union(boundingBox2);
+			}
+		}
+		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+			boundingBox2 = zincGlyphsets[i].getBoundingBox();
 			if (boundingBox1 == undefined) {
 				boundingBox1 = boundingBox2;
 			} else {
@@ -786,7 +819,6 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         loader.load( url, meshloader(modelId, colour, opacity, localTimeEnabled,
         		localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError); 
 	}
-	
 	
 	var readMetadataItem = function(item, finishCallback) {
 		if (item) {
@@ -899,11 +931,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		if (materialIn) {
 			material = materialIn;
 			material.morphTargets = localTimeEnabled;
-			material.side = THREE.DoubleSide;
 		} else {
 			material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
-			material.side = THREE.DoubleSide;
 		}
+		material.side = THREE.DoubleSide;
 		var mesh = undefined;
 		mesh = new THREE.Mesh( geometry, material );
 		
@@ -1329,7 +1360,6 @@ Zinc.Renderer = function (containerIn, window) {
 		        	return true;
 		    }
 		}
-
 	    return false;
 	} 
 	
@@ -1347,7 +1377,6 @@ Zinc.Renderer = function (containerIn, window) {
 	        	return;
 	        }
 	    }
-	   
 	}
 	
 	this.clearAllActiveScene = function() {
@@ -1371,7 +1400,6 @@ Zinc.Renderer = function (containerIn, window) {
 			}
 		}
 	}
-
 };
 
 
