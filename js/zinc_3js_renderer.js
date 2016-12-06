@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '20' };
+var Zinc = { REVISION: '21' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -725,8 +725,13 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	
 	this.loadView = function(viewData)
 	{
-		zincCameraControls.setDefaultCameraSettings(viewData.nearPlane, viewData.farPlane, viewData.eyePosition,
-				viewData.targetPosition, viewData.upVector);
+		var viewPort = new ZincViewport();
+		viewPort.nearPlane = viewData.nearPlane;
+		viewPort.farPlane = viewData.farPlane;
+		viewPort.eyePosition = viewData.eyePosition;
+		viewPort.targetPosition = viewData.targetPosition;
+		viewPort.upVector = viewData.upVector;
+		zincCameraControls.setDefaultCameraSettings(viewPort);
 		zincCameraControls.resetView();
 	}
 	
@@ -1156,7 +1161,6 @@ Zinc.Renderer = function (containerIn, window) {
 			currentScene = sceneIn;
 			if (oldScene) {
 				oldScene.setInteractiveControlEnable(false);
-				_this.addActiveScene(oldScene);
 			}
 			currentScene.setInteractiveControlEnable(true);
 		}

@@ -10,7 +10,7 @@ ZincViewport = function () {
 ZincCameraControls = function ( object, domElement, renderer, scene ) {
 
 	var _this = this;
-	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2 };
+	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3 };
 	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5 };
 	this.cameraObject = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
@@ -35,6 +35,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	var defaultViewport = new ZincViewport();
 	var currentMode = MODE.DEFAULT;
 	var smoothCameraTransitionObject = undefined;
+	var cameraAutoTumbleObject = undefined
 	this._state = STATE.NONE;
 	this.targetTouchId = -1;
 	
@@ -156,7 +157,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		_this.previous_pointer_y = _this.pointer_y
 	}
 	
-	function rotateAboutLookAtpoint(a, angle)
+	this.rotateAboutLookAtpoint = function(a, angle)
 	{
 		a.normalize()
 		var v = _this.cameraObject.position.clone();
@@ -238,7 +239,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 					axis.set(Math.sin(phi)*a.x+Math.cos(phi)*e[0],
 						Math.sin(phi)*a.y+Math.cos(phi)*e[1],
 						Math.sin(phi)*a.z+Math.cos(phi)*e[2]);
-					rotateAboutLookAtpoint(axis, -angle)
+					_this.rotateAboutLookAtpoint(axis, -angle);
 				}
 			}
 		}
@@ -443,23 +444,31 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	this.update = function (timeChanged) {
 		var delta = timeChanged * playRate;
 		var controlEnabled = enabled;
-		if (currentMode === MODE.PATH)
+		if (currentMode === MODE.PATH) {
 			updatePath(delta);
-		else if (currentMode === MODE.SMOOTH_CAMERA_TRANSITION && smoothCameraTransitionObject) {
+		} else if (currentMode === MODE.SMOOTH_CAMERA_TRANSITION && smoothCameraTransitionObject) {
 			smoothCameraTransitionObject.update(delta);
 			if (smoothCameraTransitionObject.isTransitionCompleted()) {
 				smoothCameraTransitionObject == undefined;
 				currentMode = MODE.DEFAULT;
 			}
 			controlEnabled = false;
+		} else if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject) {
+			cameraAutoTumbleObject.update(delta);
 		}
-		if (controlEnabled && currentMode !== MODE.SMOOTH_CAMERA_TRANSITION) {
+		if (controlEnabled) {
 			if ((_this._state === STATE.ROTATE) || (_this._state === STATE.TOUCH_ROTATE)){
 				tumble();
 			} else if (_this._state === STATE.PAN){
 				translate();
 			} else if (_this._state === STATE.ZOOM){
 				flyZoom();
+			}
+			if (_this._state !== STATE.NONE) {
+				if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject &&
+						cameraAutoTumbleObject.stopOnCameraInput) {
+					_this.stopAutoTumble();
+				}
 			}
 		}
 		if (deviceOrientationControl) {
@@ -519,18 +528,17 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		_this.updateDirectionalLight();
 	}
 	
-	this.setDefaultCameraSettings = function(nearPlaneIn, farPlaneIn, eyePositionIn,
-			targetPositionIn, upVectorIn) {
-		if (nearPlaneIn)
-			defaultViewport.nearPlane = nearPlaneIn;
-		if (farPlaneIn)
-			defaultViewport.farPlane = farPlaneIn;
-		if (eyePositionIn)
-			defaultViewport.eyePosition = eyePositionIn;
-		if (targetPositionIn)
-			defaultViewport.targetPosition = targetPositionIn;
-		if (upVectorIn)
-			defaultViewport.upVector = upVectorIn;	
+	this.setDefaultCameraSettings = function(newViewport) {
+		if (newViewport.nearPlane)
+			defaultViewport.nearPlane = newViewport.nearPlane;
+		if (newViewport.farPlane)
+			defaultViewport.farPlane = newViewport.farPlane;
+		if (newViewport.eyePosition)
+			defaultViewport.eyePosition = newViewport.eyePosition;
+		if (newViewport.targetPosition)
+			defaultViewport.targetPosition = newViewport.targetPosition;
+		if (newViewport.upVector)
+			defaultViewport.upVector = newViewport.upVector;	
 	}
 	
 	this.setCurrentCameraSettings = function(newViewport) {
@@ -628,8 +636,35 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		currentMode = MODE.DEFAULT;
 	}
 	
+	this.stopCameraTransition = function () {
+		currentMode = MODE.DEFAULT;
+		smoothCameraTransitionObject = undefined;
+	}
+	
 	this.isTransitioningCamera = function () {
 		return (currentMode === MODE.SMOOTH_CAMERA_TRANSITION);
+	}
+	
+	this.autoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn) {
+		cameraAutoTumbleObject = new ZincCameraAutoTumble(tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, _this);
+	}
+	
+	this.enableAutoTumble = function () {
+		currentMode = MODE.AUTO_TUMBLE;
+	}
+	
+	this.stopAutoTumble = function () {
+		currentMode = MODE.DEFAULT;
+		cameraAutoTumbleObject = undefined;
+	}
+	
+	this.updateAutoTumble = function() {
+		if (cameraAutoTumbleObject)
+			cameraAutoTumbleObject.requireUpdate = true;
+	}
+	
+	this.isAutoTumble = function () {
+		return (currentMode === MODE.AUTO_TUMBLE);
 	}
 	
 	this.enable();
@@ -686,6 +721,73 @@ ZincSmoothCameraTransition = function (startingViewport, endingViewport, targetC
 	
 	this.isTransitionCompleted = function () {
 		return completed;
+	}
+	
+};
+
+ZincCameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, targetCameraIn) {
+	var tumbleAxis = new THREE.Vector3();
+	var angle = -tumbleRateIn;
+	var targetCamera = targetCameraIn;
+	var _this = this;
+	var enabled = true;
+	var updateLightWithPathFlag = true;
+	var tumbleDirection = tumbleDirectionIn;
+	this.stopOnCameraInput = stopOnCameraInputIn;
+	this.requireUpdate = true;
+	
+	var computeTumbleAxisAngle = function(tumbleDirection) {
+		var tangent_dist = Math.sqrt(tumbleDirection[0]*tumbleDirection[0] +
+			tumbleDirection[1]*tumbleDirection[1]);
+		var width = Math.abs(tumbleDirection[0]) * 4.0;
+		var height = Math.abs(tumbleDirection[1]) * 4.0;
+		var radius = 0.25 * (width + height);
+		var dx = -tumbleDirection[1]/tangent_dist;
+		var dy = tumbleDirection[0]/tangent_dist;
+		var d = dx*(tumbleDirection[0])+dy*(-tumbleDirection[1]);
+		
+		if (d > radius)
+		{
+			d = radius;
+		}
+		else
+		{
+			if (d < -radius)
+			{
+				d = -radius;
+			}
+		}
+		
+		var phi=Math.acos(d/radius)-0.5*Math.PI;
+		/* get axis to rotate about */
+		var a = new THREE.Vector3(targetCamera.cameraObject.position.x - targetCamera.cameraObject.target.x,
+		         targetCamera.cameraObject.position.y - targetCamera.cameraObject.target.y,
+		         targetCamera.cameraObject.position.z - targetCamera.cameraObject.target.z);
+		a.normalize();
+		var b = new THREE.Vector3(targetCamera.cameraObject.up.x, targetCamera.cameraObject.up.y,
+		         					targetCamera.cameraObject.up.z);
+		b.normalize();
+		var c = new THREE.Vector3();
+		c.crossVectors(b, a);
+		c.normalize();
+		var e = new THREE.Vector3(dx*c.x + dy*b.x, dx*c.y + dy*b.y, dx*c.z + dy*b.z);
+		tumbleAxis.x = Math.sin(phi) * a.x + Math.cos(phi) * e.x;
+		tumbleAxis.y = Math.sin(phi) * a.y + Math.cos(phi) * e.y;
+		tumbleAxis.z = Math.sin(phi) * a.z + Math.cos(phi) * e.z;
+	}
+	
+	
+	
+	this.update = function (delta) {
+
+		if ( _this.enabled === false ) return;
+		
+		if (_this.requireUpdate) {
+			computeTumbleAxisAngle(tumbleDirection);
+			_this.requireUpdate = false;
+		}
+		targetCamera.rotateAboutLookAtpoint(tumbleAxis, angle);
+
 	}
 	
 };
