@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '21' };
+var Zinc = { REVISION: '22' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -682,6 +682,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	};
 	
 	this.onWindowResize = function() {
+		console.log("temp")
+		zincCameraControls.onResize();
 		_this.camera.aspect = container.clientWidth / container.clientHeight;
 		_this.camera.updateProjectionMatrix();
 	}
@@ -1141,9 +1143,16 @@ Zinc.Renderer = function (containerIn, window) {
 	var additionalActiveScenes = [];
 	var _this = this;
 	
+	this.onWindowResize = function() {
+		currentScene.onWindowResize();
+		if (renderer != undefined)
+			renderer.setSize( container.clientWidth, container.clientHeight );
+	}
+	
 	this.initialiseVisualisation = function() {
 		renderer = new THREE.WebGLRenderer({ antialias: true });
 		renderer.setSize( container.clientWidth, container.clientHeight );
+		renderer.domElement.addEventListener( 'resize', _this.onWindowResize, false );
 		container.appendChild( renderer.domElement );
 		renderer.setClearColor( 0xffffff, 1);
 		var scene = _this.createScene("default");
@@ -1199,14 +1208,6 @@ Zinc.Renderer = function (containerIn, window) {
 			cameraOrtho.updateProjectionMatrix();
 		}
 	}
-	
-	this.onWindowResize = function() {
-		currentScene.onWindowResize();
-		if (renderer != undefined)
-			renderer.setSize( container.clientWidth, container.clientHeight );
-	}
-	
-	window.addEventListener( 'resize', _this.onWindowResize, false );
 	
 	this.resetView = function()	{
 		currentScene.resetView();

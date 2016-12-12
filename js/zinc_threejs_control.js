@@ -14,6 +14,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5 };
 	this.cameraObject = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
+	var rect = this.domElement.getBoundingClientRect();
 	this.renderer = renderer
 	this.scene = scene 
 	this.tumble_rate = 1.5;
@@ -39,6 +40,10 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	this._state = STATE.NONE;
 	this.targetTouchId = -1;
 	
+	this.onResize = function() {
+		rect = _this.domElement.getBoundingClientRect();
+	}
+	
 	function onDocumentMouseDown( event ) {
 		if (event.which == 1) { 
 	 		_this._state = STATE.ROTATE
@@ -49,15 +54,15 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	   	else if (event.which == 3) {
 	    	_this._state = STATE.ZOOM
 	    }
-		_this.pointer_x = event.clientX 
-		_this.pointer_y = event.clientY
-		_this.previous_pointer_x = _this.pointer_x
-		_this.previous_pointer_y= _this.pointer_y
+		_this.pointer_x = event.clientX - rect.left;
+		_this.pointer_y = event.clientY - rect.top;
+		_this.previous_pointer_x = _this.pointer_x;
+		_this.previous_pointer_y= _this.pointer_y;
 	}
 
 	function onDocumentMouseMove( event ) {
-		_this.pointer_x = event.clientX
-		_this.pointer_y = event.clientY;
+		_this.pointer_x = event.clientX - rect.left;
+		_this.pointer_y = event.clientY - rect.top;
 	}
 	
 	function onDocumentMouseUp( event ) {
@@ -68,10 +73,10 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		var len = event.touches.length
 		if (len == 1) {
 			_this._state = STATE.TOUCH_ROTATE;
-			_this.pointer_x = event.touches[0].clientX 
-			_this.pointer_y = event.touches[0].clientY
-			_this.previous_pointer_x = _this.pointer_x
-			_this.previous_pointer_y= _this.pointer_y
+			_this.pointer_x = event.touches[0].clientX - rect.left;
+			_this.pointer_y = event.touches[0].clientY - rect.top;
+			_this.previous_pointer_x = _this.pointer_x;
+			_this.previous_pointer_y= _this.pointer_y;
 		} else if (len == 2) {
 			_this._state = STATE.TOUCH_ZOOM;
 			var dx = event.touches[ 0 ].clientX - event.touches[ 1 ].clientX;
@@ -80,10 +85,10 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		} else if (len == 3) {
 			_this._state = STATE.TOUCH_PAN;
 			_this.targetTouchId = event.touches[0].identifier
-			_this.pointer_x = event.touches[0].clientX
-			_this.pointer_y = event.touches[0].clientY
-			_this.previous_pointer_x = _this.pointer_x
-			_this.previous_pointer_y= _this.pointer_y				
+			_this.pointer_x = event.touches[0].clientX - rect.left;
+			_this.pointer_y = event.touches[0].clientY - rect.top;
+			_this.previous_pointer_x = _this.pointer_x;
+			_this.previous_pointer_y= _this.pointer_y;			
 		}
 	}
 	
@@ -92,8 +97,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		event.stopPropagation();
 		var len = event.touches.length
 		if (len == 1) {
-			_this.pointer_x = event.touches[0].clientX
-			_this.pointer_y = event.touches[0].clientY;
+			_this.pointer_x = event.touches[0].clientX - rect.left;
+			_this.pointer_y = event.touches[0].clientY - rect.top;
 		} else if (len == 2) {
 			if (_this._state === STATE.TOUCH_ZOOM) {
 				var dx = event.touches[ 0 ].clientX - event.touches[ 1 ].clientX;
@@ -106,8 +111,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			if (_this._state === STATE.TOUCH_PAN) {
 				for (var i = 0; i < 3; i++) {
 					if (event.touches[i].identifier == _this.targetTouchId) {
-						_this.pointer_x = event.touches[0].clientX 
-						_this.pointer_y = event.touches[0].clientY
+						_this.pointer_x = event.touches[0].clientX  - rect.left;
+						_this.pointer_y = event.touches[0].clientY - rect.top;
 						translate()
 						_this.renderer.render( scene, _this.cameraObject );
 					}
@@ -128,8 +133,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	{
 		if (typeof _this.cameraObject !== "undefined")
 		{
-			var width = window.innerWidth;
-			var height = window.innerHeight;
+			var width = _this.domElement.clientWidth;
+			var height = _this.domElement.clientHeight;
 			var distance = _this.cameraObject.position.distanceTo(_this.cameraObject.target)
 			var fact = 0.0;
 			if ((_this.cameraObject.far > _this.cameraObject.near) && (distance >= _this.cameraObject.near) &&
@@ -153,8 +158,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			_this.updateDirectionalLight();
 			_this.cameraObject.target = new THREE.Vector3(_this.cameraObject.target.x - dx, _this.cameraObject.target.y - dy, _this.cameraObject.target.z - dz);
 		}
-		_this.previous_pointer_x = _this.pointer_x
-		_this.previous_pointer_y = _this.pointer_y
+		_this.previous_pointer_x = _this.pointer_x;
+		_this.previous_pointer_y = _this.pointer_y;
 	}
 	
 	this.rotateAboutLookAtpoint = function(a, angle)
@@ -200,8 +205,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	{
 		if (typeof _this.cameraObject !== "undefined")
 		{
-			var width = window.innerWidth;
-			var height = window.innerHeight;
+			var width = _this.domElement.clientWidth;
+			var height = _this.domElement.clientHeight;
 			if ((0<width)&&(0<height))
 			{
 				var radius=0.25*(width+height);
@@ -243,8 +248,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 				}
 			}
 		}
-		_this.previous_pointer_x = _this.pointer_x
-		_this.previous_pointer_y = _this.pointer_y
+		_this.previous_pointer_x = _this.pointer_x;
+		_this.previous_pointer_y = _this.pointer_y;
 	}
 	
 	function calculateZoomDelta()
@@ -267,8 +272,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	function flyZoom() {
 		if (typeof _this.cameraObject !== "undefined")
 		{
-			var width = window.innerWidth;
-			var height = window.innerHeight;
+			var width = _this.domElement.clientWidth;
+			var height = _this.domElement.clientHeight;
 			var a = _this.cameraObject.position.clone();
 			a.sub(_this.cameraObject.target);
 			
@@ -313,8 +318,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			}
 		}
 		if (_this._state === STATE.ZOOM) {
-			_this.previous_pointer_x = _this.pointer_x
-			_this.previous_pointer_y = _this.pointer_y
+			_this.previous_pointer_x = _this.pointer_x;
+			_this.previous_pointer_y = _this.pointer_y;
 		}
 	}
 	
