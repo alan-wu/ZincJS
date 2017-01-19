@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '22' };
+var Zinc = { REVISION: '23' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -65,9 +65,14 @@ Zinc.Glyphset = function()  {
 	var _this = this;
 	var morphColours = false;
 	var morphVertices = false;
+	var groupName = undefined;
 	
 	this.getGroup = function() {
 		return group;
+	}
+	
+	this.setVisibility = function(flag) {
+		group.visible = flag;
 	}
 	
 	this.load = function(glyphsetData, glyphURL) {
@@ -783,29 +788,36 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
-	var loadGlyphset = function(glyphsetData, glyphurl)
+	this.forEachGlyphset = function(callbackFunction) {
+		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+			callbackFunction(zincGlyphsets[i]);
+		}
+	}
+	
+	var loadGlyphset = function(glyphsetData, glyphurl, groupName)
 	{
 		var newGlyphset = new Zinc.Glyphset();
         newGlyphset.duration = 3000;
         newGlyphset.load(glyphsetData, glyphurl);
+        newGlyphset.groupName = groupName;
         var group = newGlyphset.getGroup()
         scene.add( group );
         zincGlyphsets.push ( newGlyphset ) ;
 	}
 	
-	var onLoadGlyphsetReady = function(xmlhttp, glyphurl) {
+	var onLoadGlyphsetReady = function(xmlhttp, glyphurl, groupName) {
 		return function() {
 			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
 				var glyphsetData = JSON.parse(xmlhttp.responseText);
-	        	loadGlyphset(glyphsetData, glyphurl);
+	        	loadGlyphset(glyphsetData, glyphurl, groupName);
 			}
 		}
 	}
 	
-	this.loadGlyphsetURL = function(metaurl, glyphurl)
+	this.loadGlyphsetURL = function(metaurl, glyphurl, groupName)
 	{
 		var xmlhttp = new XMLHttpRequest();
-		xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl);
+		xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl, groupName);
 		xmlhttp.open("GET", metaurl, true);
 		xmlhttp.send();
 	}
@@ -832,7 +844,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 			if (item.Type == "Surfaces") {
 				loadMetaModel(item.URL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
 			} else if (item.Type == "Glyph") {
-				_this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL);
+				_this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL, item.GroupName);
 			}
 		}
 	}
