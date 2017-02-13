@@ -15,8 +15,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	this.cameraObject = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 	var rect = this.domElement.getBoundingClientRect();
-	this.renderer = renderer
-	this.scene = scene 
+	this.renderer = renderer;
+	this.scene = scene ;
 	this.tumble_rate = 1.5;
 	this.pointer_x = 0;
 	this.pointer_y = 0;
@@ -103,9 +103,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			if (_this._state === STATE.TOUCH_ZOOM) {
 				var dx = event.touches[ 0 ].clientX - event.touches[ 1 ].clientX;
 				var dy = event.touches[ 0 ].clientY - event.touches[ 1 ].clientY;
-				_this.touchZoomDistanceEnd = Math.sqrt( dx * dx + dy * dy )
-				flyZoom()
-				_this.renderer.render( _this.scene, _this.cameraObject );
+				_this.touchZoomDistanceEnd = Math.sqrt( dx * dx + dy * dy );
 			}
 		} else if (len == 3) {
 			if (_this._state === STATE.TOUCH_PAN) {
@@ -113,8 +111,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 					if (event.touches[i].identifier == _this.targetTouchId) {
 						_this.pointer_x = event.touches[0].clientX  - rect.left;
 						_this.pointer_y = event.touches[0].clientY - rect.top;
-						translate()
-						_this.renderer.render( scene, _this.cameraObject );
 					}
 				}
 			}				
@@ -265,7 +261,6 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			_this.touchZoomDistanceStart = _this.touchZoomDistanceEnd;
 		}
 
-	
 		return delta;
 	}
 	
@@ -464,9 +459,9 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		if (controlEnabled) {
 			if ((_this._state === STATE.ROTATE) || (_this._state === STATE.TOUCH_ROTATE)){
 				tumble();
-			} else if (_this._state === STATE.PAN){
+			} else if ((_this._state === STATE.PAN) || (_this._state === STATE.TOUCH_PAN)){
 				translate();
-			} else if (_this._state === STATE.ZOOM){
+			} else if ((_this._state === STATE.ZOOM) || (_this._state === STATE.TOUCH_ZOOM)){
 				flyZoom();
 			}
 			if (_this._state !== STATE.NONE) {
