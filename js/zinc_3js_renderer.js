@@ -687,7 +687,6 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	};
 	
 	this.onWindowResize = function() {
-		console.log("temp")
 		zincCameraControls.onResize();
 		_this.camera.aspect = container.clientWidth / container.clientHeight;
 		_this.camera.updateProjectionMatrix();
@@ -1154,17 +1153,19 @@ Zinc.Renderer = function (containerIn, window) {
 	var sceneMap = [];
 	var additionalActiveScenes = [];
 	var _this = this;
+	var currentSize = [0, 0];
 	
 	this.onWindowResize = function() {
 		currentScene.onWindowResize();
-		if (renderer != undefined)
+		if (renderer != undefined) {
 			renderer.setSize( container.clientWidth, container.clientHeight );
+			currentSize[0] = renderer.getSize().width;
+			currentSize[1] = renderer.getSize().height;
+		}
 	}
 	
 	this.initialiseVisualisation = function() {
 		renderer = new THREE.WebGLRenderer({ antialias: true });
-		renderer.setSize( container.clientWidth, container.clientHeight );
-		renderer.domElement.addEventListener( 'resize', _this.onWindowResize, false );
 		container.appendChild( renderer.domElement );
 		renderer.setClearColor( 0xffffff, 1);
 		var scene = _this.createScene("default");
@@ -1184,6 +1185,7 @@ Zinc.Renderer = function (containerIn, window) {
 				oldScene.setInteractiveControlEnable(false);
 			}
 			currentScene.setInteractiveControlEnable(true);
+			_this.onWindowResize();
 		}
 	}
 	
@@ -1345,6 +1347,9 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	this.render = function() {
+		if (currentSize[0] != container.clientWidth || currentSize[1] != container.clientHeight ) {
+			_this.onWindowResize();
+		}
 		var delta = clock.getDelta();
 		currentScene.renderGeometries(playRate, delta, _this.playAnimation);
 	    for(i = 0; i < additionalActiveScenes.length; i++) {
