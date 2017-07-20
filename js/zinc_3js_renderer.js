@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '23' };
+var Zinc = { REVISION: '24' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -75,7 +75,7 @@ Zinc.Glyphset = function()  {
 		group.visible = flag;
 	}
 	
-	this.load = function(glyphsetData, glyphURL) {
+	this.load = function(glyphsetData, glyphURL, finishCallback) {
 		axis1s = glyphsetData.axis1;
 		axis2s = glyphsetData.axis2;
 		axis3s = glyphsetData.axis3;
@@ -95,7 +95,7 @@ Zinc.Glyphset = function()  {
 		offset = glyphsetData.metadata.offset;
 		scaleFactors = glyphsetData.metadata.scale_factors;
 		var loader = new THREE.JSONLoader( true );
-		loader.load( glyphURL, meshloader());
+		loader.load( glyphURL, meshloader(finishCallback));
 	}
 		
 	var resolve_glyph_axes = function(point, axis1, axis2, axis3, scale)
@@ -383,13 +383,15 @@ Zinc.Glyphset = function()  {
 		_this.ready = true;
 	}
 	
-	var meshloader = function() {
+	var meshloader = function(finishCallback) {
 	    return function(geometry, materials){
 	    	var material = undefined;
 	    	if (materials && materials[0]) {
 	    		material = materials[0];
 	    	}
 	    	createGlyphs(geometry, material);
+	    	if (finishCallback != undefined && (typeof finishCallback == 'function'))
+        		finishCallback(_this);
 	    }
 	}
 	
@@ -793,30 +795,30 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
-	var loadGlyphset = function(glyphsetData, glyphurl, groupName)
+	var loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback)
 	{
 		var newGlyphset = new Zinc.Glyphset();
         newGlyphset.duration = 3000;
-        newGlyphset.load(glyphsetData, glyphurl);
+        newGlyphset.load(glyphsetData, glyphurl, finishCallback);
         newGlyphset.groupName = groupName;
         var group = newGlyphset.getGroup()
         scene.add( group );
         zincGlyphsets.push ( newGlyphset ) ;
 	}
 	
-	var onLoadGlyphsetReady = function(xmlhttp, glyphurl, groupName) {
+	var onLoadGlyphsetReady = function(xmlhttp, glyphurl, groupName, finishCallback) {
 		return function() {
 			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
 				var glyphsetData = JSON.parse(xmlhttp.responseText);
-	        	loadGlyphset(glyphsetData, glyphurl, groupName);
+	        	loadGlyphset(glyphsetData, glyphurl, groupName, finishCallback);
 			}
 		}
 	}
 	
-	this.loadGlyphsetURL = function(metaurl, glyphurl, groupName)
+	this.loadGlyphsetURL = function(metaurl, glyphurl, groupName, finishCallback)
 	{
 		var xmlhttp = new XMLHttpRequest();
-		xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl, groupName);
+		xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl, groupName, finishCallback);
 		xmlhttp.open("GET", metaurl, true);
 		xmlhttp.send();
 	}
@@ -843,7 +845,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 			if (item.Type == "Surfaces") {
 				loadMetaModel(item.URL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
 			} else if (item.Type == "Glyph") {
-				_this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL, item.GroupName);
+				_this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL, item.GroupName, finishCallback);
 			}
 		}
 	}
@@ -855,7 +857,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		        var metadata = JSON.parse(xmlhttp.responseText);
 		        var numberOfObjects = metadata.length;
 		        for (i=0; i < numberOfObjects; i++)
-		        	readMetadataItem(metadata[i], finishCallback)
+		        	readMetadataItem(metadata[i], finishCallback);
 		    }
 		}
 		requestURL = url
