@@ -20,6 +20,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	this.tumble_rate = 1.5;
 	this.pointer_x = 0;
 	this.pointer_y = 0;
+	this.pointer_x_start = 0;
+	this.pointer_y_start = 0;
 	this.previous_pointer_x = 0;
 	this.previous_pointer_y = 0;
 	this.near_plane_fly_debt = 0.0;
@@ -38,6 +40,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	var smoothCameraTransitionObject = undefined;
 	var cameraAutoTumbleObject = undefined
 	this._state = STATE.NONE;
+	var zincRayCaster = undefined;
 	this.targetTouchId = -1;
 	
 	this.onResize = function() {
@@ -56,6 +59,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	    }
 		_this.pointer_x = event.clientX;
 		_this.pointer_y = event.clientY;
+		_this.pointer_x_start = _this.pointer_x;
+		_this.pointer_y_start = _this.pointer_y;
 		_this.previous_pointer_x = _this.pointer_x;
 		_this.previous_pointer_y= _this.pointer_y;
 	}
@@ -67,14 +72,21 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	
 	function onDocumentMouseUp( event ) {
 		_this._state = STATE.NONE;
+		if (zincRayCaster !== undefined) {
+			if (_this.pointer_x_start==event.clientX && _this.pointer_y_start==event.clientY) {
+				zincRayCaster.pick(_this, event.clientX, event.clientY, _this.renderer);
+			}
+		}
 	}
 	
 	function onDocumentTouchStart( event ) {
-		var len = event.touches.length
+		var len = event.touches.length;
 		if (len == 1) {
 			_this._state = STATE.TOUCH_ROTATE;
 			_this.pointer_x = event.touches[0].clientX;
 			_this.pointer_y = event.touches[0].clientY;
+			_this.pointer_x_start = _this.pointer_x;
+			_this.pointer_y_start = _this.pointer_y;
 			_this.previous_pointer_x = _this.pointer_x;
 			_this.previous_pointer_y= _this.pointer_y;
 		} else if (len == 2) {
@@ -122,6 +134,13 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		_this.touchZoomDistanceStart = _this.touchZoomDistanceEnd = 0;
 		_this.targetTouchId = -1;
 		_this._state = STATE.NONE;
+		if (len == 1) {
+			if (zincRayCaster !== undefined) {
+				if (_this.pointer_x_start==event.touches[0].clientX && _this.pointer_y_start==event.touches[0].clientY) {
+					zincRayCaster.pick(_this.cameraObject, event.touches[0].clientX, event.touches[0].clientY, _this.renderer);
+				}
+			}
+		}
 	}		
 
 
@@ -658,6 +677,15 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		cameraAutoTumbleObject = undefined;
 	}
 	
+	this.enablePicking = function (sceneIn, callbackFunctionIn) {
+		if (zincRayCaster == undefined)
+			zincRayCaster = new ZincRayCaster(sceneIn, callbackFunctionIn, _this.renderer);
+	}
+	
+	this.disablePicking = function () {
+		zincRayCaster = undefined;
+	}
+	
 	this.updateAutoTumble = function() {
 		if (cameraAutoTumbleObject)
 			cameraAutoTumbleObject.requireUpdate = true;
@@ -724,6 +752,38 @@ ZincSmoothCameraTransition = function (startingViewport, endingViewport, targetC
 	}
 	
 };
+
+ZincRayCaster = function (sceneIn, callbackFunctionIn, rendererIn) {
+	var scene = sceneIn;
+	var renderer = rendererIn;
+	var callbackFunction = callbackFunctionIn;
+	var enabled = true;
+	var raycaster = new THREE.Raycaster();
+	var mouse = new THREE.Vector2();
+	var _this = this;
+	
+	_this.enable = function() {
+		enable = true;
+	}
+
+	_this.disable = function() {
+		disable = true;
+	}
+	
+	_this.pick = function(zincCamera, x, y) {
+		if (renderer && scene && zincCamera) {
+			var rect = zincCamera.domElement.getBoundingClientRect();
+			mouse.x = ((x - rect.left) / rect.width) * 2 - 1;
+			mouse.y = -((y - rect.top) / rect.height) * 2 + 1;
+			var threejsScene = scene.getThreeJSScene();
+			renderer.render(threejsScene, zincCamera.cameraObject);
+			raycaster.setFromCamera( mouse, zincCamera.cameraObject);
+			var intersects = raycaster.intersectObjects( threejsScene.children, true );
+			callbackFunction(intersects);
+		}
+	}
+};
+
 
 ZincCameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, targetCameraIn) {
 	var tumbleAxis = new THREE.Vector3();

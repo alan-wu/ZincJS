@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '24' };
+var Zinc = { REVISION: '25' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
