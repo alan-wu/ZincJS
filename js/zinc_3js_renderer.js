@@ -383,6 +383,12 @@ Zinc.Glyphset = function()  {
 		_this.ready = true;
 	}
 	
+	this.forEachGlyph = function(callbackFunction) {
+		for ( var i = 0; i < glyphList.length; i ++ ) {
+			callbackFunction(glyphList[i]);
+		}
+	}
+	
 	var meshloader = function(finishCallback) {
 	    return function(geometry, materials){
 	    	var material = undefined;
