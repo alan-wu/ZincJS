@@ -476,10 +476,13 @@ Zinc.Geometry = function () {
 	}
 	
 	this.setMorphTime = function(time){
+		console.log(time);
 		if (_this.clipAction){
 			var ratio = time / _this.duration;
 			var actualDuration = _this.clipAction._clip.duration;
+			console.log(_this.clipAction._clip.tracks);
 			_this.clipAction.time = ratio * actualDuration;
+			console.log(_this.clipAction.time);
 			if (_this.clipAction.time > actualDuration)
 				_this.clipAction.time = actualDuration;
 			if (_this.clipAction.time < 0.0)
@@ -604,8 +607,9 @@ Zinc.Geometry = function () {
 	}
 	
 	this.getBoundingBox = function() {
-		if (_this.morph)
+		if (_this.morph) {
 			return new THREE.Box3().setFromObject(_this.morph);
+		}
 		return undefined;
 	}
 	
@@ -662,6 +666,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	var stereoEffectFlag = false;
 	var stereoEffect = undefined;
 	var _this = this;
+	this.autoClearFlag = true;
 	
 	this.getDownloadProgress = function() {
 		var totalSize = 0;
@@ -828,12 +833,12 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		xmlhttp.open("GET", metaurl, true);
 		xmlhttp.send();
 	}
-	
-	var loadMetaModel = function(url, timeEnabled, morphColour, groupName, finishCallback)
+		
+	var loadMetaModel = function(url, timeEnabled, morphColour, groupName, fileFormat, finishCallback)
 	{
 		num_inputs += 1;
         var modelId = nextAvailableInternalZincModelId();
-        var loader = new THREE.JSONLoader( true );
+
         var colour = Zinc.defaultMaterialColor;
         var opacity = Zinc.defaultOpacity;
         var localTimeEnabled = 0;
@@ -842,6 +847,16 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         var localMorphColour = 0;
         if (morphColour != undefined)
         	localMorphColour = morphColour ? true: false;
+        var loader = new THREE.JSONLoader( true );
+        if (fileFormat !== undefined) {
+        	if (fileFormat == "STL") {
+        		loader = new THREE.STLLoader( );
+        	} else if (fileFormat == "OBJ") {
+        		loader = new THREE.OBJLoader( );
+        		loader.load( url, objloader(modelId, colour, opacity, localTimeEnabled,
+        			localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError); 
+        	}
+        }
         loader.load( url, meshloader(modelId, colour, opacity, localTimeEnabled,
         		localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError); 
 	}
@@ -849,11 +864,31 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	var readMetadataItem = function(item, finishCallback) {
 		if (item) {
 			if (item.Type == "Surfaces") {
-				loadMetaModel(item.URL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
+				loadMetaModel(item.URL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback);
 			} else if (item.Type == "Glyph") {
 				_this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL, item.GroupName, finishCallback);
 			}
 		}
+	}
+	
+	this.loadSTL = function(url, groupName, finishCallback) {
+		num_inputs += 1;
+        var modelId = nextAvailableInternalZincModelId();
+        var colour = Zinc.defaultMaterialColor;
+        var opacity = Zinc.defaultOpacity;
+		var loader = new THREE.STLLoader( );
+		loader.load( url, meshloader(modelId, colour, opacity, false,
+        	false, groupName, finishCallback)); 
+	}
+	
+	this.loadOBJ = function(url, groupName, finishCallback) {
+		num_inputs += 1;
+        var modelId = nextAvailableInternalZincModelId();
+        var colour = Zinc.defaultMaterialColor;
+        var opacity = Zinc.defaultOpacity;
+		var loader = new THREE.OBJLoader( );
+		loader.load( url, meshloader(modelId, colour, opacity, false,
+        	false, groupName, finishCallback)); 
 	}
 
 	this.loadMetadataURL = function(url, finishCallback) {
@@ -945,6 +980,46 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		centroid = [ centerX, centerY, centerZ]
 	}
 	
+	var addMeshToZincGeometry = function(mesh, modelId, localTimeEnabled, localMorphColour) {
+		var newGeometry = new Zinc.Geometry();
+		scene.add( mesh );
+		var mixer = new THREE.AnimationMixer(mesh);
+		var clipAction = undefined;
+		var geometry = mesh.geometry;
+		if (geometry.animations && geometry.animations[0] != undefined)
+		{
+			var action = THREE.AnimationClip.CreateFromMorphTargetSequence( 'zinc_animations', geometry.morphTargets, 30 );
+			var clipAction = mixer.clipAction( action ).setDuration(duration).play();
+		}
+		newGeometry.duration = 3000;
+		newGeometry.geometry = geometry;
+		newGeometry.timeEnabled = localTimeEnabled;
+		newGeometry.morphColour = localMorphColour;
+		newGeometry.modelId = modelId;
+		newGeometry.morph = mesh;
+		newGeometry.mixer = mixer;
+		newGeometry.clipAction = clipAction;
+		zincGeometries.push ( newGeometry ) ;
+	
+		return newGeometry;
+	}
+	
+	var objloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, groupName, finishCallback) {
+	    return function(object){
+	    	num_inputs++;
+	    	object.traverse( function (child) {
+	    		if ( child instanceof THREE.Mesh ) {    		
+	    			var zincGeometry = addMeshToZincGeometry(child, modelId, localTimeEnabled, localMorphColour);
+			    	if (zincGeometry.morph)
+			    		zincGeometry.morph.name = groupName;
+			    	zincGeometry.groupName = groupName;
+					if (finishCallback != undefined && (typeof finishCallback == 'function'))
+						finishCallback(zincGeometry);
+	    		}
+	    	});
+		}
+	}
+	
 	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback, materialIn) {
 		if (external == undefined)
 			external = true	
@@ -953,24 +1028,31 @@ Zinc.Scene = function ( containerIn, rendererIn) {
     	isTransparent = false;
 		if (1.0 > opacity)
 			isTransparent = true;
+
 		var material = undefined;
 		if (materialIn) {
 			material = materialIn;
 			material.morphTargets = localTimeEnabled;
 		} else {
-			material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
+			if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined)
+				material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, transparent: isTransparent, opacity: opacity });
+			else
+				material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
 		}
-		material.side = THREE.DoubleSide;
-		var mesh = undefined;
-		mesh = new THREE.Mesh( geometry, material );
 		
 		if (geometry instanceof THREE.Geometry ) {
 			geometry.computeMorphNormals();
 		}
 		
-		setPositionOfObject(mesh);
-		scene.add( mesh );
+		material.side = THREE.DoubleSide;
+		var mesh = undefined;
+		mesh = new THREE.Mesh( geometry, material );
+		var newGeometry = addMeshToZincGeometry(mesh, modelId, localTimeEnabled, localMorphColour);
+
+
+		/*
 		var newGeometry = new Zinc.Geometry();
+		scene.add( mesh );
 		var mixer = new THREE.AnimationMixer(mesh);
 		var clipAction = undefined;
 		if (geometry.animations && geometry.animations[0] != undefined)
@@ -987,6 +1069,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		newGeometry.mixer = mixer;
 		newGeometry.clipAction = clipAction;
 		zincGeometries.push ( newGeometry ) ;
+		*/
 		
 		if (finishCallback != undefined && (typeof finishCallback == 'function'))
 			finishCallback(newGeometry);
@@ -1000,6 +1083,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	    		material = materials[0];
 	    	}
 	    	var zincGeometry = _this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material);
+	    	if (zincGeometry.morph)
+	    		zincGeometry.morph.name = groupName;
 	    	zincGeometry.groupName = groupName;
 			if (finishCallback != undefined && (typeof finishCallback == 'function'))
 				finishCallback(zincGeometry);
@@ -1087,7 +1172,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		        fullScene.add(sceneItem.getThreeJSScene());
 		    }
 		}
-		renderer.clear();
+		if (_this.autoClearFlag)
+			renderer.clear();
 		if (stereoEffectFlag && stereoEffect) {
 			stereoEffect.render(fullScene, _this.camera);
 		}
@@ -1135,7 +1221,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	this.isStereoEffectEnable = function() {
 		return stereoEffectFlag;
 	}
-
+	
 }
 
 Zinc.Renderer = function (containerIn, window) {

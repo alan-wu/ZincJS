@@ -1,9 +1,9 @@
 ZincViewport = function () {
-	this.nearPlane = 0.1943;
-	this.farPlane = 7.8852;
-	this.eyePosition = [0.0, -3.88552, 0.0];
+	this.nearPlane = 0.1;
+	this.farPlane = 2000.0;
+	this.eyePosition = [0.0, 0.0, 0.0];
 	this.targetPosition = [0.0, 0.0, 0.0];
-	this.upVector = [ 0.0, 0.0, 1.0];
+	this.upVector = [ 0.0, 1.0, 0.0];
 	var _this = this;
 }
 
@@ -45,7 +45,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	
 	this.onResize = function() {
 		if (rect)
-			rect = _this.domElement.getBoundingClientRect();
+			rect = undefined;
 	}
 	
 	function onDocumentMouseDown( event ) {
@@ -353,10 +353,11 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	};
 	
 	this.updateDirectionalLight = function() {
-		if (_this.directionalLight != 0)
+		if (_this.directionalLight != 0) {
 			_this.directionalLight.position.set(_this.cameraObject.position.x,
 					_this.cameraObject.position.y,
 					_this.cameraObject.position.z);
+		}
 	}
 	
 	
