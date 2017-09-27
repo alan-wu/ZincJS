@@ -1259,7 +1259,16 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	this.initialiseVisualisation = function() {
-		renderer = new THREE.WebGLRenderer({ antialias: true });
+
+                var onMobile = false;
+                if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                        onMobile = true;
+                }
+                if (onMobile)
+                        renderer = new THREE.WebGLRenderer({ antialias: false});
+                else {
+                        renderer = new THREE.WebGLRenderer({ antialias: true});
+                }
 		container.appendChild( renderer.domElement );
 		renderer.setClearColor( 0xffffff, 1);
 		var scene = _this.createScene("default");
