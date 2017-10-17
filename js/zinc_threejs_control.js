@@ -42,6 +42,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	var zincRayCaster = undefined;
 	this.targetTouchId = -1;
 	var rect = undefined;
+	if (_this.cameraObject.target === undefined)
+		_this.cameraObject.target = new THREE.Vector3( 0, 0, 0  );
 	
 	this.onResize = function() {
 		if (rect)
@@ -182,7 +184,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			var dz=translate_rate*((1.0-fact)*(new_near.z-old_near.z) + fact*(new_far.z-old_far.z));
 			_this.cameraObject.position.set(_this.cameraObject.position.x - dx, _this.cameraObject.position.y - dy, _this.cameraObject.position.z - dz);
 			_this.updateDirectionalLight();
-			_this.cameraObject.target = new THREE.Vector3(_this.cameraObject.target.x - dx, _this.cameraObject.target.y - dy, _this.cameraObject.target.z - dz);
+			_this.cameraObject.target.set(_this.cameraObject.target.x - dx, _this.cameraObject.target.y - dy, _this.cameraObject.target.z - dz);
 		}
 		_this.previous_pointer_x = _this.pointer_x;
 		_this.previous_pointer_y = _this.pointer_y;
@@ -463,7 +465,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 					current_positions.push(proportion * bot_pos[i] + (1.0 - proportion) * top_pos[i]);
 				}
 				_this.cameraObject.position.set(current_positions[0], current_positions[1], current_positions[2]);
-				_this.cameraObject.target = new THREE.Vector3(top_pos[0], top_pos[1], top_pos[2]);
+				_this.cameraObject.target.set(top_pos[0], top_pos[1], top_pos[2]);
 				if (updateLightWithPathFlag) {
 					_this.directionalLight.position.set(current_positions[0], current_positions[1], current_positions[2]);
 					_this.directionalLight.target.position.set(top_pos[0], top_pos[1], top_pos[2]);
@@ -551,7 +553,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		_this.cameraObject.far = defaultViewport.farPlane;
 		_this.cameraObject.position.set( defaultViewport.eyePosition[0], defaultViewport.eyePosition[1],
 				defaultViewport.eyePosition[2]);
-		_this.cameraObject.target = new THREE.Vector3( defaultViewport.targetPosition[0],
+		_this.cameraObject.target.set( defaultViewport.targetPosition[0],
 				defaultViewport.targetPosition[1], defaultViewport.targetPosition[2]  );
 		_this.cameraObject.up.set( defaultViewport.upVector[0],  defaultViewport.upVector[1],
 				defaultViewport.upVector[2]);
@@ -581,7 +583,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			_this.cameraObject.position.set( newViewport.eyePosition[0], 
 					newViewport.eyePosition[1], newViewport.eyePosition[2]);
 		if (newViewport.targetPosition)
-			_this.cameraObject.target = new THREE.Vector3( newViewport.targetPosition[0],
+			_this.cameraObject.target.set( newViewport.targetPosition[0],
 					newViewport.targetPosition[1], newViewport.targetPosition[2]  );
 		if (newViewport.upVector)
 			_this.cameraObject.up.set( newViewport.upVector[0], newViewport.upVector[1],
@@ -743,7 +745,7 @@ ZincSmoothCameraTransition = function (startingViewport, endingViewport, targetC
 		                      startingTargetPosition[1] * (1.0 - ratio) + endingTargetPosition[1] * ratio,
 		                      startingTargetPosition[2] * (1.0 - ratio) + endingTargetPosition[2] * ratio];
 		targetCamera.cameraObject.position.set( eyePosition[0], eyePosition[1], eyePosition[2]);
-		targetCamera.cameraObject.target = new THREE.Vector3( targetPosition[0], targetPosition[1], targetPosition[2]  );
+		targetCamera.cameraObject.target.set( targetPosition[0], targetPosition[1], targetPosition[2]  );
 	}
 	
 	this.update = function (delta) {
