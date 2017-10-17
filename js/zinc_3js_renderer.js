@@ -1,4 +1,4 @@
-var Zinc = { REVISION: '25' };
+var Zinc = { REVISION: '26' };
 
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
@@ -366,6 +366,12 @@ Zinc.Glyphset = function()  {
 			}
 			updateGlyphsetHexColors(current_colors);
 		}
+		current_positions = null;
+		current_axis1s = null;
+		current_axis2s = null;
+		current_axis3s = null;
+		current_scales = null;
+		current_colors = null;
 	}
 	
 	var createGlyphs = function(geometry, material) {
@@ -476,13 +482,10 @@ Zinc.Geometry = function () {
 	}
 	
 	this.setMorphTime = function(time){
-		console.log(time);
-		if (_this.clipAction){
+		if (_this.clipAction) {
 			var ratio = time / _this.duration;
 			var actualDuration = _this.clipAction._clip.duration;
-			console.log(_this.clipAction._clip.tracks);
 			_this.clipAction.time = ratio * actualDuration;
-			console.log(_this.clipAction.time);
 			if (_this.clipAction.time > actualDuration)
 				_this.clipAction.time = actualDuration;
 			if (_this.clipAction.time < 0.0)
@@ -613,6 +616,17 @@ Zinc.Geometry = function () {
 		return undefined;
 	}
 	
+	this.dispose = function() {
+		_this.morph.geometry.dispose();
+		_this.morph.material.dispose();
+		_this.geometry = undefined;
+		_this.mixer = undefined;
+		_this.morph = undefined;
+		_this.clipAction = undefined;
+		_this.groupName = undefined;
+		_this = undefined;		
+	}
+	
 	this.render = function(delta, playAnimation) {
 		if (playAnimation == true) 
 		{
@@ -713,14 +727,14 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	
 	setupCamera = function() {
 		_this.camera = new THREE.PerspectiveCamera( 40, container.clientWidth / container.clientHeight, 0.0, 10.0);
-		  
 		_this.ambient = new THREE.AmbientLight( 0x202020 );
-		//scene.add( _this.ambient );
+		scene.add( _this.ambient );
 	
 		_this.directionalLight = new THREE.DirectionalLight( 0x777777  );
-		//scene.add( _this.directionalLight );
-	
-		zincCameraControls = new ZincCameraControls( _this.camera, rendererIn.domElement, rendererIn, scene )
+		scene.add( _this.directionalLight );
+
+		zincCameraControls = new ZincCameraControls( _this.camera, rendererIn.domElement, rendererIn, scene );
+
 		zincCameraControls.setDirectionalLight(_this.directionalLight);
 		zincCameraControls.resetView();
 	}
@@ -806,13 +820,33 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
+	this.findGeometriesWithGroupName = function(GroupName) {
+		var geometriesArray = [];
+		for ( var i = 0; i < zincGeometries.length; i ++ ) {
+			if (zincGeometries[i].groupName == GroupName) {
+				geometriesArray.push(zincGeometries[i]);
+			}
+		}
+		return geometriesArray;
+	}
+	
+	this.findGlyphsetsWithGroupName = function(GroupName) {
+		var glyphsetsArray = [];
+		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+			if (zincGlyphsets[i].groupName == GroupName) {
+				glyphsetsArray.push(zincGlyphsets[i]);
+			}
+		}
+		return glyphsetsArray;
+	}
+	
 	var loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback)
 	{
 		var newGlyphset = new Zinc.Glyphset();
         newGlyphset.duration = 3000;
         newGlyphset.load(glyphsetData, glyphurl, finishCallback);
         newGlyphset.groupName = groupName;
-        var group = newGlyphset.getGroup()
+        var group = newGlyphset.getGroup();
         scene.add( group );
         zincGlyphsets.push ( newGlyphset ) ;
 	}
@@ -854,7 +888,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         	} else if (fileFormat == "OBJ") {
         		loader = new THREE.OBJLoader( );
         		loader.load( url, objloader(modelId, colour, opacity, localTimeEnabled,
-        			localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError); 
+        			localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError);
+        		return;
         	}
         }
         loader.load( url, meshloader(modelId, colour, opacity, localTimeEnabled,
@@ -988,8 +1023,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		var geometry = mesh.geometry;
 		if (geometry.animations && geometry.animations[0] != undefined)
 		{
-			var action = THREE.AnimationClip.CreateFromMorphTargetSequence( 'zinc_animations', geometry.morphTargets, 30 );
-			var clipAction = mixer.clipAction( action ).setDuration(duration).play();
+			var clipAction = mixer.clipAction( geometry.animations[0] ).setDuration(duration).play();			
 		}
 		newGeometry.duration = 3000;
 		newGeometry.geometry = geometry;
@@ -1048,28 +1082,6 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		var mesh = undefined;
 		mesh = new THREE.Mesh( geometry, material );
 		var newGeometry = addMeshToZincGeometry(mesh, modelId, localTimeEnabled, localMorphColour);
-
-
-		/*
-		var newGeometry = new Zinc.Geometry();
-		scene.add( mesh );
-		var mixer = new THREE.AnimationMixer(mesh);
-		var clipAction = undefined;
-		if (geometry.animations && geometry.animations[0] != undefined)
-		{
-			var action = THREE.AnimationClip.CreateFromMorphTargetSequence( 'zinc_animations', geometry.morphTargets, 30 );
-			var clipAction = mixer.clipAction( action ).setDuration(duration).play();
-		}
-		newGeometry.duration = 3000;
-		newGeometry.geometry = geometry;
-		newGeometry.timeEnabled = localTimeEnabled;
-		newGeometry.morphColour = localMorphColour;
-		newGeometry.modelId = modelId;
-		newGeometry.morph = mesh;
-		newGeometry.mixer = mixer;
-		newGeometry.clipAction = clipAction;
-		zincGeometries.push ( newGeometry ) ;
-		*/
 		
 		if (finishCallback != undefined && (typeof finishCallback == 'function'))
 			finishCallback(newGeometry);
@@ -1147,12 +1159,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		if (zincGeometries.length == num_inputs && allGlyphsetsReady()) {		
 			for ( var i = 0; i < zincGeometries.length; i ++ ) {
 				/* check if morphColour flag is set */
-				zincGeometry = zincGeometries[i] ;
-				zincGeometry.render(playRate * delta, playAnimation);
-			}	
+				zincGeometries[i].render(playRate * delta, playAnimation);
+			}
 			for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
-				zincGlyphset = zincGlyphsets[i];
-				zincGlyphset.render(playRate * delta, playAnimation);
+				zincGlyphsets[i].render(playRate * delta, playAnimation);
 			}
 		}
 	}
@@ -1161,24 +1171,18 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return scene;
 	}
 	
-	this.render = function(renderer, additionalScenes) {
-		var fullScene = new THREE.Scene();
-		fullScene.add( _this.ambient );
-		fullScene.add( _this.directionalLight );
-		fullScene.add(scene);
-		if (additionalScenes !== undefined) {
-		    for(i = 0; i < additionalScenes.length; i++) {
-		        var sceneItem = additionalScenes[i];
-		        fullScene.add(sceneItem.getThreeJSScene());
-		    }
-		}
+	this.setAdditionalScenesGroup = function(scenesGroup) {
+		scene.add(scenesGroup);
+	}
+	
+	this.render = function(renderer) {
 		if (_this.autoClearFlag)
 			renderer.clear();
 		if (stereoEffectFlag && stereoEffect) {
-			stereoEffect.render(fullScene, _this.camera);
+			stereoEffect.render(scene, _this.camera);
 		}
 		else
-			renderer.render( fullScene, _this.camera );
+			renderer.render( scene, _this.camera );
 	}
 	
 	this.setInteractiveControlEnable = function(flag) {
@@ -1222,6 +1226,26 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return stereoEffectFlag;
 	}
 	
+	this.removeZincGeometry = function(zincGeometry) {
+		for ( var i = 0; i < zincGeometries.length; i ++ ) {
+			if (zincGeometry === zincGeometries[i]) {
+				scene.remove(zincGeometry.morph);
+				zincGeometries.splice(i,1);
+				zincGeometry.dispose();
+				return;
+			}
+		}
+	}
+	
+	this.removeZincGlyphset = function(zincGlyphset) {
+		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+			if (zincGlyphset === zincGlyphsets[i]) {
+				scene.remove(zincGlyphset.getGroup());
+				zincGlyphsets.splice(i,1);
+				return;
+			}
+		}
+	}
 }
 
 Zinc.Renderer = function (containerIn, window) {
@@ -1246,6 +1270,7 @@ Zinc.Renderer = function (containerIn, window) {
 	var cameraOrtho = undefined, sceneOrtho = undefined, logoSprite = undefined;
 	var sceneMap = [];
 	var additionalActiveScenes = [];
+	var scenesGroup = new THREE.Group();
 	var _this = this;
 	var currentSize = [0, 0];
 	
@@ -1259,16 +1284,15 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	this.initialiseVisualisation = function() {
-
-                var onMobile = false;
-                if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
-                        onMobile = true;
-                }
-                if (onMobile)
-                        renderer = new THREE.WebGLRenderer({ antialias: false});
-                else {
-                        renderer = new THREE.WebGLRenderer({ antialias: true});
-                }
+        var onMobile = false;
+        if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+                onMobile = true;
+        }
+        if (onMobile)
+                renderer = new THREE.WebGLRenderer({ antialias: false});
+        else {
+                renderer = new THREE.WebGLRenderer({ antialias: true});
+        }
 		container.appendChild( renderer.domElement );
 		renderer.setClearColor( 0xffffff, 1);
 		var scene = _this.createScene("default");
@@ -1288,6 +1312,7 @@ Zinc.Renderer = function (containerIn, window) {
 				oldScene.setInteractiveControlEnable(false);
 			}
 			currentScene.setInteractiveControlEnable(true);
+			currentScene.setAdditionalScenesGroup(scenesGroup);
 			_this.onWindowResize();
 		}
 	}
@@ -1399,6 +1424,10 @@ Zinc.Renderer = function (containerIn, window) {
 		}
 	}
 	
+	this.getPlayRate = function() {
+		return playRate;
+	}
+	
 	this.setPlayRate = function(playRateIn) {
 		playRate = playRateIn;
 	}
@@ -1468,7 +1497,7 @@ Zinc.Renderer = function (containerIn, window) {
         		preRenderCallbackFunctions[key].call();
         	}
     	}
-		currentScene.render(renderer, additionalActiveScenes);
+		currentScene.render(renderer);
 	}
 	
 	this.getThreeJSRenderer = function () {
@@ -1491,6 +1520,7 @@ Zinc.Renderer = function (containerIn, window) {
 	this.addActiveScene = function(additionalScene) {
 		if (!_this.isSceneActive(additionalScene)) {
 			additionalActiveScenes.push(additionalScene);
+			scenesGroup.add(additionalScene.getThreeJSScene());
 		}
 	}
 	
@@ -1499,12 +1529,16 @@ Zinc.Renderer = function (containerIn, window) {
 	        var sceneItem = additionalActiveScenes[i];
 	        if (sceneItem === additionalScene) {
 	        	additionalActiveScenes.splice(i, 1);
+	        	scenesGroup.remove(additionalScene.getThreeJSScene());
 	        	return;
 	        }
 	    }
 	}
 	
 	this.clearAllActiveScene = function() {
+		for (var i = 0; i < additionalActiveScenes.length; i++) {
+			scenesGroup.remove(additionalActiveScenes[i].getThreeJSScene());
+		}
 		additionalActiveScenes.splice(0,additionalActiveScenes.length);
 	}
 	
