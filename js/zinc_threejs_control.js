@@ -11,7 +11,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 
 	var _this = this;
 	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3 };
-	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5 };
+	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
 	this.cameraObject = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 	this.renderer = renderer;
@@ -37,7 +37,8 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	var defaultViewport = new ZincViewport();
 	var currentMode = MODE.DEFAULT;
 	var smoothCameraTransitionObject = undefined;
-	var cameraAutoTumbleObject = undefined
+	var cameraAutoTumbleObject = undefined;
+	var mouseScroll = 0;
 	this._state = STATE.NONE;
 	var zincRayCaster = undefined;
 	this.targetTouchId = -1;
@@ -154,7 +155,16 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 				}
 			}
 		}
-	}		
+	}
+	
+	function onDocumentWheelEvent( event ) {
+		if (rect === undefined)
+			rect = _this.domElement.getBoundingClientRect();
+		_this._state = STATE.SCROLL;
+		mouseScroll = mouseScroll + event.deltaY;
+		event.preventDefault(); 
+		event.stopImmediatePropagation();  
+	}	
 
 
 	function translate()
@@ -285,14 +295,13 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		var delta = 0;
 		if (_this._state === STATE.ZOOM)
 		{
-			delta=_this.previous_pointer_y-_this.pointer_y;
-		}
-		else
-		{
+			delta = _this.previous_pointer_y-_this.pointer_y;
+		} else if (_this._state === STATE.SCROLL) {
+			delta = mouseScroll;
+		} else {
 			delta = -1.0 * (_this.touchZoomDistanceEnd - _this.touchZoomDistanceStart);
 			_this.touchZoomDistanceStart = _this.touchZoomDistanceEnd;
 		}
-
 		return delta;
 	}
 	
@@ -348,6 +357,9 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			_this.previous_pointer_x = _this.pointer_x;
 			_this.previous_pointer_y = _this.pointer_y;
 		}
+		if (_this._state === STATE.SCROLL) {
+			mouseScroll = 0;
+		}
 	}
 	
 	this.setDirectionalLight = function (directionalLightIn) {
@@ -372,6 +384,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.addEventListener( 'touchstart', onDocumentTouchStart, false);
 			this.domElement.addEventListener( 'touchmove', onDocumentTouchMove, false);
 			this.domElement.addEventListener( 'touchend', onDocumentTouchEnd, false);
+			this.domElement.addEventListener( 'wheel', onDocumentWheelEvent, false);
 			this.domElement.addEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
 	    }
 	}
@@ -385,6 +398,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.removeEventListener( 'touchstart', onDocumentTouchStart, false);
 			this.domElement.removeEventListener( 'touchmove', onDocumentTouchMove, false);
 			this.domElement.removeEventListener( 'touchend', onDocumentTouchEnd, false);
+			this.domElement.removeEventListener( 'wheel', onDocumentWheelEvent, false);
 			this.domElement.removeEventListener( 'contextmenu', function ( event ) { event.preventDefault(); }, false );
 	    }
 	}
@@ -494,15 +508,16 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 				tumble();
 			} else if ((_this._state === STATE.PAN) || (_this._state === STATE.TOUCH_PAN)){
 				translate();
-			} else if ((_this._state === STATE.ZOOM) || (_this._state === STATE.TOUCH_ZOOM)){
+			} else if ((_this._state === STATE.ZOOM) || (_this._state === STATE.TOUCH_ZOOM) || (_this._state === STATE.SCROLL)){
 				flyZoom();
 			}
 			if (_this._state !== STATE.NONE) {
 				if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject &&
 						cameraAutoTumbleObject.stopOnCameraInput) {
-					_this.stopAutoTumble();
 				}
 			}
+			if (_this._state === STATE.SCROLL)
+				_this._state = STATE.NONE;
 		}
 		if (deviceOrientationControl) {
 			deviceOrientationControl.update();
