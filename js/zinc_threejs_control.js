@@ -161,7 +161,12 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		if (rect === undefined)
 			rect = _this.domElement.getBoundingClientRect();
 		_this._state = STATE.SCROLL;
-		mouseScroll = mouseScroll + event.deltaY;
+		var changes = 0;
+		if (event.deltaY > 0)
+			changes = 100;
+		else if (event.deltaY < 0)
+			changes = -100;
+		mouseScroll = mouseScroll + changes;
 		event.preventDefault(); 
 		event.stopImmediatePropagation();  
 	}	
