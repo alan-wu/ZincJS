@@ -27,6 +27,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	this.touchZoomDistanceStart = 0;
 	this.touchZoomDistanceEnd = 0;
 	this.directionalLight = 0;
+	this.scrollRate = 50;
 	var duration = 3000;
 	var inbuildTime = 0;
 	var cameraPath = undefined;
@@ -163,9 +164,9 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		_this._state = STATE.SCROLL;
 		var changes = 0;
 		if (event.deltaY > 0)
-			changes = 100;
+			changes = _this.scrollRate;
 		else if (event.deltaY < 0)
-			changes = -100;
+			changes = _this.scrollRate * -1;
 		mouseScroll = mouseScroll + changes;
 		event.preventDefault(); 
 		event.stopImmediatePropagation();  
