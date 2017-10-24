@@ -12,6 +12,10 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 	var _this = this;
 	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3 };
 	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
+	var CLICK_ACTION = {};
+	CLICK_ACTION.MAIN = STATE.ROTATE;
+	CLICK_ACTION.AUXILIARY = STATE.PAN;
+	CLICK_ACTION.SECONDARY = STATE.ZOOM;
 	this.cameraObject = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 	this.renderer = renderer;
@@ -52,17 +56,21 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			rect = undefined;
 	}
 	
+	this.setMouseButtonAction = function(buttonName, actionName) {
+		CLICK_ACTION[buttonName] = STATE[actionName];
+	}
+	
 	function onDocumentMouseDown( event ) {
 		if (rect === undefined)
 			rect = _this.domElement.getBoundingClientRect();
-		if (event.which == 1) { 
-	 		_this._state = STATE.ROTATE
-		} else if (event.which == 2) {
+		if (event.button == 0) { 
+	 		_this._state = CLICK_ACTION.MAIN;
+		} else if (event.button == 1) {
 			event.preventDefault();
-			_this._state = STATE.PAN
+			_this._state = CLICK_ACTION.AUXILIARY;
 	    } 
-	   	else if (event.which == 3) {
-	    	_this._state = STATE.ZOOM
+	   	else if (event.button == 2) {
+	    	_this._state = CLICK_ACTION.SECONDARY;
 	    }
 		_this.pointer_x = event.clientX - rect.left;
 		_this.pointer_y = event.clientY - rect.top;
