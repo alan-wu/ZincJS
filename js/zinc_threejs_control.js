@@ -100,6 +100,10 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 		}
 	}
 	
+	function onDocumentMouseLeave( event ) {
+		_this._state = STATE.NONE;
+	}
+	
 	function onDocumentTouchStart( event ) {
 		if (rect === undefined)
 			rect = _this.domElement.getBoundingClientRect();
@@ -395,6 +399,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
 			this.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
 			this.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
+			this.domElement.addEventListener( 'mouseleave', onDocumentMouseLeave, false );
 			this.domElement.addEventListener( 'touchstart', onDocumentTouchStart, false);
 			this.domElement.addEventListener( 'touchmove', onDocumentTouchMove, false);
 			this.domElement.addEventListener( 'touchend', onDocumentTouchEnd, false);
@@ -409,6 +414,7 @@ ZincCameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.removeEventListener( 'mousedown', onDocumentMouseDown, false );
 			this.domElement.removeEventListener( 'mousemove', onDocumentMouseMove, false );
 			this.domElement.removeEventListener( 'mouseup', onDocumentMouseUp, false );
+			this.domElement.removeEventListener( 'mouseleave', onDocumentMouseLeave, false );
 			this.domElement.removeEventListener( 'touchstart', onDocumentTouchStart, false);
 			this.domElement.removeEventListener( 'touchmove', onDocumentTouchMove, false);
 			this.domElement.removeEventListener( 'touchend', onDocumentTouchEnd, false);
