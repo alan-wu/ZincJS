@@ -636,7 +636,7 @@ Zinc.Geometry = function () {
 			else {
 				var targetTime = inbuildTime + delta;
 				if (targetTime > _this.duration)
-					targetTime = targetTime - _this.duration
+					targetTime = targetTime - _this.duration;
 				inbuildTime = targetTime;
 			}
 			if (_this.morphColour == 1) {
@@ -1021,9 +1021,15 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		var mixer = new THREE.AnimationMixer(mesh);
 		var clipAction = undefined;
 		var geometry = mesh.geometry;
-		if (geometry.animations && geometry.animations[0] != undefined)
+		if (geometry.morphTargets)
 		{
-			var clipAction = mixer.clipAction( geometry.animations[0] ).setDuration(duration).play();			
+			var animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences( geometry.morphTargets, 10, false );
+			if (animationClip && animationClip[0] != undefined) {
+				var clipAction =  mixer.clipAction(animationClip[0]).setDuration(duration);
+				clipAction.loop = THREE.loopOnce;
+				clipAction.clampWhenFinished = true;
+				clipAction.play();
+			}
 		}
 		newGeometry.duration = 3000;
 		newGeometry.geometry = geometry;
