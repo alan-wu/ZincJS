@@ -1023,7 +1023,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		var geometry = mesh.geometry;
 		if (geometry.morphTargets)
 		{
-			var animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences( geometry.morphTargets, 10, false );
+			var animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences( geometry.morphTargets, 10, true );
 			if (animationClip && animationClip[0] != undefined) {
 				var clipAction =  mixer.clipAction(animationClip[0]).setDuration(duration);
 				clipAction.loop = THREE.loopOnce;
