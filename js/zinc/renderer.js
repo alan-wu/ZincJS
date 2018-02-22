@@ -1,3 +1,15 @@
+/**
+ * Create a Zinc 3D renderer in the container provided.
+ * The primary function of a Zinc 3D renderer is to display the current
+ * scene (@link Zinc.Scene} set to the renderer and each scene may contain as 
+ * many geometries, glyphset and other primitives as the system can support.
+ * Zinc.Renderer also allows additional scenes to be displayed.
+ * 
+ * @param {Object} containerIn - Container to create the renderer on.
+ * 
+ * @author Alan Wu
+ * @return {Zinc.Renderer}
+ */
 Zinc.Renderer = function (containerIn, window) {
 
 	var animation = 0;
@@ -24,6 +36,9 @@ Zinc.Renderer = function (containerIn, window) {
 	var _this = this;
 	var currentSize = [0, 0];
 	
+	/** 
+	 * Call this to resize the renderer, this is normally call automatically.
+	 */
 	this.onWindowResize = function() {
 		currentScene.onWindowResize();
 		if (renderer != undefined) {
@@ -33,6 +48,9 @@ Zinc.Renderer = function (containerIn, window) {
 		}
 	}
 	
+	/**
+	 * Initialise the renderer and its visualisations.
+	 */
 	this.initialiseVisualisation = function() {
         var onMobile = false;
         if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
@@ -49,10 +67,20 @@ Zinc.Renderer = function (containerIn, window) {
 		_this.setCurrentScene(scene);
 	}
 	
+	/**
+	 * Get the current scene on display.
+	 * @return {Zinc.Scene};
+	 */
 	this.getCurrentScene = function() {
 		return currentScene;
 	}
 	
+	/**
+	 * Set the current scene on display.
+	 * 
+	 * @param {Zinc.Scene} sceneIn - The scene to be set, only scene created by this instance
+	 * of ZincRenderer is supported currently.
+	 */
 	this.setCurrentScene = function(sceneIn) {
 		if (sceneIn) {
 			_this.removeActiveScene(sceneIn);
@@ -67,10 +95,23 @@ Zinc.Renderer = function (containerIn, window) {
 		}
 	}
 	
+	/**
+	 * Return scene with the matching name if scene with that name has been created.
+	 * 
+	 * @param {String} name - Name to match
+	 * @return {Zinc.Scene}
+	 */
 	this.getSceneByName = function(name) {
 		return sceneMap[name];
 	}
 	
+	/**
+	 * Create a new scene with the provided name if scene with the same name exists,
+	 * return undefined.
+	 * 
+	 * @param {String} name - Name of the scene to be created.
+	 * @return {Zinc.Scene}
+	 */
 	this.createScene = function (name) {
 		if (sceneMap[name] != undefined){
 			return undefined;
@@ -101,10 +142,16 @@ Zinc.Renderer = function (containerIn, window) {
 		}
 	}
 	
+	/**
+	 * Reset the viewport of the current scene to its original state. 
+	 */
 	this.resetView = function()	{
 		currentScene.resetView();
 	}
 	
+	/**
+	 * Adjust zoom distance to include all primitives in scene but keep the lookat direction and up vectors.
+	 */
 	this.viewAll = function()	{
 		if (currentScene) {	
 			var boundingBox = currentScene.getBoundingBox();
@@ -120,6 +167,10 @@ Zinc.Renderer = function (containerIn, window) {
 		}
 	}
 	
+	/**
+	 * Load model(s) with the provided URLs and parameters. This only loads the geometry
+	 * without any of the metadata. Therefore, extra parameters should be provided.
+	 */
 	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback) {
 		currentScene.loadModelsURL(urls, colours, opacities, timeEnabled, morphColour, finishCallback);
 	}
@@ -128,16 +179,30 @@ Zinc.Renderer = function (containerIn, window) {
 		currentScene.loadView(viewData);
 	}
 	
+	/**
+	 * Load the viewport from an external location provided by the url.
+	 * @param {String} URL - address to the file containing viewport information.
+	 */
 	this.loadViewURL = function(url)
 	{
 		currentScene.loadViewURL(url);
 	}
 	
+	/**
+	 * Load the viewport and its model file from an external location provided by the url.
+	 * This methid is deprecated. Use Zinc.Scene.loadMetadataURL instead.
+	 * 
+	 * @param {String} URL - address to the file containing viewport and model information.
+	 * @deprecated
+	 */
 	this.loadFromViewURL = function(jsonFilePrefix, finishCallback)
 	{
 		currentScene.loadFromViewURL(jsonFilePrefix, finishCallback);
-	}	
+	}
 
+	/**
+	 * Manually add a zinc geometry to the scene.
+	 */
 	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback) {
 		return currentScene.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback);
 	}
@@ -146,14 +211,17 @@ Zinc.Renderer = function (containerIn, window) {
 		currentScene.updateDirectionalLight();
 	}
 	
-	/* function to make sure each vertex got the right colour at the right time,
-		it will linearly interpolate colour between time steps */
-
+	/**
+	 * Stop the animation and renderer to get into the render loop.
+	 */
 	this.stopAnimate = function () {
 		cancelAnimationFrame(animated_id);
    		animated_id = undefined;
 	}
 
+	/**
+	 * Start the animation and begin the rendering loop.
+	 */
 	this.animate = function() {
 		animated_id = requestAnimationFrame( _this.animate );
 		_this.render();
@@ -161,23 +229,41 @@ Zinc.Renderer = function (containerIn, window) {
 
 	var prevTime = Date.now();
 	
+	/**
+	 * Add a callback function which will be called everytime before the renderer renders its scene.
+	 * @param {Function} callbackFunction - callbackFunction to be added.
+	 * 
+	 * @return {Number}
+	 */
 	this.addPreRenderCallbackFunction = function(callbackFunction) {
 		preRenderCallbackFunctions_id = preRenderCallbackFunctions_id + 1;
-	
 		preRenderCallbackFunctions[preRenderCallbackFunctions_id] = callbackFunction;
 		return preRenderCallbackFunctions_id;
 	}
 	
+	/**
+	 * Remove a callback function that is previously added to the scene.
+	 * @param {Number} id - identifier of the previously added callback function.
+	 */
 	this.removePreRenderCallbackFunction = function(id) {
 		if (id in preRenderCallbackFunctions) {
    			delete preRenderCallbackFunctions[id];
 		}
 	}
 	
+	/**
+	 * Get the current play rate, playrate affects how fast an animated object animates.
+	 * Also see {@link Zinc.Scene#duration}.
+	 */
 	this.getPlayRate = function() {
 		return playRate;
 	}
 	
+	/**
+	 * Set the current play rate, playrate affects how fast an animated object animates.
+	 * @param {Number} PlayRateIn - value to set the playrate to.
+	 * Also see {@link Zinc.Scene#duration}.
+	 */
 	this.setPlayRate = function(playRateIn) {
 		playRate = playRateIn;
 	}
@@ -186,17 +272,35 @@ Zinc.Renderer = function (containerIn, window) {
 		return currentScene.getCurrentTime();
 	}
 	
+	
+	/**
+	 * Get the current play rate, playrate affects how fast an animated object animates.
+	 * Also see {@link Zinc.Scene#duration}.
+	 */
 	this.setMorphsTime = function(time) {
 		currentScene.setMorphsTime(time);
 	}
 	
+	/**
+	 * Get {Zinc.Geoemtry} by its id.
+	 * @return {Zinc.Geometry}
+	 */
 	this.getZincGeometryByID = function(id) {
 		return currentScene.getZincGeometryByID(id);
 	}	
+	
+	/**
+	 * Add {Three.Object} to the current scene.
+	 */
 	this.addToScene = function(object) {
 		currentScene.addObject(object)
 	}
 	
+	/**
+	 * Add {Three.Object} to the ortho scene, objects added to the ortho scene are rendered in
+	 * normalised coordinates and overlay on top of current scene.  
+	 * 
+	 */
 	this.addToOrthoScene = function(object) {
 		if (sceneOrtho == undefined)
 			sceneOrtho = new THREE.Scene();
@@ -250,10 +354,18 @@ Zinc.Renderer = function (containerIn, window) {
 		currentScene.render(renderer);
 	}
 	
+	/**
+	 * Get the internal {@link Three.Renderer}, to gain access to ThreeJS APIs.
+	 */
 	this.getThreeJSRenderer = function () {
 		return renderer;
 	}
 	
+	/**
+	 * Check if a scene is currently active.
+	 * @param {Zinc.Scene} sceneIn - Scene to check if it is currently
+	 * rendered.
+	 */
 	this.isSceneActive = function (sceneIn) {
 		if (currentScene === sceneIn) {
 			return true;
@@ -267,6 +379,11 @@ Zinc.Renderer = function (containerIn, window) {
 	    return false;
 	} 
 	
+	/**
+	 * Add additional active scene for rendering, this scene will also be rendered but 
+	 * viewport of the currentScene will be used. 
+	 * @param {Zinc.Scene} additionalScene - Scene to be added to the rendering.
+	 */
 	this.addActiveScene = function(additionalScene) {
 		if (!_this.isSceneActive(additionalScene)) {
 			additionalActiveScenes.push(additionalScene);
@@ -274,6 +391,11 @@ Zinc.Renderer = function (containerIn, window) {
 		}
 	}
 	
+	/**
+	 * Remove a currenrtly active scene from the renderer, this scene will also be rendered but 
+	 * viewport of the currentScene will be used. 
+	 * @param {Zinc.Scene} additionalScene - Scene to be removed from rendering.
+	 */
 	this.removeActiveScene = function(additionalScene) {
 	    for(i = 0; i < additionalActiveScenes.length; i++) {
 	        var sceneItem = additionalActiveScenes[i];
@@ -285,6 +407,9 @@ Zinc.Renderer = function (containerIn, window) {
 	    }
 	}
 	
+	/**
+	 * Clear all additional scenes from rendering except for curentScene.
+	 */
 	this.clearAllActiveScene = function() {
 		for (var i = 0; i < additionalActiveScenes.length; i++) {
 			scenesGroup.remove(additionalActiveScenes[i].getThreeJSScene());
@@ -292,6 +417,13 @@ Zinc.Renderer = function (containerIn, window) {
 		additionalActiveScenes.splice(0,additionalActiveScenes.length);
 	}
 	
+	/**
+	 * Transition from the current viewport to the endingScene's viewport in the specified duration.
+	 * 
+	 * @param {Zinc.Scene} endingScene - Viewport of this scene will be used as the destination.
+	 * @param {Number} duration - Amount of time to transition from current viewport to the 
+	 * endingScene's viewport.
+	 */
 	this.transitionScene = function(endingScene, duration) {
 		if (currentScene) {
 			var currentCamera = currentScene.getZincCameraControls();
