@@ -5,7 +5,7 @@
  * however they may have different transformations.
  * 
  * @author Alan Wu
- * @return {Zinc.Glyph}
+ * @return {Zinc.Glyphset}
  */
 Zinc.Glyphset = function()  {
 	var glyphList = [];
