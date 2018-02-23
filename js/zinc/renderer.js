@@ -143,14 +143,15 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	/**
-	 * Reset the viewport of the current scene to its original state. 
+	 * Reset the viewport of the current scene to its original state.
 	 */
 	this.resetView = function()	{
 		currentScene.resetView();
 	}
 	
 	/**
-	 * Adjust zoom distance to include all primitives in scene but keep the lookat direction and up vectors.
+	 * Adjust zoom distance to include all primitives in scene and also the additional scenes
+	 * but the lookat direction and up vectors will remain constant.
 	 */
 	this.viewAll = function()	{
 		if (currentScene) {	
@@ -168,20 +169,25 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	/**
-	 * Load model(s) with the provided URLs and parameters. This only loads the geometry
-	 * without any of the metadata. Therefore, extra parameters should be provided.
+	 * Load a legacy model(s) format with the provided URLs and parameters. This only loads the geometry
+	 * without any of the metadata. Therefore, extra parameters should be provided. This should be
+	 * called from {@link Zinc.Scene}.
+	 * 
+	 * @deprecated
 	 */
 	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback) {
 		currentScene.loadModelsURL(urls, colours, opacities, timeEnabled, morphColour, finishCallback);
 	}
 	
-	loadView = function(viewData) {
+	var loadView = function(viewData) {
 		currentScene.loadView(viewData);
 	}
 	
 	/**
-	 * Load the viewport from an external location provided by the url.
+	 * Load the viewport from an external location provided by the url. This should be
+	 * called from {@link Zinc.Scene};
 	 * @param {String} URL - address to the file containing viewport information.
+	 * @deprecated
 	 */
 	this.loadViewURL = function(url)
 	{
@@ -189,8 +195,10 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	/**
-	 * Load the viewport and its model file from an external location provided by the url.
-	 * This methid is deprecated. Use Zinc.Scene.loadMetadataURL instead.
+	 * Load a legacy file format containing the viewport and its model file from an external 
+	 * location provided by the url. Use the new metadata format with
+	 * {@link Zinc.Scene#loadMetadataURL} instead. This should be
+	 * called from {@link Zinc.Scene};
 	 * 
 	 * @param {String} URL - address to the file containing viewport and model information.
 	 * @deprecated
@@ -201,7 +209,10 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 
 	/**
-	 * Manually add a zinc geometry to the scene.
+	 * Manually add a zinc geometry to the scene. This should be
+	 * called from {@link Zinc.Scene};
+	 * 
+	 * @deprecated
 	 */
 	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback) {
 		return currentScene.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback);
@@ -282,7 +293,9 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	/**
-	 * Get {Zinc.Geoemtry} by its id.
+	 * Get {Zinc.Geoemtry} by its id. This should be called from {@link Zinc.Scene};
+	 * 
+	 * @depreacted
 	 * @return {Zinc.Geometry}
 	 */
 	this.getZincGeometryByID = function(id) {
@@ -332,6 +345,11 @@ Zinc.Renderer = function (containerIn, window) {
 				"images/abi_big_logo_transparent_small.png", undefined, createHUDSprites(logoSprite))
 	}
 	
+	/**
+	 * Render the current and all additional scenes. It will first update all geometries and glyphsets
+	 * in scenes, clear depth buffer and render the ortho scene, call the preRenderCallbackFunctions stack
+	 * and finally render the scenes.
+	 */
 	this.render = function() {
 		if (currentSize[0] != container.clientWidth || currentSize[1] != container.clientHeight ) {
 			_this.onWindowResize();
