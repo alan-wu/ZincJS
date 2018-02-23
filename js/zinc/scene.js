@@ -1,10 +1,25 @@
+/**
+ * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
+ * {@link ZincCameraControls} which controls the viewport and additional features.
+ * It is the main object used for controlling what is and what is not displayed
+ * on the renderer.
+ * 
+ * @param {Object} containerIn - Container to create the renderer on.
+ * @author Alan Wu
+ * @return {Zinc.Scene}
+ */
 Zinc.Scene = function ( containerIn, rendererIn) {
 	var container = containerIn;
-	//zincGeometries contains a tuple of the threejs mesh, timeEnabled, morphColour flag, unique id and morph
 	var zincGeometries = [];
 	var zincGlyphsets = [];
 	var scene = new THREE.Scene();
+	/**
+	 * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
+	 */
 	this.directionalLight = undefined;
+	/**
+	 * a {@link THREE.AmbientLight} for controlling the ambient lighting of this scene.
+	 */
 	this.ambient = undefined;
 	this.camera = undefined;
 	var duration = 3000;
@@ -20,6 +35,12 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	var _this = this;
 	this.autoClearFlag = true;
 	
+	/**
+	 * This function returns a three component array, which contains
+	 * [totalsize, totalLoaded and errorDownload] of all the downloads happening
+	 * in this scene.
+	 * @returns {Array} 
+	 */
 	this.getDownloadProgress = function() {
 		var totalSize = 0;
 		var totalLoaded = 0;
@@ -40,7 +61,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return [totalSize, totalLoaded, errorDownload];
 	}
 	
-	
+	//Stores the current progress of downloads
 	this.onProgress = function(id) {
 	    return function(xhr){
 	    	_this.progressMap[id] = [xhr.loaded, xhr.total];
@@ -51,19 +72,24 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		errorDownload = true;
 	};
 	
+	//called from Renderer when panel has been resized
 	this.onWindowResize = function() {
 		zincCameraControls.onResize();
 		_this.camera.aspect = container.clientWidth / container.clientHeight;
 		_this.camera.updateProjectionMatrix();
 	}
 	
+	/**
+	 * Reset the viewport of this scene to its original state. 
+	 */
 	this.resetView = function()
 	{
 		_this.onWindowResize();
 		zincCameraControls.resetView();
 	}
 	
-	setupCamera = function() {
+	//Setup the camera for this scene, it also initialise the lighting
+	var setupCamera = function() {
 		_this.camera = new THREE.PerspectiveCamera( 40, container.clientWidth / container.clientHeight, 0.0, 10.0);
 		_this.ambient = new THREE.AmbientLight( 0x202020 );
 		scene.add( _this.ambient );
@@ -79,7 +105,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	
 	setupCamera();
 	
-	nextAvailableInternalZincModelId = function() {
+	//Get the next available unique identifier for Zinc.Geometry
+	var nextAvailableInternalZincModelId = function() {
 		var idFound = true;
 		while (idFound == true) {
 			startingId++;
@@ -94,6 +121,12 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return startingId;
 	}
 	
+	/**
+	 * Load the viewport Data from the argument  {@link ZincViewport} and set it as 
+	 * the default viewport of this scene.
+	 * 
+	 * @param {ZincViewport} viewData - Viewport data to be loaded. 
+	 */
 	this.loadView = function(viewData)
 	{
 		var viewPort = new ZincViewport();
@@ -106,6 +139,11 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		zincCameraControls.resetView();
 	}
 	
+	/**
+	 * Get the bounding box of all the object in this scene only.
+	 * 
+	 * @returns {THREE.Box3} 
+	 */
 	this.getBoundingBox = function() {
 		var boundingBox1 = undefined, boundingBox2 = undefined;
 		for ( var i = 0; i < zincGeometries.length; i ++ ) {
@@ -127,6 +165,12 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return boundingBox1;
 	}
 	
+	/**
+	 * Adjust the viewport to display the desired volume provided by the bounding box.
+	 * 
+	 * @param {THREE.Box3} boundingBox - The bounding box which describes the volume of
+	 * which we the viewport should be displaying.
+	 */
 	this.viewAllWithBoundingBox = function(boundingBox) {
 		if (boundingBox) {
 			// enlarge radius to keep image within edge of window
@@ -141,23 +185,44 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 
+	/**
+	 * Adjust zoom distance to include all primitives in scene only.
+	 */
 	this.viewAll = function() {
 		var boundingBox = _this.getBoundingBox();
 		_this.viewAllWithBoundingBox(boundingBox);
 	}
 	
+	/**
+	 * A function which iterates through the list of geometries and call the callback
+	 * function with the geometries as the argument.
+	 * @param {Function} callbackFunction - Callback function with the geometry
+	 * as an argument.
+	 */
 	this.forEachGeometry = function(callbackFunction) {
 		for ( var i = 0; i < zincGeometries.length; i ++ ) {
 			callbackFunction(zincGeometries[i]);
 		}
 	}
 	
+	/**
+	 * A function which iterates through the list of glyphsets and call the callback
+	 * function with the glyphset as the argument.
+	 * @param {Function} callbackFunction - Callback function with the glyphset
+	 * as an argument.
+	 */
 	this.forEachGlyphset = function(callbackFunction) {
 		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
 			callbackFunction(zincGlyphsets[i]);
 		}
 	}
 	
+	/** 
+	 * Find and return all geometries in this scene with the matching GroupName.
+	 * 
+	 * @param {String} GroupName - Groupname to match with.
+	 * @returns {Array}
+	 */
 	this.findGeometriesWithGroupName = function(GroupName) {
 		var geometriesArray = [];
 		for ( var i = 0; i < zincGeometries.length; i ++ ) {
@@ -168,6 +233,12 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return geometriesArray;
 	}
 	
+	/** 
+	 * Find and return all glyphsets in this scene with the matching GroupName.
+	 * 
+	 * @param {String} GroupName - Groupname to match with.
+	 * @returns {Array}
+	 */
 	this.findGlyphsetsWithGroupName = function(GroupName) {
 		var glyphsetsArray = [];
 		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
@@ -178,7 +249,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return glyphsetsArray;
 	}
 	
-	var loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback)
+	//Load a glyphset into this scene.
+	loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback)
 	{
 		var newGlyphset = new Zinc.Glyphset();
         newGlyphset.duration = 3000;
@@ -189,6 +261,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         zincGlyphsets.push ( newGlyphset ) ;
 	}
 	
+	//Load a glyphset into this scene.
 	var onLoadGlyphsetReady = function(xmlhttp, glyphurl, groupName, finishCallback) {
 		return function() {
 			if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
@@ -198,6 +271,16 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
+	/**
+	 * Load a glyphset into this scene object.
+	 * 
+	 * @param {String} metaurl - Provide informations such as transformations, colours 
+	 * and others for each of the glyph in the glyphsset.
+	 * @param {String} glyphurl - regular json model file providing geometry of the glyph.
+	 * @param {String} groupName - name to assign the glyphset's groupname to.
+	 * @param {Function} finishCallback - Callback function which will be called
+	 * once the glyphset is succssfully load in.
+	 */
 	this.loadGlyphsetURL = function(metaurl, glyphurl, groupName, finishCallback)
 	{
 		var xmlhttp = new XMLHttpRequest();
@@ -205,7 +288,20 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		xmlhttp.open("GET", metaurl, true);
 		xmlhttp.send();
 	}
-		
+	
+	/**
+	 * Load a geometry into this scene, this is a subsequent called from 
+	 * {@link Zinc.Scene#loadMetadataURL}, although it can be used to read
+	 * in geometry into the scene externally.
+	 * 
+	 * @param {String} url - regular json model file providing geometry.
+	 * @param {Boolean} timeEnabled - Indicate if geometry morphing is enabled.
+	 * @param {Boolean} morphColour - Indicate if color morphing is enabled.
+	 * @param {STRING} groupName - name to assign the geometry's groupname to.
+	 * @param {STRING} fileFormat - name supported formats are STL, OBJ and JSON.
+	 * @param {Function} finishCallback - Callback function which will be called
+	 * once the geometry is succssfully loaded in.
+	 */
 	var loadMetaModel = function(url, timeEnabled, morphColour, groupName, fileFormat, finishCallback)
 	{
 		num_inputs += 1;
@@ -234,6 +330,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         		localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError); 
 	}
 	
+	//Function to process each of the metadata item. There are two types of metadata item,
+	//one for Zinc.Geometry and one for Zinc.Glyphset.
 	var readMetadataItem = function(item, finishCallback) {
 		if (item) {
 			if (item.Type == "Surfaces") {
@@ -244,6 +342,15 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
+	/**
+	 * Read a STL file into this scene, the geometry will be presented as
+	 * {@link Zinc.Geometry}. 
+	 * 
+	 * @param {STRING} url - location to the STL file.
+	 * @param {STRING} groupName - name to assign the geometry's groupname to.
+	 * @param {Function} finishCallback - Callback function which will be called
+	 * once the STL geometry is succssfully loaded.
+	 */
 	this.loadSTL = function(url, groupName, finishCallback) {
 		num_inputs += 1;
         var modelId = nextAvailableInternalZincModelId();
@@ -254,6 +361,15 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         	false, groupName, finishCallback)); 
 	}
 	
+	/**
+	 * Read a OBJ file into this scene, the geometry will be presented as
+	 * {@link Zinc.Geometry}. 
+	 * 
+	 * @param {STRING} url - location to the STL file.
+	 * @param {STRING} groupName - name to assign the geometry's groupname to.
+	 * @param {Function} finishCallback - Callback function which will be called
+	 * once the OBJ geometry is succssfully loaded.
+	 */
 	this.loadOBJ = function(url, groupName, finishCallback) {
 		num_inputs += 1;
         var modelId = nextAvailableInternalZincModelId();
@@ -264,6 +380,14 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         	false, groupName, finishCallback)); 
 	}
 
+	/**
+	 * Load a metadata file from the provided URL into this scene. Once
+	 * succssful scene proceeds to read each items into scene for visualisations.
+	 * 
+	 * @param {String} url - Location of the metafile
+	 * @param {Function} finishCallback - Callback function which will be called
+	 * for each glyphset and geometry that has been written in.
+	 */
 	this.loadMetadataURL = function(url, finishCallback) {
 		var xmlhttp = new XMLHttpRequest();
 		xmlhttp.onreadystatechange = function() {
@@ -279,6 +403,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		xmlhttp.send();			
 	}
 
+	/**
+	 * Load a legacy model(s) format with the provided URLs and parameters. This only loads the geometry
+	 * without any of the metadata. Therefore, extra parameters should be provided.
+	 */
 	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback)
 	{
 		var number = urls.length;
@@ -306,6 +434,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
         }
 	}
 	
+	/**
+	 * Load the viewport from an external location provided by the url.
+	 * @param {String} URL - address to the file containing viewport information.
+	 */
 	this.loadViewURL = function(url)
 	{
 		var xmlhttp = new XMLHttpRequest();
@@ -320,6 +452,14 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		xmlhttp.send();
 	}
 	
+	/**
+	 * Load a legacy file format containing the viewport and its model file from an external 
+	 * location provided by the url. Use the new metadata format with
+	 * {@link Zinc.Scene#loadMetadataURL} instead.
+	 * 
+	 * @param {String} URL - address to the file containing viewport and model information.
+	 * @deprecated
+	 */
 	this.loadFromViewURL = function(jsonFilePrefix, finishCallback)
 	{
 		var xmlhttp = new XMLHttpRequest();
@@ -353,6 +493,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		centroid = [ centerX, centerY, centerZ]
 	}
 	
+	//Internal function for creating a Zinc.Geometry object and add it into the scene for rendering.
 	var addMeshToZincGeometry = function(mesh, modelId, localTimeEnabled, localMorphColour) {
 		var newGeometry = new Zinc.Geometry();
 		scene.add( mesh );
@@ -382,6 +523,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return newGeometry;
 	}
 	
+	//Loader for the OBJ format, 
 	var objloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, groupName, finishCallback) {
 	    return function(object){
 	    	num_inputs++;
@@ -398,6 +540,9 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
+	/**
+	 * Add a user provided {THREE.Geometry} into  the scene as zinc geometry.
+	 */
 	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback, materialIn) {
 		if (external == undefined)
 			external = true	
@@ -432,6 +577,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return newGeometry;
 	}
 	
+	//Internal loader for a regular zinc geometry.
 	var meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, groupName, finishCallback) {
 	    return function(geometry, materials){
 	    	var material = undefined;
@@ -447,14 +593,23 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	    }
 	}
 	
+	//Update the directional light for this scene.
 	this.updateDirectionalLight = function() {
 		zincCameraControls.updateDirectionalLight();
 	}
 	
+	/**
+	 * Add any {THREE.Object} into this scene.
+	 * @param {THREE.Object} object - to be addded into this scene.
+	 */
 	this.addObject = function(object) {
-		scene.add(object)
+		scene.add(object);
 	}
 	
+	/**
+	 * Get the current time of the scene.
+	 * @return {Number}
+	 */
 	this.getCurrentTime = function() {
 		var currentTime = 0;
 		if (zincGeometries[0] != undefined)
@@ -465,6 +620,11 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return currentTime;
 	}
 	
+	
+	/**
+	 * Set the current time of all the geometries and glyphsets of this scene.
+	 * @param {Number} time  - Value to set the time to.
+	 */
 	this.setMorphsTime = function(time) {
 		for ( var i = 0; i < zincGeometries.length; i ++ ) {
 			zincGeometry = zincGeometries[i];
@@ -476,6 +636,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
+	/**
+	 * Get {Zinc.Geoemtry} in this scene by its id.
+	 * @return {Zinc.Geometry}
+	 */
 	this.getZincGeometryByID = function(id) {
 		for ( var i = 0; i < zincGeometries.length; i ++ ) {
 			if (zincGeometries[i].modelId == id)
@@ -487,6 +651,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		return null;
 	}
 	
+	// Used to check if all glyphsets are ready.
 	var allGlyphsetsReady = function() {
 		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
 			zincGlyphset = zincGlyphsets[i];
@@ -497,6 +662,10 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		
 	}
 	
+	/**
+	 * Update geometries and glyphsets based on the calculated time.
+	 * @private
+	 */
 	this.renderGeometries = function(playRate, delta, playAnimation) {
 		zincCameraControls.update(delta);
 		/* the following check make sure all models are loaded and synchonised */
@@ -511,14 +680,27 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
+	/**
+	 * Return the internal {THREE.Scene}.
+	 * @return {THREE.Scene}
+	 */
 	this.getThreeJSScene = function() {
 		return scene;
 	}
 	
+	/**
+	 * Set a group of scenes into this parent scene. This group of
+	 * scenes will also be rendered when this scene is rendered.
+	 * @private
+	 */
 	this.setAdditionalScenesGroup = function(scenesGroup) {
 		scene.add(scenesGroup);
 	}
 	
+	/**
+	 * Render the scene.
+	 * @private
+	 */
 	this.render = function(renderer) {
 		if (_this.autoClearFlag)
 			renderer.clear();
@@ -529,6 +711,12 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 			renderer.render( scene, _this.camera );
 	}
 	
+	/**
+	 * Enable or disable interactive control, this is on by default.
+	 * 
+	 * @param {Boolean} flag - Indicate either interactive control 
+	 * should be enabled or disabled.
+	 */
 	this.setInteractiveControlEnable = function(flag) {
 		if (flag == true)
 			zincCameraControls.enable();
@@ -536,22 +724,44 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 			zincCameraControls.disable();
 	}
 	
+	/**
+	 * Get the camera control of this scene.
+	 * @return {ZincCameraControls}
+	 */
 	this.getZincCameraControls = function () {
 		return zincCameraControls;
 	}
 	
+	/**
+	 * Get the internal {THREE.Scene}.
+	 * @return {THREE.Scene}
+	 */
 	this.getThreeJSScene = function() {
 		return scene;
 	}
 	
+	/**
+	 * Set the default duration value for geometries and glyphsets that are to be loaded
+	 * into this scene.
+	 * @param {Number} durationIn - duration of the scene.
+	 */
 	this.setDuration = function(durationIn) {
 		duration = durationIn;
 	}
 	
+	/**
+	 * Get the default duration value.
+	 * returns {Number}
+	 */
 	this.getDuration = function() {
 		return duration;
 	}
 	
+	/**
+	 * Enable or disable stereo effect of this scene.
+	 * @param {Boolean} flag - Indicate either stereo effect control 
+	 * should be enabled or disabled.
+	 */
 	this.setStereoEffectEnable = function(stereoFlag) {
 		if (stereoFlag == true) {
 			if (!stereoEffect) {
@@ -566,10 +776,19 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		stereoEffectFlag = stereoFlag;
 	}
 	
+	/**
+	 * Check if stereo effect is enabled.
+	 * @returns {Boolean}
+	 */
 	this.isStereoEffectEnable = function() {
 		return stereoEffectFlag;
 	}
 	
+	/**
+	 * Remove a ZincGeometry from this scene if it presents. This will eventually
+	 * destroy the geometry and free up the memory.
+	 * @param {Zinc.Geometry} zincGeometry - geometry to be removed from this scene.
+	 */
 	this.removeZincGeometry = function(zincGeometry) {
 		for ( var i = 0; i < zincGeometries.length; i ++ ) {
 			if (zincGeometry === zincGeometries[i]) {
@@ -581,6 +800,11 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
+	/**
+	 * Remove a ZincGlyphset from this scene if it presents. This will eventually
+	 * destroy the glyphset and free up the memory.
+	 * @param {Zinc.Glyphset} zincGlyphset - geometry to be removed from this scene.
+	 */
 	this.removeZincGlyphset = function(zincGlyphset) {
 		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
 			if (zincGlyphset === zincGlyphsets[i]) {
