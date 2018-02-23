@@ -1,3 +1,12 @@
+/**
+ * This is a container of {@link Zinc.Glyph} and their graphical properties 
+ * including transformations, colors, number of time steps, duration of animations
+ * and group name. Please note that all glyphs in the glyphset share the same geometry
+ * however they may have different transformations.
+ * 
+ * @author Alan Wu
+ * @return {Zinc.Glyph}
+ */
 Zinc.Glyphset = function()  {
 	var glyphList = [];
 	var axis1s = undefined;
@@ -21,14 +30,33 @@ Zinc.Glyphset = function()  {
 	var morphVertices = false;
 	var groupName = undefined;
 	
+	/**
+	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
+	 * @returns {Three.Group}
+	 */
 	this.getGroup = function() {
 		return group;
 	}
 	
+	/**
+	 * Set the visibility of this glyphset.
+	 * @param {Boolean} flag - visibility to be set for this glyphset.
+	 */
 	this.setVisibility = function(flag) {
 		group.visible = flag;
 	}
 	
+	/**
+	 * Copy glyphset data into this glyphset then load the glyph's geoemtry 
+	 * with the provided glyphURL. FinishCallback will be called once
+	 * glyph is loaded.
+	 * 
+	 * @param {Array} glyphsetData - contains the informations about the glyphs.
+	 * @param {String} glyphURL - URL to the geometry which will be applied to all
+	 * all the glyphs in the glyphset once loaded.
+	 * @param {Function} finishCallback - User's function to be called once glyph's
+	 * geometry is loaded.
+	 */
 	this.load = function(glyphsetData, glyphURL, finishCallback) {
 		axis1s = glyphsetData.axis1;
 		axis2s = glyphsetData.axis2;
@@ -51,7 +79,12 @@ Zinc.Glyphset = function()  {
 		var loader = new THREE.JSONLoader( true );
 		loader.load( glyphURL, meshloader(finishCallback));
 	}
-		
+	
+	/**
+	 * Calculate the actual transformation value that can be applied 
+	 * to the transformation matrix.
+	 * @returns {Array}
+	 */
 	var resolve_glyph_axes = function(point, axis1, axis2, axis3, scale)
 	{
 		var return_arrays = [];
@@ -201,6 +234,9 @@ Zinc.Glyphset = function()  {
 		return return_arrays;
 	}
 	
+	/**
+	 * Update transformation for each of the glyph in this glyphset.
+	 */
 	var updateGlyphsetTransformation = function(current_positions, current_axis1s, current_axis2s, current_axis3s,
 			current_scales) {
 		var numberOfGlyphs = 1;
@@ -236,6 +272,9 @@ Zinc.Glyphset = function()  {
 		}
 	}
 	
+	/**
+	 * Update colour for each of the glyph in this glyphset.
+	 */
 	var updateGlyphsetHexColors = function(current_colors) {
 		var numberOfGlyphs = 1;
 		if (repeat_mode == "AXES_2D" || repeat_mode == "MIRROR")
@@ -257,6 +296,11 @@ Zinc.Glyphset = function()  {
 		}
 	}
 	
+	/**
+	 * Update the current states of the glyphs in this glyphset, this includes transformation and
+	 * colour for each of them. This is called when glyphset and glyphs are initialised and whenever
+	 * the internal time has been updated.
+	 */
 	var updateMorphGlyphsets = function() {
 		var current_positions = [];
 		var current_axis1s = [];
@@ -334,15 +378,22 @@ Zinc.Glyphset = function()  {
 			glyphList[i] = glyph;
 			group.add(glyph.getMesh());
 		}
-		
+		//Update the transformation of the glyphs.
 		updateGlyphsetTransformation(positions["0"], axis1s["0"],
 				axis2s["0"], axis3s["0"], scales["0"]);
+		//Update the color of the glyphs.
 		if (colors != undefined) {
 			updateGlyphsetHexColors(colors["0"]);
 		}
 		_this.ready = true;
 	}
 	
+	/**
+	 * A function which iterates through the list of glyphs and call the callback
+	 * function with the glyph as the argument.
+	 * @param {Function} callbackFunction - Callback function with the glyph
+	 * as an argument.
+	 */
 	this.forEachGlyph = function(callbackFunction) {
 		for ( var i = 0; i < glyphList.length; i ++ ) {
 			callbackFunction(glyphList[i]);
@@ -361,6 +412,11 @@ Zinc.Glyphset = function()  {
 	    }
 	}
 	
+	/**
+	 * Get the bounding box for the whole set of glyphs.
+	 * 
+	 * @return {Three.Box3};
+	 */
 	this.getBoundingBox = function() {
 		var boundingBox1 = undefined, boundingBox2 = undefined;
 		for ( var i = 0; i < glyphList.length; i ++ ) {
@@ -374,6 +430,11 @@ Zinc.Glyphset = function()  {
 		return boundingBox1;
 	}
 	
+	/**
+	 * Set the local time of this glyphset.
+	 * 
+	 * @param {Number} time - Can be any value between 0 to duration.
+	 */
 	this.setMorphTime = function (time) {
 		if (time > _this.duration)
 			inbuildTime = _this.duration;
@@ -386,6 +447,7 @@ Zinc.Glyphset = function()  {
 		}
 	}
 	
+	//Update the geometry and colours depending on the morph.
 	this.render = function(delta, playAnimation) {
 		if (playAnimation == true) 
 		{

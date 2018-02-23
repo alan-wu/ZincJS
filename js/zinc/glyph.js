@@ -1,3 +1,14 @@
+/**
+ * Zinc representation of glyph graphic, it contains the colours, 
+ * geometry and transformation of the glyph.
+ * 
+ * @param {THREE.Geometry} geometry - Geometry of the glyph.
+ * @param {THREE.material} materialIn - Material of the glyph.
+ * @param {Number} idIn - Ud of the glyph.
+ * 
+ * @author Alan Wu
+ * @return {Zinc.Glyph}
+ */
 Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	var material = materialIn.clone();
 	material.vertexColors = THREE.FaceColors;
@@ -6,21 +17,44 @@ Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	this.id = idIn;
 	var _this = this;
 	
+	/**
+	 * Get the mesh of this glyph.
+	 * @return {THREE.Mesh}
+	 */
 	this.getMesh = function () {
 		return mesh;
 	}
 	
+	/**
+	 * Get the bounding box of this glyph.
+	 * @return {THREE.Box3}
+	 */
 	this.getBoundingBox = function() {
 		if (mesh)
 			return new THREE.Box3().setFromObject(mesh);
 		return undefined;
 	}
 	
+	/**
+	 * Set the Colour of this glyph.
+	 * @param {THREE.Color} colorIn - Colour to be set of this mesh.
+	 */
 	this.setColor = function (colorIn) {
 		mesh.material.color = colorIn
 		mesh.geometry.colorsNeedUpdate = true;
 	}
 	
+	/**
+	 * Set the transformation of this glyph.
+	 * @param {Array} position - Three components vectors containing position of the
+	 * transformation.
+	 * @param {Array} axis1 - Three components vectors containing axis1 rotation of the
+	 * transformation.
+	 * @param {Array} axis2 - Three components vectors containing axis2 rotation of the
+	 * transformation.
+	 * @param {Array} position - Three components vectors containing axis3 rotation of the
+	 * transformation.
+	 */
 	this.setTransformation = function(position, axis1, axis2, axis3) {
 		mesh.matrix.elements[0] = axis1[0];
 		mesh.matrix.elements[1] = axis1[1];

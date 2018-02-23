@@ -1,29 +1,66 @@
+/**
+ * Provides an object which stores geometry and provides method which controls its animations.
+ * This is created when a valid json file containging geometry is read into a {@link Zinc.Scene}
+ * object.
+ * 
+ * @author Alan Wu
+ * @return {Zinc.Geometry}
+ */
 Zinc.Geometry = function () {
+	// THREE.Geometry or THREE.BufferGeometry
 	this.geometry = undefined;
 	this.mixer = undefined;
 	this.timeEnabled = false;
 	this.morphColour = false;
 	this.modelId = -1;
+	// THREE.Mesh
 	this.morph = undefined;
 	this.clipAction = undefined;
+	/**
+	 * Total duration of the animation, this value interacts with the 
+	 * {@link Zinc.Renderer#playRate} to produce the actual duration of the
+	 * animation. Actual time in second = duration / playRate.
+	 */
 	this.duration = 3000;
+	/**
+	 * Groupname given to this geometry.
+	 */
 	this.groupName = undefined;
 	var inbuildTime = 0;
 	var _this = this;
 	
+	/**
+	 * Set the visibility of this Geometry.
+	 * 
+	 * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
+	 */
 	this.setVisibility = function(visible) {
-		_this.morph.visible = visible
+		_this.morph.visible = visible;
 	}
 	
+	/**
+	 * Set the opacity of this Geometry. This function will also set the isTransparent
+	 * flag according to the provided alpha value.
+	 * 
+	 * @param {Number} alpah - Alpha value to set for this geometry, 
+	 * can be any value between from 0 to 1.0.
+	 */
 	this.setAlpha = function(alpha){
-		var material = _this.morph.material
-		var isTransparent = false
+		var material = _this.morph.material;
+		var isTransparent = false;
 		if (alpha  < 1.0)
-			isTransparent = true
-		material.transparent = isTransparent
-		material.opacity = alpha
+			isTransparent = true;
+		material.transparent = isTransparent;
+		material.opacity = alpha;
 	}
 	
+	
+	/**
+	 * Get the local time of this geometry, it returns a value between 
+	 * 0 and the duration.
+	 * 
+	 * @return {Number}
+	 */
 	this.getCurrentTime = function () {
 		if (_this.clipAction) {
 			var ratio = _this.clipAction.time / _this.clipAction._clip.duration;
@@ -33,6 +70,11 @@ Zinc.Geometry = function () {
 		}
 	}
 	
+	/**
+	 * Set the local time of this geometry.
+	 * 
+	 * @param {Number} time - Can be any value between 0 to duration.
+	 */
 	this.setMorphTime = function(time){
 		if (_this.clipAction) {
 			var ratio = time / _this.duration;
@@ -84,25 +126,41 @@ Zinc.Geometry = function () {
 		geometry.uvsNeedUpdate = true;	
 	}
 	
+	/**
+	 * Set wireframe display for this geometry.
+	 * 
+	 * @param {Boolean} wireframe - Flag to turn on/off wireframe display.
+	 */
 	this.setWireframe = function(wireframe) {
-		_this.morph.material.wireframe = wireframe
+		_this.morph.material.wireframe = wireframe;
 	}
 	
 	this.setVertexColors = function(vertexColors) {
-		_this.morph.material.vertexColors = vertexColors
+		_this.morph.material.vertexColors = vertexColors;
 		_this.geometry.colorsNeedUpdate = true;
 	}
 	
-	this.setColour= function(colour) {
+	/**
+	 * Set the colour of the geometry.
+	 * 
+	 * @param {THREE.COLOR} colour - Colour to be set for this geometry.
+	 */
+	this.setColour = function(colour) {
 		_this.morph.material.color = colour
 		_this.geometry.colorsNeedUpdate = true;
 	}
 	
-	this.setMaterial=function(material) {
+	/**
+	 * Set the material of the geometry.
+	 * 
+	 * @param {THREE.MATERIAL} material - Material to be set for this geometry.
+	 */
+	this.setMaterial = function(material) {
 		_this.morph.material = material;
 		_this.geometry.colorsNeedUpdate = true;
 	}
 	
+	//Get the colours at index
 	getColorsRGB = function(colors, index)
 	{
 		var index_in_colors = Math.floor(index/3);
@@ -110,20 +168,21 @@ Zinc.Geometry = function () {
 		var hex_value = 0;
 		if (remainder == 0)
 		{
-			hex_value = colors[index_in_colors].r
+			hex_value = colors[index_in_colors].r;
 		}
 		else if (remainder == 1)
 		{
-			hex_value = colors[index_in_colors].g
+			hex_value = colors[index_in_colors].g;
 		}
 		else if (remainder == 2)
 		{
-			hex_value = colors[index_in_colors].b
+			hex_value = colors[index_in_colors].b;
 		}
 		var mycolor = new THREE.Color(hex_value);
 		return [mycolor.r, mycolor.g, mycolor.b];
 	}
 	
+	//Calculate the interpolated colour at current time
 	var morphColorsToVertexColors = function( targetGeometry, morph, clipAction ) {
 		if ( morph && targetGeometry.morphColors && targetGeometry.morphColors.length) {
 			var current_time = 0.0;
@@ -132,9 +191,9 @@ Zinc.Geometry = function () {
 			else
 				current_time = inbuildTime/_this.duration * (targetGeometry.morphColors.length - 1);
 			
-			var bottom_frame =  Math.floor(current_time)
-			var proportion = 1 - (current_time - bottom_frame)
-			var top_frame =  Math.ceil(current_time)
+			var bottom_frame =  Math.floor(current_time);
+			var proportion = 1 - (current_time - bottom_frame);
+			var top_frame =  Math.ceil(current_time);
 			var bottomColorMap = targetGeometry.morphColors[ bottom_frame ];
 			var TopColorMap = targetGeometry.morphColors[ top_frame ];
 			
@@ -161,6 +220,11 @@ Zinc.Geometry = function () {
 		}
 	}
 	
+	/**
+	 * Get the bounding box of this geometry.
+	 * 
+	 * @return {THREE.Box3}.
+	 */
 	this.getBoundingBox = function() {
 		if (_this.morph) {
 			return new THREE.Box3().setFromObject(_this.morph);
@@ -168,6 +232,9 @@ Zinc.Geometry = function () {
 		return undefined;
 	}
 	
+	/**
+	 * Clear this geometry and free the memory.
+	 */
 	this.dispose = function() {
 		_this.morph.geometry.dispose();
 		_this.morph.material.dispose();
@@ -179,6 +246,8 @@ Zinc.Geometry = function () {
 		_this = undefined;		
 	}
 	
+	
+	//Update the geometry and colours depending on the morph.
 	this.render = function(delta, playAnimation) {
 		if (playAnimation == true) 
 		{
