@@ -4,6 +4,7 @@
  * and group name. Please note that all glyphs in the glyphset share the same geometry
  * however they may have different transformations.
  * 
+ * @class
  * @author Alan Wu
  * @return {Zinc.Glyphset}
  */

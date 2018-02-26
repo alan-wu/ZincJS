@@ -6,7 +6,7 @@
  * Zinc.Renderer also allows additional scenes to be displayed.
  * 
  * @param {Object} containerIn - Container to create the renderer on.
- * 
+ * @class
  * @author Alan Wu
  * @return {Zinc.Renderer}
  */

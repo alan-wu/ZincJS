@@ -6,6 +6,7 @@
  * @param {THREE.material} materialIn - Material of the glyph.
  * @param {Number} idIn - Ud of the glyph.
  * 
+ * @class
  * @author Alan Wu
  * @return {Zinc.Glyph}
  */

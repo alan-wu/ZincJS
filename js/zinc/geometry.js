@@ -3,6 +3,7 @@
  * This is created when a valid json file containging geometry is read into a {@link Zinc.Scene}
  * object.
  * 
+ * @class
  * @author Alan Wu
  * @return {Zinc.Geometry}
  */
@@ -143,7 +144,7 @@ Zinc.Geometry = function () {
 	/**
 	 * Set the colour of the geometry.
 	 * 
-	 * @param {THREE.COLOR} colour - Colour to be set for this geometry.
+	 * @param {THREE.Color} colour - Colour to be set for this geometry.
 	 */
 	this.setColour = function(colour) {
 		_this.morph.material.color = colour
@@ -153,7 +154,7 @@ Zinc.Geometry = function () {
 	/**
 	 * Set the material of the geometry.
 	 * 
-	 * @param {THREE.MATERIAL} material - Material to be set for this geometry.
+	 * @param {THREE.Material} material - Material to be set for this geometry.
 	 */
 	this.setMaterial = function(material) {
 		_this.morph.material = material;

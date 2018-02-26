@@ -4,6 +4,7 @@
  * It is the main object used for controlling what is and what is not displayed
  * on the renderer.
  * 
+ * @class
  * @param {Object} containerIn - Container to create the renderer on.
  * @author Alan Wu
  * @return {Zinc.Scene}
@@ -406,6 +407,8 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	/**
 	 * Load a legacy model(s) format with the provided URLs and parameters. This only loads the geometry
 	 * without any of the metadata. Therefore, extra parameters should be provided.
+	 * 
+	 * @deprecated
 	 */
 	this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback)
 	{
@@ -542,6 +545,18 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	
 	/**
 	 * Add a user provided {THREE.Geometry} into  the scene as zinc geometry.
+	 * 
+	 * @param {Three.Geometry} geometry - The threejs geometry to be added as {@link Zinc.Geometry}.
+	 * @param {Number} modelId - The numeric ID to be given to the newly created geometry.
+	 * @param {THREE.Color} color - Colour to be assigned to this geometry, overrided if materialIn is provided.
+	 * @param {Number} opacity - Opacity to be set for this geometry, overrided if materialIn is provided.
+	 * @param {Boolean} localTimeEnabled - Set this to true if morph geometry is present, overrided if materialIn is provided.
+	 * @param {Boolean} localMorphColour - Set this to true if morph colour is present, overrided if materialIn is provided.
+	 * @param {Boolean} external - Set this to true if morph geometry is present, overrided if materialIn is provided.
+	 * @param {Function} finishCallback - Callback once the geometry has been added succssfully.
+	 * @param {THREE.Material} materialIn - Material to be set for this geometry if it is present.
+	 * 
+	 * @returns {Zinc.Geometry}
 	 */
 	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback, materialIn) {
 		if (external == undefined)
