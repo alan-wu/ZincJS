@@ -2,7 +2,7 @@
     "plugins": [],
     "recurseDepth": 10,
     "source": {
-    	"include": [ "js", "js/zinc" ],
+    	"include": [ "README.md", "js", "js/zinc" ],
     	"exclude": ["js/three.min.js", "js/OBJLoader.js", "js/STLLoader.js"], 
         "includePattern": ".+\\.js(doc|x)?$",
         "excludePattern": "(^|\\/|\\\\)_"
