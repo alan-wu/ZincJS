@@ -251,7 +251,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	}
 	
 	//Load a glyphset into this scene.
-	loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback)
+	var loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback)
 	{
 		var newGlyphset = new Zinc.Glyphset();
         newGlyphset.duration = 3000;

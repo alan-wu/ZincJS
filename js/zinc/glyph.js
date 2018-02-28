@@ -41,7 +41,7 @@ Zinc.Glyph = function(geometry, materialIn, idIn)  {
 	 * @param {THREE.Color} colorIn - Colour to be set of this mesh.
 	 */
 	this.setColor = function (colorIn) {
-		mesh.material.color = colorIn
+		mesh.material.color = colorIn;
 		mesh.geometry.colorsNeedUpdate = true;
 	}
 	

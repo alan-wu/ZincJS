@@ -266,7 +266,8 @@ Zinc.Glyphset = function()  {
 				for (var j = 0; j < numberOfGlyphs; j++)
 				{
 					var glyph = glyphList[current_glyph_index];
-					glyph.setTransformation(arrays[j][0], arrays[j][1], arrays[j][2], arrays[j][3]);
+					if(glyph)
+						glyph.setTransformation(arrays[j][0], arrays[j][1], arrays[j][2], arrays[j][3]);
 					current_glyph_index++;
 				}
 			}
@@ -290,8 +291,10 @@ Zinc.Glyphset = function()  {
 			for (var j = 0; j < numberOfGlyphs; j++)
 			{
 				var glyph = glyphList[current_glyph_index];
-				var mycolor = new THREE.Color(hex_values);
-				glyph.setColor(mycolor);
+				if (glyph) {
+					var mycolor = new THREE.Color(hex_values);
+					glyph.setColor(mycolor);
+				}
 				current_glyph_index++;
 			}
 		}
