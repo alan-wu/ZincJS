@@ -1,5 +1,15 @@
-Web-based-Zinc-Visualisation
-============================
+ZincJS (Web-based-Zinc-Visualisation)
+=====================================
+
+Webapp developed using ZincJS:
+------------------------------
+
+[Braveheart Interactive hert](http://sites.bioeng.auckland.ac.nz/medtech/heart/)
+
+[Medtech Lungs](http://sites.bioeng.auckland.ac.nz/silo6/lung/)
+
+How to use:
+-----------
 
 Example html and javascript to visualise Zinc to ThreeJS export.
 
