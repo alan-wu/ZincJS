@@ -247,7 +247,6 @@ Zinc.Geometry = function () {
 		_this = undefined;		
 	}
 	
-	
 	//Update the geometry and colours depending on the morph.
 	this.render = function(delta, playAnimation) {
 		if (playAnimation == true) 

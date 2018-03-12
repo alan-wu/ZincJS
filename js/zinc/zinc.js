@@ -4,7 +4,7 @@
  * @namespace
  * @author Alan Wu
  */
-var Zinc = { REVISION: '27' };
+var Zinc = { REVISION: '28' };
 
 
 Zinc.defaultMaterialColor = 0x7F1F1A;

@@ -451,6 +451,23 @@ Zinc.Glyphset = function()  {
 		}
 	}
 	
+	/**
+	 * Clear this glyphset and its list of glyphs which will release them from the memory.
+	 */
+	this.dispose = function() {
+		for( var i = glyphList.length - 1; i >= 0; i--) {
+			glyphList[i].dispose();
+		}
+		axis1s = undefined;
+		axis2s = undefined;
+		axis3s = undefined;
+		positions = undefined;
+		scales = undefined;
+		colors = undefined;
+		_this.ready = false;
+		groupName = undefined;
+	}
+	
 	//Update the geometry and colours depending on the morph.
 	this.render = function(delta, playAnimation) {
 		if (playAnimation == true) 

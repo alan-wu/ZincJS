@@ -824,9 +824,27 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
 			if (zincGlyphset === zincGlyphsets[i]) {
 				scene.remove(zincGlyphset.getGroup());
+				zincGlyphsets[i].dispose();
 				zincGlyphsets.splice(i,1);
 				return;
 			}
 		}
+	}
+	
+	/**
+	 * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
+
+	 */
+	this.clearAll = function() {
+		for( var i = zincGeometries.length - 1; i >= 0; i--) {
+			scene.remove(zincGeometries[i].morph);
+			zincGeometries[i].dispose();
+		}
+		zincGeometries = [];
+		for( var i = zincGlyphsets.length - 1; i >= 0; i--) {
+			scene.remove(zincGlyphsets[i].getGroup());
+			zincGlyphsets[i].dispose();
+		}
+		zincGlyphsets = [];		
 	}
 }

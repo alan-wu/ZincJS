@@ -74,5 +74,13 @@ Zinc.Glyph = function(geometry, materialIn, idIn)  {
 		mesh.matrix.elements[14] = position[2];
 		mesh.matrix.elements[15] = 1.0;
 		mesh.matrixAutoUpdate = false;
-	}	
+	}
+	
+	/**
+	 * Clear and free its memory.
+	 */
+	this.dispose = function() {
+		_this.material.dispose();
+		_this.mesh = undefined;
+	}
 }
