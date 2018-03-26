@@ -35,6 +35,7 @@ Zinc.Renderer = function (containerIn, window) {
 	var scenesGroup = new THREE.Group();
 	var _this = this;
 	var currentSize = [0, 0];
+	var currentOffset = [0, 0];
 	
 	/** 
 	 * Call this to resize the renderer, this is normally call automatically.
@@ -45,6 +46,9 @@ Zinc.Renderer = function (containerIn, window) {
 			renderer.setSize( container.clientWidth, container.clientHeight );
 			currentSize[0] = renderer.getSize().width;
 			currentSize[1] = renderer.getSize().height;
+			var rect = container.getBoundingClientRect();
+			currentOffset[0] = rect.left;
+			currentOffset[1] = rect.top;
 		}
 	}
 	
@@ -351,7 +355,10 @@ Zinc.Renderer = function (containerIn, window) {
 	 * and finally render the scenes.
 	 */
 	this.render = function() {
-		if (currentSize[0] != container.clientWidth || currentSize[1] != container.clientHeight ) {
+		var rect = container.getBoundingClientRect();
+		
+		if (currentSize[0] != container.clientWidth || currentSize[1] != container.clientHeight ||
+				rect.left != currentOffset[0] || rect.top != currentOffset[1]) {
 			_this.onWindowResize();
 		}
 		var delta = clock.getDelta();
