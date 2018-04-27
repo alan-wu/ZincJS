@@ -1,0 +1,50 @@
+{
+  "name": "zincjs",
+  "version": "0.28.0",
+  "description": "ZincJS (Web-based-Zinc-Visualisation)",
+  "main": "dis/zinc.min.js",
+  "directories": {
+    "doc": "docs",
+    "tutorials": "tutorials",
+    "example": "examples"
+  },
+  "files": [
+    "package.json",
+    "LICENSE",
+    "README.md",
+    "dist/zinc.js",
+    "dist/zinc.min.js",
+    "js",
+    "models",
+    "examples",
+    "tutorials"
+  ],
+  "scripts": {
+    "build": "webpack --mode=production",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alan-wu/ZincJS.git"
+  },
+  "keywords": [
+  	"library",
+  	"webgl",
+  	"3d",
+  	"zincjs"
+  ],
+  "author": "Alan Wu <alan.wu@auckland.ac.nz>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alan-wu/ZincJS/issues"
+  },
+  "homepage": "http://alan-wu.github.io/ZincJS/",
+  "devDependencies": {
+  	"uglifyjs-webpack-plugin": "^1.2.5",
+  	"webpack": "^4.6.0",
+  	"webpack-cli": "^2.0.15"
+  },
+  "dependencies": {
+    "three": "alan-wu/three.js"
+  }
+}
