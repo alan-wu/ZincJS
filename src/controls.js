@@ -10,7 +10,6 @@ exports.Viewport = function () {
 }
 
 exports.CameraControls = function ( object, domElement, renderer, scene ) {
-
 	var _this = this;
 	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3 };
 	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
@@ -917,11 +916,10 @@ exports.CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCame
 	
 };
 
-
 /**
  * @author mrdoob / http://mrdoob.com/
  */
-THREE.StereoCameraZoomFixed = function () {
+StereoCameraZoomFixed = function () {
 
 	this.type = 'StereoCamera';
 
@@ -937,7 +935,7 @@ THREE.StereoCameraZoomFixed = function () {
 
 };
 
-Object.assign( THREE.StereoCameraZoomFixed.prototype, {
+Object.assign( StereoCameraZoomFixed.prototype, {
 
 	update: ( function () {
 
@@ -1013,9 +1011,9 @@ Object.assign( THREE.StereoCameraZoomFixed.prototype, {
  * @authod arodic / http://aleksandarrodic.com/
  * @authod fonserbc / http://fonserbc.github.io/
 */
-THREE.StereoEffect = function ( renderer ) {
+exports.StereoEffect = function ( renderer ) {
 
-	var _stereo = new StereoCameraZoomFixed();
+	var _stereo = new StereoCameraZoom();
 	_stereo.aspect = 0.5;
 
 	this.setSize = function ( width, height ) {

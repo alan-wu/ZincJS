@@ -1,5 +1,3 @@
-var THREE = require('three');
-
 /**
  * Provides a global namespace for the Zinc javascript library and some default parameters for it.
  * 
@@ -23,7 +21,7 @@ Zinc.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
 Zinc.RayCaster = require('./controls').RayCaster;
 Zinc.CameraAutoTumble = require('./controls').CameraAutoTumble;
 Zinc.loadExternalFile = require('./utilities').loadExternalFile;
-Zinc.loadExternalFiles  = require('./utilities').loadExternalFiles;
-
+Zinc.loadExternalFiles = require('./utilities').loadExternalFiles;
+Zinc.StereoEffect = require('./controls').StereoEffect;
 
 module.exports = Zinc;
