@@ -23,9 +23,9 @@ module.exports = {
   ],
   externals: {
     three: {
-      commonjs: 'THREE',
-      commonjs2: 'THREE',
-      amd: 'THREE',
+      commonjs: 'three',
+      commonjs2: 'three',
+      amd: 'three',
       root: 'THREE'
     }
   }

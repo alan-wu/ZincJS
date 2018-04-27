@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("THREE"));
+		module.exports = factory(require("three"));
 	else if(typeof define === 'function' && define.amd)
-		define(["THREE"], factory);
+		define(["three"], factory);
 	else if(typeof exports === 'object')
-		exports["Zinc"] = factory(require("THREE"));
+		exports["Zinc"] = factory(require("three"));
 	else
 		root["Zinc"] = factory(root["THREE"]);
-})(window, function(__WEBPACK_EXTERNAL_MODULE__1__) {
+})(window, function(__WEBPACK_EXTERNAL_MODULE__2__) {
 return /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -83,8 +83,6 @@ return /******/ (function(modules) { // webpackBootstrap
 /* 0 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var THREE = __webpack_require__(1);
-
 /**
  * Provides a global namespace for the Zinc javascript library and some default parameters for it.
  * 
@@ -96,7 +94,7 @@ var Zinc = { REVISION: '28' };
 Zinc.defaultMaterialColor = 0x7F1F1A;
 Zinc.defaultOpacity = 1.0;
 
-Zinc.Geometry = __webpack_require__(2).Geometry;
+Zinc.Geometry = __webpack_require__(1).Geometry;
 Zinc.Glyph = __webpack_require__(3).Glyph;
 Zinc.Glyphset = __webpack_require__(4).Glyphset;
 Zinc.Renderer = __webpack_require__(5).Renderer;
@@ -108,23 +106,17 @@ Zinc.SmoothCameraTransition = __webpack_require__(7).SmoothCameraTransition;
 Zinc.RayCaster = __webpack_require__(7).RayCaster;
 Zinc.CameraAutoTumble = __webpack_require__(7).CameraAutoTumble;
 Zinc.loadExternalFile = __webpack_require__(8).loadExternalFile;
-Zinc.loadExternalFiles  = __webpack_require__(8).loadExternalFiles;
-
+Zinc.loadExternalFiles = __webpack_require__(8).loadExternalFiles;
+Zinc.StereoEffect = __webpack_require__(7).StereoEffect;
 
 module.exports = Zinc;
 
 
 /***/ }),
 /* 1 */
-/***/ (function(module, exports) {
-
-module.exports = __WEBPACK_EXTERNAL_MODULE__1__;
-
-/***/ }),
-/* 2 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var THREE = __webpack_require__(1);
+var THREE = __webpack_require__(2);
 
 /**
  * Provides an object which stores geometry and provides method which controls its animations.
@@ -408,6 +400,12 @@ exports.Geometry = function () {
 
 
 /***/ }),
+/* 2 */
+/***/ (function(module, exports) {
+
+module.exports = __WEBPACK_EXTERNAL_MODULE__2__;
+
+/***/ }),
 /* 3 */
 /***/ (function(module, exports) {
 
@@ -503,7 +501,7 @@ exports.Glyph = function(geometry, materialIn, idIn)  {
 /* 4 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var THREE = __webpack_require__(1);
+var THREE = __webpack_require__(2);
 
 /**
  * This is a container of {@link Zinc.Glyph} and their graphical properties 
@@ -995,7 +993,7 @@ exports.Glyphset = function()  {
 /* 5 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var THREE = __webpack_require__(1);
+var THREE = __webpack_require__(2);
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
@@ -1471,7 +1469,7 @@ exports.Renderer = function (containerIn, window) {
 /* 6 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var THREE = __webpack_require__(1);
+var THREE = __webpack_require__(2);
 
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
@@ -2329,7 +2327,7 @@ exports.Scene = function ( containerIn, rendererIn) {
 /* 7 */
 /***/ (function(module, exports, __webpack_require__) {
 
-var THREE = __webpack_require__(1);
+var THREE = __webpack_require__(2);
 
 exports.Viewport = function () {
 	this.nearPlane = 0.1;
@@ -2341,7 +2339,6 @@ exports.Viewport = function () {
 }
 
 exports.CameraControls = function ( object, domElement, renderer, scene ) {
-
 	var _this = this;
 	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3 };
 	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
@@ -3248,11 +3245,10 @@ exports.CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCame
 	
 };
 
-
 /**
  * @author mrdoob / http://mrdoob.com/
  */
-THREE.StereoCameraZoomFixed = function () {
+StereoCameraZoomFixed = function () {
 
 	this.type = 'StereoCamera';
 
@@ -3268,7 +3264,7 @@ THREE.StereoCameraZoomFixed = function () {
 
 };
 
-Object.assign( THREE.StereoCameraZoomFixed.prototype, {
+Object.assign( StereoCameraZoomFixed.prototype, {
 
 	update: ( function () {
 
@@ -3344,9 +3340,9 @@ Object.assign( THREE.StereoCameraZoomFixed.prototype, {
  * @authod arodic / http://aleksandarrodic.com/
  * @authod fonserbc / http://fonserbc.github.io/
 */
-THREE.StereoEffect = function ( renderer ) {
+exports.StereoEffect = function ( renderer ) {
 
-	var _stereo = new StereoCameraZoomFixed();
+	var _stereo = new StereoCameraZoom();
 	_stereo.aspect = 0.5;
 
 	this.setSize = function ( width, height ) {
