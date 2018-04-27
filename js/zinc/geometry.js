@@ -1,3 +1,5 @@
+var THREE = require('three');
+
 /**
  * Provides an object which stores geometry and provides method which controls its animations.
  * This is created when a valid json file containging geometry is read into a {@link Zinc.Scene}
@@ -7,7 +9,7 @@
  * @author Alan Wu
  * @return {Zinc.Geometry}
  */
-Zinc.Geometry = function () {
+exports.Geometry = function () {
 	// THREE.Geometry or THREE.BufferGeometry
 	this.geometry = undefined;
 	this.mixer = undefined;

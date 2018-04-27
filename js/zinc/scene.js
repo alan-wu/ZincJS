@@ -1,6 +1,8 @@
+var THREE = require('three');
+
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
- * {@link ZincCameraControls} which controls the viewport and additional features.
+ * {@link Zinc.CameraControls} which controls the viewport and additional features.
  * It is the main object used for controlling what is and what is not displayed
  * on the renderer.
  * 
@@ -9,7 +11,7 @@
  * @author Alan Wu
  * @return {Zinc.Scene}
  */
-Zinc.Scene = function ( containerIn, rendererIn) {
+exports.Scene = function ( containerIn, rendererIn) {
 	var container = containerIn;
 	var zincGeometries = [];
 	var zincGlyphsets = [];
@@ -98,7 +100,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 		_this.directionalLight = new THREE.DirectionalLight( 0x777777  );
 		scene.add( _this.directionalLight );
 
-		zincCameraControls = new ZincCameraControls( _this.camera, rendererIn.domElement, rendererIn, scene );
+		zincCameraControls = new Zinc.CameraControls( _this.camera, rendererIn.domElement, rendererIn, scene );
 
 		zincCameraControls.setDirectionalLight(_this.directionalLight);
 		zincCameraControls.resetView();
@@ -123,14 +125,14 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	}
 	
 	/**
-	 * Load the viewport Data from the argument  {@link ZincViewport} and set it as 
+	 * Load the viewport Data from the argument  {@link Zinc.Viewport} and set it as 
 	 * the default viewport of this scene.
 	 * 
-	 * @param {ZincViewport} viewData - Viewport data to be loaded. 
+	 * @param {Zinc.Viewport} viewData - Viewport data to be loaded. 
 	 */
 	this.loadView = function(viewData)
 	{
-		var viewPort = new ZincViewport();
+		var viewPort = new Zinc.Viewport();
 		viewPort.nearPlane = viewData.nearPlane;
 		viewPort.farPlane = viewData.farPlane;
 		viewPort.eyePosition = viewData.eyePosition;
@@ -741,7 +743,7 @@ Zinc.Scene = function ( containerIn, rendererIn) {
 	
 	/**
 	 * Get the camera control of this scene.
-	 * @return {ZincCameraControls}
+	 * @return {Zinc.CameraControls}
 	 */
 	this.getZincCameraControls = function () {
 		return zincCameraControls;

@@ -1,3 +1,5 @@
+var THREE = require('three');
+
 /**
  * This is a container of {@link Zinc.Glyph} and their graphical properties 
  * including transformations, colors, number of time steps, duration of animations
@@ -8,7 +10,7 @@
  * @author Alan Wu
  * @return {Zinc.Glyphset}
  */
-Zinc.Glyphset = function()  {
+exports.Glyphset = function()  {
 	var glyphList = [];
 	var axis1s = undefined;
 	var axis2s = undefined;

@@ -1,3 +1,4 @@
+var THREE = require('three');
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
@@ -10,7 +11,7 @@
  * @author Alan Wu
  * @return {Zinc.Renderer}
  */
-Zinc.Renderer = function (containerIn, window) {
+exports.Renderer = function (containerIn, window) {
 
 	var animation = 0;
 	

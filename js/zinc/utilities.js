@@ -40,3 +40,6 @@ function loadExternalFiles(urls, callback, errorCallback) {
     	loadExternalFile(urls[i], i, partialCallback, errorCallback);
     }
 }
+
+exports.loadExternalFile = loadExternalFile;
+exports.loadExternalFiles = loadExternalFiles;

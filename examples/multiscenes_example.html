@@ -23,6 +23,7 @@
 			}
 			#info a, .button { color: #f00; font-weight: bold; text-decoration: underline; cursor: pointer }
 		</style>
+		<script src="../js/three.min.js"></script>
 	</head>
 
 	<body style="height:100%">
@@ -36,22 +37,13 @@
 		<button name="skin" value="skin" type="button" onclick="loadMyModel(this.value)">Skin</button>
 		<button name="materials" value="materials" type="button" onclick="loadMyModel(this.value)">materials</button>
 		<button name="deforming_heart" value="deforming_heart" type="button" onclick="loadMyModel(this.value)">Deforming Heart</button>
-		<script src="js/three.min.js"></script>
-		<script src="js/zinc/zinc.js"></script>
-		<script src="js/zinc/controls.js"></script>
-		<script src="js/zinc/geometry.js"></script>
-		<script src="js/zinc/glyph.js"></script>
-		<script src="js/zinc/glyphset.js"></script>
-		<script src="js/zinc/scene.js"></script>
-		<script src="js/zinc/renderer.js"></script>
-		<script src="js/zinc/utilities.js"></script>
+		<script src="../dist/zinc.min.js"></script>
 		<script>
 			var currentModel = undefined;
-		
 			container = document.createElement( 'div' );
 			document.body.appendChild( container );
 			container.style.height = "100%"
-
+			console.log(Zinc)
 			zincRenderer = new Zinc.Renderer(container, window);
 			Zinc.defaultMaterialColor = 0xFFFF9C
 			zincRenderer.initialiseVisualisation();
