@@ -3,11 +3,11 @@ const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = {
   entry: {
-    "zinc": "./js/zinc/zinc.js",
-    "zinc.min": "./js/zinc/zinc.js",
+    "zinc": "./src/zinc.js",
+    "zinc.min": "./src/zinc.js",
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
+    path: path.resolve(__dirname, 'build'),
     filename: "[name].js",
     library: 'Zinc',
     libraryTarget: 'umd'
