@@ -121,7 +121,7 @@ exports.Renderer = function (containerIn, window) {
 		if (sceneMap[name] != undefined){
 			return undefined;
 		} else {
-			var new_scene = new Zinc.Scene(container, renderer)
+			var new_scene = new (require('./scene')).Scene(container, renderer)
 			sceneMap[name] = new_scene;
 			new_scene.sceneName = name;
 			return new_scene;

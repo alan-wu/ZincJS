@@ -1,6 +1,6 @@
 var THREE = require('three');
 
-exports.Viewport = function () {
+var Viewport = function () {
 	this.nearPlane = 0.1;
 	this.farPlane = 2000.0;
 	this.eyePosition = [0.0, 0.0, 0.0];
@@ -9,7 +9,7 @@ exports.Viewport = function () {
 	var _this = this;
 }
 
-exports.CameraControls = function ( object, domElement, renderer, scene ) {
+var CameraControls = function ( object, domElement, renderer, scene ) {
 	var _this = this;
 	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3 };
 	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
@@ -40,7 +40,7 @@ exports.CameraControls = function ( object, domElement, renderer, scene ) {
 	var updateLightWithPathFlag = false;
 	var playRate = 500;
 	var deviceOrientationControl = undefined;
-	var defaultViewport = new Zinc.Viewport();
+	var defaultViewport = new Viewport();
 	var currentMode = MODE.DEFAULT;
 	var smoothCameraTransitionObject = undefined;
 	var cameraAutoTumbleObject = undefined;
@@ -653,7 +653,7 @@ exports.CameraControls = function ( object, domElement, renderer, scene ) {
 		{
 			localNearPlane = eye_distance - clip_distance;
 		}
-		var newViewport = new Zinc.Viewport();
+		var newViewport = new Viewport();
 		newViewport.nearPlane = localNearPlane;
 		newViewport.farPlane = localFarPlane;
 		newViewport.eyePosition = localEyePosition;
@@ -669,7 +669,7 @@ exports.CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 	this.getCurrentViewport = function() {
-		var currentViewport = new Zinc.Viewport();
+		var currentViewport = new Viewport();
 		currentViewport.nearPlane = _this.cameraObject.near;
 		currentViewport.farPlane = _this.cameraObject.far;
 		currentViewport.eyePosition[0] = _this.cameraObject.position.x;
@@ -693,7 +693,7 @@ exports.CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 	this.cameraTransition = function (startingViewport, endingViewport, durationIn) {
-		smoothCameraTransitionObject = new Zinc.SmoothCameraTransition(startingViewport, endingViewport,
+		smoothCameraTransitionObject = new SmoothCameraTransition(startingViewport, endingViewport,
 			_this, durationIn);
 	}
 	
@@ -715,7 +715,7 @@ exports.CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 	this.autoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn) {
-		cameraAutoTumbleObject = new Zinc.CameraAutoTumble(tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, _this);
+		cameraAutoTumbleObject = new CameraAutoTumble(tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, _this);
 	}
 	
 	this.enableAutoTumble = function () {
@@ -729,7 +729,7 @@ exports.CameraControls = function ( object, domElement, renderer, scene ) {
 	
 	this.enableRaycaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) {
 		if (zincRayCaster == undefined)
-			zincRayCaster = new Zinc.RayCaster(sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, _this.renderer);
+			zincRayCaster = new RayCaster(sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, _this.renderer);
 	}
 	
 	this.disableRaycaster = function () {
@@ -750,7 +750,7 @@ exports.CameraControls = function ( object, domElement, renderer, scene ) {
 
 };
 
-exports.SmoothCameraTransition = function (startingViewport, endingViewport, targetCameraIn, durationIn) {
+var SmoothCameraTransition = function (startingViewport, endingViewport, targetCameraIn, durationIn) {
 	var startingEyePosition = startingViewport.eyePosition;
 	var startingTargetPosition = startingViewport.targetPosition;
 	var endingEyePosition = endingViewport.eyePosition;
@@ -804,7 +804,7 @@ exports.SmoothCameraTransition = function (startingViewport, endingViewport, tar
 	
 };
 
-exports.RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, rendererIn) {
+var RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, rendererIn) {
 	var scene = sceneIn;
 	var renderer = rendererIn;
 	var callbackFunction = callbackFunctionIn;
@@ -849,7 +849,7 @@ exports.RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunction
 };
 
 
-exports.CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, targetCameraIn) {
+var CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, targetCameraIn) {
 	var tumbleAxis = new THREE.Vector3();
 	var angle = -tumbleRateIn;
 	var targetCamera = targetCameraIn;
@@ -1011,7 +1011,7 @@ Object.assign( StereoCameraZoomFixed.prototype, {
  * @authod arodic / http://aleksandarrodic.com/
  * @authod fonserbc / http://fonserbc.github.io/
 */
-exports.StereoEffect = function ( renderer ) {
+var StereoEffect = function ( renderer ) {
 
 	var _stereo = new StereoCameraZoom();
 	_stereo.aspect = 0.5;
@@ -1161,3 +1161,10 @@ ModifiedDeviceOrientationControls = function ( object ) {
 	this.connect();
 
 };
+
+exports.Viewport = Viewport
+exports.CameraControls = CameraControls
+exports.SmoothCameraTransition = SmoothCameraTransition
+exports.RayCaster = RayCaster
+exports.CameraAutoTumble = CameraAutoTumble
+exports.StereoEffect = StereoEffect

@@ -380,7 +380,7 @@ exports.Glyphset = function()  {
 	
 	var createGlyphs = function(geometry, material) {
 		for (var i = 0; i < numberOfVertices; i ++) {
-			var glyph = new Zinc.Glyph(geometry, material, i + 1);
+			var glyph = new (require('./glyph').Glyph)(geometry, material, i + 1);
 			glyphList[i] = glyph;
 			group.add(glyph.getMesh());
 		}
