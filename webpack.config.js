@@ -2,6 +2,7 @@ var path = require('path');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 
 module.exports = {
+  mode: "none",
   entry: {
     "zinc": "./src/zinc.js",
     "zinc.min": "./src/zinc.js",
