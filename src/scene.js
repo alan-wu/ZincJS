@@ -1,4 +1,5 @@
 var THREE = require('three');
+var Zinc = require('./zinc');
 
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
@@ -100,7 +101,7 @@ exports.Scene = function ( containerIn, rendererIn) {
 		_this.directionalLight = new THREE.DirectionalLight( 0x777777  );
 		scene.add( _this.directionalLight );
 
-		zincCameraControls = new Zinc.CameraControls( _this.camera, rendererIn.domElement, rendererIn, scene );
+		zincCameraControls = new (require('./controls').CameraControls)( _this.camera, rendererIn.domElement, rendererIn, scene );
 
 		zincCameraControls.setDirectionalLight(_this.directionalLight);
 		zincCameraControls.resetView();
@@ -132,7 +133,7 @@ exports.Scene = function ( containerIn, rendererIn) {
 	 */
 	this.loadView = function(viewData)
 	{
-		var viewPort = new Zinc.Viewport();
+		var viewPort = new (require('./controls').Viewport)();
 		viewPort.nearPlane = viewData.nearPlane;
 		viewPort.farPlane = viewData.farPlane;
 		viewPort.eyePosition = viewData.eyePosition;
@@ -255,7 +256,7 @@ exports.Scene = function ( containerIn, rendererIn) {
 	//Load a glyphset into this scene.
 	var loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback)
 	{
-		var newGlyphset = new Zinc.Glyphset();
+		var newGlyphset = new (require('./controls').Glyphset)();
         newGlyphset.duration = 3000;
         newGlyphset.load(glyphsetData, glyphurl, finishCallback);
         newGlyphset.groupName = groupName;
@@ -500,7 +501,7 @@ exports.Scene = function ( containerIn, rendererIn) {
 	
 	//Internal function for creating a Zinc.Geometry object and add it into the scene for rendering.
 	var addMeshToZincGeometry = function(mesh, modelId, localTimeEnabled, localMorphColour) {
-		var newGeometry = new Zinc.Geometry();
+		var newGeometry = new (require('./geometry').Geometry)();
 		scene.add( mesh );
 		var mixer = new THREE.AnimationMixer(mesh);
 		var clipAction = undefined;
