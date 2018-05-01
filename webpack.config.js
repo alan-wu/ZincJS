@@ -11,7 +11,8 @@ module.exports = {
     path: path.resolve(__dirname, 'build'),
     filename: "[name].js",
     library: 'Zinc',
-    libraryTarget: 'umd'
+    libraryTarget: 'umd',
+    globalObject: 'this',
   },
   plugins: [
     new UglifyJsPlugin({

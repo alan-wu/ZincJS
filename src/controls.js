@@ -1076,8 +1076,8 @@ ModifiedDeviceOrientationControls = function ( object ) {
 	};
 
 	var onScreenOrientationChangeEvent = function () {
-
-		scope.screenOrientation = window.orientation || 0;
+	  if (typeof(window) !== 'undefined')
+	    scope.screenOrientation = window.orientation || 0;
 
 	};
 
@@ -1122,19 +1122,19 @@ ModifiedDeviceOrientationControls = function ( object ) {
 	this.connect = function() {
 
 		onScreenOrientationChangeEvent(); // run once on load
-
-		window.addEventListener( 'orientationchange', onScreenOrientationChangeEvent, false );
-		window.addEventListener( 'deviceorientation', onDeviceOrientationChangeEvent, false );
-
+		if (typeof(window) !== 'undefined') {
+		  window.addEventListener( 'orientationchange', onScreenOrientationChangeEvent, false );
+		  window.addEventListener( 'deviceorientation', onDeviceOrientationChangeEvent, false );
+		}
 		scope.enabled = true;
 
 	};
 
 	this.disconnect = function() {
-
-		window.removeEventListener( 'orientationchange', onScreenOrientationChangeEvent, false );
-		window.removeEventListener( 'deviceorientation', onDeviceOrientationChangeEvent, false );
-
+	  if (typeof(window) !== 'undefined') {
+	    window.removeEventListener( 'orientationchange', onScreenOrientationChangeEvent, false );
+		  window.removeEventListener( 'deviceorientation', onDeviceOrientationChangeEvent, false );
+	  }
 		scope.enabled = false;
 
 	};
