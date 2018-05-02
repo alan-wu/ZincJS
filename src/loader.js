@@ -550,7 +550,7 @@ Object.assign( JSONLoader.prototype, {
 			}
 
 			var geometry = new Geometry();
-
+			geometry.morphColors = [];
 			parseModel( json, geometry );
 			parseSkin( json, geometry );
 			parseMorphing( json, geometry );
