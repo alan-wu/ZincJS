@@ -1,5 +1,4 @@
 var THREE = require('three');
-var Zinc = require('./zinc');
 
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
@@ -256,7 +255,7 @@ exports.Scene = function ( containerIn, rendererIn) {
 	//Load a glyphset into this scene.
 	var loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback)
 	{
-		var newGlyphset = new (require('./controls').Glyphset)();
+		var newGlyphset = new (require('./glyphset').Glyphset)();
         newGlyphset.duration = 3000;
         newGlyphset.load(glyphsetData, glyphurl, finishCallback);
         newGlyphset.groupName = groupName;
@@ -311,8 +310,8 @@ exports.Scene = function ( containerIn, rendererIn) {
 		num_inputs += 1;
         var modelId = nextAvailableInternalZincModelId();
 
-        var colour = Zinc.defaultMaterialColor;
-        var opacity = Zinc.defaultOpacity;
+        var colour = require('./zinc').defaultMaterialColor;
+        var opacity = require('./zinc').defaultOpacity;
         var localTimeEnabled = 0;
         if (timeEnabled != undefined)
         	localTimeEnabled = timeEnabled ? true: false;

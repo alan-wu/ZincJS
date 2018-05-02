@@ -4,24 +4,27 @@
  * @namespace
  * @author Alan Wu
  */
-var Zinc = { REVISION: '28' };
 
-Zinc.defaultMaterialColor = 0x7F1F1A;
-Zinc.defaultOpacity = 1.0;
+var Zinc = function() {
+  this.Revision = 28;
 
-Zinc.Geometry = require('./geometry').Geometry;
-Zinc.Glyph = require('./glyph').Glyph;
-Zinc.Glyphset = require('./glyphset').Glyphset;
-Zinc.Renderer = require('./renderer').Renderer;
-Zinc.Scene = require('./scene').Scene;
+  this.defaultMaterialColor = 0x7F1F1A;
+  this.defaultOpacity = 1.0;
 
-Zinc.Viewport = require('./controls').Viewport;
-Zinc.CameraControls = require('./controls').CameraControls;
-Zinc.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
-Zinc.RayCaster = require('./controls').RayCaster;
-Zinc.CameraAutoTumble = require('./controls').CameraAutoTumble;
-Zinc.loadExternalFile = require('./utilities').loadExternalFile;
-Zinc.loadExternalFiles = require('./utilities').loadExternalFiles;
-Zinc.StereoEffect = require('./controls').StereoEffect;
+  this.Geometry = require('./geometry').Geometry;
+  this.Glyph = require('./glyph').Glyph;
+  this.Glyphset = require('./glyphset').Glyphset;
+  this.Renderer = require('./renderer').Renderer;
+  this.Scene = require('./scene').Scene;
 
-module.exports = Zinc;
+  this.Viewport = require('./controls').Viewport;
+  this.CameraControls = require('./controls').CameraControls;
+  this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
+  this.RayCaster = require('./controls').RayCaster;
+  this.CameraAutoTumble = require('./controls').CameraAutoTumble;
+  this.loadExternalFile = require('./utilities').loadExternalFile;
+  this.loadExternalFiles = require('./utilities').loadExternalFiles;
+  this.StereoEffect = require('./controls').StereoEffect;
+}
+
+module.exports = new Zinc();
