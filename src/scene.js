@@ -1,4 +1,5 @@
 var THREE = require('three');
+var JSONLoader = require('./loader').JSONLoader;
 
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
@@ -318,7 +319,7 @@ exports.Scene = function ( containerIn, rendererIn) {
         var localMorphColour = 0;
         if (morphColour != undefined)
         	localMorphColour = morphColour ? true: false;
-        var loader = new THREE.JSONLoader( true );
+        var loader = new JSONLoader( true );
         if (fileFormat !== undefined) {
         	if (fileFormat == "STL") {
         		loader = new THREE.STLLoader( );
@@ -420,7 +421,7 @@ exports.Scene = function ( containerIn, rendererIn) {
         {
         	var modelId = nextAvailableInternalZincModelId();
         	var filename = urls[i]
-        	var loader = new THREE.JSONLoader( true );
+		var loader = new JSONLoader( true );
         	var colour = Zinc.defaultMaterialColor;
         	var opacity = Zinc.defaultOpacity;
         	if (colours != undefined && colours[i] != undefined)

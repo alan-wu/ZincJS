@@ -1,4 +1,5 @@
 var THREE = require('three');
+var JSONLoader = require('./loader').JSONLoader;
 
 /**
  * This is a container of {@link Zinc.Glyph} and their graphical properties 
@@ -79,7 +80,7 @@ exports.Glyphset = function()  {
 		baseSize = glyphsetData.metadata.base_size;
 		offset = glyphsetData.metadata.offset;
 		scaleFactors = glyphsetData.metadata.scale_factors;
-		var loader = new THREE.JSONLoader( true );
+		var loader = new JSONLoader( true );
 		loader.load( glyphURL, meshloader(finishCallback));
 	}
 	
