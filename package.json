@@ -45,6 +45,6 @@
     "webpack-cli": "^2.1.2"
   },
   "dependencies": {
-    "three": "alan-wu/three.js"
+    "three": "^0.92.0"
   }
 }
