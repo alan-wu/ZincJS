@@ -59,6 +59,7 @@ You can also view the following page to see mroe WebGL based Zinc in action: htt
 
 Use of ThreeJS:
 ----------------
+
 This library wraps the ThreeJS library and provides a more Zinc-like experience to users.
 I have modified the ThreeJS backend slightly to fit my usage here, you can find the github repository of my ThreeJS fork here: https://github.com/alan-wu/three.js
  
@@ -69,3 +70,17 @@ Basic controls:
 * Middle click/three finger touch move: Translate
 * Right click/two finger pinch: Zoom
 
+Examples:
+---------
+
+https://github.com/alan-wu/ZincJS-Examples
+
+Tutorials:
+----------
+
+https://github.com/alan-wu/ZincJS-Tutorials
+
+API Documentation:
+-------------------
+
+http://alan-wu.github.io/ZincJS/
