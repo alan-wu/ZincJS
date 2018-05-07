@@ -360,8 +360,8 @@ exports.Scene = function ( containerIn, rendererIn) {
 	this.loadSTL = function(url, groupName, finishCallback) {
 		num_inputs += 1;
         var modelId = nextAvailableInternalZincModelId();
-        var colour = Zinc.defaultMaterialColor;
-        var opacity = Zinc.defaultOpacity;
+        var colour =  require('./zinc').defaultMaterialColor;
+        var opacity =  require('./zinc').defaultOpacity;
 		var loader = new STLLoader( );
 		loader.load( url, meshloader(modelId, colour, opacity, false,
         	false, groupName, finishCallback)); 
@@ -379,8 +379,8 @@ exports.Scene = function ( containerIn, rendererIn) {
 	this.loadOBJ = function(url, groupName, finishCallback) {
 		num_inputs += 1;
         var modelId = nextAvailableInternalZincModelId();
-        var colour = Zinc.defaultMaterialColor;
-        var opacity = Zinc.defaultOpacity;
+        var colour =  require('./zinc').defaultMaterialColor;
+        var opacity =  require('./zinc').defaultOpacity;
 		var loader = new OBJLoader( );
 		loader.load( url, meshloader(modelId, colour, opacity, false,
         	false, groupName, finishCallback)); 
@@ -424,8 +424,8 @@ exports.Scene = function ( containerIn, rendererIn) {
         	var modelId = nextAvailableInternalZincModelId();
         	var filename = urls[i]
 		var loader = new JSONLoader( true );
-        	var colour = Zinc.defaultMaterialColor;
-        	var opacity = Zinc.defaultOpacity;
+        	var colour =  require('./zinc').defaultMaterialColor;
+        	var opacity =  require('./zinc').defaultOpacity;
         	if (colours != undefined && colours[i] != undefined)
         		colour = colours[i] ? true: false;
         	if (opacities != undefined && opacities[i] != undefined)

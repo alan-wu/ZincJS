@@ -8,7 +8,7 @@
 var Zinc = function() {
   this.Revision = 28;
 
-  this.defaultMaterialColor = 0x7F1F1A;
+  this.defaultMaterialColor = 0xFFFFFF;
   this.defaultOpacity = 1.0;
 
   this.Geometry = require('./geometry').Geometry;
