@@ -1,5 +1,7 @@
 var THREE = require('three');
 var JSONLoader = require('./loader').JSONLoader;
+var STLLoader = require('./STLLoader').STLLoader;
+var OBJLoader = require('./OBJLoader').OBJLoader;
 
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
@@ -322,9 +324,9 @@ exports.Scene = function ( containerIn, rendererIn) {
         var loader = new JSONLoader( true );
         if (fileFormat !== undefined) {
         	if (fileFormat == "STL") {
-        		loader = new THREE.STLLoader( );
+        		loader = new STLLoader( );
         	} else if (fileFormat == "OBJ") {
-        		loader = new THREE.OBJLoader( );
+        		loader = new OBJLoader( );
         		loader.load( url, objloader(modelId, colour, opacity, localTimeEnabled,
         			localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError);
         		return;
@@ -360,7 +362,7 @@ exports.Scene = function ( containerIn, rendererIn) {
         var modelId = nextAvailableInternalZincModelId();
         var colour = Zinc.defaultMaterialColor;
         var opacity = Zinc.defaultOpacity;
-		var loader = new THREE.STLLoader( );
+		var loader = new STLLoader( );
 		loader.load( url, meshloader(modelId, colour, opacity, false,
         	false, groupName, finishCallback)); 
 	}
@@ -379,7 +381,7 @@ exports.Scene = function ( containerIn, rendererIn) {
         var modelId = nextAvailableInternalZincModelId();
         var colour = Zinc.defaultMaterialColor;
         var opacity = Zinc.defaultOpacity;
-		var loader = new THREE.OBJLoader( );
+		var loader = new OBJLoader( );
 		loader.load( url, meshloader(modelId, colour, opacity, false,
         	false, groupName, finishCallback)); 
 	}

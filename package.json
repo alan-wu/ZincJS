@@ -1,12 +1,10 @@
 {
   "name": "zincjs",
-  "version": "0.28.0",
+  "version": "0.28.3",
   "description": "ZincJS (Web-based-Zinc-Visualisation)",
-  "main": "build/zinc.js",
+  "main": "build/zinc.min.js",
   "directories": {
-    "doc": "docs",
-    "tutorials": "tutorials",
-    "example": "examples"
+    "doc": "docs"
   },
   "files": [
     "package.json",
@@ -14,10 +12,7 @@
     "README.md",
     "build/zinc.js",
     "build/zinc.min.js",
-    "js",
-    "models",
-    "examples",
-    "tutorials"
+    "webpack.config.js"
   ],
   "scripts": {
     "build": "webpack --mode=none",
