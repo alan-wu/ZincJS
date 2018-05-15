@@ -149,7 +149,7 @@ exports.Geometry = function () {
 	 * @param {THREE.Color} colour - Colour to be set for this geometry.
 	 */
 	this.setColour = function(colour) {
-		_this.morph.material.color = colour
+		_this.morph.material.color = colour;
 		_this.geometry.colorsNeedUpdate = true;
 	}
 	

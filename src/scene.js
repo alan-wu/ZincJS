@@ -423,7 +423,7 @@ exports.Scene = function ( containerIn, rendererIn) {
         {
         	var modelId = nextAvailableInternalZincModelId();
         	var filename = urls[i]
-		var loader = new JSONLoader( true );
+        	var loader = new JSONLoader( true );
         	var colour =  require('./zinc').defaultMaterialColor;
         	var opacity =  require('./zinc').defaultOpacity;
         	if (colours != undefined && colours[i] != undefined)
@@ -679,7 +679,6 @@ exports.Scene = function ( containerIn, rendererIn) {
 				return false;
 		}
 		return true;
-		
 	}
 	
 	/**
@@ -785,9 +784,9 @@ exports.Scene = function ( containerIn, rendererIn) {
 	this.setStereoEffectEnable = function(stereoFlag) {
 		if (stereoFlag == true) {
 			if (!stereoEffect) {
-				stereoEffect = new THREE.StereoEffect( rendererIn );
+				stereoEffect = new require('./controls').StereoEffect( rendererIn );
 			}
-			stereoEffect.setSize( container.clientWidth, container.clientHeight );
+			rendererIn.setSize( container.clientWidth, container.clientHeight );
 		}
 		else {
 			rendererIn.setSize( container.clientWidth, container.clientHeight );

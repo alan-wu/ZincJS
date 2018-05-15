@@ -36,7 +36,7 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 	var duration = 3000;
 	var inbuildTime = 0;
 	var cameraPath = undefined;
-	var numerOfCameraPoint = undefined;
+	var numberOfCameraPoint = undefined;
 	var updateLightWithPathFlag = false;
 	var playRate = 500;
 	var deviceOrientationControl = undefined;
@@ -428,7 +428,7 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 	var loadPath = function(pathData)
 	{
 		cameraPath = pathData.CameraPath;
-		numerOfCameraPoint = pathData.NumberOfPoints;
+		numberOfCameraPoint = pathData.NumberOfPoints;
 	}
 	
 	this.loadPathURL = function(path_url, finishCallback)
@@ -438,6 +438,8 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 		    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
 		        var pathData = JSON.parse(xmlhttp.responseText);
 		        loadPath(pathData);
+	          if (finishCallback != undefined && (typeof finishCallback == 'function'))
+	            finishCallback();
 		    }
 		}
 		requestURL = path_url;
@@ -465,23 +467,31 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 	this.getNumberOfTimeFrame = function() {
-		return numerOfCameraPoint;
+		return numberOfCameraPoint;
 	}
 	
 	this.getCurrentTimeFrame = function() {
-		var current_time = inbuildTime/duration * (numerOfCameraPoint - 1);
-		var bottom_frame =  Math.floor(current_time);
-		var proportion = 1 - (current_time - bottom_frame);
-		var top_frame =  Math.ceil(current_time);
-		return [bottom_frame, top_frame, proportion];
+	  if (numberOfCameraPoint > 2) {
+  		var current_time = inbuildTime/duration * (numberOfCameraPoint - 1);
+  		var bottom_frame =  Math.floor(current_time);
+  		var proportion = 1 - (current_time - bottom_frame);
+  		var top_frame =  Math.ceil(current_time);
+  		return [bottom_frame, top_frame, proportion];
+	  } else if (numberOfCameraPoint == 1) {
+	    return [0, 0, 0];
+	  }
+	    
+	  return undefined;
 	}
 	
 	this.setCurrentTimeFrame = function(targetTimeFrame) {
-		inbuildTime = duration * targetTimeFrame / (numerOfCameraPoint - 1);
-		if (inbuildTime < 0.0)
-			inbuildTime = 0.0;
-		if (inbuildTime > duration)
-			inbuildTime = duration;	
+	   if (numberOfCameraPoint > 2) {
+  		inbuildTime = duration * targetTimeFrame / (numberOfCameraPoint - 1);
+  		if (inbuildTime < 0.0)
+  			inbuildTime = 0.0;
+  		if (inbuildTime > duration)
+  			inbuildTime = duration;
+	   }
 	}
 
 	var updatePath = function(delta)	{
@@ -727,16 +737,6 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 		cameraAutoTumbleObject = undefined;
 	}
 	
-	this.enableRaycaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) {
-		if (zincRayCaster == undefined)
-			zincRayCaster = new RayCaster(sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, _this.renderer);
-	}
-	
-	this.disableRaycaster = function () {
-		zincRayCaster.disable();
-		zincRayCaster = undefined;
-	}
-	
 	this.updateAutoTumble = function() {
 		if (cameraAutoTumbleObject)
 			cameraAutoTumbleObject.requireUpdate = true;
@@ -745,6 +745,16 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 	this.isAutoTumble = function () {
 		return (currentMode === MODE.AUTO_TUMBLE);
 	}
+	
+	 this.enableRaycaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) {
+	    if (zincRayCaster == undefined)
+	      zincRayCaster = new RayCaster(sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, _this.renderer);
+	  }
+	  
+	  this.disableRaycaster = function () {
+	    zincRayCaster.disable();
+	    zincRayCaster = undefined;
+	  }
 	
 	this.enable();
 
@@ -1013,7 +1023,7 @@ Object.assign( StereoCameraZoomFixed.prototype, {
 */
 var StereoEffect = function ( renderer ) {
 
-	var _stereo = new StereoCameraZoom();
+	var _stereo = new StereoCameraZoomFixed();
 	_stereo.aspect = 0.5;
 
 	this.setSize = function ( width, height ) {

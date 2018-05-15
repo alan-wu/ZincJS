@@ -13,8 +13,6 @@ var THREE = require('three');
  */
 exports.Renderer = function (containerIn, window) {
 
-	var animation = 0;
-	
 	var container = containerIn;
 	
 	var stats = 0;
@@ -56,17 +54,27 @@ exports.Renderer = function (containerIn, window) {
 	/**
 	 * Initialise the renderer and its visualisations.
 	 */
-	this.initialiseVisualisation = function() {
-        var onMobile = false;
+	this.initialiseVisualisation = function(parameters) {
+	  parameters = parameters || {};
+	  if (parameters['antialias'] === undefined) {
+      var onMobile = false;
+      try {
         if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
-                onMobile = true;
+          onMobile = true;
         }
-        if (onMobile)
-                renderer = new THREE.WebGLRenderer({ antialias: false});
-        else {
-                renderer = new THREE.WebGLRenderer({ antialias: true});
-        }
-		container.appendChild( renderer.domElement );
+      }
+      catch(err) {
+        onMobile = false;
+      }
+      if (onMobile)
+        parameters['antialias'] = false;
+      else
+        parameters['antialias'] = true;
+	  }
+    
+    renderer = new THREE.WebGLRenderer(parameters);
+    if (container !== undefined)
+      container.appendChild( renderer.domElement );
 		renderer.setClearColor( 0xffffff, 1);
 		var scene = _this.createScene("default");
 		_this.setCurrentScene(scene);
@@ -232,7 +240,7 @@ exports.Renderer = function (containerIn, window) {
 	 */
 	this.stopAnimate = function () {
 		cancelAnimationFrame(animated_id);
-   		animated_id = undefined;
+   	animated_id = undefined;
 	}
 
 	/**
@@ -372,11 +380,11 @@ exports.Renderer = function (containerIn, window) {
 			renderer.clearDepth();
 			renderer.render( sceneOrtho, cameraOrtho );
 		}
-    	for (key in preRenderCallbackFunctions) {
-        	if (preRenderCallbackFunctions.hasOwnProperty(key)) {
-        		preRenderCallbackFunctions[key].call();
-        	}
-    	}
+    for (key in preRenderCallbackFunctions) {
+      if (preRenderCallbackFunctions.hasOwnProperty(key)) {
+        preRenderCallbackFunctions[key].call();
+      }
+    }
 		currentScene.render(renderer);
 	}
 	
@@ -402,7 +410,7 @@ exports.Renderer = function (containerIn, window) {
 		        	return true;
 		    }
 		}
-	    return false;
+	  return false;
 	} 
 	
 	/**
