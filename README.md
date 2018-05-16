@@ -8,6 +8,18 @@ Webapp developed using ZincJS:
 
 [Medtech Lungs](http://sites.bioeng.auckland.ac.nz/silo6/lung/)
 
+Installation:
+-------------
+
+You need NPM to build the ZincJS library. Once NPM has been installed, follow the instructions below:
+
+```Shell
+$ npm install
+$ npm run build
+```
+
+If everything works accordingly, a 'build' folder along with two files zinc.js and zinc.min.js in it should be created. The zinc.js and zinc.min.js can now be consumed in your preferred envirnoment.
+
 How to use:
 -----------
 
