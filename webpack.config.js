@@ -21,13 +21,5 @@ module.exports = {
         compress: true
       }
     })
-  ],
-  externals: {
-    three: {
-      commonjs: 'three',
-      commonjs2: 'three',
-      amd: 'three',
-      root: 'THREE'
-    }
-  }
+  ]
 };
