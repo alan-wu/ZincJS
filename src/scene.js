@@ -605,8 +605,10 @@ exports.Scene = function ( containerIn, rendererIn) {
 	    		material = materials[0];
 	    	}
 	    	var zincGeometry = _this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material);
-	    	if (zincGeometry.morph)
+	    	if (zincGeometry.morph) {
 	    		zincGeometry.morph.name = groupName;
+	    		zincGeometry.morph.userData = zincGeometry;
+	    	}
 	    	zincGeometry.groupName = groupName;
 			if (finishCallback != undefined && (typeof finishCallback == 'function'))
 				finishCallback(zincGeometry);
@@ -795,6 +797,67 @@ exports.Scene = function ( containerIn, rendererIn) {
 		stereoEffectFlag = stereoFlag;
 	}
 	
+	this.objectIsInScene = function(zincObject) {
+    for ( var i = 0; i < zincGeometries.length; i ++ ) {
+      if (zincObject === zincGeometries[i]) {
+        return true;
+      }
+    }
+    for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+      if (zincObjects === zincGlyphsets[i]) {
+        return true;
+      }
+    }
+    return false;
+	}
+	
+  this.alignObjectToCameraView = function(zincObject) {
+    if (_this.objectIsInScene(zincObject)) {
+      var center = new THREE.Vector3( );
+      var boundingBox = zincObject.getBoundingBox();
+      var viewport = _this.getZincCameraControls().getCurrentViewport();
+      boundingBox.getCenter(center);
+      var target = new THREE.Vector3( viewport.targetPosition[0], 
+          viewport.targetPosition[1], viewport.targetPosition[2]);
+      var eyePosition = new THREE.Vector3( viewport.eyePosition[0], 
+          viewport.eyePosition[1], viewport.eyePosition[2]);
+      var upVector = new THREE.Vector3(viewport.upVector[0],
+          viewport.upVector[1], viewport.upVector[2]);
+      var newVec1 = new THREE.Vector3( );
+      var newVec2 = new THREE.Vector3( );
+      newVec1.subVectors(target, eyePosition).normalize();
+      newVec2.subVectors(target, center).normalize();
+      var newVec3 = new THREE.Vector3( );
+      newVec3.crossVectors(newVec1, newVec2);
+      var angle = newVec1.angleTo(newVec2);
+      _this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
+    }
+  }
+   
+  this.setCameraTargetToObject = function(zincObject) {
+    if (_this.objectIsInScene(zincObject)) {
+      var center = new THREE.Vector3( );
+      var boundingBox = zincObject.getBoundingBox();
+      var viewport = _this.getZincCameraControls().getCurrentViewport();
+      boundingBox.getCenter(center);
+      var target = new THREE.Vector3( viewport.targetPosition[0], 
+          viewport.targetPosition[1], viewport.targetPosition[2]);
+      var eyePosition = new THREE.Vector3( viewport.eyePosition[0], 
+          viewport.eyePosition[1], viewport.eyePosition[2]);
+      var newVec1 = new THREE.Vector3( );
+      var newVec2 = new THREE.Vector3( );
+      newVec1.subVectors(eyePosition, target);
+      newVec2.addVectors(center, newVec1);
+      viewport.eyePosition[0] = newVec2.x;
+      viewport.eyePosition[1] = newVec2.y;
+      viewport.eyePosition[2] = newVec2.z;
+      viewport.targetPosition[0] = center.x;
+      viewport.targetPosition[1] = center.y; 
+      viewport.targetPosition[2] = center.z; 
+      _this.getZincCameraControls().setCurrentCameraSettings(viewport);
+    }
+  }
+
 	/**
 	 * Check if stereo effect is enabled.
 	 * @returns {Boolean}
