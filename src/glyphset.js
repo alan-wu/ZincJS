@@ -454,6 +454,18 @@ exports.Glyphset = function()  {
 		}
 	}
 	
+  /**
+   * Check if the glyphset is time varying.
+   * 
+   * @return {Boolean}
+   */
+  this.isTimeVarying = function () {
+    if ((numberOfTimeSteps > 0) && (morphColours || morphVertices))
+      return true;
+    return false;
+  }
+	
+	
 	/**
 	 * Clear this glyphset and its list of glyphs which will release them from the memory.
 	 */

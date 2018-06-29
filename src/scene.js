@@ -658,6 +658,25 @@ exports.Scene = function ( containerIn, rendererIn) {
 		}
 	}
 	
+  /**
+   * Check if any object in this scene is time varying.
+   * 
+   * @return {Boolean}
+   */
+  this.isTimeVarying = function() {
+    for ( var i = 0; i < zincGeometries.length; i ++ ) {
+      if (zincGeometries[i].isTimeVarying()) {
+        return true;
+      }
+    }
+    for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+      if (zincGlyphsets[i].isTimeVarying()) {
+        return true;
+      }
+    }
+    return false;
+  }
+	
 	/**
 	 * Get {Zinc.Geoemtry} in this scene by its id.
 	 * @return {Zinc.Geometry}

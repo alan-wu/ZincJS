@@ -223,6 +223,17 @@ exports.Geometry = function () {
 		}
 	}
 	
+  /**
+   * Check if the geometry is time varying.
+   * 
+   * @return {Boolean}
+   */
+  this.isTimeVarying = function() {
+    if (_this.timeEnabled || _this.morphColour)
+      return true;
+    return false;
+  }
+	
 	/**
 	 * Get the bounding box of this geometry.
 	 * 
