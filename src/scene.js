@@ -849,7 +849,7 @@ exports.Scene = function ( containerIn, rendererIn) {
       var newVec3 = new THREE.Vector3( );
       newVec3.crossVectors(newVec1, newVec2);
       var angle = newVec1.angleTo(newVec2);
-      if (transitionTime > 100) {
+      if (transitionTime > 0) {
         _this.getZincCameraControls().rotateCameraTransition(newVec3, 
           angle, transitionTime);
         _this.getZincCameraControls().enableCameraTransition();
