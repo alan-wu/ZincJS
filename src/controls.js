@@ -11,7 +11,7 @@ var Viewport = function () {
 
 var CameraControls = function ( object, domElement, renderer, scene ) {
 	var _this = this;
-	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3 };
+	var MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4 };
 	var STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
 	var CLICK_ACTION = {};
 	CLICK_ACTION.MAIN = STATE.ROTATE;
@@ -43,6 +43,7 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 	var defaultViewport = new Viewport();
 	var currentMode = MODE.DEFAULT;
 	var smoothCameraTransitionObject = undefined;
+	var rotateCameraTransitionObject = undefined;
 	var cameraAutoTumbleObject = undefined;
 	var mouseScroll = 0;
 	this._state = STATE.NONE;
@@ -219,43 +220,50 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 		_this.previous_pointer_y = _this.pointer_y;
 	}
 	
-	this.rotateAboutLookAtpoint = function(a, angle)
-	{
-		a.normalize()
-		var v = _this.cameraObject.position.clone();
-		
-		v.sub(_this.cameraObject.target)
-		var rel_eye = v.clone()
-		v.normalize()
-		if (0.8 < Math.abs(v.x*a.x+v.y*a.y+v.z*a.z)) {
-			v = _this.cameraObject.up.clone();
-		}
-		var b = new THREE.Vector3 (a.y*v.z-a.z*v.y, a.z*v.x-a.x*v.z, a.x*v.y-a.y*v.x);
-		b.normalize()
-		var c = new THREE.Vector3 (a.y*b.z-a.z*b.y, a.z*b.x-a.x*b.z, a.x*b.y-a.y*b.x);
-		var rel_eyea = a.x*rel_eye.x+a.y*rel_eye.y+a.z*rel_eye.z;
-		var rel_eyeb = b.x*rel_eye.x+b.y*rel_eye.y+b.z*rel_eye.z;
-		var rel_eyec = c.x*rel_eye.x+c.y*rel_eye.y+c.z*rel_eye.z;
-		var upa = a.x*_this.cameraObject.up.x+a.y*_this.cameraObject.up.y+a.z*_this.cameraObject.up.z;
-		var upb = b.x*_this.cameraObject.up.x+b.y*_this.cameraObject.up.y+b.z*_this.cameraObject.up.z;
-		var upc = c.x*_this.cameraObject.up.x+c.y*_this.cameraObject.up.y+c.z*_this.cameraObject.up.z;
-		var cos_angle = Math.cos(angle)
-		var sin_angle = Math.sin(angle)
-		var new_b = new THREE.Vector3(cos_angle*b.x+sin_angle*c.x,
-									cos_angle*b.y+sin_angle*c.y,
-									cos_angle*b.z+sin_angle*c.z);
-		var new_c = new THREE.Vector3(cos_angle*c.x-sin_angle*b.x,
-									cos_angle*c.y-sin_angle*b.y,
-									cos_angle*c.z-sin_angle*b.z);								
-		var eye_position = _this.cameraObject.target.clone()
-		eye_position.x = eye_position.x + a.x*rel_eyea + new_b.x*rel_eyeb+new_c.x*rel_eyec
-		eye_position.y = eye_position.y + a.y*rel_eyea + new_b.y*rel_eyeb+new_c.y*rel_eyec
-		eye_position.z = eye_position.z + a.z*rel_eyea + new_b.z*rel_eyeb+new_c.z*rel_eyec
-		_this.cameraObject.position.set(eye_position.x, eye_position.y, eye_position.z);
-		_this.updateDirectionalLight();
-		_this.cameraObject.up.set(a.x*upa+new_b.x*upb+new_c.x*upc,
-					a.y*upa+new_b.y*upb+new_c.y*upc,
-					a.z*upa+new_b.z*upb+new_c.z*upc);
+	this.getVectorsFromRotateAboutLookAtPoints = function(a, angle) {
+	   a.normalize()
+	    var v = _this.cameraObject.position.clone();
+	    v.sub(_this.cameraObject.target)
+	    var rel_eye = v.clone()
+	    v.normalize()
+	    if (0.8 < Math.abs(v.x*a.x+v.y*a.y+v.z*a.z)) {
+	      v = _this.cameraObject.up.clone();
+	    }
+	    var b = new THREE.Vector3 (a.y*v.z-a.z*v.y, a.z*v.x-a.x*v.z, a.x*v.y-a.y*v.x);
+	    b.normalize()
+	    var c = new THREE.Vector3 (a.y*b.z-a.z*b.y, a.z*b.x-a.x*b.z, a.x*b.y-a.y*b.x);
+	    var rel_eyea = a.x*rel_eye.x+a.y*rel_eye.y+a.z*rel_eye.z;
+	    var rel_eyeb = b.x*rel_eye.x+b.y*rel_eye.y+b.z*rel_eye.z;
+	    var rel_eyec = c.x*rel_eye.x+c.y*rel_eye.y+c.z*rel_eye.z;
+	    var upa = a.x*_this.cameraObject.up.x+a.y*_this.cameraObject.up.y+a.z*_this.cameraObject.up.z;
+	    var upb = b.x*_this.cameraObject.up.x+b.y*_this.cameraObject.up.y+b.z*_this.cameraObject.up.z;
+	    var upc = c.x*_this.cameraObject.up.x+c.y*_this.cameraObject.up.y+c.z*_this.cameraObject.up.z;
+	    var cos_angle = Math.cos(angle)
+	    var sin_angle = Math.sin(angle)
+	    var new_b = new THREE.Vector3(cos_angle*b.x+sin_angle*c.x,
+	                  cos_angle*b.y+sin_angle*c.y,
+	                  cos_angle*b.z+sin_angle*c.z);
+	    var new_c = new THREE.Vector3(cos_angle*c.x-sin_angle*b.x,
+	                  cos_angle*c.y-sin_angle*b.y,
+	                  cos_angle*c.z-sin_angle*b.z);               
+	    var eye_position = _this.cameraObject.target.clone()
+	    eye_position.x = eye_position.x + a.x*rel_eyea + new_b.x*rel_eyeb+new_c.x*rel_eyec
+	    eye_position.y = eye_position.y + a.y*rel_eyea + new_b.y*rel_eyeb+new_c.y*rel_eyec
+	    eye_position.z = eye_position.z + a.z*rel_eyea + new_b.z*rel_eyeb+new_c.z*rel_eyec
+	    var eye_position = [eye_position.x, eye_position.y, eye_position.z];
+	    var up_vector = [a.x*upa+new_b.x*upb+new_c.x*upc,
+            a.y*upa+new_b.y*upb+new_c.y*upc,
+            a.z*upa+new_b.z*upb+new_c.z*upc];
+	    return {position: eye_position, up: up_vector};
+	}
+	
+	this.rotateAboutLookAtpoint = function(a, angle) {
+	  var returned_values = _this.getVectorsFromRotateAboutLookAtPoints(a, angle);
+	  var eye_position = returned_values.position;
+	  var up_vector = returned_values.up;
+	  _this.cameraObject.position.set(eye_position[0], eye_position[1], eye_position[2]);
+	  _this.updateDirectionalLight();
+	  _this.cameraObject.up.set(up_vector[0], up_vector[1], up_vector[2]);
 	}
 
 	function tumble()
@@ -531,7 +539,14 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 				currentMode = MODE.DEFAULT;
 			}
 			controlEnabled = false;
-		} else if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject) {
+		} else if (currentMode === MODE.ROTATE_CAMERA_TRANSITION && rotateCameraTransitionObject) {
+		  rotateCameraTransitionObject.update(delta);
+      if (rotateCameraTransitionObject.isTransitionCompleted()) {
+        rotateCameraTransitionObject == undefined;
+        currentMode = MODE.DEFAULT;
+      }
+      controlEnabled = false;
+    } else if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject) {
 			cameraAutoTumbleObject.update(delta);
 		}
 		if (controlEnabled) {
@@ -703,12 +718,22 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 	this.cameraTransition = function (startingViewport, endingViewport, durationIn) {
-		smoothCameraTransitionObject = new SmoothCameraTransition(startingViewport, endingViewport,
-			_this, durationIn);
+	  if (rotateCameraTransitionObject == undefined)
+	    smoothCameraTransitionObject = new SmoothCameraTransition(startingViewport, endingViewport,
+	        _this, durationIn);
+	}
+	
+	this.rotateCameraTransition = function (axis, angle, duration) {
+	  if (smoothCameraTransitionObject == undefined)
+	    rotateCameraTransitionObject = new RotateCameraTransition(axis, angle,
+	      _this, duration);
 	}
 	
 	this.enableCameraTransition = function () {
-		currentMode = MODE.SMOOTH_CAMERA_TRANSITION;
+	  if (smoothCameraTransitionObject)
+	    currentMode = MODE.SMOOTH_CAMERA_TRANSITION;
+	  if (rotateCameraTransitionObject)
+	    currentMode = MODE.ROTATE_CAMERA_TRANSITION;
 	}
 	
 	this.pauseCameraTransition = function () {
@@ -718,10 +743,12 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 	this.stopCameraTransition = function () {
 		currentMode = MODE.DEFAULT;
 		smoothCameraTransitionObject = undefined;
+		rotateCameraTransitionObject = undefined;
 	}
 	
 	this.isTransitioningCamera = function () {
-		return (currentMode === MODE.SMOOTH_CAMERA_TRANSITION);
+		return (currentMode === MODE.SMOOTH_CAMERA_TRANSITION ||
+		    currentMode === MODE.ROTATE_CAMERA_TRANSITION);
 	}
 	
 	this.autoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn) {
@@ -763,8 +790,10 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 var SmoothCameraTransition = function (startingViewport, endingViewport, targetCameraIn, durationIn) {
 	var startingEyePosition = startingViewport.eyePosition;
 	var startingTargetPosition = startingViewport.targetPosition;
+	var startingUp = startingViewport.upVector;
 	var endingEyePosition = endingViewport.eyePosition;
 	var endingTargetPosition = endingViewport.targetPosition;
+	var endingUp = endingViewport.upVector;
 	var targetCamera = targetCameraIn;
 	var _this = this;
 	var duration = durationIn;
@@ -772,8 +801,12 @@ var SmoothCameraTransition = function (startingViewport, endingViewport, targetC
 	var enabled = true;
 	var updateLightWithPathFlag = true;
 	var completed = false;
+	console.log(startingViewport)
+	console.log(endingViewport)
 	targetCamera.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
 	targetCamera.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
+	targetCamera.cameraObject.up.set( endingViewport.upVector[0],  endingViewport.upVector[1],
+	    endingViewport.upVector[2]);
 	
 	var updateTime = function(delta) {
 		var targetTime = inbuildTime + delta;
@@ -790,6 +823,9 @@ var SmoothCameraTransition = function (startingViewport, endingViewport, targetC
 		var targetPosition = [startingTargetPosition[0] * (1.0 - ratio) + endingTargetPosition[0] * ratio,
 		                      startingTargetPosition[1] * (1.0 - ratio) + endingTargetPosition[1] * ratio,
 		                      startingTargetPosition[2] * (1.0 - ratio) + endingTargetPosition[2] * ratio];
+    var upVector = [startingUp[0] * (1.0 - ratio) + endingUp[0] * ratio,
+      startingUp[1] * (1.0 - ratio) + endingUp[1] * ratio,
+      startingUp[2] * (1.0 - ratio) + endingUp[2] * ratio];
 		targetCamera.cameraObject.position.set( eyePosition[0], eyePosition[1], eyePosition[2]);
 		targetCamera.cameraObject.target.set( targetPosition[0], targetPosition[1], targetPosition[2]  );
 	}
@@ -813,6 +849,46 @@ var SmoothCameraTransition = function (startingViewport, endingViewport, targetC
 	}
 	
 };
+
+var RotateCameraTransition = function(axisIn, angleIn, targetCameraIn, durationIn) {
+  var axis = axisIn;
+  var angle = angleIn;
+  var targetCamera = targetCameraIn;
+  var _this = this;
+  var duration = durationIn;
+  var inbuildTime = 0;
+  var enabled = true;
+  var ratio = inbuildTime / duration;
+  var completed = false;
+  
+  var updateCameraSettings = function (delta) {
+    var previousTime = inbuildTime;
+    var targetTime = inbuildTime + delta;
+    if (targetTime > duration)
+      targetTime = duration;
+    inbuildTime = targetTime;
+    var actualDelta = inbuildTime - previousTime;
+    var ratio = actualDelta / duration;
+    var alpha = ratio * angle;
+    targetCamera.rotateAboutLookAtpoint(axis, alpha);
+  }
+  
+  this.update = function (delta) {
+
+    if ( _this.enabled === false ) return;
+    
+    updateCameraSettings(delta);
+    
+    if (inbuildTime == duration) {
+      completed = true;
+    }
+
+  }
+  
+  this.isTransitionCompleted = function () {
+    return completed;
+  }
+}
 
 var RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, rendererIn) {
 	var scene = sceneIn;
@@ -857,7 +933,6 @@ var RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, 
 	}
 	
 };
-
 
 var CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, targetCameraIn) {
 	var tumbleAxis = new THREE.Vector3();
@@ -1175,6 +1250,7 @@ ModifiedDeviceOrientationControls = function ( object ) {
 exports.Viewport = Viewport
 exports.CameraControls = CameraControls
 exports.SmoothCameraTransition = SmoothCameraTransition
+exports.RotateCameraTransition = RotateCameraTransition
 exports.RayCaster = RayCaster
 exports.CameraAutoTumble = CameraAutoTumble
 exports.StereoEffect = StereoEffect

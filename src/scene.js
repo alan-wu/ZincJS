@@ -830,7 +830,7 @@ exports.Scene = function ( containerIn, rendererIn) {
     return false;
 	}
 	
-  this.alignObjectToCameraView = function(zincObject) {
+  this.alignObjectToCameraView = function(zincObject, transitionTime) {
     if (_this.objectIsInScene(zincObject)) {
       var center = new THREE.Vector3( );
       var boundingBox = zincObject.getBoundingBox();
@@ -849,7 +849,13 @@ exports.Scene = function ( containerIn, rendererIn) {
       var newVec3 = new THREE.Vector3( );
       newVec3.crossVectors(newVec1, newVec2);
       var angle = newVec1.angleTo(newVec2);
-      _this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
+      if (transitionTime > 100) {
+        _this.getZincCameraControls().rotateCameraTransition(newVec3, 
+          angle, transitionTime);
+        _this.getZincCameraControls().enableCameraTransition();
+      } else {
+        _this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
+      }
     }
   }
    
