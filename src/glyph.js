@@ -1,3 +1,5 @@
+var THREE = require('three');
+
 /**
  * Zinc representation of glyph graphic, it contains the colours, 
  * geometry and transformation of the glyph.
