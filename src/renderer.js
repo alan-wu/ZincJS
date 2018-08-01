@@ -25,7 +25,7 @@ exports.Renderer = function (containerIn, window) {
 	this.playAnimation = true
 	/* default animation update rate, rate is 500 and duration is default to 3000, 6s to finish a full animation */
 	var playRate = 500;
-	var preRenderCallbackFunctions = {};
+	var preRenderCallbackFunctions = [];
 	var preRenderCallbackFunctions_id = 0;
 	var animated_id = undefined;
 	var cameraOrtho = undefined, sceneOrtho = undefined, logoSprite = undefined;
@@ -449,6 +449,28 @@ exports.Renderer = function (containerIn, window) {
 			scenesGroup.remove(additionalActiveScenes[i].getThreeJSScene());
 		}
 		additionalActiveScenes.splice(0,additionalActiveScenes.length);
+	}
+	
+	/**
+	 * Dispose all memory allocated, this will effetively destroy all scenes.
+	 */
+	this.dispose = function() {
+	  for (var key in sceneMap) {
+	    if (sceneMap.hasOwnProperty(key)) {
+	      sceneMap[key].clearAll();
+	    }
+	  }
+	  sceneMap = [];
+	  additionalActiveScenes = [];
+	  scenesGroup = new THREE.Group();
+	  _this.stopAnimate();
+	  preRenderCallbackFunctions = [];
+	  preRenderCallbackFunctions_id = 0;
+	  cameraOrtho = undefined;
+	  sceneOrtho = undefined;
+	  logoSprite = undefined;
+	   var scene = _this.createScene("default");
+	    _this.setCurrentScene(scene);
 	}
 	
 	/**
