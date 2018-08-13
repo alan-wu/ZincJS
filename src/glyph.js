@@ -82,7 +82,8 @@ exports.Glyph = function(geometry, materialIn, idIn)  {
 	 * Clear and free its memory.
 	 */
 	this.dispose = function() {
-		_this.material.dispose();
+	  if (_this.material)
+	    _this.material.dispose();
 		_this.mesh = undefined;
 	}
 }
