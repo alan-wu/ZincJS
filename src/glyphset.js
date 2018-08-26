@@ -33,6 +33,7 @@ exports.Glyphset = function()  {
 	var morphColours = false;
 	var morphVertices = false;
 	var groupName = undefined;
+	this.userData = [];
 	
 	/**
 	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
@@ -381,7 +382,7 @@ exports.Glyphset = function()  {
 	
 	var createGlyphs = function(geometry, material) {
 		for (var i = 0; i < numberOfVertices; i ++) {
-			var glyph = new (require('./glyph').Glyph)(geometry, material, i + 1);
+			var glyph = new (require('./glyph').Glyph)(geometry, material, i + 1, _this);
 			glyphList[i] = glyph;
 			group.add(glyph.getMesh());
 		}

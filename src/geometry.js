@@ -30,6 +30,7 @@ exports.Geometry = function () {
 	 */
 	this.groupName = undefined;
 	var inbuildTime = 0;
+	this.userData = [];
 	var _this = this;
 	
 	/**

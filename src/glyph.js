@@ -12,13 +12,15 @@ var THREE = require('three');
  * @author Alan Wu
  * @return {Zinc.Glyph}
  */
-exports.Glyph = function(geometry, materialIn, idIn)  {
+exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	var material = materialIn.clone();
+	var parent = glyphsetIn;
 	material.vertexColors = THREE.FaceColors;
 	var mesh = new THREE.Mesh( geometry, material );
-	
 	this.id = idIn;
+	this.userData = [];
 	var _this = this;
+	mesh.userData = _this;
 	
 	/**
 	 * Get the mesh of this glyph.
