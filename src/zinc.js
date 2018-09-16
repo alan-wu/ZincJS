@@ -26,6 +26,7 @@ var Zinc = function() {
   this.loadExternalFile = require('./utilities').loadExternalFile;
   this.loadExternalFiles = require('./utilities').loadExternalFiles;
   this.StereoEffect = require('./controls').StereoEffect;
+  this.THREE = require('three'); 
   
 }
 
