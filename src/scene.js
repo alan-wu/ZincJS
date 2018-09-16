@@ -206,7 +206,7 @@ exports.Scene = function ( containerIn, rendererIn) {
 	 * as an argument.
 	 */
 	this.forEachGeometry = function(callbackFunction) {
-		for ( var i = 0; i < zincGeometries.length; i ++ ) {
+		for ( var i = zincGeometries.length - 1; i >=0; i -- ) {
 			callbackFunction(zincGeometries[i]);
 		}
 	}
@@ -218,7 +218,7 @@ exports.Scene = function ( containerIn, rendererIn) {
 	 * as an argument.
 	 */
 	this.forEachGlyphset = function(callbackFunction) {
-		for ( var i = 0; i < zincGlyphsets.length; i ++ ) {
+		for ( var i = zincGlyphsets.length - 1; i >= 0; i-- ) {
 			callbackFunction(zincGlyphsets[i]);
 		}
 	}
@@ -501,10 +501,22 @@ exports.Scene = function ( containerIn, rendererIn) {
 		centroid = [ centerX, centerY, centerZ]
 	}
 	
+	var tempGeometry = undefined;
+	
+	this.addGeometry = function(zincGeometry) {
+	  if (zincGeometry && zincGeometry.morph) {
+	    if (zincGeometry.modelId === -1) {
+	      num_inputs++;
+	      zincGeometry.modelId = nextAvailableInternalZincModelId();
+	    }
+	    scene.add( zincGeometry.morph );
+	    zincGeometries.push ( zincGeometry ) ;
+	  }
+	}
+	
 	//Internal function for creating a Zinc.Geometry object and add it into the scene for rendering.
 	var addMeshToZincGeometry = function(mesh, modelId, localTimeEnabled, localMorphColour) {
 		var newGeometry = new (require('./geometry').Geometry)();
-		scene.add( mesh );
 		var mixer = new THREE.AnimationMixer(mesh);
 		var clipAction = undefined;
 		var geometry = mesh.geometry;
@@ -526,8 +538,7 @@ exports.Scene = function ( containerIn, rendererIn) {
 		newGeometry.morph = mesh;
 		newGeometry.mixer = mixer;
 		newGeometry.clipAction = clipAction;
-		zincGeometries.push ( newGeometry ) ;
-	
+		_this.addGeometry(newGeometry);
 		return newGeometry;
 	}
 	
@@ -563,38 +574,50 @@ exports.Scene = function ( containerIn, rendererIn) {
 	 * 
 	 * @returns {Zinc.Geometry}
 	 */
-	this.addZincGeometry = function(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback, materialIn) {
-		if (external == undefined)
-			external = true	
-		if (external)
-			num_inputs++;
-    	isTransparent = false;
-		if (1.0 > opacity)
-			isTransparent = true;
-
-		var material = undefined;
-		if (materialIn) {
-			material = materialIn;
-			material.morphTargets = localTimeEnabled;
-		} else {
-			if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined)
-				material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, transparent: isTransparent, opacity: opacity });
-			else
-				material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
-		}
-		
-		if (geometry instanceof THREE.Geometry ) {
-			geometry.computeMorphNormals();
-		}
-		
-		material.side = THREE.DoubleSide;
-		var mesh = undefined;
-		mesh = new THREE.Mesh( geometry, material );
-		var newGeometry = addMeshToZincGeometry(mesh, modelId, localTimeEnabled, localMorphColour);
-		
-		if (finishCallback != undefined && (typeof finishCallback == 'function'))
-			finishCallback(newGeometry);
-		return newGeometry;
+	this.addZincGeometry = function(geometryIn, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback, materialIn) {
+	  var geometry = undefined;
+	  if (geometryIn) {
+	    if (geometryIn instanceof THREE.Geometry) {
+	      geometry = new THREE.Geometry();
+	      geometry.copy(geometryIn);
+	    }
+	    if (geometryIn instanceof THREE.BufferGeometry) {
+	      geometry = new THREE.BufferGeometry();
+	      geometry.copy(geometryIn);
+	    }
+  		if (external == undefined)
+  			external = true	
+  		if (external)
+  			num_inputs++;
+      	isTransparent = false;
+  		if (1.0 > opacity)
+  			isTransparent = true;
+  
+  		var material = undefined;
+  		if (materialIn) {
+  			material = materialIn;
+  			material.morphTargets = localTimeEnabled;
+  		} else {
+  			if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined)
+  				material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, transparent: isTransparent, opacity: opacity });
+  			else
+  				material = new THREE.MeshPhongMaterial( { color: colour, morphTargets: localTimeEnabled, morphNormals: false, vertexColors: THREE.VertexColors, transparent: isTransparent, opacity: opacity });
+  		}
+  		
+  		if (geometry instanceof THREE.Geometry ) {
+  			geometry.computeMorphNormals();
+  		}
+  		
+  		material.side = THREE.DoubleSide;
+  		var mesh = undefined;
+  		mesh = new THREE.Mesh( geometry, material );
+  		var newGeometry = addMeshToZincGeometry(mesh, modelId, localTimeEnabled, localMorphColour);
+  		
+  		if (finishCallback != undefined && (typeof finishCallback == 'function'))
+  			finishCallback(newGeometry);
+  		return newGeometry;
+	  }
+	  return undefined;
 	}
 	
 	//Internal loader for a regular zinc geometry.
