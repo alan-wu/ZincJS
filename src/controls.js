@@ -459,9 +459,9 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 		duration = durationIn;
 	}
 	
-	this.setTime = function(time) {
-		inbuildTime = time;
-	}
+	 this.getPlayRate = function() {
+	    return playRate;
+	  }
 	
 	this.setPlayRate = function(playRateIn) {
 		playRate = playRateIn;
@@ -472,6 +472,19 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 		if (targetTime > duration)
 			targetTime = targetTime - duration
 		inbuildTime = targetTime;
+	}
+	
+	 this.getTime = function() {
+	    return inbuildTime;
+	  }
+	
+	this.setTime = function(timeIn) {
+	  if (timeIn > duration)
+	    inbuildTime = duration;
+	  else if (timeIn < 0.0)
+	    inbuildTime = 0.0;
+	  else
+	    inbuildTime = timeIn;
 	}
 	
 	this.getNumberOfTimeFrame = function() {
@@ -525,6 +538,10 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 				}					
 			}
 		}
+	}
+	
+	this.calculatePathNow = function() {
+	  updatePath(0.0);
 	}
 	
 	this.update = function (timeChanged) {
