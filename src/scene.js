@@ -330,6 +330,20 @@ exports.Scene = function(containerIn, rendererIn) {
     loader.load(url, meshloader(modelId, colour, opacity, localTimeEnabled,
       localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError);
   }
+  
+  //Object to keep track of number of items downloaded and when add items are downloaded
+  //allCompletedCallback is called
+  var metaFinishCallback = function(numberOfDownloaded, finishCallback, allCompletedCallback) {
+    var downloadedItem = 0;
+    return function(zincGeometry) {
+      downloadedItem = downloadedItem + 1;
+      if (finishCallback != undefined && (typeof finishCallback == 'function'))
+        finishCallback(zincGeometry);
+      if (downloadedItem == numberOfDownloaded)
+        if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function'))
+          allCompletedCallback();
+    }
+  }
 
   //Function to process each of the metadata item. There are two types of metadata item,
   //one for Zinc.Geometry and one for Zinc.Glyphset.
@@ -389,14 +403,15 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * for each glyphset and geometry that has been written in.
    */
-  this.loadMetadataURL = function(url, finishCallback) {
+  this.loadMetadataURL = function(url, finishCallback, allCompletedCallback) {
     var xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = function() {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
         var metadata = JSON.parse(xmlhttp.responseText);
         var numberOfObjects = metadata.length;
+        var callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
         for (i = 0; i < numberOfObjects; i++)
-          readMetadataItem(metadata[i], finishCallback);
+          readMetadataItem(metadata[i], callback);
       }
     }
     requestURL = url
@@ -651,7 +666,7 @@ exports.Scene = function(containerIn, rendererIn) {
   this.addObject = function(object) {
     scene.add(object);
   }
-  
+
   /**
    * Remove any {THREE.Object} from this scene.
    * @param {THREE.Object} object - to be removed from this scene.
