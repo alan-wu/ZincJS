@@ -562,6 +562,20 @@ exports.Scene = function(containerIn, rendererIn) {
     }
   }
 
+  
+  var copyMorphColors = function(sourceGeometry, targetGeometry) {
+    if (sourceGeometry && sourceGeometry.morphColors) {
+      targetGeometry.morphColors = [];
+      var morphColors = sourceGeometry.morphColors;
+      for ( i = 0, il = morphColors.length; i < il; i ++ ) {
+        var morphColor = {};
+        morphColor.name = morphColors[i].name;
+        morphColor.colors = morphColors[i].colors.slice(0);
+        targetGeometry.morphColors.push( morphColor );
+      }
+    }
+  }
+  
   /**
    * Add a user provided {THREE.Geometry} into  the scene as zinc geometry.
    * 
@@ -583,6 +597,7 @@ exports.Scene = function(containerIn, rendererIn) {
       if (geometryIn instanceof THREE.Geometry) {
         geometry = new THREE.Geometry();
         geometry.copy(geometryIn);
+        copyMorphColors(geometryIn, geometry);
       }
       if (geometryIn instanceof THREE.BufferGeometry) {
         geometry = new THREE.BufferGeometry();
