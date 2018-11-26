@@ -316,7 +316,7 @@ exports.Scene = function(containerIn, rendererIn) {
     var localMorphColour = 0;
     if (morphColour != undefined)
       localMorphColour = morphColour ? true : false;
-    var loader = new JSONLoader(true);
+    var loader = new JSONLoader();
     if (fileFormat !== undefined) {
       if (fileFormat == "STL") {
         loader = new STLLoader();
@@ -431,7 +431,7 @@ exports.Scene = function(containerIn, rendererIn) {
     for (var i = 0; i < number; i++) {
       var modelId = nextAvailableInternalZincModelId();
       var filename = urls[i]
-      var loader = new JSONLoader(true);
+      var loader = new JSONLoader();
       var colour = require('./zinc').defaultMaterialColor;
       var opacity = require('./zinc').defaultOpacity;
       if (colours != undefined && colours[i] != undefined)

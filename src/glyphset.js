@@ -81,7 +81,7 @@ exports.Glyphset = function()  {
 		baseSize = glyphsetData.metadata.base_size;
 		offset = glyphsetData.metadata.offset;
 		scaleFactors = glyphsetData.metadata.scale_factors;
-		var loader = new JSONLoader( true );
+		var loader = new JSONLoader();
 		loader.load( glyphURL, meshloader(finishCallback));
 	}
 	
