@@ -36,8 +36,8 @@
   "homepage": "http://alan-wu.github.io/ZincJS/",
   "devDependencies": {
     "uglifyjs-webpack-plugin": "^1.2.5",
-    "webpack": "^4.6.0",
-    "webpack-cli": "^2.1.2"
+    "webpack": "^4.20.2",
+    "webpack-cli": "^3.1.1"
   },
   "dependencies": {
     "three": "^0.92.0",
