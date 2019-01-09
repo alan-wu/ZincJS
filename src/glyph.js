@@ -6,7 +6,7 @@ var THREE = require('three');
  * 
  * @param {THREE.Geometry} geometry - Geometry of the glyph.
  * @param {THREE.material} materialIn - Material of the glyph.
- * @param {Number} idIn - Ud of the glyph.
+ * @param {Number} idIn - Id of the glyph.
  * 
  * @class
  * @author Alan Wu
@@ -21,7 +21,29 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	this.userData = [];
 	var _this = this;
 	mesh.userData = _this;
+	var label = undefined;
+	var group = new THREE.Group();
 	
+	this.setLabel = function(text) {
+	  if (text && (typeof text === 'string' || text instanceof String)) {
+	    if (label) {
+	      group.remove(label.getSprite());
+	      label.dispose();
+	      label = undefined;
+	    }
+	    label = new (require('./label').Label)(text);
+	    group.add(label.getSprite());
+	  }
+	}
+	
+	 /**
+   * Get the group containing the label and mesh.
+   * @return {THREE.Mesh}
+   */
+  this.getGroup = function () {
+    return group;
+  }
+  
 	/**
 	 * Get the mesh of this glyph.
 	 * @return {THREE.Mesh}
@@ -78,6 +100,8 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 		mesh.matrix.elements[14] = position[2];
 		mesh.matrix.elements[15] = 1.0;
 		mesh.matrixAutoUpdate = false;
+		if (label)
+		  label.setPosition(position[0],  position[1], position[2]);
 	}
 	
 	/**
