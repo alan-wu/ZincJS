@@ -63,6 +63,11 @@ Make sure all the json files are located in the same folder and now we should ha
 
 *please not that only surfaces are supported at this moment.
 
+For PyZinc users:
+----------------
+
+Take a look at the following page: https://github.com/alan-wu/PyZinc2ZincJS
+
 Using the sample page:
 ----------------------
 
