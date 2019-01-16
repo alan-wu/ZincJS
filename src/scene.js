@@ -505,8 +505,6 @@ exports.Scene = function(containerIn, rendererIn) {
     centroid = [ centerX, centerY, centerZ ]
   }
 
-  var tempGeometry = undefined;
-
   this.addGeometry = function(zincGeometry) {
     if (zincGeometry && zincGeometry.morph) {
       if (zincGeometry.modelId === -1) {
