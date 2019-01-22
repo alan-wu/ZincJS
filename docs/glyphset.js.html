@@ -1,32 +1,88 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: glyphset.js</title>
+    <title>JSDoc: glyphset.js</title>
 
-    <script src="scripts/prettify/prettify.js"> </script>
-    <script src="scripts/prettify/lang-css.js"> </script>
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
 </head>
 
 <body>
-
-<div id="main">
-
-    <h1 class="page-title">Source: glyphset.js</h1>
-
-    
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">ZincJS Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                 
+                <div class="navbar-menu">
+                    <div class="navbar-end">
+                    
+                        <div class="navbar-item">
+                            <a href="https://github.com/alan-wu/ZincJS" target="_blank">Github</a>
+                        </div>
+                    
+                        <div class="navbar-item">
+                            <a href="https://sites.bioeng.auckland.ac.nz/webgl_zinc_collections" target="_blank">Examples</a>
+                        </div>
+                    
+                        <div class="navbar-item">
+                            <a href="https://github.com/alan-wu/ZincJS-Tutorials" target="_blank">Tutorials</a>
+                        </div>
+                    
+                    </div>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li></ul><h3>Global</h3><ul><li><a href="global.html#JSONLoader">JSONLoader</a></li><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li></ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Source</p>
+                        <h1>glyphset.js</h1>
+                    </header>
+                    
+                    
 
 
 
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>/**
+            <pre class="prettyprint source linenums"><code>var THREE = require('three');
+var JSONLoader = require('./loader').JSONLoader;
+
+/**
  * This is a container of {@link Zinc.Glyph} and their graphical properties 
  * including transformations, colors, number of time steps, duration of animations
  * and group name. Please note that all glyphs in the glyphset share the same geometry
@@ -36,7 +92,7 @@
  * @author Alan Wu
  * @return {Zinc.Glyphset}
  */
-Zinc.Glyphset = function()  {
+exports.Glyphset = function()  {
 	var glyphList = [];
 	var axis1s = undefined;
 	var axis2s = undefined;
@@ -44,6 +100,7 @@ Zinc.Glyphset = function()  {
 	var positions = undefined;
 	var scales = undefined;
 	var colors = undefined;
+	var labels = undefined;
 	var numberOfTimeSteps = 0;
 	var numberOfVertices = 0;
 	var baseSize = [0, 0, 0];
@@ -58,6 +115,7 @@ Zinc.Glyphset = function()  {
 	var morphColours = false;
 	var morphVertices = false;
 	var groupName = undefined;
+	this.userData = [];
 	
 	/**
 	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
@@ -93,6 +151,7 @@ Zinc.Glyphset = function()  {
 		positions = glyphsetData.positions;
 		scales = glyphsetData.scale;
 		colors = glyphsetData.colors;
+		labels = glyphsetData.label;
 		morphColours = glyphsetData.metadata.MorphColours;
 		morphVertices = glyphsetData.metadata.MorphVertices;
 		numberOfTimeSteps = glyphsetData.metadata.number_of_time_steps;
@@ -105,7 +164,7 @@ Zinc.Glyphset = function()  {
 		baseSize = glyphsetData.metadata.base_size;
 		offset = glyphsetData.metadata.offset;
 		scaleFactors = glyphsetData.metadata.scale_factors;
-		var loader = new THREE.JSONLoader( true );
+		var loader = new JSONLoader();
 		loader.load( glyphURL, meshloader(finishCallback));
 	}
 	
@@ -406,9 +465,13 @@ Zinc.Glyphset = function()  {
 	
 	var createGlyphs = function(geometry, material) {
 		for (var i = 0; i &lt; numberOfVertices; i ++) {
-			var glyph = new Zinc.Glyph(geometry, material, i + 1);
+			var glyph = new (require('./glyph').Glyph)(geometry, material, i + 1, _this);
+			console.log(labels);
+			if (labels != undefined &amp;&amp; labels[i] != undefined) {
+			  glyph.setLabel(labels[i]);
+			}
 			glyphList[i] = glyph;
-			group.add(glyph.getMesh());
+			group.add(glyph.getGroup());
 		}
 		//Update the transformation of the glyphs.
 		updateGlyphsetTransformation(positions["0"], axis1s["0"],
@@ -479,6 +542,18 @@ Zinc.Glyphset = function()  {
 		}
 	}
 	
+  /**
+   * Check if the glyphset is time varying.
+   * 
+   * @return {Boolean}
+   */
+  this.isTimeVarying = function () {
+    if ((numberOfTimeSteps > 0) &amp;&amp; (morphColours || morphVertices))
+      return true;
+    return false;
+  }
+	
+	
 	/**
 	 * Clear this glyphset and its list of glyphs which will release them from the memory.
 	 */
@@ -517,19 +592,23 @@ Zinc.Glyphset = function()  {
 
 
 
-</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Zinc.Geometry.html">Geometry</a></li><li><a href="Zinc.Glyph.html">Glyph</a></li><li><a href="Zinc.Glyphset.html">Glyphset</a></li><li><a href="Zinc.Renderer.html">Renderer</a></li><li><a href="Zinc.Scene.html">Scene</a></li></ul><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li></ul>
-</nav>
-
-<br class="clear">
-
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Mar 12 2018 14:33:03 GMT+1300 (NZDT)
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jan 22 2019 14:17:44 GMT+1300 (NZDT)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers</a>
+        </p>
+    </div>
 </footer>
 
 <script> prettyPrint(); </script>
+<script src="scripts/app.min.js"></script>
 <script src="scripts/linenumber.js"> </script>
 </body>
 </html>
