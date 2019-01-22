@@ -4,22 +4,73 @@
     <meta charset="utf-8">
     <title>JSDoc: Home</title>
 
-    <script src="scripts/prettify/prettify.js"> </script>
-    <script src="scripts/prettify/lang-css.js"> </script>
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
 </head>
 
 <body>
-
-<div id="main">
-
-    <h1 class="page-title">Home</h1>
-
-    
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">ZincJS Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                 
+                <div class="navbar-menu">
+                    <div class="navbar-end">
+                    
+                        <div class="navbar-item">
+                            <a href="https://github.com/alan-wu/ZincJS" target="_blank">Github</a>
+                        </div>
+                    
+                        <div class="navbar-item">
+                            <a href="https://sites.bioeng.auckland.ac.nz/webgl_zinc_collections" target="_blank">Examples</a>
+                        </div>
+                    
+                        <div class="navbar-item">
+                            <a href="https://github.com/alan-wu/ZincJS-Tutorials" target="_blank">Tutorials</a>
+                        </div>
+                    
+                    </div>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li></ul><h3>Global</h3><ul><li><a href="global.html#JSONLoader">JSONLoader</a></li><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li></ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Title</p>
+                        <h1>Home</h1>
+                    </header>
+                    
+                    
 
 
 
@@ -45,14 +96,22 @@
     <section>
         <article><h1>ZincJS (Web-based-Zinc-Visualisation)</h1><h2>Webapp developed using ZincJS:</h2><p><a href="http://sites.bioeng.auckland.ac.nz/medtech/heart/">Braveheart Interactive hert</a></p>
 <p><a href="http://sites.bioeng.auckland.ac.nz/silo6/lung/">Medtech Lungs</a></p>
-<h2>How to use:</h2><p>Example html and javascript to visualise Zinc to ThreeJS export.</p>
-<p>Here is a short instructions on how to get simple models from CMGUI/Zinc showing on web brwoser quickly.</p>
+<p><a href="https://mapcore-demo.org/2018-datathon/">SPARC MAPcore 2018 Demo</a></p>
+<p><a href="https://sites.bioeng.auckland.ac.nz/mwu035/fitzlet/">Fitzlet</a></p>
+<h2>Installation:</h2><p>You need NPM to build the ZincJS library. Once NPM has been installed, follow the instructions below:</p>
+<pre class="prettyprint source lang-Shell"><code>$ npm install
+$ npm run build</code></pre><p>If everything works accordingly, a 'build' folder along with two files zinc.js and zinc.min.js in it should be created. The zinc.js and zinc.min.js can now be consumed in your preferred envirnoment.</p>
+<h2>Useful links:</h2><p><a href="https://github.com/alan-wu/ZincJS-Examples/">Examples</a></p>
+<p><a href="https://github.com/alan-wu/ZincJS-Tutorials/">Tutorials</a></p>
+<p><a href="http://alan-wu.github.io/ZincJS/">API Documentation</a></p>
+<h2>How to export models to ZincJS:</h2><p>Here is a short instruction on how to get simple models from CMGUI/Zinc showing on web brwoser quickly.</p>
+<h2>For PyZinc users:</h2><p><a href="https://github.com/alan-wu/PyZinc2ZincJS/">PyZinc2ZincJS</a></p>
 <h2>For Cmgui users:</h2><ol>
 <li><p>Download the latest cmgui from http://physiomeproject.org/software/opencmiss/cmgui/download/developer</p>
 </li>
 <li><p>Read in your files, set up the graphics and viewing windows.</p>
 </li>
-<li><p>Export the json files using the following command gfx expore threejs, there are few different options regarding the export, make sure you read the instruction using &quot;gfx exporet threejs ?&quot; command. Please note down the filename_prefix you have chosen here. The number of files output is determined by the number of surfaces group you have created.</p>
+<li><p>Export the json files using the following command gfx expore threejs, there are few different options regarding the export, make sure you read the instruction using &quot;gfx export threejs ?&quot; command. Please note down the filename_prefix you have chosen here. The number of files output is determined by the number of surfaces group you have created.</p>
 </li>
 <li><p>Note down the values of eye point, interest point, upvector, near plane and far plane from the output of the &quot;gfx list win 1&quot; command.</p>
 </li>
@@ -87,19 +146,23 @@ I have modified the ThreeJS backend slightly to fit my usage here, you can find 
 
 
 
-</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Zinc.Geometry.html">Geometry</a></li><li><a href="Zinc.Glyph.html">Glyph</a></li><li><a href="Zinc.Glyphset.html">Glyphset</a></li><li><a href="Zinc.Renderer.html">Renderer</a></li><li><a href="Zinc.Scene.html">Scene</a></li></ul><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li></ul>
-</nav>
-
-<br class="clear">
-
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Mar 12 2018 14:33:03 GMT+1300 (NZDT)
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jan 22 2019 14:17:44 GMT+1300 (NZDT)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers</a>
+        </p>
+    </div>
 </footer>
 
 <script> prettyPrint(); </script>
+<script src="scripts/app.min.js"></script>
 <script src="scripts/linenumber.js"> </script>
 </body>
 </html>

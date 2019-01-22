@@ -30,6 +30,7 @@ exports.Geometry = function () {
 	 */
 	this.groupName = undefined;
 	var inbuildTime = 0;
+	this.userData = [];
 	var _this = this;
 	
 	/**
@@ -250,8 +251,10 @@ exports.Geometry = function () {
 	 * Clear this geometry and free the memory.
 	 */
 	this.dispose = function() {
-		_this.morph.geometry.dispose();
-		_this.morph.material.dispose();
+	  if (_this.morph && _this.morph.geometry)
+	    _this.morph.geometry.dispose();
+	  if (_this.morph && _this.morph.material)
+	    _this.morph.material.dispose();
 		_this.geometry = undefined;
 		_this.mixer = undefined;
 		_this.morph = undefined;

@@ -19,6 +19,7 @@ exports.Glyphset = function()  {
 	var positions = undefined;
 	var scales = undefined;
 	var colors = undefined;
+	var labels = undefined;
 	var numberOfTimeSteps = 0;
 	var numberOfVertices = 0;
 	var baseSize = [0, 0, 0];
@@ -33,6 +34,7 @@ exports.Glyphset = function()  {
 	var morphColours = false;
 	var morphVertices = false;
 	var groupName = undefined;
+	this.userData = [];
 	
 	/**
 	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
@@ -68,6 +70,7 @@ exports.Glyphset = function()  {
 		positions = glyphsetData.positions;
 		scales = glyphsetData.scale;
 		colors = glyphsetData.colors;
+		labels = glyphsetData.label;
 		morphColours = glyphsetData.metadata.MorphColours;
 		morphVertices = glyphsetData.metadata.MorphVertices;
 		numberOfTimeSteps = glyphsetData.metadata.number_of_time_steps;
@@ -80,7 +83,7 @@ exports.Glyphset = function()  {
 		baseSize = glyphsetData.metadata.base_size;
 		offset = glyphsetData.metadata.offset;
 		scaleFactors = glyphsetData.metadata.scale_factors;
-		var loader = new JSONLoader( true );
+		var loader = new JSONLoader();
 		loader.load( glyphURL, meshloader(finishCallback));
 	}
 	
@@ -381,9 +384,13 @@ exports.Glyphset = function()  {
 	
 	var createGlyphs = function(geometry, material) {
 		for (var i = 0; i < numberOfVertices; i ++) {
-			var glyph = new (require('./glyph').Glyph)(geometry, material, i + 1);
+			var glyph = new (require('./glyph').Glyph)(geometry, material, i + 1, _this);
+			console.log(labels);
+			if (labels != undefined && labels[i] != undefined) {
+			  glyph.setLabel(labels[i]);
+			}
 			glyphList[i] = glyph;
-			group.add(glyph.getMesh());
+			group.add(glyph.getGroup());
 		}
 		//Update the transformation of the glyphs.
 		updateGlyphsetTransformation(positions["0"], axis1s["0"],
