@@ -385,7 +385,6 @@ exports.Glyphset = function()  {
 	var createGlyphs = function(geometry, material) {
 		for (var i = 0; i < numberOfVertices; i ++) {
 			var glyph = new (require('./glyph').Glyph)(geometry, material, i + 1, _this);
-			console.log(labels);
 			if (labels != undefined && labels[i] != undefined) {
 			  glyph.setLabel(labels[i]);
 			}

@@ -23,6 +23,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	mesh.userData = _this;
 	var label = undefined;
 	var group = new THREE.Group();
+	group.add(mesh);
 	
 	this.setLabel = function(text) {
 	  if (text && (typeof text === 'string' || text instanceof String)) {
