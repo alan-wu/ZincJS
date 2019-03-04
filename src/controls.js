@@ -818,8 +818,6 @@ var SmoothCameraTransition = function (startingViewport, endingViewport, targetC
 	var enabled = true;
 	var updateLightWithPathFlag = true;
 	var completed = false;
-	console.log(startingViewport)
-	console.log(endingViewport)
 	targetCamera.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
 	targetCamera.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
 	targetCamera.cameraObject.up.set( endingViewport.upVector[0],  endingViewport.upVector[1],

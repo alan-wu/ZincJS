@@ -34,6 +34,7 @@ exports.Glyphset = function()  {
 	var morphColours = false;
 	var morphVertices = false;
 	var groupName = undefined;
+	this.isGlyphset = true;
 	this.userData = [];
 	
 	/**
@@ -383,6 +384,8 @@ exports.Glyphset = function()  {
 	}
 	
 	var createGlyphs = function(geometry, material) {
+		geometry.computeFaceNormals();
+		geometry.computeVertexNormals();
 		for (var i = 0; i < numberOfVertices; i ++) {
 			var glyph = new (require('./glyph').Glyph)(geometry, material, i + 1, _this);
 			if (labels != undefined && labels[i] != undefined) {
@@ -399,6 +402,24 @@ exports.Glyphset = function()  {
 			updateGlyphsetHexColors(colors["0"]);
 		}
 		_this.ready = true;
+	}
+	
+	this.addCustomGlyph = function(glyph) {
+		if (glyph.isGlyph)
+			glyphList.push(glyph);
+		_this.ready = true;
+	}
+	
+	this.addMeshAsGlyph = function(mesh, id) {
+		if (mesh.isMesh) {
+			var glyph = new (require('./glyph').Glyph)(undefined, undefined, id, _this);
+			glyph.fromMesh(mesh);
+			glyphList.push(glyph);
+			group.add(glyph.getGroup())
+			_this.ready = true;
+			return glyph;
+		}
+		return undefined;
 	}
 	
 	/**

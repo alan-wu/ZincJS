@@ -17,7 +17,7 @@ var Zinc = function() {
   this.Renderer = require('./renderer').Renderer;
   this.Scene = require('./scene').Scene;
   this.GeometryCSG = require('./geometryCSG').GeometryCSG;
-  
+  this.GlyphsetCSG = require('./glyphsetCSG').GlyphsetCSG;
   this.Viewport = require('./controls').Viewport;
   this.CameraControls = require('./controls').CameraControls;
   this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;

@@ -19,6 +19,7 @@ exports.Geometry = function () {
 	// THREE.Mesh
 	this.morph = undefined;
 	this.clipAction = undefined;
+	this.isGeometry = true;
 	/**
 	 * Total duration of the animation, this value interacts with the 
 	 * {@link Zinc.Renderer#playRate} to produce the actual duration of the
@@ -234,6 +235,7 @@ exports.Geometry = function () {
       return true;
     return false;
   }
+  
 	
 	/**
 	 * Get the bounding box of this geometry.
