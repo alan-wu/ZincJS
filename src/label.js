@@ -37,6 +37,12 @@ exports.Label = function ( textIn ) {
   var createLabel = function() {
     _this.element  = createBitmap();
     createFontSprite();
+  } 
+  
+  this.getPosition = function() {
+	  if (sprite)
+		  return [sprite.position.x, sprite.position.y, sprite.position.z];
+	  return [0, 0, 0];
   }
   
 //now set the position at the correct 3D space 
@@ -57,8 +63,11 @@ exports.Label = function ( textIn ) {
   }
   
   this.getSprite = function() {
-    console.log(sprite)
     return sprite;
+  }
+  
+  this.getString = function() {
+	  return Text;
   }
   
   createLabel();

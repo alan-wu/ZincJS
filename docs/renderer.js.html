@@ -1,32 +1,86 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: renderer.js</title>
+    <title>JSDoc: renderer.js</title>
 
-    <script src="scripts/prettify/prettify.js"> </script>
-    <script src="scripts/prettify/lang-css.js"> </script>
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
+    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
 </head>
 
 <body>
-
-<div id="main">
-
-    <h1 class="page-title">Source: renderer.js</h1>
-
-    
+    <div id="stickyNavbarOverlay"></div>
+    <div class="top-navbar">
+        <div class="container">
+            <nav class="navbar" role="navigation" aria-label="main navigation">
+                <div class="navbar-brand">
+                    
+                     
+                        <h1 class="navbar-item">ZincJS Documentation</h1>
+                    
+                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                        <span aria-hidden="true"></span>
+                    </a>
+                </div>
+                 
+                <div class="navbar-menu">
+                    <div class="navbar-end">
+                    
+                        <div class="navbar-item">
+                            <a href="https://github.com/alan-wu/ZincJS" target="_blank">Github</a>
+                        </div>
+                    
+                        <div class="navbar-item">
+                            <a href="https://sites.bioeng.auckland.ac.nz/webgl_zinc_collections" target="_blank">Examples</a>
+                        </div>
+                    
+                        <div class="navbar-item">
+                            <a href="https://github.com/alan-wu/ZincJS-Tutorials" target="_blank">Tutorials</a>
+                        </div>
+                    
+                    </div>
+                </div>
+                
+            </nav>
+        </div>
+    </div>
+    <div class="container">
+        <div class="columns">
+            <div class="column is-3" id="sidebarNav">
+                <div class="sidebar">
+                    <nav>
+                        <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li></ul><h3>Global</h3><ul><li><a href="global.html#JSONLoader">JSONLoader</a></li><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li></ul>
+                    </nav>
+                </div>
+            </div>
+            <div class="column is-9-desktop">
+                <div class="content" id="main-content-wrapper">
+                    <header class="page-title">
+                        <p>Source</p>
+                        <h1>renderer.js</h1>
+                    </header>
+                    
+                    
 
 
 
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>/**
+            <pre class="prettyprint source linenums"><code>var THREE = require('three');
+/**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
  * scene (@link Zinc.Scene} set to the renderer and each scene may contain as 
@@ -38,10 +92,8 @@
  * @author Alan Wu
  * @return {Zinc.Renderer}
  */
-Zinc.Renderer = function (containerIn, window) {
+exports.Renderer = function (containerIn, window) {
 
-	var animation = 0;
-	
 	var container = containerIn;
 	
 	var stats = 0;
@@ -54,7 +106,7 @@ Zinc.Renderer = function (containerIn, window) {
 	this.playAnimation = true
 	/* default animation update rate, rate is 500 and duration is default to 3000, 6s to finish a full animation */
 	var playRate = 500;
-	var preRenderCallbackFunctions = {};
+	var preRenderCallbackFunctions = [];
 	var preRenderCallbackFunctions_id = 0;
 	var animated_id = undefined;
 	var cameraOrtho = undefined, sceneOrtho = undefined, logoSprite = undefined;
@@ -63,6 +115,7 @@ Zinc.Renderer = function (containerIn, window) {
 	var scenesGroup = new THREE.Group();
 	var _this = this;
 	var currentSize = [0, 0];
+	var currentOffset = [0, 0];
 	
 	/** 
 	 * Call this to resize the renderer, this is normally call automatically.
@@ -73,23 +126,36 @@ Zinc.Renderer = function (containerIn, window) {
 			renderer.setSize( container.clientWidth, container.clientHeight );
 			currentSize[0] = renderer.getSize().width;
 			currentSize[1] = renderer.getSize().height;
+			var rect = container.getBoundingClientRect();
+			currentOffset[0] = rect.left;
+			currentOffset[1] = rect.top;
 		}
 	}
 	
 	/**
 	 * Initialise the renderer and its visualisations.
 	 */
-	this.initialiseVisualisation = function() {
-        var onMobile = false;
+	this.initialiseVisualisation = function(parameters) {
+	  parameters = parameters || {};
+	  if (parameters['antialias'] === undefined) {
+      var onMobile = false;
+      try {
         if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
-                onMobile = true;
+          onMobile = true;
         }
-        if (onMobile)
-                renderer = new THREE.WebGLRenderer({ antialias: false});
-        else {
-                renderer = new THREE.WebGLRenderer({ antialias: true});
-        }
-		container.appendChild( renderer.domElement );
+      }
+      catch(err) {
+        onMobile = false;
+      }
+      if (onMobile)
+        parameters['antialias'] = false;
+      else
+        parameters['antialias'] = true;
+	  }
+    
+    renderer = new THREE.WebGLRenderer(parameters);
+    if (container !== undefined)
+      container.appendChild( renderer.domElement );
 		renderer.setClearColor( 0xffffff, 1);
 		var scene = _this.createScene("default");
 		_this.setCurrentScene(scene);
@@ -144,7 +210,7 @@ Zinc.Renderer = function (containerIn, window) {
 		if (sceneMap[name] != undefined){
 			return undefined;
 		} else {
-			var new_scene = new Zinc.Scene(container, renderer)
+			var new_scene = new (require('./scene')).Scene(container, renderer)
 			sceneMap[name] = new_scene;
 			new_scene.sceneName = name;
 			return new_scene;
@@ -255,7 +321,7 @@ Zinc.Renderer = function (containerIn, window) {
 	 */
 	this.stopAnimate = function () {
 		cancelAnimationFrame(animated_id);
-   		animated_id = undefined;
+   	animated_id = undefined;
 	}
 
 	/**
@@ -379,7 +445,10 @@ Zinc.Renderer = function (containerIn, window) {
 	 * and finally render the scenes.
 	 */
 	this.render = function() {
-		if (currentSize[0] != container.clientWidth || currentSize[1] != container.clientHeight ) {
+		var rect = container.getBoundingClientRect();
+		
+		if (currentSize[0] != container.clientWidth || currentSize[1] != container.clientHeight ||
+				rect.left != currentOffset[0] || rect.top != currentOffset[1]) {
 			_this.onWindowResize();
 		}
 		var delta = clock.getDelta();
@@ -392,11 +461,11 @@ Zinc.Renderer = function (containerIn, window) {
 			renderer.clearDepth();
 			renderer.render( sceneOrtho, cameraOrtho );
 		}
-    	for (key in preRenderCallbackFunctions) {
-        	if (preRenderCallbackFunctions.hasOwnProperty(key)) {
-        		preRenderCallbackFunctions[key].call();
-        	}
-    	}
+    for (key in preRenderCallbackFunctions) {
+      if (preRenderCallbackFunctions.hasOwnProperty(key)) {
+        preRenderCallbackFunctions[key].call();
+      }
+    }
 		currentScene.render(renderer);
 	}
 	
@@ -422,7 +491,7 @@ Zinc.Renderer = function (containerIn, window) {
 		        	return true;
 		    }
 		}
-	    return false;
+	  return false;
 	} 
 	
 	/**
@@ -464,6 +533,28 @@ Zinc.Renderer = function (containerIn, window) {
 	}
 	
 	/**
+	 * Dispose all memory allocated, this will effetively destroy all scenes.
+	 */
+	this.dispose = function() {
+	  for (var key in sceneMap) {
+	    if (sceneMap.hasOwnProperty(key)) {
+	      sceneMap[key].clearAll();
+	    }
+	  }
+	  sceneMap = [];
+	  additionalActiveScenes = [];
+	  scenesGroup = new THREE.Group();
+	  _this.stopAnimate();
+	  preRenderCallbackFunctions = [];
+	  preRenderCallbackFunctions_id = 0;
+	  cameraOrtho = undefined;
+	  sceneOrtho = undefined;
+	  logoSprite = undefined;
+	   var scene = _this.createScene("default");
+	    _this.setCurrentScene(scene);
+	}
+	
+	/**
 	 * Transition from the current viewport to the endingScene's viewport in the specified duration.
 	 * 
 	 * @param {Zinc.Scene} endingScene - Viewport of this scene will be used as the destination.
@@ -495,19 +586,23 @@ Zinc.Renderer = function (containerIn, window) {
 
 
 
-</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Classes</h3><ul><li><a href="Zinc.Geometry.html">Geometry</a></li><li><a href="Zinc.Glyph.html">Glyph</a></li><li><a href="Zinc.Glyphset.html">Glyphset</a></li><li><a href="Zinc.Renderer.html">Renderer</a></li><li><a href="Zinc.Scene.html">Scene</a></li></ul><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li></ul>
-</nav>
-
-<br class="clear">
-
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Mon Mar 12 2018 14:33:03 GMT+1300 (NZDT)
+<footer class="footer">
+    <div class="content has-text-centered">
+        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jan 22 2019 14:17:44 GMT+1300 (NZDT)</p>
+        <p class="sidebar-created-by">
+            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
+            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers</a>
+        </p>
+    </div>
 </footer>
 
 <script> prettyPrint(); </script>
+<script src="scripts/app.min.js"></script>
 <script src="scripts/linenumber.js"> </script>
 </body>
 </html>

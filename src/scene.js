@@ -252,6 +252,14 @@ exports.Scene = function(containerIn, rendererIn) {
     }
     return glyphsetsArray;
   }
+  
+  this.addGlyphset = function(glyphset) {
+	  if (glyphset && glyphset.isGlyphset) {
+		  var group = glyphset.getGroup();
+		  scene.add(group);
+		  zincGlyphsets.push(glyphset) ;
+	  }  
+  }
 
   //Load a glyphset into this scene.
   var loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback) {
@@ -259,9 +267,7 @@ exports.Scene = function(containerIn, rendererIn) {
     newGlyphset.duration = 3000;
     newGlyphset.load(glyphsetData, glyphurl, finishCallback);
     newGlyphset.groupName = groupName;
-    var group = newGlyphset.getGroup();
-    scene.add(group);
-    zincGlyphsets.push(newGlyphset) ;
+    _this.addGlyphset(newGlyphset);
   }
 
   //Load a glyphset into this scene.

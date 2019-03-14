@@ -8,6 +8,10 @@ Webapp developed using ZincJS:
 
 [Medtech Lungs](http://sites.bioeng.auckland.ac.nz/silo6/lung/)
 
+[SPARC MAPcore 2018 Demo](https://mapcore-demo.org/2018-datathon/)
+
+[Fitzlet](https://sites.bioeng.auckland.ac.nz/mwu035/fitzlet/)
+
 Installation:
 -------------
 
@@ -20,12 +24,24 @@ $ npm run build
 
 If everything works accordingly, a 'build' folder along with two files zinc.js and zinc.min.js in it should be created. The zinc.js and zinc.min.js can now be consumed in your preferred envirnoment.
 
-How to use:
------------
+Useful links:
+-------------
 
-Example html and javascript to visualise Zinc to ThreeJS export.
+[Examples](https://github.com/alan-wu/ZincJS-Examples/)
 
-Here is a short instructions on how to get simple models from CMGUI/Zinc showing on web brwoser quickly.
+[Tutorials](https://github.com/alan-wu/ZincJS-Tutorials/)
+
+[API Documentation](http://alan-wu.github.io/ZincJS/)
+
+How to export models to ZincJS:
+-------------------------------
+
+Here is a short instruction on how to get simple models from CMGUI/Zinc showing on web brwoser quickly.
+
+For PyZinc users:
+-----------------
+
+[PyZinc2ZincJS](https://github.com/alan-wu/PyZinc2ZincJS/)
 
 For Cmgui users:
 ----------------
@@ -34,7 +50,7 @@ For Cmgui users:
 
 2. Read in your files, set up the graphics and viewing windows.
 
-3. Export the json files using the following command gfx expore threejs, there are few different options regarding the export, make sure you read the instruction using "gfx exporet threejs ?" command. Please note down the filename_prefix you have chosen here. The number of files output is determined by the number of surfaces group you have created.
+3. Export the json files using the following command gfx expore threejs, there are few different options regarding the export, make sure you read the instruction using "gfx export threejs ?" command. Please note down the filename_prefix you have chosen here. The number of files output is determined by the number of surfaces group you have created.
 
 4. Note down the values of eye point, interest point, upvector, near plane and far plane from the output of the "gfx list win 1" command.
 
@@ -87,17 +103,3 @@ Basic controls:
 * Middle click/three finger touch move: Translate
 * Right click/two finger pinch: Zoom
 
-Examples:
----------
-
-https://github.com/alan-wu/ZincJS-Examples
-
-Tutorials:
-----------
-
-https://github.com/alan-wu/ZincJS-Tutorials
-
-API Documentation:
--------------------
-
-http://alan-wu.github.io/ZincJS/
