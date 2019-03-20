@@ -433,7 +433,7 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 
-	var loadPath = function(pathData)
+	this.loadPath = function(pathData)
 	{
 		cameraPath = pathData.CameraPath;
 		numberOfCameraPoint = pathData.NumberOfPoints;
@@ -445,7 +445,7 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 		xmlhttp.onreadystatechange = function() {
 		    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
 		        var pathData = JSON.parse(xmlhttp.responseText);
-		        loadPath(pathData);
+		        _this.loadPath(pathData);
 	          if (finishCallback != undefined && (typeof finishCallback == 'function'))
 	            finishCallback();
 		    }
