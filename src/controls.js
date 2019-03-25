@@ -497,6 +497,13 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
   		var bottom_frame =  Math.floor(current_time);
   		var proportion = 1 - (current_time - bottom_frame);
   		var top_frame =  Math.ceil(current_time);
+  		if (bottom_frame == top_frame) {
+  			if (bottom_frame == numberOfCameraPoint - 1) {
+  				return [bottom_frame - 1, top_frame, 0];
+  			} else {
+  				return [bottom_frame, top_frame + 1, 1.0];
+  			}
+  		}
   		return [bottom_frame, top_frame, proportion];
 	  } else if (numberOfCameraPoint == 1) {
 	    return [0, 0, 0];
@@ -523,7 +530,6 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 				var bottom_frame = time_frame[0];
 				var top_frame = time_frame[1];
 				var proportion = time_frame[2];
-	
 				var bot_pos = [cameraPath[bottom_frame*3], cameraPath[bottom_frame*3+1], cameraPath[bottom_frame*3+2]];
 				var top_pos = [cameraPath[top_frame*3], cameraPath[top_frame*3+1], cameraPath[top_frame*3+2]];
 				var current_positions = [];
@@ -532,6 +538,8 @@ var CameraControls = function ( object, domElement, renderer, scene ) {
 				}
 				_this.cameraObject.position.set(current_positions[0], current_positions[1], current_positions[2]);
 				_this.cameraObject.target.set(top_pos[0], top_pos[1], top_pos[2]);
+				if (deviceOrientationControl)
+					_this.cameraObject.lookAt( _this.cameraObject.target );
 				if (updateLightWithPathFlag) {
 					_this.directionalLight.position.set(current_positions[0], current_positions[1], current_positions[2]);
 					_this.directionalLight.target.position.set(top_pos[0], top_pos[1], top_pos[2]);
