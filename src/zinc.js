@@ -5,7 +5,7 @@
  * @author Alan Wu
  */
 
-var Zinc = function() {
+const Zinc = function() {
   this.Revision = 29;
 
   this.defaultMaterialColor = 0xFFFFFF;
@@ -28,6 +28,6 @@ var Zinc = function() {
   this.StereoEffect = require('./controls').StereoEffect;
   this.THREE = require('three'); 
   
-}
+};
 
 module.exports = new Zinc();

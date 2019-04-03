@@ -1,4 +1,4 @@
-var THREE = require('three');
+const THREE = require('three');
 
 /**
  * Zinc representation of glyph graphic, it contains the colours, 
@@ -13,21 +13,21 @@ var THREE = require('three');
  * @return {Zinc.Glyph}
  */
 exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
-	var material = undefined;
+	let material = undefined;
 	if (materialIn) {
 		material = materialIn.clone();
 		material.vertexColors = THREE.FaceColors;
 	}
-	var parent = glyphsetIn;
-	var mesh = undefined;
+	const parent = glyphsetIn;
+	let mesh = undefined;
 	this.id = idIn;
 	this.userData = [];
-	var _this = this;
-	var label = undefined;
-	var group = new THREE.Group();
-	var isGlyph = true;
+	const _this = this;
+	let label = undefined;
+	const group = new THREE.Group();
+	const isGlyph = true;
 	
-	this.fromMesh = function(meshIn) {
+	this.fromMesh = meshIn => {
 		if (meshIn && meshIn.isMesh) {
 			mesh = meshIn.clone();
 			mesh.userData = _this;
@@ -41,9 +41,9 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 		_this.fromMesh(new THREE.Mesh( geometry, material ));
 	}
 	
-	this.setLabel = function(text) {
+	this.setLabel = text => {
 	  if (text && (typeof text === 'string' || text instanceof String)) {
-		var position = [0, 0, 0];
+		let position = [0, 0, 0];
 	    if (label) {
 	      position = label.getPosition();
 	      group.remove(label.getSprite());
@@ -60,7 +60,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * Get the group containing the label and mesh.
 	 * @return {THREE.Mesh}
 	 */
-	this.getGroup = function () {
+	this.getGroup = () => {
 		return group;
 	}
 	
@@ -68,7 +68,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * Get the label of this glyph
 	 * @return {Label}
 	 */
-	this.getLabel = function () {
+	this.getLabel = () => {
 		if (label)
 			return label.getString();
 		return undefined;
@@ -78,7 +78,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * Get the mesh of this glyph.
 	 * @return {THREE.Mesh}
 	 */
-	this.getMesh = function () {
+	this.getMesh = () => {
 		return mesh;
 	}
 	
@@ -86,7 +86,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * Get the bounding box of this glyph.
 	 * @return {THREE.Box3}
 	 */
-	this.getBoundingBox = function() {
+	this.getBoundingBox = () => {
 		if (mesh)
 			return new THREE.Box3().setFromObject(mesh);
 		return undefined;
@@ -96,7 +96,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * get the Colour of this glyph.
 	 * return {THREE.Color}
 	 */
-	this.getColor = function (colorIn) {
+	this.getColor = colorIn => {
 		if (mesh && mesh.material)
 			return mesh.material;
 		return undefined;
@@ -106,7 +106,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * Set the Colour of this glyph.
 	 * @param {THREE.Color} colorIn - Colour to be set of this mesh.
 	 */
-	this.setColor = function (colorIn) {
+	this.setColor = colorIn => {
 		mesh.material.color = colorIn;
 		mesh.geometry.colorsNeedUpdate = true;
 	}
@@ -122,7 +122,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * @param {Array} position - Three components vectors containing axis3 rotation of the
 	 * transformation.
 	 */
-	this.setTransformation = function(position, axis1, axis2, axis3) {
+	this.setTransformation = (position, axis1, axis2, axis3) => {
 		mesh.matrix.elements[0] = axis1[0];
 		mesh.matrix.elements[1] = axis1[1];
 		mesh.matrix.elements[2] = axis1[2];
@@ -147,7 +147,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	/**
 	 * Clear and free its memory.
 	 */
-	this.dispose = function() {
+	this.dispose = () => {
 	  if (_this.material)
 	    _this.material.dispose();
 		_this.mesh = undefined;

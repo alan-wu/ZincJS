@@ -2,7 +2,7 @@
   "name": "zincjs",
   "version": "0.29.7",
   "description": "ZincJS (Web-based-Zinc-Visualisation)",
-  "main": "build/zinc.min.js",
+  "main": "build/zinc.js",
   "directories": {
     "doc": "docs"
   },
@@ -35,13 +35,14 @@
   },
   "homepage": "http://alan-wu.github.io/ZincJS/",
   "devDependencies": {
+    "@babel/preset-env": "^7.4.2",
+    "@babel/core": "^7.4.0",
+    "babel-loader": "^8.0.5",
     "better-docs": "^1.0.0",
-    "uglifyjs-webpack-plugin": "^1.2.5",
-    "webpack": "^4.20.2",
-    "webpack-cli": "^3.1.1"
-  },
-  "dependencies": {
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.1.1",
     "three": "^0.92.0",
     "three-js-csg": "^72.0.0"
-  }
+  },
+  "dependencies": {}
 }
