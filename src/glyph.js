@@ -22,7 +22,6 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	let mesh = undefined;
 	this.id = idIn;
 	this.userData = [];
-	const _this = this;
 	let label = undefined;
 	const group = new THREE.Group();
 	const isGlyph = true;
@@ -30,7 +29,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	this.fromMesh = meshIn => {
 		if (meshIn && meshIn.isMesh) {
 			mesh = meshIn.clone();
-			mesh.userData = _this;
+			mesh.userData = this;
 			group.add(mesh);
 			return true;
 		} 
@@ -38,7 +37,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	}
 	
 	if (geometry && material) {
-		_this.fromMesh(new THREE.Mesh( geometry, material ));
+		this.fromMesh(new THREE.Mesh( geometry, material ));
 	}
 	
 	this.setLabel = text => {
@@ -148,8 +147,8 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * Clear and free its memory.
 	 */
 	this.dispose = () => {
-	  if (_this.material)
-	    _this.material.dispose();
-		_this.mesh = undefined;
+	  if (this.material)
+	    this.material.dispose();
+		this.mesh = undefined;
 	}
 }

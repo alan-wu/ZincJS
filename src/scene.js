@@ -38,7 +38,6 @@ exports.Scene = function(containerIn, rendererIn) {
   let errorDownload = false;
   let stereoEffectFlag = false;
   let stereoEffect = undefined;
-  const _this = this;
   this.autoClearFlag = true;
 
   /**
@@ -52,8 +51,8 @@ exports.Scene = function(containerIn, rendererIn) {
     let totalLoaded = 0;
     let unknownFound = false;
 
-    for (const key in _this.progressMap) {
-      const progress = _this.progressMap[key];
+    for (const key in this.progressMap) {
+      const progress = this.progressMap[key];
 
       totalSize += progress[1];
       totalLoaded += progress[0];
@@ -70,7 +69,7 @@ exports.Scene = function(containerIn, rendererIn) {
   //Stores the current progress of downloads
   this.onProgress = id => {
     return xhr => {
-      _this.progressMap[id] = [ xhr.loaded, xhr.total ];
+      this.progressMap[id] = [ xhr.loaded, xhr.total ];
     };
   }
 
@@ -81,30 +80,30 @@ exports.Scene = function(containerIn, rendererIn) {
   //called from Renderer when panel has been resized
   this.onWindowResize = () => {
     zincCameraControls.onResize();
-    _this.camera.aspect = container.clientWidth / container.clientHeight;
-    _this.camera.updateProjectionMatrix();
+    this.camera.aspect = container.clientWidth / container.clientHeight;
+    this.camera.updateProjectionMatrix();
   }
 
   /**
    * Reset the viewport of this scene to its original state. 
    */
   this.resetView = () => {
-    _this.onWindowResize();
+    this.onWindowResize();
     zincCameraControls.resetView();
   }
 
   //Setup the camera for this scene, it also initialise the lighting
   const setupCamera = () => {
-    _this.camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.0, 10.0);
-    _this.ambient = new THREE.AmbientLight(0x202020);
-    scene.add(_this.ambient);
+    this.camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.0, 10.0);
+    this.ambient = new THREE.AmbientLight(0x202020);
+    scene.add(this.ambient);
 
-    _this.directionalLight = new THREE.DirectionalLight(0x777777);
-    scene.add(_this.directionalLight);
+    this.directionalLight = new THREE.DirectionalLight(0x777777);
+    scene.add(this.directionalLight);
 
-    zincCameraControls = new (require('./controls').CameraControls)(_this.camera, rendererIn.domElement, rendererIn, scene);
+    zincCameraControls = new (require('./controls').CameraControls)(this.camera, rendererIn.domElement, rendererIn, scene);
 
-    zincCameraControls.setDirectionalLight(_this.directionalLight);
+    zincCameraControls.setDirectionalLight(this.directionalLight);
     zincCameraControls.resetView();
   };
 
@@ -131,13 +130,13 @@ exports.Scene = function(containerIn, rendererIn) {
    * 
    * @param {Zinc.Viewport} viewData - Viewport data to be loaded. 
    */
-  this.loadView = viewData => {
+  this.loadView = ({nearPlane, farPlane, eyePosition, targetPosition, upVector}) => {
     const viewPort = new (require('./controls').Viewport)();
-    viewPort.nearPlane = viewData.nearPlane;
-    viewPort.farPlane = viewData.farPlane;
-    viewPort.eyePosition = viewData.eyePosition;
-    viewPort.targetPosition = viewData.targetPosition;
-    viewPort.upVector = viewData.upVector;
+    viewPort.nearPlane = nearPlane;
+    viewPort.farPlane = farPlane;
+    viewPort.eyePosition = eyePosition;
+    viewPort.targetPosition = targetPosition;
+    viewPort.upVector = upVector;
     zincCameraControls.setDefaultCameraSettings(viewPort);
     zincCameraControls.resetView();
   }
@@ -192,8 +191,8 @@ exports.Scene = function(containerIn, rendererIn) {
    * Adjust zoom distance to include all primitives in scene only.
    */
   this.viewAll = () => {
-    const boundingBox = _this.getBoundingBox();
-    _this.viewAllWithBoundingBox(boundingBox);
+    const boundingBox = this.getBoundingBox();
+    this.viewAllWithBoundingBox(boundingBox);
   }
 
   /**
@@ -266,7 +265,7 @@ exports.Scene = function(containerIn, rendererIn) {
     newGlyphset.duration = 3000;
     newGlyphset.load(glyphsetData, glyphurl, finishCallback);
     newGlyphset.groupName = groupName;
-    _this.addGlyphset(newGlyphset);
+    this.addGlyphset(newGlyphset);
   };
 
   //Load a glyphset into this scene.
@@ -328,17 +327,17 @@ exports.Scene = function(containerIn, rendererIn) {
       } else if (fileFormat == "OBJ") {
         loader = new OBJLoader();
         loader.load(url, objloader(modelId, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError);
+          localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
         return;
       }
     }
     loader.load(url, meshloader(modelId, colour, opacity, localTimeEnabled,
-      localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError);
+      localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
   };
   
   //Object to keep track of number of items downloaded and when add items are downloaded
   //allCompletedCallback is called
-  const metaFinishCallback = (numberOfDownloaded, finishCallback, allCompletedCallback) => {
+  var metaFinishCallback = function(numberOfDownloaded, finishCallback, allCompletedCallback) {
     let downloadedItem = 0;
     return zincGeometry => {
       downloadedItem = downloadedItem + 1;
@@ -357,7 +356,7 @@ exports.Scene = function(containerIn, rendererIn) {
       if (item.Type == "Surfaces") {
         loadMetaModel(item.URL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback);
       } else if (item.Type == "Glyph") {
-        _this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL, item.GroupName, finishCallback);
+        this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL, item.GroupName, finishCallback);
       }
     }
   };
@@ -414,8 +413,9 @@ exports.Scene = function(containerIn, rendererIn) {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
         const metadata = JSON.parse(xmlhttp.responseText);
         const numberOfObjects = metadata.length;
+        var callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
         for (i = 0; i < numberOfObjects; i++)
-          readMetadataItem(metadata[i], metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback));
+          readMetadataItem(metadata[i], callback);
       }
     }
     requestURL = url
@@ -450,7 +450,7 @@ exports.Scene = function(containerIn, rendererIn) {
         localMorphColour = morphColour[i] ? true : false;
 
       loader.load(filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, undefined,
-        finishCallback), _this.onProgress(i), _this.onError);
+        finishCallback), this.onProgress(i), this.onError);
     }
   }
 
@@ -463,7 +463,7 @@ exports.Scene = function(containerIn, rendererIn) {
     xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
         const viewData = JSON.parse(xmlhttp.responseText);
-        _this.loadView(viewData);
+        this.loadView(viewData);
       }
     }
     requestURL = url
@@ -484,14 +484,14 @@ exports.Scene = function(containerIn, rendererIn) {
     xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
         const viewData = JSON.parse(xmlhttp.responseText);
-        _this.loadView(viewData);
+        this.loadView(viewData);
         const urls = [];
         const filename_prefix = jsonFilePrefix + "_";
         for (let i = 0; i < viewData.numberOfResources; i++) {
           const filename = filename_prefix + (i + 1) + ".json";
           urls.push(filename);
         }
-        _this.loadModelsURL(urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback);
+        this.loadModelsURL(urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback);
       }
     }
     requestURL = jsonFilePrefix + "_view.json";
@@ -543,7 +543,7 @@ exports.Scene = function(containerIn, rendererIn) {
     newGeometry.morph = mesh;
     newGeometry.mixer = mixer;
     newGeometry.clipAction = clipAction;
-    _this.addGeometry(newGeometry);
+    this.addGeometry(newGeometry);
     return newGeometry;
   };
 
@@ -686,7 +686,7 @@ exports.Scene = function(containerIn, rendererIn) {
       if (materials && materials[0]) {
         material = materials[0];
       }
-      const zincGeometry = _this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material);
+      const zincGeometry = this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material);
       if (zincGeometry.morph) {
         zincGeometry.morph.name = groupName;
         zincGeometry.morph.userData = zincGeometry;
@@ -830,13 +830,13 @@ exports.Scene = function(containerIn, rendererIn) {
    * @private
    */
   this.render = renderer => {
-    if (_this.autoClearFlag)
+    if (this.autoClearFlag)
       renderer.clear();
     if (stereoEffectFlag && stereoEffect) {
-      stereoEffect.render(scene, _this.camera);
+      stereoEffect.render(scene, this.camera);
     }
     else
-      renderer.render(scene, _this.camera);
+      renderer.render(scene, this.camera);
   }
 
   /**
@@ -899,7 +899,7 @@ exports.Scene = function(containerIn, rendererIn) {
     } else {
       rendererIn.setSize(container.clientWidth, container.clientHeight);
     }
-    _this.camera.updateProjectionMatrix();
+    this.camera.updateProjectionMatrix();
     stereoEffectFlag = stereoFlag;
   }
 
@@ -918,10 +918,10 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   this.alignObjectToCameraView = (zincObject, transitionTime) => {
-    if (_this.objectIsInScene(zincObject)) {
+    if (this.objectIsInScene(zincObject)) {
       const center = new THREE.Vector3();
       const boundingBox = zincObject.getBoundingBox();
-      const viewport = _this.getZincCameraControls().getCurrentViewport();
+      const viewport = this.getZincCameraControls().getCurrentViewport();
       boundingBox.getCenter(center);
       const target = new THREE.Vector3(viewport.targetPosition[0],
         viewport.targetPosition[1], viewport.targetPosition[2]);
@@ -937,20 +937,20 @@ exports.Scene = function(containerIn, rendererIn) {
       newVec3.crossVectors(newVec1, newVec2);
       const angle = newVec1.angleTo(newVec2);
       if (transitionTime > 0) {
-        _this.getZincCameraControls().rotateCameraTransition(newVec3,
+        this.getZincCameraControls().rotateCameraTransition(newVec3,
           angle, transitionTime);
-        _this.getZincCameraControls().enableCameraTransition();
+        this.getZincCameraControls().enableCameraTransition();
       } else {
-        _this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
+        this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
       }
     }
   }
 
   this.setCameraTargetToObject = zincObject => {
-    if (_this.objectIsInScene(zincObject)) {
+    if (this.objectIsInScene(zincObject)) {
       const center = new THREE.Vector3();
       const boundingBox = zincObject.getBoundingBox();
-      const viewport = _this.getZincCameraControls().getCurrentViewport();
+      const viewport = this.getZincCameraControls().getCurrentViewport();
       boundingBox.getCenter(center);
       const target = new THREE.Vector3(viewport.targetPosition[0],
         viewport.targetPosition[1], viewport.targetPosition[2]);
@@ -966,7 +966,7 @@ exports.Scene = function(containerIn, rendererIn) {
       viewport.targetPosition[0] = center.x;
       viewport.targetPosition[1] = center.y;
       viewport.targetPosition[2] = center.z;
-      _this.getZincCameraControls().setCurrentCameraSettings(viewport);
+      this.getZincCameraControls().setCurrentCameraSettings(viewport);
     }
   }
 

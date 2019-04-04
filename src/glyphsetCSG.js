@@ -16,7 +16,6 @@ const GlyphsetCSG = function (hostIn) {
 	  host = hostIn;
   const hostCSGs = new Array();
   const currentIntersect = undefined;
-  const _this = this;
   
   this.setGlyphset = hostIn => {
 	  if (hostIn && hostIn.isGlyphset)

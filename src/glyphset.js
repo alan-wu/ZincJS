@@ -30,7 +30,6 @@ exports.Glyphset = function()  {
 	let inbuildTime = 0;
 	this.ready = false;
 	const group = new THREE.Group();
-	const _this = this;
 	let morphColours = false;
 	let morphVertices = false;
 	let groupName = undefined;
@@ -323,7 +322,7 @@ exports.Glyphset = function()  {
 		let current_axis3s = [];
 		let current_scales = [];
 		let current_colors = [];
-		const current_time = inbuildTime/_this.duration * (numberOfTimeSteps - 1);
+		const current_time = inbuildTime/this.duration * (numberOfTimeSteps - 1);
 		const bottom_frame =  Math.floor(current_time);
 		const proportion = 1 - (current_time - bottom_frame);
 		const top_frame =  Math.ceil(current_time);
@@ -391,7 +390,7 @@ exports.Glyphset = function()  {
 		geometry.computeFaceNormals();
 		geometry.computeVertexNormals();
 		for (let i = 0; i < numberOfVertices; i ++) {
-			const glyph = new (require('./glyph').Glyph)(geometry, material, i + 1, _this);
+			const glyph = new (require('./glyph').Glyph)(geometry, material, i + 1, this);
 			if (labels != undefined && labels[i] != undefined) {
 			  glyph.setLabel(labels[i]);
 			}
@@ -405,22 +404,22 @@ exports.Glyphset = function()  {
 		if (colors != undefined) {
 			updateGlyphsetHexColors(colors["0"]);
 		}
-		_this.ready = true;
+		this.ready = true;
 	};
 	
 	this.addCustomGlyph = glyph => {
 		if (glyph.isGlyph)
 			glyphList.push(glyph);
-		_this.ready = true;
+		this.ready = true;
 	}
 	
 	this.addMeshAsGlyph = (mesh, id) => {
 		if (mesh.isMesh) {
-			const glyph = new (require('./glyph').Glyph)(undefined, undefined, id, _this);
+			const glyph = new (require('./glyph').Glyph)(undefined, undefined, id, this);
 			glyph.fromMesh(mesh);
 			glyphList.push(glyph);
 			group.add(glyph.getGroup())
-			_this.ready = true;
+			this.ready = true;
 			return glyph;
 		}
 		return undefined;
@@ -446,7 +445,7 @@ exports.Glyphset = function()  {
 	    	}
 	    	createGlyphs(geometry, material);
 	    	if (finishCallback != undefined && (typeof finishCallback == 'function'))
-        		finishCallback(_this);
+        		finishCallback(this);
 	    };
 	}
 	
@@ -474,8 +473,8 @@ exports.Glyphset = function()  {
 	 * @param {Number} time - Can be any value between 0 to duration.
 	 */
 	this.setMorphTime = time => {
-		if (time > _this.duration)
-			inbuildTime = _this.duration;
+		if (time > this.duration)
+			inbuildTime = this.duration;
 		else if (0 > time)
 			inbuildTime = 0;
 		else
@@ -510,7 +509,7 @@ exports.Glyphset = function()  {
 		positions = undefined;
 		scales = undefined;
 		colors = undefined;
-		_this.ready = false;
+		this.ready = false;
 		groupName = undefined;
 	}
 	
@@ -519,8 +518,8 @@ exports.Glyphset = function()  {
 		if (playAnimation == true) 
 		{
 			let targetTime = inbuildTime + delta;
-			if (targetTime > _this.duration)
-				targetTime = targetTime - _this.duration
+			if (targetTime > this.duration)
+				targetTime = targetTime - this.duration
 			inbuildTime = targetTime;
 			if (morphColours || morphVertices) {
 				updateMorphGlyphsets();

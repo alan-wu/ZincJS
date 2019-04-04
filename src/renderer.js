@@ -76,8 +76,8 @@ exports.Renderer = function (containerIn, window) {
     if (container !== undefined)
       container.appendChild( renderer.domElement );
 		renderer.setClearColor( 0xffffff, 1);
-		const scene = _this.createScene("default");
-		_this.setCurrentScene(scene);
+		const scene = this.createScene("default");
+		this.setCurrentScene(scene);
 	}
 	
 	/**
@@ -96,7 +96,7 @@ exports.Renderer = function (containerIn, window) {
 	 */
 	this.setCurrentScene = sceneIn => {
 		if (sceneIn) {
-			_this.removeActiveScene(sceneIn);
+			this.removeActiveScene(sceneIn);
 			const oldScene = currentScene;
 			currentScene = sceneIn;
 			if (oldScene) {
@@ -104,7 +104,7 @@ exports.Renderer = function (containerIn, window) {
 			}
 			currentScene.setInteractiveControlEnable(true);
 			currentScene.setAdditionalScenesGroup(scenesGroup);
-			_this.onWindowResize();
+			this.onWindowResize();
 		}
 	}
 	
@@ -254,8 +254,8 @@ exports.Renderer = function (containerIn, window) {
 	 * Start the animation and begin the rendering loop.
 	 */
 	this.animate = () => {
-		animated_id = requestAnimationFrame( _this.animate );
-		_this.render();
+		animated_id = requestAnimationFrame( this.animate );
+		this.render();
 	}
 
 	const prevTime = Date.now();
@@ -354,7 +354,7 @@ exports.Renderer = function (containerIn, window) {
 			logoSprite.material = material;
 			logoSprite.scale.set( imagewidth, imageheight, 1 );
 			logoSprite.position.set( (container.clientWidth- imagewidth)/2, (-container.clientHeight + imageheight)/2, 1 );
-			_this.addToOrthoScene(logoSprite)
+			this.addToOrthoScene(logoSprite)
 		};
 	};
 	
@@ -374,13 +374,13 @@ exports.Renderer = function (containerIn, window) {
 		
 		if (currentSize[0] != container.clientWidth || currentSize[1] != container.clientHeight ||
 				rect.left != currentOffset[0] || rect.top != currentOffset[1]) {
-			_this.onWindowResize();
+			this.onWindowResize();
 		}
 		const delta = clock.getDelta();
-		currentScene.renderGeometries(playRate, delta, _this.playAnimation);
+		currentScene.renderGeometries(playRate, delta, this.playAnimation);
 	    for(i = 0; i < additionalActiveScenes.length; i++) {
 	        const sceneItem = additionalActiveScenes[i];
-	        sceneItem.renderGeometries(playRate, delta, _this.playAnimation);
+	        sceneItem.renderGeometries(playRate, delta, this.playAnimation);
 	    }
 		if (cameraOrtho != undefined && sceneOrtho != undefined) {
 			renderer.clearDepth();
@@ -425,7 +425,7 @@ exports.Renderer = function (containerIn, window) {
 	 * @param {Zinc.Scene} additionalScene - Scene to be added to the rendering.
 	 */
 	this.addActiveScene = additionalScene => {
-		if (!_this.isSceneActive(additionalScene)) {
+		if (!this.isSceneActive(additionalScene)) {
 			additionalActiveScenes.push(additionalScene);
 			scenesGroup.add(additionalScene.getThreeJSScene());
 		}
@@ -469,14 +469,14 @@ exports.Renderer = function (containerIn, window) {
 	  sceneMap = [];
 	  additionalActiveScenes = [];
 	  scenesGroup = new THREE.Group();
-	  _this.stopAnimate();
+	  this.stopAnimate();
 	  preRenderCallbackFunctions = [];
 	  preRenderCallbackFunctions_id = 0;
 	  cameraOrtho = undefined;
 	  sceneOrtho = undefined;
 	  logoSprite = undefined;
-	   const scene = _this.createScene("default");
-	    _this.setCurrentScene(scene);
+	  const scene = this.createScene("default");
+	  this.setCurrentScene(scene);
 	}
 	
 	/**

@@ -8,7 +8,6 @@ const GeometryCSG = function (hostIn) {
   if (hostIn && hostIn.isGeometry)
     host = hostIn;
   let hostCSG = undefined;
-  const _this = this;
   
   this.setGeometry = hostIn => {
     if (hostIn && hostIn.isGeometry)
@@ -21,9 +20,7 @@ const GeometryCSG = function (hostIn) {
     return new createZincGeometry(tempCSG);
   }
   
-  this.getGeometry = () => {
-	  return host;
-  }
+  this.getGeometry = () => host;
   
   const createZincGeometry = csgMesh => {
 	const material = host.morph.material.clone();

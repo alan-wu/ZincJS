@@ -5,7 +5,6 @@ exports.Label = function ( textIn ) {
   const text = textIn;
   this.element = undefined;
   let sprite = undefined;
-  const _this = this;
   
   const createBitmap = () => {
     //create an element to render the font on
@@ -28,14 +27,14 @@ exports.Label = function ( textIn ) {
   
   const createFontSprite = () => {
     //create a texture with the element and put it on threejs object
-    const texture = new THREE.Texture(_this.element);
+    const texture = new THREE.Texture(this.element);
     texture.needsUpdate = true;
     const spriteMaterial = new THREE.SpriteMaterial( {  map: texture, color: '#ffffff'} ); 
     sprite = new THREE.Sprite( spriteMaterial );
   };
   
   const createLabel = () => {
-    _this.element  = createBitmap();
+    this.element  = createBitmap();
     createFontSprite();
   }; 
   
@@ -58,8 +57,8 @@ exports.Label = function ( textIn ) {
   }
   
   this.dispose = () => {
-    _this.object = undefined;
-    _this.element.parentNode.removeChild( _this.element );
+    this.object = undefined;
+    this.element.parentNode.removeChild( this.element );
   }
   
   this.getSprite = () => {

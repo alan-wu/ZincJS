@@ -32,7 +32,6 @@ exports.Geometry = function () {
 	this.groupName = undefined;
 	let inbuildTime = 0;
 	this.userData = [];
-	let _this = this;
 	
 	/**
 	 * Set the visibility of this Geometry.
@@ -40,7 +39,7 @@ exports.Geometry = function () {
 	 * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
 	 */
 	this.setVisibility = visible => {
-		_this.morph.visible = visible;
+		this.morph.visible = visible;
 	}
 	
 	/**
@@ -51,7 +50,7 @@ exports.Geometry = function () {
 	 * can be any value between from 0 to 1.0.
 	 */
 	this.setAlpha = alpha => {
-		const material = _this.morph.material;
+		const material = this.morph.material;
 		let isTransparent = false;
 		if (alpha  < 1.0)
 			isTransparent = true;
@@ -67,9 +66,9 @@ exports.Geometry = function () {
 	 * @return {Number}
 	 */
 	this.getCurrentTime = () => {
-		if (_this.clipAction) {
-			const ratio = _this.clipAction.time / _this.clipAction._clip.duration;
-			return _this.duration * ratio;
+		if (this.clipAction) {
+			const ratio = this.clipAction.time / this.clipAction._clip.duration;
+			return this.duration * ratio;
 		} else {
 			return inbuildTime;
 		}
@@ -81,45 +80,45 @@ exports.Geometry = function () {
 	 * @param {Number} time - Can be any value between 0 to duration.
 	 */
 	this.setMorphTime = time => {
-		if (_this.clipAction) {
-			const ratio = time / _this.duration;
-			const actualDuration = _this.clipAction._clip.duration;
-			_this.clipAction.time = ratio * actualDuration;
-			if (_this.clipAction.time > actualDuration)
-				_this.clipAction.time = actualDuration;
-			if (_this.clipAction.time < 0.0)
-				_this.clipAction.time = 0.0;
-			if (_this.timeEnabled == 1)
-				_this.mixer.update( 0.0 );
+		if (this.clipAction) {
+			const ratio = time / this.duration;
+			const actualDuration = this.clipAction._clip.duration;
+			this.clipAction.time = ratio * actualDuration;
+			if (this.clipAction.time > actualDuration)
+				this.clipAction.time = actualDuration;
+			if (this.clipAction.time < 0.0)
+				this.clipAction.time = 0.0;
+			if (this.timeEnabled == 1)
+				this.mixer.update( 0.0 );
 		} else {
-			if (time > _this.duration)
-				inbuildTime = _this.duration;
+			if (time > this.duration)
+				inbuildTime = this.duration;
 			else if (0 > time)
 				inbuildTime = 0;
 			else
 				inbuildTime = time;
 		}
-		if (_this.morphColour == 1) {
-			if (typeof _this.geometry !== "undefined") {
-				if (_this.morph.material.vertexColors == THREE.VertexColors)
+		if (this.morphColour == 1) {
+			if (typeof this.geometry !== "undefined") {
+				if (this.morph.material.vertexColors == THREE.VertexColors)
 				{
-					morphColorsToVertexColors(_this.geometry, _this.morph, _this.clipAction)
+					morphColorsToVertexColors(this.geometry, this.morph, this.clipAction)
 				}
-				_this.geometry.colorsNeedUpdate = true;
+				this.geometry.colorsNeedUpdate = true;
 			}
 		}
 	}
 	
 	this.calculateUVs = () => {
-		_this.geometry.computeBoundingBox();
-		const max = _this.geometry.boundingBox.max, min = _this.geometry.boundingBox.min;
+		this.geometry.computeBoundingBox();
+		const max = this.geometry.boundingBox.max, min = this.geometry.boundingBox.min;
 		const offset = new THREE.Vector2(0 - min.x, 0 - min.y);
 		const range = new THREE.Vector2(max.x - min.x, max.y - min.y);
-		_this.geometry.faceVertexUvs[0] = [];
-		for (let i = 0; i < _this.geometry.faces.length ; i++) {
-		    const v1 = _this.geometry.vertices[_this.geometry.faces[i].a];
-		    const v2 = _this.geometry.vertices[_this.geometry.faces[i].b];
-		    const v3 = _this.geometry.vertices[_this.geometry.faces[i].c];
+		this.geometry.faceVertexUvs[0] = [];
+		for (let i = 0; i < this.geometry.faces.length ; i++) {
+		    const v1 = this.geometry.vertices[this.geometry.faces[i].a];
+		    const v2 = this.geometry.vertices[this.geometry.faces[i].b];
+		    const v3 = this.geometry.vertices[this.geometry.faces[i].c];
 		    geometry.faceVertexUvs[0].push(
 		        [
 		            new THREE.Vector2((v1.x + offset.x)/range.x ,(v1.y + offset.y)/range.y),
@@ -136,12 +135,12 @@ exports.Geometry = function () {
 	 * @param {Boolean} wireframe - Flag to turn on/off wireframe display.
 	 */
 	this.setWireframe = wireframe => {
-		_this.morph.material.wireframe = wireframe;
+		this.morph.material.wireframe = wireframe;
 	}
 	
 	this.setVertexColors = vertexColors => {
-		_this.morph.material.vertexColors = vertexColors;
-		_this.geometry.colorsNeedUpdate = true;
+		this.morph.material.vertexColors = vertexColors;
+		this.geometry.colorsNeedUpdate = true;
 	}
 	
 	/**
@@ -150,8 +149,8 @@ exports.Geometry = function () {
 	 * @param {THREE.Color} colour - Colour to be set for this geometry.
 	 */
 	this.setColour = colour => {
-		_this.morph.material.color = colour;
-		_this.geometry.colorsNeedUpdate = true;
+		this.morph.material.color = colour;
+		this.geometry.colorsNeedUpdate = true;
 	}
 	
 	/**
@@ -160,11 +159,11 @@ exports.Geometry = function () {
 	 * @param {THREE.Material} material - Material to be set for this geometry.
 	 */
 	this.setMaterial = material => {
-		_this.morph.material = material;
-		_this.geometry.colorsNeedUpdate = true;
+		this.morph.material = material;
+		this.geometry.colorsNeedUpdate = true;
 	}
 	
-	//Get the colours at index
+	//Get the colours at index		this = undefined;	
 	getColorsRGB = (colors, index) => {
 		const index_in_colors = Math.floor(index/3);
 		const remainder = index%3;
@@ -192,7 +191,7 @@ exports.Geometry = function () {
 			if (clipAction)
 				current_time = clipAction.time/clipAction._clip.duration * (targetGeometry.morphColors.length - 1);
 			else
-				current_time = inbuildTime/_this.duration * (targetGeometry.morphColors.length - 1);
+				current_time = inbuildTime/this.duration * (targetGeometry.morphColors.length - 1);
 			
 			const bottom_frame =  Math.floor(current_time);
 			const proportion = 1 - (current_time - bottom_frame);
@@ -229,7 +228,7 @@ exports.Geometry = function () {
    * @return {Boolean}
    */
   this.isTimeVarying = () => {
-    if (_this.timeEnabled || _this.morphColour)
+    if (this.timeEnabled || this.morphColour)
       return true;
     return false;
   }
@@ -241,8 +240,8 @@ exports.Geometry = function () {
 	 * @return {THREE.Box3}.
 	 */
 	this.getBoundingBox = () => {
-		if (_this.morph) {
-			return new THREE.Box3().setFromObject(_this.morph);
+		if (this.morph) {
+			return new THREE.Box3().setFromObject(this.morph);
 		}
 		return undefined;
 	}
@@ -251,41 +250,40 @@ exports.Geometry = function () {
 	 * Clear this geometry and free the memory.
 	 */
 	this.dispose = () => {
-	  if (_this.morph && _this.morph.geometry)
-	    _this.morph.geometry.dispose();
-	  if (_this.morph && _this.morph.material)
-	    _this.morph.material.dispose();
-		_this.geometry = undefined;
-		_this.mixer = undefined;
-		_this.morph = undefined;
-		_this.clipAction = undefined;
-		_this.groupName = undefined;
-		_this = undefined;		
+	  if (this.morph && this.morph.geometry)
+	    this.morph.geometry.dispose();
+	  if (this.morph && this.morph.material)
+	    this.morph.material.dispose();
+		this.geometry = undefined;
+		this.mixer = undefined;
+		this.morph = undefined;
+		this.clipAction = undefined;
+		this.groupName = undefined;
 	}
 	
 	//Update the geometry and colours depending on the morph.
 	this.render = (delta, playAnimation) => {
 		if (playAnimation == true) 
 		{
-			if ((_this.clipAction) && (_this.timeEnabled == 1)) {
-				_this.mixer.update( delta );
+			if ((this.clipAction) && (this.timeEnabled == 1)) {
+				this.mixer.update( delta );
 			}
 			else {
 				let targetTime = inbuildTime + delta;
-				if (targetTime > _this.duration)
-					targetTime = targetTime - _this.duration;
+				if (targetTime > this.duration)
+					targetTime = targetTime - this.duration;
 				inbuildTime = targetTime;
 			}
-			if (_this.morphColour == 1) {
-				if (typeof _this.geometry !== "undefined") {
+			if (this.morphColour == 1) {
+				if (typeof this.geometry !== "undefined") {
 					
-					if (_this.morph.material.vertexColors == THREE.VertexColors)
+					if (this.morph.material.vertexColors == THREE.VertexColors)
 					{
 						let clipAction = undefined;
-						if (_this.clipAction && (_this.timeEnabled == 1))
-							clipAction = _this.clipAction;
-						morphColorsToVertexColors(_this.geometry, _this.morph, clipAction);
-						_this.geometry.colorsNeedUpdate = true;
+						if (this.clipAction && (this.timeEnabled == 1))
+							clipAction = this.clipAction;
+						morphColorsToVertexColors(this.geometry, this.morph, clipAction);
+						this.geometry.colorsNeedUpdate = true;
 					}
 					
 				}
