@@ -1,7 +1,7 @@
-var THREE = require('three');
-var JSONLoader = require('./loader').JSONLoader;
-var STLLoader = require('./STLLoader').STLLoader;
-var OBJLoader = require('./OBJLoader').OBJLoader;
+const THREE = require('three');
+const JSONLoader = require('./loader').JSONLoader;
+const STLLoader = require('./STLLoader').STLLoader;
+const OBJLoader = require('./OBJLoader').OBJLoader;
 
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
@@ -15,10 +15,10 @@ var OBJLoader = require('./OBJLoader').OBJLoader;
  * @return {Zinc.Scene}
  */
 exports.Scene = function(containerIn, rendererIn) {
-  var container = containerIn;
-  var zincGeometries = [];
-  var zincGlyphsets = [];
-  var scene = new THREE.Scene();
+  const container = containerIn;
+  let zincGeometries = [];
+  let zincGlyphsets = [];
+  const scene = new THREE.Scene();
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
    */
@@ -28,17 +28,16 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.ambient = undefined;
   this.camera = undefined;
-  var duration = 3000;
-  var centroid = [ 0, 0, 0 ];
-  var zincCameraControls = undefined;
-  var num_inputs = 0;
-  var startingId = 1000;
+  let duration = 3000;
+  let centroid = [ 0, 0, 0 ];
+  let zincCameraControls = undefined;
+  let num_inputs = 0;
+  let startingId = 1000;
   this.sceneName = undefined;
   this.progressMap = [];
-  var errorDownload = false;
-  var stereoEffectFlag = false;
-  var stereoEffect = undefined;
-  var _this = this;
+  let errorDownload = false;
+  let stereoEffectFlag = false;
+  let stereoEffect = undefined;
   this.autoClearFlag = true;
 
   /**
@@ -47,13 +46,13 @@ exports.Scene = function(containerIn, rendererIn) {
    * in this scene.
    * @returns {Array} 
    */
-  this.getDownloadProgress = function() {
-    var totalSize = 0;
-    var totalLoaded = 0;
-    var unknownFound = false;
+  this.getDownloadProgress = () => {
+    let totalSize = 0;
+    let totalLoaded = 0;
+    let unknownFound = false;
 
-    for (var key in _this.progressMap) {
-      var progress = _this.progressMap[key];
+    for (const key in this.progressMap) {
+      const progress = this.progressMap[key];
 
       totalSize += progress[1];
       totalLoaded += progress[0];
@@ -68,62 +67,62 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   //Stores the current progress of downloads
-  this.onProgress = function(id) {
-    return function(xhr) {
-      _this.progressMap[id] = [ xhr.loaded, xhr.total ];
-    }
+  this.onProgress = id => {
+    return xhr => {
+      this.progressMap[id] = [ xhr.loaded, xhr.total ];
+    };
   }
 
-  this.onError = function(xhr) {
+  this.onError = xhr => {
     errorDownload = true;
   };
 
   //called from Renderer when panel has been resized
-  this.onWindowResize = function() {
+  this.onWindowResize = () => {
     zincCameraControls.onResize();
-    _this.camera.aspect = container.clientWidth / container.clientHeight;
-    _this.camera.updateProjectionMatrix();
+    this.camera.aspect = container.clientWidth / container.clientHeight;
+    this.camera.updateProjectionMatrix();
   }
 
   /**
    * Reset the viewport of this scene to its original state. 
    */
-  this.resetView = function() {
-    _this.onWindowResize();
+  this.resetView = () => {
+    this.onWindowResize();
     zincCameraControls.resetView();
   }
 
   //Setup the camera for this scene, it also initialise the lighting
-  var setupCamera = function() {
-    _this.camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.0, 10.0);
-    _this.ambient = new THREE.AmbientLight(0x202020);
-    scene.add(_this.ambient);
+  const setupCamera = () => {
+    this.camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.0, 10.0);
+    this.ambient = new THREE.AmbientLight(0x202020);
+    scene.add(this.ambient);
 
-    _this.directionalLight = new THREE.DirectionalLight(0x777777);
-    scene.add(_this.directionalLight);
+    this.directionalLight = new THREE.DirectionalLight(0x777777);
+    scene.add(this.directionalLight);
 
-    zincCameraControls = new (require('./controls').CameraControls)(_this.camera, rendererIn.domElement, rendererIn, scene);
+    zincCameraControls = new (require('./controls').CameraControls)(this.camera, rendererIn.domElement, rendererIn, scene);
 
-    zincCameraControls.setDirectionalLight(_this.directionalLight);
+    zincCameraControls.setDirectionalLight(this.directionalLight);
     zincCameraControls.resetView();
-  }
+  };
 
   setupCamera();
 
   //Get the next available unique identifier for Zinc.Geometry
-  var nextAvailableInternalZincModelId = function() {
-    var idFound = true;
+  const nextAvailableInternalZincModelId = () => {
+    let idFound = true;
     while (idFound == true) {
       startingId++;
       idFound = false
-      for (var i = 0; i < zincGeometries.length; i++) {
+      for (let i = 0; i < zincGeometries.length; i++) {
         if (zincGeometries[i].modelId == startingId) {
           idFound = true;
         }
       }
     }
     return startingId;
-  }
+  };
 
   /**
    * Load the viewport Data from the argument  {@link Zinc.Viewport} and set it as 
@@ -131,13 +130,13 @@ exports.Scene = function(containerIn, rendererIn) {
    * 
    * @param {Zinc.Viewport} viewData - Viewport data to be loaded. 
    */
-  this.loadView = function(viewData) {
-    var viewPort = new (require('./controls').Viewport)();
-    viewPort.nearPlane = viewData.nearPlane;
-    viewPort.farPlane = viewData.farPlane;
-    viewPort.eyePosition = viewData.eyePosition;
-    viewPort.targetPosition = viewData.targetPosition;
-    viewPort.upVector = viewData.upVector;
+  this.loadView = ({nearPlane, farPlane, eyePosition, targetPosition, upVector}) => {
+    const viewPort = new (require('./controls').Viewport)();
+    viewPort.nearPlane = nearPlane;
+    viewPort.farPlane = farPlane;
+    viewPort.eyePosition = eyePosition;
+    viewPort.targetPosition = targetPosition;
+    viewPort.upVector = upVector;
     zincCameraControls.setDefaultCameraSettings(viewPort);
     zincCameraControls.resetView();
   }
@@ -147,10 +146,9 @@ exports.Scene = function(containerIn, rendererIn) {
    * 
    * @returns {THREE.Box3} 
    */
-  this.getBoundingBox = function() {
-    var boundingBox1 = undefined,
-      boundingBox2 = undefined;
-    for (var i = 0; i < zincGeometries.length; i++) {
+  this.getBoundingBox = () => {
+    let boundingBox1 = undefined, boundingBox2 = undefined;
+    for (let i = 0; i < zincGeometries.length; i++) {
       boundingBox2 = zincGeometries[i].getBoundingBox();
       if (boundingBox1 == undefined) {
         boundingBox1 = boundingBox2;
@@ -158,7 +156,7 @@ exports.Scene = function(containerIn, rendererIn) {
         boundingBox1.union(boundingBox2);
       }
     }
-    for (var i = 0; i < zincGlyphsets.length; i++) {
+    for (let i = 0; i < zincGlyphsets.length; i++) {
       boundingBox2 = zincGlyphsets[i].getBoundingBox();
       if (boundingBox1 == undefined) {
         boundingBox1 = boundingBox2;
@@ -175,15 +173,15 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {THREE.Box3} boundingBox - The bounding box which describes the volume of
    * which we the viewport should be displaying.
    */
-  this.viewAllWithBoundingBox = function(boundingBox) {
+  this.viewAllWithBoundingBox = boundingBox => {
     if (boundingBox) {
       // enlarge radius to keep image within edge of window
-      var radius = boundingBox.min.distanceTo(boundingBox.max) / 2.0;
-      var centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
-      var centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
-      var centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
-      var clip_factor = 4.0;
-      var viewport = zincCameraControls.getViewportFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor);
+      const radius = boundingBox.min.distanceTo(boundingBox.max) / 2.0;
+      const centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
+      const centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
+      const centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
+      const clip_factor = 4.0;
+      const viewport = zincCameraControls.getViewportFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor);
 
       zincCameraControls.setCurrentCameraSettings(viewport);
     }
@@ -192,9 +190,9 @@ exports.Scene = function(containerIn, rendererIn) {
   /**
    * Adjust zoom distance to include all primitives in scene only.
    */
-  this.viewAll = function() {
-    var boundingBox = _this.getBoundingBox();
-    _this.viewAllWithBoundingBox(boundingBox);
+  this.viewAll = () => {
+    const boundingBox = this.getBoundingBox();
+    this.viewAllWithBoundingBox(boundingBox);
   }
 
   /**
@@ -203,8 +201,8 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Function} callbackFunction - Callback function with the geometry
    * as an argument.
    */
-  this.forEachGeometry = function(callbackFunction) {
-    for (var i = zincGeometries.length - 1; i >= 0; i--) {
+  this.forEachGeometry = callbackFunction => {
+    for (let i = zincGeometries.length - 1; i >= 0; i--) {
       callbackFunction(zincGeometries[i]);
     }
   }
@@ -215,8 +213,8 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Function} callbackFunction - Callback function with the glyphset
    * as an argument.
    */
-  this.forEachGlyphset = function(callbackFunction) {
-    for (var i = zincGlyphsets.length - 1; i >= 0; i--) {
+  this.forEachGlyphset = callbackFunction => {
+    for (let i = zincGlyphsets.length - 1; i >= 0; i--) {
       callbackFunction(zincGlyphsets[i]);
     }
   }
@@ -227,9 +225,9 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {String} GroupName - Groupname to match with.
    * @returns {Array}
    */
-  this.findGeometriesWithGroupName = function(GroupName) {
-    var geometriesArray = [];
-    for (var i = 0; i < zincGeometries.length; i++) {
+  this.findGeometriesWithGroupName = GroupName => {
+    const geometriesArray = [];
+    for (let i = 0; i < zincGeometries.length; i++) {
       if (zincGeometries[i].groupName == GroupName) {
         geometriesArray.push(zincGeometries[i]);
       }
@@ -243,9 +241,9 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {String} GroupName - Groupname to match with.
    * @returns {Array}
    */
-  this.findGlyphsetsWithGroupName = function(GroupName) {
-    var glyphsetsArray = [];
-    for (var i = 0; i < zincGlyphsets.length; i++) {
+  this.findGlyphsetsWithGroupName = GroupName => {
+    const glyphsetsArray = [];
+    for (let i = 0; i < zincGlyphsets.length; i++) {
       if (zincGlyphsets[i].groupName == GroupName) {
         glyphsetsArray.push(zincGlyphsets[i]);
       }
@@ -253,32 +251,32 @@ exports.Scene = function(containerIn, rendererIn) {
     return glyphsetsArray;
   }
   
-  this.addGlyphset = function(glyphset) {
+  this.addGlyphset = glyphset => {
 	  if (glyphset && glyphset.isGlyphset) {
-		  var group = glyphset.getGroup();
+		  const group = glyphset.getGroup();
 		  scene.add(group);
 		  zincGlyphsets.push(glyphset) ;
 	  }  
   }
 
   //Load a glyphset into this scene.
-  var loadGlyphset = function(glyphsetData, glyphurl, groupName, finishCallback) {
-    var newGlyphset = new (require('./glyphset').Glyphset)();
+  const loadGlyphset = (glyphsetData, glyphurl, groupName, finishCallback) => {
+    const newGlyphset = new (require('./glyphset').Glyphset)();
     newGlyphset.duration = 3000;
     newGlyphset.load(glyphsetData, glyphurl, finishCallback);
     newGlyphset.groupName = groupName;
-    _this.addGlyphset(newGlyphset);
-  }
+    this.addGlyphset(newGlyphset);
+  };
 
   //Load a glyphset into this scene.
-  var onLoadGlyphsetReady = function(xmlhttp, glyphurl, groupName, finishCallback) {
-    return function() {
+  const onLoadGlyphsetReady = (xmlhttp, glyphurl, groupName, finishCallback) => {
+    return () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        var glyphsetData = JSON.parse(xmlhttp.responseText);
+        const glyphsetData = JSON.parse(xmlhttp.responseText);
         loadGlyphset(glyphsetData, glyphurl, groupName, finishCallback);
       }
-    }
-  }
+    };
+  };
 
   /**
    * Load a glyphset into this scene object.
@@ -290,8 +288,8 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the glyphset is succssfully load in.
    */
-  this.loadGlyphsetURL = function(metaurl, glyphurl, groupName, finishCallback) {
-    var xmlhttp = new XMLHttpRequest();
+  this.loadGlyphsetURL = (metaurl, glyphurl, groupName, finishCallback) => {
+    const xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl, groupName, finishCallback);
     xmlhttp.open("GET", metaurl, true);
     xmlhttp.send();
@@ -310,58 +308,58 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the geometry is succssfully loaded in.
    */
-  var loadMetaModel = function(url, timeEnabled, morphColour, groupName, fileFormat, finishCallback) {
+  const loadMetaModel = (url, timeEnabled, morphColour, groupName, fileFormat, finishCallback) => {
     num_inputs += 1;
-    var modelId = nextAvailableInternalZincModelId();
+    const modelId = nextAvailableInternalZincModelId();
 
-    var colour = require('./zinc').defaultMaterialColor;
-    var opacity = require('./zinc').defaultOpacity;
-    var localTimeEnabled = 0;
+    const colour = require('./zinc').defaultMaterialColor;
+    const opacity = require('./zinc').defaultOpacity;
+    let localTimeEnabled = 0;
     if (timeEnabled != undefined)
       localTimeEnabled = timeEnabled ? true : false;
-    var localMorphColour = 0;
+    let localMorphColour = 0;
     if (morphColour != undefined)
       localMorphColour = morphColour ? true : false;
-    var loader = new JSONLoader();
+    let loader = new JSONLoader();
     if (fileFormat !== undefined) {
       if (fileFormat == "STL") {
         loader = new STLLoader();
       } else if (fileFormat == "OBJ") {
         loader = new OBJLoader();
         loader.load(url, objloader(modelId, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError);
+          localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
         return;
       }
     }
     loader.load(url, meshloader(modelId, colour, opacity, localTimeEnabled,
-      localMorphColour, groupName, finishCallback), _this.onProgress(i), _this.onError);
-  }
+      localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
+  };
   
   //Object to keep track of number of items downloaded and when add items are downloaded
   //allCompletedCallback is called
   var metaFinishCallback = function(numberOfDownloaded, finishCallback, allCompletedCallback) {
-    var downloadedItem = 0;
-    return function(zincGeometry) {
+    let downloadedItem = 0;
+    return zincGeometry => {
       downloadedItem = downloadedItem + 1;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
       if (downloadedItem == numberOfDownloaded)
         if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function'))
           allCompletedCallback();
-    }
-  }
+    };
+  };
 
   //Function to process each of the metadata item. There are two types of metadata item,
   //one for Zinc.Geometry and one for Zinc.Glyphset.
-  var readMetadataItem = function(item, finishCallback) {
+  const readMetadataItem = (item, finishCallback) => {
     if (item) {
       if (item.Type == "Surfaces") {
         loadMetaModel(item.URL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback);
       } else if (item.Type == "Glyph") {
-        _this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL, item.GroupName, finishCallback);
+        this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL, item.GroupName, finishCallback);
       }
     }
-  }
+  };
 
   /**
    * Read a STL file into this scene, the geometry will be presented as
@@ -372,12 +370,12 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the STL geometry is succssfully loaded.
    */
-  this.loadSTL = function(url, groupName, finishCallback) {
+  this.loadSTL = (url, groupName, finishCallback) => {
     num_inputs += 1;
-    var modelId = nextAvailableInternalZincModelId();
-    var colour = require('./zinc').defaultMaterialColor;
-    var opacity = require('./zinc').defaultOpacity;
-    var loader = new STLLoader();
+    const modelId = nextAvailableInternalZincModelId();
+    const colour = require('./zinc').defaultMaterialColor;
+    const opacity = require('./zinc').defaultOpacity;
+    const loader = new STLLoader();
     loader.load(url, meshloader(modelId, colour, opacity, false,
       false, groupName, finishCallback));
   }
@@ -391,12 +389,12 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the OBJ geometry is succssfully loaded.
    */
-  this.loadOBJ = function(url, groupName, finishCallback) {
+  this.loadOBJ = (url, groupName, finishCallback) => {
     num_inputs += 1;
-    var modelId = nextAvailableInternalZincModelId();
-    var colour = require('./zinc').defaultMaterialColor;
-    var opacity = require('./zinc').defaultOpacity;
-    var loader = new OBJLoader();
+    const modelId = nextAvailableInternalZincModelId();
+    const colour = require('./zinc').defaultMaterialColor;
+    const opacity = require('./zinc').defaultOpacity;
+    const loader = new OBJLoader();
     loader.load(url, meshloader(modelId, colour, opacity, false,
       false, groupName, finishCallback));
   }
@@ -409,12 +407,12 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * for each glyphset and geometry that has been written in.
    */
-  this.loadMetadataURL = function(url, finishCallback, allCompletedCallback) {
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function() {
+  this.loadMetadataURL = (url, finishCallback, allCompletedCallback) => {
+    const xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        var metadata = JSON.parse(xmlhttp.responseText);
-        var numberOfObjects = metadata.length;
+        const metadata = JSON.parse(xmlhttp.responseText);
+        const numberOfObjects = metadata.length;
         var callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
         for (i = 0; i < numberOfObjects; i++)
           readMetadataItem(metadata[i], callback);
@@ -431,28 +429,28 @@ exports.Scene = function(containerIn, rendererIn) {
    * 
    * @deprecated
    */
-  this.loadModelsURL = function(urls, colours, opacities, timeEnabled, morphColour, finishCallback) {
-    var number = urls.length;
+  this.loadModelsURL = (urls, colours, opacities, timeEnabled, morphColour, finishCallback) => {
+    const number = urls.length;
     num_inputs += number;
-    for (var i = 0; i < number; i++) {
-      var modelId = nextAvailableInternalZincModelId();
-      var filename = urls[i]
-      var loader = new JSONLoader();
-      var colour = require('./zinc').defaultMaterialColor;
-      var opacity = require('./zinc').defaultOpacity;
+    for (let i = 0; i < number; i++) {
+      const modelId = nextAvailableInternalZincModelId();
+      const filename = urls[i];
+      const loader = new JSONLoader();
+      let colour = require('./zinc').defaultMaterialColor;
+      let opacity = require('./zinc').defaultOpacity;
       if (colours != undefined && colours[i] != undefined)
         colour = colours[i] ? true : false;
       if (opacities != undefined && opacities[i] != undefined)
         opacity = opacities[i];
-      var localTimeEnabled = 0;
+      let localTimeEnabled = 0;
       if (timeEnabled != undefined && timeEnabled[i] != undefined)
         localTimeEnabled = timeEnabled[i] ? true : false;
-      var localMorphColour = 0;
+      let localMorphColour = 0;
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
 
       loader.load(filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, undefined,
-        finishCallback), _this.onProgress(i), _this.onError);
+        finishCallback), this.onProgress(i), this.onError);
     }
   }
 
@@ -460,12 +458,12 @@ exports.Scene = function(containerIn, rendererIn) {
    * Load the viewport from an external location provided by the url.
    * @param {String} URL - address to the file containing viewport information.
    */
-  this.loadViewURL = function(url) {
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function() {
+  this.loadViewURL = url => {
+    const xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        var viewData = JSON.parse(xmlhttp.responseText);
-        _this.loadView(viewData);
+        const viewData = JSON.parse(xmlhttp.responseText);
+        this.loadView(viewData);
       }
     }
     requestURL = url
@@ -481,19 +479,19 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {String} URL - address to the file containing viewport and model information.
    * @deprecated
    */
-  this.loadFromViewURL = function(jsonFilePrefix, finishCallback) {
-    var xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = function() {
+  this.loadFromViewURL = (jsonFilePrefix, finishCallback) => {
+    const xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        var viewData = JSON.parse(xmlhttp.responseText);
-        _this.loadView(viewData);
-        var urls = [];
-        var filename_prefix = jsonFilePrefix + "_";
-        for (var i = 0; i < viewData.numberOfResources; i++) {
-          var filename = filename_prefix + (i + 1) + ".json";
+        const viewData = JSON.parse(xmlhttp.responseText);
+        this.loadView(viewData);
+        const urls = [];
+        const filename_prefix = jsonFilePrefix + "_";
+        for (let i = 0; i < viewData.numberOfResources; i++) {
+          const filename = filename_prefix + (i + 1) + ".json";
           urls.push(filename);
         }
-        _this.loadModelsURL(urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback);
+        this.loadModelsURL(urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback);
       }
     }
     requestURL = jsonFilePrefix + "_view.json";
@@ -501,17 +499,17 @@ exports.Scene = function(containerIn, rendererIn) {
     xmlhttp.send();
   }
 
-  var setPositionOfObject = function(mesh) {
+  const setPositionOfObject = mesh => {
     geometry = mesh.geometry;
     geometry.computeBoundingBox();
 
-    var centerX = 0.5 * (geometry.boundingBox.min.x + geometry.boundingBox.max.x);
-    var centerY = 0.5 * (geometry.boundingBox.min.y + geometry.boundingBox.max.y);
-    var centerZ = 0.5 * (geometry.boundingBox.min.z + geometry.boundingBox.max.z);
+    const centerX = 0.5 * (geometry.boundingBox.min.x + geometry.boundingBox.max.x);
+    const centerY = 0.5 * (geometry.boundingBox.min.y + geometry.boundingBox.max.y);
+    const centerZ = 0.5 * (geometry.boundingBox.min.z + geometry.boundingBox.max.z);
     centroid = [ centerX, centerY, centerZ ]
-  }
+  };
 
-  this.addGeometry = function(zincGeometry) {
+  this.addGeometry = zincGeometry => {
     if (zincGeometry && zincGeometry.morph) {
       if (zincGeometry.modelId === -1) {
         num_inputs++;
@@ -523,15 +521,15 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   //Internal function for creating a Zinc.Geometry object and add it into the scene for rendering.
-  var addMeshToZincGeometry = function(mesh, modelId, localTimeEnabled, localMorphColour) {
-    var newGeometry = new (require('./geometry').Geometry)();
-    var mixer = new THREE.AnimationMixer(mesh);
-    var clipAction = undefined;
-    var geometry = mesh.geometry;
+  const addMeshToZincGeometry = (mesh, modelId, localTimeEnabled, localMorphColour) => {
+    const newGeometry = new (require('./geometry').Geometry)();
+    const mixer = new THREE.AnimationMixer(mesh);
+    const geometry = mesh.geometry;
+    let clipAction = undefined;
     if (geometry.morphTargets) {
-      var animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(geometry.morphTargets, 10, true);
+      const animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(geometry.morphTargets, 10, true);
       if (animationClip && animationClip[0] != undefined) {
-        var clipAction = mixer.clipAction(animationClip[0]).setDuration(duration);
+        clipAction = mixer.clipAction(animationClip[0]).setDuration(duration);
         clipAction.loop = THREE.loopOnce;
         clipAction.clampWhenFinished = true;
         clipAction.play();
@@ -545,17 +543,25 @@ exports.Scene = function(containerIn, rendererIn) {
     newGeometry.morph = mesh;
     newGeometry.mixer = mixer;
     newGeometry.clipAction = clipAction;
-    _this.addGeometry(newGeometry);
+    this.addGeometry(newGeometry);
     return newGeometry;
-  }
+  };
 
   //Loader for the OBJ format, 
-  var objloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, groupName, finishCallback) {
-    return function(object) {
+  const objloader = (
+    modelId,
+    colour,
+    opacity,
+    localTimeEnabled,
+    localMorphColour,
+    groupName,
+    finishCallback
+  ) => {
+    return object => {
       num_inputs++;
-      object.traverse(function(child) {
+      object.traverse(child => {
         if (child instanceof THREE.Mesh) {
-          var zincGeometry = addMeshToZincGeometry(child, modelId, localTimeEnabled, localMorphColour);
+          const zincGeometry = addMeshToZincGeometry(child, modelId, localTimeEnabled, localMorphColour);
           if (zincGeometry.morph)
             zincGeometry.morph.name = groupName;
           zincGeometry.groupName = groupName;
@@ -563,22 +569,22 @@ exports.Scene = function(containerIn, rendererIn) {
             finishCallback(zincGeometry);
         }
       });
-    }
+    };
   }
 
   
-  var copyMorphColors = function(sourceGeometry, targetGeometry) {
+  const copyMorphColors = (sourceGeometry, targetGeometry) => {
     if (sourceGeometry && sourceGeometry.morphColors) {
       targetGeometry.morphColors = [];
-      var morphColors = sourceGeometry.morphColors;
+      const morphColors = sourceGeometry.morphColors;
       for ( i = 0, il = morphColors.length; i < il; i ++ ) {
-        var morphColor = {};
+        const morphColor = {};
         morphColor.name = morphColors[i].name;
         morphColor.colors = morphColors[i].colors.slice(0);
         targetGeometry.morphColors.push( morphColor );
       }
     }
-  }
+  };
   
   /**
    * Add a user provided {THREE.Geometry} into  the scene as zinc geometry.
@@ -595,8 +601,18 @@ exports.Scene = function(containerIn, rendererIn) {
    * 
    * @returns {Zinc.Geometry}
    */
-  this.addZincGeometry = function(geometryIn, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback, materialIn) {
-    var geometry = undefined;
+  this.addZincGeometry = (
+    geometryIn,
+    modelId,
+    colour,
+    opacity,
+    localTimeEnabled,
+    localMorphColour,
+    external,
+    finishCallback,
+    materialIn
+  ) => {
+    let geometry = undefined;
     if (geometryIn) {
       if (geometryIn instanceof THREE.Geometry) {
         geometry = new THREE.Geometry();
@@ -615,7 +631,7 @@ exports.Scene = function(containerIn, rendererIn) {
       if (1.0 > opacity)
         isTransparent = true;
 
-      var material = undefined;
+      let material = undefined;
       if (materialIn) {
         material = materialIn;
         material.morphTargets = localTimeEnabled;
@@ -644,9 +660,9 @@ exports.Scene = function(containerIn, rendererIn) {
       }
 
       material.side = THREE.DoubleSide;
-      var mesh = undefined;
+      let mesh = undefined;
       mesh = new THREE.Mesh(geometry, material);
-      var newGeometry = addMeshToZincGeometry(mesh, modelId, localTimeEnabled, localMorphColour);
+      const newGeometry = addMeshToZincGeometry(mesh, modelId, localTimeEnabled, localMorphColour);
 
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGeometry);
@@ -656,13 +672,21 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   //Internal loader for a regular zinc geometry.
-  var meshloader = function(modelId, colour, opacity, localTimeEnabled, localMorphColour, groupName, finishCallback) {
-    return function(geometry, materials) {
-      var material = undefined;
+  const meshloader = (
+    modelId,
+    colour,
+    opacity,
+    localTimeEnabled,
+    localMorphColour,
+    groupName,
+    finishCallback
+  ) => {
+    return (geometry, materials) => {
+      let material = undefined;
       if (materials && materials[0]) {
         material = materials[0];
       }
-      var zincGeometry = _this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material);
+      const zincGeometry = this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material);
       if (zincGeometry.morph) {
         zincGeometry.morph.name = groupName;
         zincGeometry.morph.userData = zincGeometry;
@@ -670,11 +694,11 @@ exports.Scene = function(containerIn, rendererIn) {
       zincGeometry.groupName = groupName;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
-    }
+    };
   }
 
   //Update the directional light for this scene.
-  this.updateDirectionalLight = function() {
+  this.updateDirectionalLight = () => {
     zincCameraControls.updateDirectionalLight();
   }
 
@@ -682,7 +706,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * Add any {THREE.Object} into this scene.
    * @param {THREE.Object} object - to be addded into this scene.
    */
-  this.addObject = function(object) {
+  this.addObject = object => {
     scene.add(object);
   }
 
@@ -690,7 +714,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * Remove any {THREE.Object} from this scene.
    * @param {THREE.Object} object - to be removed from this scene.
    */
-  this.removeObject = function(object) {
+  this.removeObject = object => {
     scene.remove(object);
   }
 
@@ -698,10 +722,10 @@ exports.Scene = function(containerIn, rendererIn) {
    * Get the current time of the scene.
    * @return {Number}
    */
-  this.getCurrentTime = function() {
-    var currentTime = 0;
+  this.getCurrentTime = () => {
+    let currentTime = 0;
     if (zincGeometries[0] != undefined) {
-      var mixer = zincGeometries[0].mixer;
+      const mixer = zincGeometries[0].mixer;
       currentTime = zincGeometries[0].getCurrentTime();
     }
     return currentTime;
@@ -712,12 +736,12 @@ exports.Scene = function(containerIn, rendererIn) {
    * Set the current time of all the geometries and glyphsets of this scene.
    * @param {Number} time  - Value to set the time to.
    */
-  this.setMorphsTime = function(time) {
-    for (var i = 0; i < zincGeometries.length; i++) {
+  this.setMorphsTime = time => {
+    for (let i = 0; i < zincGeometries.length; i++) {
       zincGeometry = zincGeometries[i];
       zincGeometry.setMorphTime(time);
     }
-    for (var i = 0; i < zincGlyphsets.length; i++) {
+    for (let i = 0; i < zincGlyphsets.length; i++) {
       zincGlyphset = zincGlyphsets[i];
       zincGlyphset.setMorphTime(time);
     }
@@ -728,13 +752,13 @@ exports.Scene = function(containerIn, rendererIn) {
    * 
    * @return {Boolean}
    */
-  this.isTimeVarying = function() {
-    for (var i = 0; i < zincGeometries.length; i++) {
+  this.isTimeVarying = () => {
+    for (let i = 0; i < zincGeometries.length; i++) {
       if (zincGeometries[i].isTimeVarying()) {
         return true;
       }
     }
-    for (var i = 0; i < zincGlyphsets.length; i++) {
+    for (let i = 0; i < zincGlyphsets.length; i++) {
       if (zincGlyphsets[i].isTimeVarying()) {
         return true;
       }
@@ -746,8 +770,8 @@ exports.Scene = function(containerIn, rendererIn) {
    * Get {Zinc.Geoemtry} in this scene by its id.
    * @return {Zinc.Geometry}
    */
-  this.getZincGeometryByID = function(id) {
-    for (var i = 0; i < zincGeometries.length; i++) {
+  this.getZincGeometryByID = id => {
+    for (let i = 0; i < zincGeometries.length; i++) {
       if (zincGeometries[i].modelId == id) {
         return zincGeometries[i];
       }
@@ -757,28 +781,28 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   // Used to check if all glyphsets are ready.
-  var allGlyphsetsReady = function() {
-    for (var i = 0; i < zincGlyphsets.length; i++) {
+  const allGlyphsetsReady = () => {
+    for (let i = 0; i < zincGlyphsets.length; i++) {
       zincGlyphset = zincGlyphsets[i];
       if (zincGlyphset.ready == false)
         return false;
     }
     return true;
-  }
+  };
 
   /**
    * Update geometries and glyphsets based on the calculated time.
    * @private
    */
-  this.renderGeometries = function(playRate, delta, playAnimation) {
+  this.renderGeometries = (playRate, delta, playAnimation) => {
     zincCameraControls.update(delta);
     /* the following check make sure all models are loaded and synchonised */
     if (zincGeometries.length == num_inputs && allGlyphsetsReady()) {
-      for (var i = 0; i < zincGeometries.length; i++) {
+      for (let i = 0; i < zincGeometries.length; i++) {
         /* check if morphColour flag is set */
         zincGeometries[i].render(playRate * delta, playAnimation);
       }
-      for (var i = 0; i < zincGlyphsets.length; i++) {
+      for (let i = 0; i < zincGlyphsets.length; i++) {
         zincGlyphsets[i].render(playRate * delta, playAnimation);
       }
     }
@@ -788,7 +812,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * Return the internal {THREE.Scene}.
    * @return {THREE.Scene}
    */
-  this.getThreeJSScene = function() {
+  this.getThreeJSScene = () => {
     return scene;
   }
 
@@ -797,7 +821,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * scenes will also be rendered when this scene is rendered.
    * @private
    */
-  this.setAdditionalScenesGroup = function(scenesGroup) {
+  this.setAdditionalScenesGroup = scenesGroup => {
     scene.add(scenesGroup);
   }
 
@@ -805,14 +829,14 @@ exports.Scene = function(containerIn, rendererIn) {
    * Render the scene.
    * @private
    */
-  this.render = function(renderer) {
-    if (_this.autoClearFlag)
+  this.render = renderer => {
+    if (this.autoClearFlag)
       renderer.clear();
     if (stereoEffectFlag && stereoEffect) {
-      stereoEffect.render(scene, _this.camera);
+      stereoEffect.render(scene, this.camera);
     }
     else
-      renderer.render(scene, _this.camera);
+      renderer.render(scene, this.camera);
   }
 
   /**
@@ -821,7 +845,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Boolean} flag - Indicate either interactive control 
    * should be enabled or disabled.
    */
-  this.setInteractiveControlEnable = function(flag) {
+  this.setInteractiveControlEnable = flag => {
     if (flag == true)
       zincCameraControls.enable();
     else
@@ -832,7 +856,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * Get the camera control of this scene.
    * @return {Zinc.CameraControls}
    */
-  this.getZincCameraControls = function() {
+  this.getZincCameraControls = () => {
     return zincCameraControls;
   }
 
@@ -840,7 +864,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * Get the internal {THREE.Scene}.
    * @return {THREE.Scene}
    */
-  this.getThreeJSScene = function() {
+  this.getThreeJSScene = () => {
     return scene;
   }
 
@@ -849,7 +873,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * into this scene.
    * @param {Number} durationIn - duration of the scene.
    */
-  this.setDuration = function(durationIn) {
+  this.setDuration = durationIn => {
     duration = durationIn;
   }
 
@@ -857,7 +881,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * Get the default duration value.
    * returns {Number}
    */
-  this.getDuration = function() {
+  this.getDuration = () => {
     return duration;
   }
 
@@ -866,7 +890,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Boolean} flag - Indicate either stereo effect control 
    * should be enabled or disabled.
    */
-  this.setStereoEffectEnable = function(stereoFlag) {
+  this.setStereoEffectEnable = stereoFlag => {
     if (stereoFlag == true) {
       if (!stereoEffect) {
         stereoEffect = new require('./controls').StereoEffect(rendererIn);
@@ -875,17 +899,17 @@ exports.Scene = function(containerIn, rendererIn) {
     } else {
       rendererIn.setSize(container.clientWidth, container.clientHeight);
     }
-    _this.camera.updateProjectionMatrix();
+    this.camera.updateProjectionMatrix();
     stereoEffectFlag = stereoFlag;
   }
 
-  this.objectIsInScene = function(zincObject) {
-    for (var i = 0; i < zincGeometries.length; i++) {
+  this.objectIsInScene = zincObject => {
+    for (let i = 0; i < zincGeometries.length; i++) {
       if (zincObject === zincGeometries[i]) {
         return true;
       }
     }
-    for (var i = 0; i < zincGlyphsets.length; i++) {
+    for (let i = 0; i < zincGlyphsets.length; i++) {
       if (zincObjects === zincGlyphsets[i]) {
         return true;
       }
@@ -893,47 +917,47 @@ exports.Scene = function(containerIn, rendererIn) {
     return false;
   }
 
-  this.alignObjectToCameraView = function(zincObject, transitionTime) {
-    if (_this.objectIsInScene(zincObject)) {
-      var center = new THREE.Vector3();
-      var boundingBox = zincObject.getBoundingBox();
-      var viewport = _this.getZincCameraControls().getCurrentViewport();
+  this.alignObjectToCameraView = (zincObject, transitionTime) => {
+    if (this.objectIsInScene(zincObject)) {
+      const center = new THREE.Vector3();
+      const boundingBox = zincObject.getBoundingBox();
+      const viewport = this.getZincCameraControls().getCurrentViewport();
       boundingBox.getCenter(center);
-      var target = new THREE.Vector3(viewport.targetPosition[0],
+      const target = new THREE.Vector3(viewport.targetPosition[0],
         viewport.targetPosition[1], viewport.targetPosition[2]);
-      var eyePosition = new THREE.Vector3(viewport.eyePosition[0],
+      const eyePosition = new THREE.Vector3(viewport.eyePosition[0],
         viewport.eyePosition[1], viewport.eyePosition[2]);
-      var upVector = new THREE.Vector3(viewport.upVector[0],
+      const upVector = new THREE.Vector3(viewport.upVector[0],
         viewport.upVector[1], viewport.upVector[2]);
-      var newVec1 = new THREE.Vector3();
-      var newVec2 = new THREE.Vector3();
+      const newVec1 = new THREE.Vector3();
+      const newVec2 = new THREE.Vector3();
       newVec1.subVectors(target, eyePosition).normalize();
       newVec2.subVectors(target, center).normalize();
-      var newVec3 = new THREE.Vector3();
+      const newVec3 = new THREE.Vector3();
       newVec3.crossVectors(newVec1, newVec2);
-      var angle = newVec1.angleTo(newVec2);
+      const angle = newVec1.angleTo(newVec2);
       if (transitionTime > 0) {
-        _this.getZincCameraControls().rotateCameraTransition(newVec3,
+        this.getZincCameraControls().rotateCameraTransition(newVec3,
           angle, transitionTime);
-        _this.getZincCameraControls().enableCameraTransition();
+        this.getZincCameraControls().enableCameraTransition();
       } else {
-        _this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
+        this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
       }
     }
   }
 
-  this.setCameraTargetToObject = function(zincObject) {
-    if (_this.objectIsInScene(zincObject)) {
-      var center = new THREE.Vector3();
-      var boundingBox = zincObject.getBoundingBox();
-      var viewport = _this.getZincCameraControls().getCurrentViewport();
+  this.setCameraTargetToObject = zincObject => {
+    if (this.objectIsInScene(zincObject)) {
+      const center = new THREE.Vector3();
+      const boundingBox = zincObject.getBoundingBox();
+      const viewport = this.getZincCameraControls().getCurrentViewport();
       boundingBox.getCenter(center);
-      var target = new THREE.Vector3(viewport.targetPosition[0],
+      const target = new THREE.Vector3(viewport.targetPosition[0],
         viewport.targetPosition[1], viewport.targetPosition[2]);
-      var eyePosition = new THREE.Vector3(viewport.eyePosition[0],
+      const eyePosition = new THREE.Vector3(viewport.eyePosition[0],
         viewport.eyePosition[1], viewport.eyePosition[2]);
-      var newVec1 = new THREE.Vector3();
-      var newVec2 = new THREE.Vector3();
+      const newVec1 = new THREE.Vector3();
+      const newVec2 = new THREE.Vector3();
       newVec1.subVectors(eyePosition, target);
       newVec2.addVectors(center, newVec1);
       viewport.eyePosition[0] = newVec2.x;
@@ -942,7 +966,7 @@ exports.Scene = function(containerIn, rendererIn) {
       viewport.targetPosition[0] = center.x;
       viewport.targetPosition[1] = center.y;
       viewport.targetPosition[2] = center.z;
-      _this.getZincCameraControls().setCurrentCameraSettings(viewport);
+      this.getZincCameraControls().setCurrentCameraSettings(viewport);
     }
   }
 
@@ -950,7 +974,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * Check if stereo effect is enabled.
    * @returns {Boolean}
    */
-  this.isStereoEffectEnable = function() {
+  this.isStereoEffectEnable = () => {
     return stereoEffectFlag;
   }
 
@@ -959,8 +983,8 @@ exports.Scene = function(containerIn, rendererIn) {
    * destroy the geometry and free up the memory.
    * @param {Zinc.Geometry} zincGeometry - geometry to be removed from this scene.
    */
-  this.removeZincGeometry = function(zincGeometry) {
-    for (var i = 0; i < zincGeometries.length; i++) {
+  this.removeZincGeometry = zincGeometry => {
+    for (let i = 0; i < zincGeometries.length; i++) {
       if (zincGeometry === zincGeometries[i]) {
         scene.remove(zincGeometry.morph);
         zincGeometries.splice(i, 1);
@@ -975,8 +999,8 @@ exports.Scene = function(containerIn, rendererIn) {
    * destroy the glyphset and free up the memory.
    * @param {Zinc.Glyphset} zincGlyphset - geometry to be removed from this scene.
    */
-  this.removeZincGlyphset = function(zincGlyphset) {
-    for (var i = 0; i < zincGlyphsets.length; i++) {
+  this.removeZincGlyphset = zincGlyphset => {
+    for (let i = 0; i < zincGlyphsets.length; i++) {
       if (zincGlyphset === zincGlyphsets[i]) {
         scene.remove(zincGlyphset.getGroup());
         zincGlyphsets[i].dispose();
@@ -991,13 +1015,13 @@ exports.Scene = function(containerIn, rendererIn) {
    * This does not remove obejcts that are added using the addObject APIs.
 
    */
-  this.clearAll = function() {
-    for (var i = zincGeometries.length - 1; i >= 0; i--) {
+  this.clearAll = () => {
+    for (let i = zincGeometries.length - 1; i >= 0; i--) {
       scene.remove(zincGeometries[i].morph);
       zincGeometries[i].dispose();
     }
     zincGeometries = [];
-    for (var i = zincGlyphsets.length - 1; i >= 0; i--) {
+    for (let i = zincGlyphsets.length - 1; i >= 0; i--) {
       scene.remove(zincGlyphsets[i].getGroup());
       zincGlyphsets[i].dispose();
     }

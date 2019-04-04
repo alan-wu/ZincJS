@@ -1,88 +1,85 @@
-var THREE = require('three');
-var ThreeBSP = require('three-js-csg')(THREE);
-var Geometry = require('./geometry').Geometry;
+const THREE = require('three');
+const ThreeBSP = require('three-js-csg')(THREE);
+const Geometry = require('./geometry').Geometry;
 
-var GeometryCSG = function (hostIn) {
+const GeometryCSG = function (hostIn) {
   //ZincGeoemtry of the main geometry
+  let host = undefined;
   if (hostIn && hostIn.isGeometry)
     host = hostIn;
-  var host = hostIn;
-  var hostCSG = undefined;
-  var _this = this;
+  let hostCSG = undefined;
   
-  this.setGeometry = function(hostIn) {
+  this.setGeometry = hostIn => {
     if (hostIn && hostIn.isGeometry)
 	  host = hostIn;
     hostCSG = undefined;
   }
   
-  this.getHostGeometry = function() {
-	var tempCSG = new ThreeBSP(host.morph);
+  this.getHostGeometry = () => {
+	const tempCSG = new ThreeBSP(host.morph);
     return new createZincGeometry(tempCSG);
   }
   
-  this.getGeometry = function() {
-	  return host;
-  }
+  this.getGeometry = () => host;
   
-  var createZincGeometry = function(csgMesh) {
-	var material = host.morph.material.clone();
+  const createZincGeometry = csgMesh => {
+	const material = host.morph.material.clone();
 	material.morphTargets = false;
-	var newMesh = csgMesh.toMesh(material);
-    var newGeometry = new Geometry();
+	const newMesh = csgMesh.toMesh(material);
+    const newGeometry = new Geometry();
     newGeometry.geometry = newMesh.geometry;
     newGeometry.morph = newMesh;
     newGeometry.morph.userData = newGeometry;
     return newGeometry;
   }
   
-  var prepareCSG = function(guestGeometry) {
+  const prepareCSG = guestGeometry => {
 	  if (host && host.morph && guestGeometry && guestGeometry.morph) {
 	      if (hostCSG === undefined)
 	        hostCSG = new ThreeBSP(host.morph);
-	      var guestCSG = new ThreeBSP(guestGeometry.morph);
+	      const guestCSG = new ThreeBSP(guestGeometry.morph);
 	      return guestCSG;
 	  }
 	  return undefined;
-  }
+  };
   
-  this.intersect = function(guestGeometry) {
-	  var guestCSG = prepareCSG(guestGeometry);
+  this.intersect = guestGeometry => {
+	  const guestCSG = prepareCSG(guestGeometry);
 	  if (hostCSG && guestCSG) {
-	    var intersect = hostCSG.intersect(guestCSG);
-	    var newCSG = new GeometryCSG(createZincGeometry(intersect));
+	    const intersect = hostCSG.intersect(guestCSG);
+	    const newCSG = new GeometryCSG(createZincGeometry(intersect));
 	    newCSG.setCSG(intersect);
 	    return newCSG;
 	  }
 	  return undefined;
   }
   
-  this.setCSG = function(csg) {
+  this.setCSG = csg => {
 	  if (hostCSG === undefined)
 		  hostCSG = csg;
   }
   
-  this.subtract = function(guestGeometry) {
-	  var guestCSG = prepareCSG(guestGeometry);
+  this.subtract = guestGeometry => {
+	  const guestCSG = prepareCSG(guestGeometry);
 	  if (hostCSG && guestCSG) {
-		  var intersect = hostCSG.subtract(guestCSG);
-		  var newCSG = new GeometryCSG(createZincGeometry(intersect));
+		  const intersect = hostCSG.subtract(guestCSG);
+		  const newCSG = new GeometryCSG(createZincGeometry(intersect));
 		  newCSG.setCSG(intersect);
 		  return newCSG;
 	  }
 	  return undefined;
   }
   
-  this.union = function(guestGeometry) {
-	  var guestCSG = prepareCSG(guestGeometry);
+  this.union = guestGeometry => {
+	  const guestCSG = prepareCSG(guestGeometry);
 	  if (hostCSG && guestCSG) {
-		  var intersect = hostCSG.union(guestCSG);
-		  var newCSG = new GeometryCSG(createZincGeometry(intersect));
+		  const intersect = hostCSG.union(guestCSG);
+		  const newCSG = new GeometryCSG(createZincGeometry(intersect));
 		  newCSG.setCSG(intersect);
 		  return newCSG;
 	  }
 	  return undefined;
   }
-}
+};
 
 exports.GeometryCSG = GeometryCSG;

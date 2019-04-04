@@ -1,25 +1,29 @@
 var path = require('path');
-const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
+var webpack = require('webpack');
 
 module.exports = {
   mode: "none",
   entry: {
-    "zinc": "./src/zinc.js",
-    "zinc.min": "./src/zinc.js",
+    "zinc": "./src/zinc.js"
   },
   output: {
     path: path.resolve(__dirname, 'build'),
     filename: "[name].js",
     library: 'Zinc',
     libraryTarget: 'umd',
-    globalObject: 'this',
+    globalObject: 'this'
+
   },
-  plugins: [
-    new UglifyJsPlugin({
-      include: /\.min\.js$/,
-      uglifyOptions: {
-        compress: true
-      }
-    })
-  ]
+  module: {
+      rules: [
+          {
+              test: /\.js$/,
+              loader: 'babel-loader',
+              query: {
+                  presets: ['@babel/preset-env']
+              }
+          }
+      ]
+  },
+  devtool: 'source-map'
 };
