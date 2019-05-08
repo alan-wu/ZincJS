@@ -1,8 +1,21 @@
+function resolveURL(url) {
+	let actualURL = url;
+	const prefix = (require("./zinc").modelPrefix);
+	if (prefix) {
+		const r = new RegExp('^(?:[a-z]+:)?//', 'i');
+		if (!r.test(url)) {
+			actualURL =  prefix + url;
+		}
+	}
+	
+	return actualURL;
+}
+
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {
     // Set up an asynchronous request
     const request = new XMLHttpRequest();
-    request.open('GET', url, true);
+    request.open('GET', resolveURL(url), true);
 
     // Hook the event that gets called as the request progresses
     request.onreadystatechange = () => {
@@ -41,5 +54,6 @@ function loadExternalFiles(urls, callback, errorCallback) {
     }
 }
 
+exports.resolveURL = resolveURL;
 exports.loadExternalFile = loadExternalFile;
 exports.loadExternalFiles = loadExternalFiles;

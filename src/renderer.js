@@ -11,9 +11,9 @@ const THREE = require('three');
  * @author Alan Wu
  * @return {Zinc.Renderer}
  */
-exports.Renderer = function (containerIn, window) {
+exports.Renderer = function (containerIn) {
 
-	const container = containerIn;
+	let container = containerIn;
 	
 	const stats = 0;
 	
@@ -32,22 +32,82 @@ exports.Renderer = function (containerIn, window) {
 	let sceneMap = [];
 	let additionalActiveScenes = [];
 	let scenesGroup = new THREE.Group();
+	let canvas = undefined;
 	const _this = this;
 	const currentSize = [0, 0];
 	const currentOffset = [0, 0];
+	
+	this.getDrawingWidth = () => {
+		if (container) {
+			return container.clientWidth;
+		} else if (canvas)
+			if (typeof canvas.clientWidth !== 'undefined')
+				return Math.round(canvas.clientWidth);
+			else
+				return Math.round(canvas.width);
+		return 0;
+	}
+	
+	this.getDrawingHeight = () => {
+		if (container) {
+			return container.clientHeight;
+		} else if (canvas)
+			if (typeof canvas.clientHeight !== 'undefined')
+				return Math.round(canvas.clientHeight);
+			else
+				return Math.round(canvas.height);
+		return 0;
+	}
 	
 	/** 
 	 * Call this to resize the renderer, this is normally call automatically.
 	 */
 	this.onWindowResize = () => {
 		currentScene.onWindowResize();
+		const width = this.getDrawingWidth();
+		const height = this.getDrawingHeight();
 		if (renderer != undefined) {
-			renderer.setSize( container.clientWidth, container.clientHeight );
+			let rect = undefined;
+			if (container) {
+				rect = container.getBoundingClientRect();
+				renderer.setSize(width, height);		
+			} else if (canvas) {
+				if (typeof canvas.getBoundingClientRect !== 'undefined') {
+					rect = canvas.getBoundingClientRect();
+					canvas.width = width;
+					canvas.height = height;
+					renderer.setSize(width, height, false);
+				} else {
+					renderer.setSize(width, height, false);
+					
+				}
+			}
+			if (rect) {
+				currentOffset[0] = rect.left;
+				currentOffset[1] = rect.top;
+			}
 			currentSize[0] = renderer.getSize().width;
 			currentSize[1] = renderer.getSize().height;
-			const rect = container.getBoundingClientRect();
-			currentOffset[0] = rect.left;
-			currentOffset[1] = rect.top;
+		}
+	}
+	
+	const resizeIfRequired = () => {
+		const width = this.getDrawingWidth();
+		const height = this.getDrawingHeight();
+		let rect = undefined;
+		let left = 0, top = 0;
+		if (container)
+			rect = container.getBoundingClientRect();
+		else if (canvas && (typeof canvas.getBoundingClientRect !== 'undefined')) {
+			rect = canvas.getBoundingClientRect();
+		}
+		if (rect) {
+			left = rect.left;
+			top = rect.top;
+		}
+		if (currentSize[0] != width || currentSize[1] != height ||
+			left != currentOffset[0] || top != currentOffset[1]) {
+			this.onWindowResize();
 		}
 	}
 	
@@ -71,13 +131,21 @@ exports.Renderer = function (containerIn, window) {
       else
         parameters['antialias'] = true;
 	  }
-    
-    renderer = new THREE.WebGLRenderer(parameters);
-    if (container !== undefined)
-      container.appendChild( renderer.domElement );
-		renderer.setClearColor( 0xffffff, 1);
-		const scene = this.createScene("default");
-		this.setCurrentScene(scene);
+	  if (parameters["canvas"]) {
+		  container = undefined;
+		  canvas = parameters["canvas"];
+	  }
+      renderer = new THREE.WebGLRenderer(parameters);
+      if (container !== undefined) {
+    	  container.appendChild( renderer.domElement );
+      }
+	  renderer.setClearColor( 0xffffff, 1);
+	  if (canvas && canvas.style) {
+		  canvas.style.height = "100%";
+		  canvas.style.width = "100%";
+	  }
+	  const scene = this.createScene("default");
+	  this.setCurrentScene(scene);
 	}
 	
 	/**
@@ -129,7 +197,11 @@ exports.Renderer = function (containerIn, window) {
 		if (sceneMap[name] != undefined){
 			return undefined;
 		} else {
-			const new_scene = new (require('./scene').Scene)(container, renderer);
+			let new_scene = undefined;
+			if (canvas)
+				new_scene = new (require('./scene').Scene)(canvas, renderer);
+			else
+				new_scene = new (require('./scene').Scene)(container, renderer);
 			sceneMap[name] = new_scene;
 			new_scene.sceneName = name;
 			return new_scene;
@@ -139,18 +211,24 @@ exports.Renderer = function (containerIn, window) {
 	const updateOrthoScene = () => {
 		if (logoSprite != undefined) {
 			const material = logoSprite.material;
-			if (material.map)
-				logoSprite.position.set( (container.clientWidth- material.map.image.width)/2, 
-					(-container.clientHeight + material.map.image.height)/2, 1 );
+			if (material.map) {
+				const width = this.getDrawingWidth();
+				const height = this.getDrawingHeight();
+				const calculatedWidth = (width - material.map.image.width)/2;
+				const calculatedHeight = (-height + material.map.image.height)/2;
+				logoSprite.position.set(calculatedWidth, calculatedHeight, 1 );
+			}
 		}
 	};
 	
 	const updateOrthoCamera = () => {
 		if (cameraOrtho != undefined) {
-			cameraOrtho.left = - container.clientWidth / 2;
-			cameraOrtho.right = container.clientWidth / 2;
-			cameraOrtho.top =  container.clientHeight / 2;
-			cameraOrtho.bottom = -  container.clientHeight / 2;
+			const width = this.getDrawingWidth();
+			const height = this.getDrawingHeight();
+			cameraOrtho.left = -width / 2;
+			cameraOrtho.right = width / 2;
+			cameraOrtho.top =  height / 2;
+			cameraOrtho.bottom = -height / 2;
 			cameraOrtho.updateProjectionMatrix();
 		}
 	};
@@ -338,8 +416,10 @@ exports.Renderer = function (containerIn, window) {
 		if (sceneOrtho == undefined)
 			sceneOrtho = new THREE.Scene();
 		if (cameraOrtho == undefined) {
-			cameraOrtho = new THREE.OrthographicCamera( - container.clientWidth / 2,
-					container.clientWidth / 2, container.clientHeight / 2, - container.clientHeight / 2, 1, 10 );
+			const width = this.getDrawingWidth();
+			const height = this.getDrawingHeight();
+			cameraOrtho = new THREE.OrthographicCamera( -width / 2,
+					width / 2, height/ 2, -height / 2, 1, 10 );
 			cameraOrtho.position.z = 10;
 		}
 		sceneOrtho.add(object)
@@ -353,8 +433,10 @@ exports.Renderer = function (containerIn, window) {
 			const imageheight = material.map.image.height;
 			logoSprite.material = material;
 			logoSprite.scale.set( imagewidth, imageheight, 1 );
-			logoSprite.position.set( (container.clientWidth- imagewidth)/2, (-container.clientHeight + imageheight)/2, 1 );
-			this.addToOrthoScene(logoSprite)
+			const width = this.getDrawingWidth();
+			const height = this.getDrawingHeight();
+			logoSprite.position.set( (width - imagewidth)/2, (-height + imageheight)/2, 1 );
+			this.addToOrthoScene(logoSprite);
 		};
 	};
 	
@@ -370,12 +452,7 @@ exports.Renderer = function (containerIn, window) {
 	 * and finally render the scenes.
 	 */
 	this.render = () => {
-		const rect = container.getBoundingClientRect();
-		
-		if (currentSize[0] != container.clientWidth || currentSize[1] != container.clientHeight ||
-				rect.left != currentOffset[0] || rect.top != currentOffset[1]) {
-			this.onWindowResize();
-		}
+		resizeIfRequired();
 		const delta = clock.getDelta();
 		currentScene.renderGeometries(playRate, delta, this.playAnimation);
 	    for(i = 0; i < additionalActiveScenes.length; i++) {

@@ -10,7 +10,7 @@ const Zinc = function() {
 
   this.defaultMaterialColor = 0xFFFFFF;
   this.defaultOpacity = 1.0;
-
+  this.modelPrefix = undefined;
   this.Geometry = require('./geometry').Geometry;
   this.Glyph = require('./glyph').Glyph;
   this.Glyphset = require('./glyphset').Glyphset;
