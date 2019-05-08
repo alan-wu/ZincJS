@@ -1,7 +1,10 @@
 function resolveURL(url) {
 	let actualURL = url;
-	const prefix = (require("./zinc").modelPrefix);
+	const prefix = (require("./zinc").modelPrefix) +"/";
+	
 	if (prefix) {
+		if (prefix[prefix.length -1] != '/')
+			prefix = prefix + '/';
 		const r = new RegExp('^(?:[a-z]+:)?//', 'i');
 		if (!r.test(url)) {
 			actualURL =  prefix + url;
