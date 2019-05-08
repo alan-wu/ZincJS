@@ -1,4 +1,5 @@
 const THREE = require('three');
+const resolveURL = require('./utilities').resolveURL;
 const JSONLoader = require('./loader').JSONLoader;
 const STLLoader = require('./STLLoader').STLLoader;
 const OBJLoader = require('./OBJLoader').OBJLoader;
@@ -40,6 +41,24 @@ exports.Scene = function(containerIn, rendererIn) {
   let stereoEffect = undefined;
   this.autoClearFlag = true;
 
+  const getDrawingWidth = () => {
+	  if (container)
+		  if (typeof container.clientWidth !== "undefined")
+			  return container.clientWidth;
+		  else
+			  return container.width;
+	  return 0;
+  }
+  
+  const getDrawingHeight = () => {
+	  if (container)
+		  if (typeof container.clientHeight !== "undefined")
+			  return container.clientHeight;
+		  else
+			  return container.height;
+	  return 0;
+  }
+
   /**
    * This function returns a three component array, which contains
    * [totalsize, totalLoaded and errorDownload] of all the downloads happening
@@ -80,7 +99,7 @@ exports.Scene = function(containerIn, rendererIn) {
   //called from Renderer when panel has been resized
   this.onWindowResize = () => {
     zincCameraControls.onResize();
-    this.camera.aspect = container.clientWidth / container.clientHeight;
+    this.camera.aspect = getDrawingWidth() / getDrawingHeight();
     this.camera.updateProjectionMatrix();
   }
 
@@ -94,13 +113,12 @@ exports.Scene = function(containerIn, rendererIn) {
 
   //Setup the camera for this scene, it also initialise the lighting
   const setupCamera = () => {
-    this.camera = new THREE.PerspectiveCamera(40, container.clientWidth / container.clientHeight, 0.0, 10.0);
+    this.camera = new THREE.PerspectiveCamera(40, getDrawingWidth() / getDrawingHeight(), 0.0, 10.0);
     this.ambient = new THREE.AmbientLight(0x202020);
     scene.add(this.ambient);
 
     this.directionalLight = new THREE.DirectionalLight(0x777777);
     scene.add(this.directionalLight);
-
     zincCameraControls = new (require('./controls').CameraControls)(this.camera, rendererIn.domElement, rendererIn, scene);
 
     zincCameraControls.setDirectionalLight(this.directionalLight);
@@ -263,7 +281,7 @@ exports.Scene = function(containerIn, rendererIn) {
   const loadGlyphset = (glyphsetData, glyphurl, groupName, finishCallback) => {
     const newGlyphset = new (require('./glyphset').Glyphset)();
     newGlyphset.duration = 3000;
-    newGlyphset.load(glyphsetData, glyphurl, finishCallback);
+    newGlyphset.load(glyphsetData, resolveURL(glyphurl), finishCallback);
     newGlyphset.groupName = groupName;
     this.addGlyphset(newGlyphset);
   };
@@ -291,7 +309,7 @@ exports.Scene = function(containerIn, rendererIn) {
   this.loadGlyphsetURL = (metaurl, glyphurl, groupName, finishCallback) => {
     const xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl, groupName, finishCallback);
-    xmlhttp.open("GET", metaurl, true);
+    xmlhttp.open("GET", resolveURL(metaurl), true);
     xmlhttp.send();
   }
 
@@ -326,12 +344,12 @@ exports.Scene = function(containerIn, rendererIn) {
         loader = new STLLoader();
       } else if (fileFormat == "OBJ") {
         loader = new OBJLoader();
-        loader.load(url, objloader(modelId, colour, opacity, localTimeEnabled,
+        loader.load(resolveURL(url), objloader(modelId, colour, opacity, localTimeEnabled,
           localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
         return;
       }
     }
-    loader.load(url, meshloader(modelId, colour, opacity, localTimeEnabled,
+    loader.load(resolveURL(url), meshloader(modelId, colour, opacity, localTimeEnabled,
       localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
   };
   
@@ -376,7 +394,7 @@ exports.Scene = function(containerIn, rendererIn) {
     const colour = require('./zinc').defaultMaterialColor;
     const opacity = require('./zinc').defaultOpacity;
     const loader = new STLLoader();
-    loader.load(url, meshloader(modelId, colour, opacity, false,
+    loader.load(resolveURL(url), meshloader(modelId, colour, opacity, false,
       false, groupName, finishCallback));
   }
 
@@ -395,7 +413,7 @@ exports.Scene = function(containerIn, rendererIn) {
     const colour = require('./zinc').defaultMaterialColor;
     const opacity = require('./zinc').defaultOpacity;
     const loader = new OBJLoader();
-    loader.load(url, meshloader(modelId, colour, opacity, false,
+    loader.load(resolveURL(url), meshloader(modelId, colour, opacity, false,
       false, groupName, finishCallback));
   }
 
@@ -418,8 +436,8 @@ exports.Scene = function(containerIn, rendererIn) {
           readMetadataItem(metadata[i], callback);
       }
     }
-    requestURL = url
-    xmlhttp.open("GET", url, true);
+    requestURL = resolveURL(url);
+    xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
 
@@ -449,7 +467,7 @@ exports.Scene = function(containerIn, rendererIn) {
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
 
-      loader.load(filename, meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, undefined,
+      loader.load(resolveURL(filename), meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, undefined,
         finishCallback), this.onProgress(i), this.onError);
     }
   }
@@ -466,7 +484,7 @@ exports.Scene = function(containerIn, rendererIn) {
         this.loadView(viewData);
       }
     }
-    requestURL = url
+    requestURL = resolveURL(url);
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
@@ -494,7 +512,7 @@ exports.Scene = function(containerIn, rendererIn) {
         this.loadModelsURL(urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback);
       }
     }
-    requestURL = jsonFilePrefix + "_view.json";
+    requestURL = resolveURL(jsonFilePrefix + "_view.json");
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
@@ -895,10 +913,8 @@ exports.Scene = function(containerIn, rendererIn) {
       if (!stereoEffect) {
         stereoEffect = new require('./controls').StereoEffect(rendererIn);
       }
-      rendererIn.setSize(container.clientWidth, container.clientHeight);
-    } else {
-      rendererIn.setSize(container.clientWidth, container.clientHeight);
     }
+    rendererIn.setSize(getDrawingWidth(), getDrawingHeight());
     this.camera.updateProjectionMatrix();
     stereoEffectFlag = stereoFlag;
   }

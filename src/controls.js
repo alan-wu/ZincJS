@@ -1,4 +1,5 @@
 const THREE = require('three');
+const resolveURL = require('./utilities').resolveURL;
 
 const Viewport = function () {
 	this.nearPlane = 0.1;
@@ -400,7 +401,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	
 	this.enable = function () {
 		enabled = true;
-		if (this.domElement.addEventListener) {
+		if (this.domElement && this.domElement.addEventListener) {
 			this.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
 			this.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
 			this.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
@@ -415,7 +416,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	
 	this.disable = function () {
 		enabled = false;
-		if (this.domElement.removeEventListener) {
+		if (this.domElement && this.domElement.removeEventListener) {
 			this.domElement.removeEventListener( 'mousedown', onDocumentMouseDown, false );
 			this.domElement.removeEventListener( 'mousemove', onDocumentMouseMove, false );
 			this.domElement.removeEventListener( 'mouseup', onDocumentMouseUp, false );
@@ -443,7 +444,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	            finishCallback();
 		    }
 		}
-		requestURL = path_url;
+		requestURL = resolveURL(path_url);
 		xmlhttp.open("GET", requestURL, true);
 		xmlhttp.send();
 	}
