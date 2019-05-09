@@ -1,6 +1,6 @@
 function resolveURL(url) {
 	let actualURL = url;
-	const prefix = (require("./zinc").modelPrefix) +"/";
+	const prefix = (require("./zinc").modelPrefix);
 	
 	if (prefix) {
 		if (prefix[prefix.length -1] != '/')
