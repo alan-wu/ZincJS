@@ -329,7 +329,6 @@ exports.Scene = function(containerIn, rendererIn) {
   const loadMetaModel = (url, timeEnabled, morphColour, groupName, fileFormat, finishCallback) => {
     num_inputs += 1;
     const modelId = nextAvailableInternalZincModelId();
-
     const colour = require('./zinc').defaultMaterialColor;
     const opacity = require('./zinc').defaultOpacity;
     let localTimeEnabled = 0;
@@ -344,12 +343,12 @@ exports.Scene = function(containerIn, rendererIn) {
         loader = new STLLoader();
       } else if (fileFormat == "OBJ") {
         loader = new OBJLoader();
-        loader.load(resolveURL(url), objloader(modelId, colour, opacity, localTimeEnabled,
+        loader.load(url, objloader(modelId, colour, opacity, localTimeEnabled,
           localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
         return;
       }
     }
-    loader.load(resolveURL(url), meshloader(modelId, colour, opacity, localTimeEnabled,
+    loader.load(url, meshloader(modelId, colour, opacity, localTimeEnabled,
       localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
   };
   
@@ -369,12 +368,21 @@ exports.Scene = function(containerIn, rendererIn) {
 
   //Function to process each of the metadata item. There are two types of metadata item,
   //one for Zinc.Geometry and one for Zinc.Glyphset.
-  const readMetadataItem = (item, finishCallback) => {
+  const readMetadataItem = (referenceURL, item, finishCallback) => {
     if (item) {
       if (item.Type == "Surfaces") {
-        loadMetaModel(item.URL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback);
+    	let newURL = item.URL;
+    	if (referenceURL)
+    	   	newURL = (new URL(item.URL, referenceURL)).href;
+        loadMetaModel(newURL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback);
       } else if (item.Type == "Glyph") {
-        this.loadGlyphsetURL(item.URL, item.GlyphGeometriesURL, item.GroupName, finishCallback);
+      	let newURL = item.URL;
+      	let newGeometryURL = item.GlyphGeometriesURL;
+    	if (referenceURL) {
+    	   	newURL = (new URL(item.URL, referenceURL)).href;
+    	   	newGeometryURL = (new URL(item.GlyphGeometriesURL, referenceURL)).href;
+    	}
+        this.loadGlyphsetURL(newURL, newGeometryURL, item.GroupName, finishCallback);
       }
     }
   };
@@ -429,11 +437,12 @@ exports.Scene = function(containerIn, rendererIn) {
     const xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+    	const referenceURL = xmlhttp.responseURL;
         const metadata = JSON.parse(xmlhttp.responseText);
         const numberOfObjects = metadata.length;
         var callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
         for (i = 0; i < numberOfObjects; i++)
-          readMetadataItem(metadata[i], callback);
+          readMetadataItem(referenceURL, metadata[i], callback);
       }
     }
     requestURL = resolveURL(url);
