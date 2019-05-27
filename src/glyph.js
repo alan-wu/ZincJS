@@ -25,7 +25,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	let label = undefined;
 	let labelString = undefined;
 	const group = new THREE.Group();
-	const isGlyph = true;
+	this.isGlyph = true;
 	
 	this.fromMesh = meshIn => {
 		if (meshIn && meshIn.isMesh) {
