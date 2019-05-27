@@ -297,7 +297,6 @@ exports.Glyphset = function()  {
 		let current_glyph_index = 0;
 		for (let i = 0; i < numberOfColours; i++) {
 			const hex_values = current_colors[i];
-
 			for (let j = 0; j < numberOfGlyphs; j++)
 			{
 				const glyph = glyphList[current_glyph_index];
@@ -385,6 +384,11 @@ exports.Glyphset = function()  {
 		current_scales = null;
 		current_colors = null;
 	};
+	
+	this.showLabel = () => {
+		for ( let i = 0; i < glyphList.length; i ++ )
+			glyphList[i].showLabel();
+	}
 	
 	const createGlyphs = (geometry, material) => {
 		geometry.computeFaceNormals();

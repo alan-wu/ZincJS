@@ -23,6 +23,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	this.id = idIn;
 	this.userData = [];
 	let label = undefined;
+	let labelString = undefined;
 	const group = new THREE.Group();
 	const isGlyph = true;
 	
@@ -41,15 +42,25 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	}
 	
 	this.setLabel = text => {
-	  if (text && (typeof text === 'string' || text instanceof String)) {
+		if (text && (typeof text === 'string' || text instanceof String)) {
+			labelString = text;
+			if (mesh)
+				mesh.name = text;
+		}
+		if (label)
+			this.showLabel();
+	}	
+	
+	this.showLabel = () => {
+	  if (label) {
+		  position = label.getPosition();
+		  group.remove(label.getSprite());
+		  label.dispose();
+		  label = undefined;
+	  }
+	  if (labelString && (typeof labelString === 'string' || labelString instanceof String)) {
 		let position = [0, 0, 0];
-	    if (label) {
-	      position = label.getPosition();
-	      group.remove(label.getSprite());
-	      label.dispose();
-	      label = undefined;
-	    }
-	    label = new (require('./label').Label)(text);
+	    label = new (require('./label').Label)(labelString);
 	    label.setPosition(position[0], position[1], position[2]);
 	    group.add(label.getSprite());
 	  }
@@ -68,9 +79,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * @return {Label}
 	 */
 	this.getLabel = () => {
-		if (label)
-			return label.getString();
-		return undefined;
+		return labelString;
 	}
   
 	/**
