@@ -1,3 +1,5 @@
+require("url-polyfill");
+
 /**
  * Provides a global namespace for the Zinc javascript library and some default parameters for it.
  * 
@@ -7,7 +9,6 @@
 
 const Zinc = function() {
   this.Revision = 29;
-
   this.defaultMaterialColor = 0xFFFFFF;
   this.defaultOpacity = 1.0;
   this.modelPrefix = undefined;

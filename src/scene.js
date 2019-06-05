@@ -435,9 +435,12 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.loadMetadataURL = (url, finishCallback, allCompletedCallback) => {
     const xmlhttp = new XMLHttpRequest();
+    var requestURL = resolveURL(url);
     xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-    	const referenceURL = xmlhttp.responseURL;
+    	let  referenceURL = xmlhttp.responseURL;
+    	if (referenceURL === undefined)
+    		referenceURL = (new URL(requestURL)).href;
         const metadata = JSON.parse(xmlhttp.responseText);
         const numberOfObjects = metadata.length;
         var callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
@@ -445,7 +448,7 @@ exports.Scene = function(containerIn, rendererIn) {
           readMetadataItem(referenceURL, metadata[i], callback);
       }
     }
-    requestURL = resolveURL(url);
+ 
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
