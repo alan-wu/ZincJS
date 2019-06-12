@@ -19,6 +19,7 @@ exports.Scene = function(containerIn, rendererIn) {
   const container = containerIn;
   let zincGeometries = [];
   let zincGlyphsets = [];
+  let zincPointsets = [];
   const scene = new THREE.Scene();
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
@@ -182,6 +183,14 @@ exports.Scene = function(containerIn, rendererIn) {
         boundingBox1.union(boundingBox2);
       }
     }
+    for (let i = 0; i < zincPointsets.length; i++) {
+        boundingBox2 = zincPointsets[i].getBoundingBox();
+        if (boundingBox1 == undefined) {
+          boundingBox1 = boundingBox2;
+        } else {
+          boundingBox1.union(boundingBox2);
+        }
+      }
     return boundingBox1;
   }
 
@@ -237,6 +246,18 @@ exports.Scene = function(containerIn, rendererIn) {
     }
   }
 
+  /**
+   * A function which iterates through the list of pointsets and call the callback
+   * function with the pointset as the argument.
+   * @param {Function} callbackFunction - Callback function with the pointset
+   * as an argument.
+   */
+  this.forEachGlyphset = callbackFunction => {
+    for (let i = zincPointsets.length - 1; i >= 0; i--) {
+      callbackFunction(zincPointsets[i]);
+    }
+  }
+  
   /** 
    * Find and return all geometries in this scene with the matching GroupName.
    * 
@@ -252,7 +273,22 @@ exports.Scene = function(containerIn, rendererIn) {
     }
     return geometriesArray;
   }
-
+  
+  /** 
+   * Find and return all pointsets in this scene with the matching GroupName.
+   * 
+   * @param {String} GroupName - Groupname to match with.
+   * @returns {Array}
+   */
+  this.findPointsetsWithGroupName = GroupName => {
+    const pointsetsArray = [];
+    for (let i = 0; i < zincPointsets.length; i++) {
+      if (zincPointsets[i].groupName == GroupName) {
+    	  pointsetsArray.push(zincPointsets[i]);
+      }
+    }
+    return pointsetsArray;
+  }
   /** 
    * Find and return all glyphsets in this scene with the matching GroupName.
    * 
@@ -312,6 +348,50 @@ exports.Scene = function(containerIn, rendererIn) {
     xmlhttp.open("GET", resolveURL(metaurl), true);
     xmlhttp.send();
   }
+  
+  //Internal loader for a regular zinc geometry.
+  const pointsetloader = (localTimeEnabled, localMorphColour, groupName, finishCallback) => {
+	  return (geometry, materials) => {
+		  const newPointset = new (require('./pointset').Pointset)();
+		  let material = new THREE.PointsMaterial({alphaTest: 0.5, transparent: true, size: 3, sizeAttenuation:false});
+		  if (materials && materials[0]) {
+			  material.color = materials[0].color;
+			  material.morphTargets = localTimeEnabled;
+		  }
+		  const points = newPointset.createMesh(geometry, material);
+		  if (points) {
+			  newPointset.timeEnabled = localTimeEnabled;
+			  newPointset.morphColour = localMorphColour;
+			  newPointset.setName(groupName);
+			  scene.add(points);
+			  zincPointsets.push(newPointset);
+		  }
+		  if (finishCallback != undefined && (typeof finishCallback == 'function'))
+			  finishCallback(newPointset);
+	  };
+  }  
+
+  /**
+   * Load a pointset into this scene object.
+   * 
+   * @param {String} metaurl - Provide informations such as transformations, colours 
+   * and others for each of the glyph in the glyphsset.
+   * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
+   * @param {Boolean} morphColour - Indicate if color morphing is enabled.
+   * @param {STRING} groupName - name to assign the pointset's groupname to.
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the glyphset is succssfully load in.
+   */
+  this.loadPointsetURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
+	  let localTimeEnabled = 0;
+	  if (timeEnabled != undefined)
+		  localTimeEnabled = timeEnabled ? true : false;
+	  let localMorphColour = 0;
+	  if (morphColour != undefined)
+		  localMorphColour = morphColour ? true : false;
+	  let loader = new JSONLoader();
+	  loader.load(url, pointsetloader(localTimeEnabled, localMorphColour, groupName, finishCallback));
+  }
 
   /**
    * Load a geometry into this scene, this is a subsequent called from 
@@ -370,19 +450,19 @@ exports.Scene = function(containerIn, rendererIn) {
   //one for Zinc.Geometry and one for Zinc.Glyphset.
   const readMetadataItem = (referenceURL, item, finishCallback) => {
     if (item) {
-      if (item.Type == "Surfaces") {
     	let newURL = item.URL;
     	if (referenceURL)
     	   	newURL = (new URL(item.URL, referenceURL)).href;
+      if (item.Type == "Surfaces") {
         loadMetaModel(newURL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback);
       } else if (item.Type == "Glyph") {
-      	let newURL = item.URL;
       	let newGeometryURL = item.GlyphGeometriesURL;
     	if (referenceURL) {
-    	   	newURL = (new URL(item.URL, referenceURL)).href;
     	   	newGeometryURL = (new URL(item.GlyphGeometriesURL, referenceURL)).href;
     	}
         this.loadGlyphsetURL(newURL, newGeometryURL, item.GroupName, finishCallback);
+      } else if (item.Type == "Points") {
+    	  this.loadPointsetURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
       }
     }
   };

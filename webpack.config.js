@@ -27,6 +27,17 @@ module.exports = {
                 		  mangle: false,
                 	   }]]
               }
+          },
+          {
+        	  test: /\.(gif|png|jpe?g|svg)$/i,
+        	  use: [
+        	    {
+        	      loader: 'url-loader',
+        	      options: {
+        	        limit: 8192
+        	      },
+        	    },
+        	  ],
           }
       ]
   },

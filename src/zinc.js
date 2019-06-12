@@ -15,6 +15,7 @@ const Zinc = function() {
   this.Geometry = require('./geometry').Geometry;
   this.Glyph = require('./glyph').Glyph;
   this.Glyphset = require('./glyphset').Glyphset;
+  this.Pointset = require('./pointset').Pointset;
   this.Renderer = require('./renderer').Renderer;
   this.Scene = require('./scene').Scene;
   this.GeometryCSG = require('./geometryCSG').GeometryCSG;

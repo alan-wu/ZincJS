@@ -460,12 +460,14 @@ exports.Glyphset = function()  {
 	 */
 	this.getBoundingBox = () => {
 		let boundingBox1 = undefined, boundingBox2 = undefined;
-		for ( let i = 0; i < glyphList.length; i ++ ) {
-			boundingBox2 = glyphList[i].getBoundingBox();
-			if (boundingBox1 == undefined) {
-				boundingBox1 = boundingBox2;
-			} else {
-				boundingBox1.union(boundingBox2);
+		if (group.visible) {
+			for ( let i = 0; i < glyphList.length; i ++ ) {
+				boundingBox2 = glyphList[i].getBoundingBox();
+				if (boundingBox1 == undefined) {
+					boundingBox1 = boundingBox2;
+				} else {
+					boundingBox1.union(boundingBox2);
+				}
 			}
 		}
 		return boundingBox1;
