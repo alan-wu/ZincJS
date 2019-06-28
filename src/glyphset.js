@@ -32,7 +32,7 @@ exports.Glyphset = function()  {
 	const group = new THREE.Group();
 	let morphColours = false;
 	let morphVertices = false;
-	let groupName = undefined;
+	this.groupName = undefined;
 	this.isGlyphset = true;
 	this.userData = [];
 	
@@ -516,7 +516,7 @@ exports.Glyphset = function()  {
 		scales = undefined;
 		colors = undefined;
 		this.ready = false;
-		groupName = undefined;
+		this.groupName = undefined;
 	}
 	
 	//Update the geometry and colours depending on the morph.

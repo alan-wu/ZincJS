@@ -11,10 +11,11 @@ const THREE = require('three');
  */
 exports.Pointset = function () {
 	this.morph = undefined;
-	let groupName = undefined;
+	this.groupName = undefined;
 	this.timeEnabled = false;
 	this.morphColour = false;
 	this.isPointset = true;
+	this.userData = [];
 	
 	const getCircularTexture = () => {
 		var image = new Image();
@@ -32,7 +33,7 @@ exports.Pointset = function () {
 			this.morph = new THREE.Points(geometry, material);
 			if (this.morph) {
 				this.morph.userData = this;
-				this.morph.name = groupName;
+				this.morph.name = this.groupName;
 			}
 		}
 		return this.morph;		
@@ -53,9 +54,9 @@ exports.Pointset = function () {
 	}
 	
 	this.setName = groupNameIn => {
-		groupName = groupNameIn;
+		this.groupName = groupNameIn;
 		if (this.morph) {
-			this.morph.name = groupName;
+			this.morph.name = this.groupName;
 		}
 	}
 	
