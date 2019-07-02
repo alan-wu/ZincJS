@@ -26,8 +26,20 @@ exports.Pointset = function () {
 		return texture;
 	}
 	
+	  /**
+	   * Check if the pointset is time varying.
+	   * 
+	   * @return {Boolean}
+	   */
+	  this.isTimeVarying = () => {
+	    if (this.timeEnabled || this.morphColour)
+	      return true;
+	    return false;
+	  }
+	
 	this.createMesh = (geometry, material) => {
 		if (geometry && material) {
+			geometry.colorsNeedUpdate = true;
 			const texture = getCircularTexture();
 			material.map = texture;
 			this.morph = new THREE.Points(geometry, material);

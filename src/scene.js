@@ -353,10 +353,13 @@ exports.Scene = function(containerIn, rendererIn) {
   const pointsetloader = (localTimeEnabled, localMorphColour, groupName, finishCallback) => {
 	  return (geometry, materials) => {
 		  const newPointset = new (require('./pointset').Pointset)();
-		  let material = new THREE.PointsMaterial({alphaTest: 0.5, transparent: true, size: 3, sizeAttenuation:false});
+		  let material = new THREE.PointsMaterial({alphaTest: 0.5, transparent: true, size: 5, sizeAttenuation:false});
 		  if (materials && materials[0]) {
 			  material.color = materials[0].color;
 			  material.morphTargets = localTimeEnabled;
+			  //material.vertexColors = materials[0].vertexColors;
+			  //material.needsUpdate = true;
+			  //console.log(material);
 		  }
 		  const points = newPointset.createMesh(geometry, material);
 		  if (points) {
