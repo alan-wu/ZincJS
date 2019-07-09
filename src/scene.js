@@ -357,9 +357,7 @@ exports.Scene = function(containerIn, rendererIn) {
 		  if (materials && materials[0]) {
 			  material.color = materials[0].color;
 			  material.morphTargets = localTimeEnabled;
-			  //material.vertexColors = materials[0].vertexColors;
-			  //material.needsUpdate = true;
-			  //console.log(material);
+			  material.vertexColors = materials[0].vertexColors;
 		  }
 		  const points = newPointset.createMesh(geometry, material);
 		  if (points) {

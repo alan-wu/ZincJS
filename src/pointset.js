@@ -36,21 +36,39 @@ exports.Pointset = function () {
 	      return true;
 	    return false;
 	  }
-	
-	this.createMesh = (geometry, material) => {
-		if (geometry && material) {
-			geometry.colorsNeedUpdate = true;
-			const texture = getCircularTexture();
-			material.map = texture;
-			this.morph = new THREE.Points(geometry, material);
-			if (this.morph) {
-				this.morph.userData = this;
-				this.morph.name = this.groupName;
-			}
-		}
-		return this.morph;		
-	}
-	
+
+	  this.createMesh = (geometry, material) => {
+		  if (geometry && material) {
+			  let k = 0;
+			  if (material.vertexColors === THREE.VertexColors) {
+				  if (geometry.faces.length > 0 && geometry.faces[i].vertexColors.length > 0) {
+					  material.color = new THREE.Color(1, 1, 1);
+					  for (let i = 0; i < geometry.faces.length; i++) {
+						  for (let j = 0; j < geometry.faces[i].vertexColors.length; j++) {
+							  geometry.colors.push(geometry.faces[i].vertexColors[j]);
+							  k++;
+						  }
+					  }
+					  if (geometry.vertices.length > k) {
+						  for (k;k < geometry.vertices.length; k++)
+							  geometry.colors.push(new THREE.Color(0,0,0));
+					  }
+				  } else {
+					  material.vertexColors = THREE.NoColors;
+				  }
+			  }
+			  geometry.colorsNeedUpdate = true;
+			  const texture = getCircularTexture();
+			  material.map = texture;
+			  this.morph = new THREE.Points(geometry, material);
+			  if (this.morph) {
+				  this.morph.userData = this;
+				  this.morph.name = this.groupName;
+			  }
+		  }
+		  return this.morph;		
+	  }
+
 	this.setSize = size => {
 		if (this.morph && this.morph.material) {
 			this.morph.material.size = size;
