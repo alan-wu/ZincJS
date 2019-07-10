@@ -94,7 +94,8 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   this.onError = xhr => {
-    errorDownload = true;
+	  num_inputs = num_inputs - 1;
+	  errorDownload = true;
   };
 
   //called from Renderer when panel has been resized
@@ -353,8 +354,12 @@ exports.Scene = function(containerIn, rendererIn) {
   const pointsetloader = (localTimeEnabled, localMorphColour, groupName, finishCallback) => {
 	  return (geometry, materials) => {
 		  const newPointset = new (require('./pointset').Pointset)();
-		  let material = new THREE.PointsMaterial({alphaTest: 0.5, transparent: true, size: 5, sizeAttenuation:false});
+		  let material = new THREE.PointsMaterial({alphaTest:0.5,size: 5, sizeAttenuation:false});
 		  if (materials && materials[0]) {
+		      if (1.0 > materials[0].opacity) {
+		    	  material.transparent = true;
+		      }
+		      material.opacity = materials[0].opacity;
 			  material.color = materials[0].color;
 			  material.morphTargets = localTimeEnabled;
 			  material.vertexColors = materials[0].vertexColors;
@@ -385,13 +390,15 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.loadPointsetURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
 	  let localTimeEnabled = 0;
+	  num_inputs += 1;
 	  if (timeEnabled != undefined)
 		  localTimeEnabled = timeEnabled ? true : false;
 	  let localMorphColour = 0;
 	  if (morphColour != undefined)
 		  localMorphColour = morphColour ? true : false;
 	  let loader = new JSONLoader();
-	  loader.load(url, pointsetloader(localTimeEnabled, localMorphColour, groupName, finishCallback));
+	  loader.load(url, pointsetloader(localTimeEnabled, localMorphColour, groupName, finishCallback),
+		  this.onProgress(i), this.onError);
   }
 
   /**
@@ -874,6 +881,11 @@ exports.Scene = function(containerIn, rendererIn) {
         return true;
       }
     }
+    for (let i = 0; i < zincPointsets.length; i++) {
+        if (zincGlyphsets[i].isTimeVarying()) {
+          return true;
+        }
+    }
     return false;
   }
 
@@ -908,7 +920,8 @@ exports.Scene = function(containerIn, rendererIn) {
   this.renderGeometries = (playRate, delta, playAnimation) => {
     zincCameraControls.update(delta);
     /* the following check make sure all models are loaded and synchonised */
-    if (zincGeometries.length == num_inputs && allGlyphsetsReady()) {
+    var totalInput = zincGeometries.length + zincPointsets.length;
+    if (totalInput == num_inputs && allGlyphsetsReady()) {
       for (let i = 0; i < zincGeometries.length; i++) {
         /* check if morphColour flag is set */
         zincGeometries[i].render(playRate * delta, playAnimation);
@@ -916,6 +929,9 @@ exports.Scene = function(containerIn, rendererIn) {
       for (let i = 0; i < zincGlyphsets.length; i++) {
         zincGlyphsets[i].render(playRate * delta, playAnimation);
       }
+      for (let i = 0; i < zincPointsets.length; i++) {
+    	  zincPointsets[i].render(playRate * delta, playAnimation);
+        }
     }
   }
 

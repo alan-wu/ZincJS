@@ -15,8 +15,39 @@ exports.Pointset = function () {
 	this.timeEnabled = false;
 	this.morphColour = false;
 	this.isPointset = true;
+	let inbuildTime = 0;
+	/**
+	 * Total duration of the animation, this value interacts with the 
+	 * {@link Zinc.Renderer#playRate} to produce the actual duration of the
+	 * animation. Actual time in second = duration / playRate.
+	 */
+	this.duration = 3000;
+	this.clipAction = undefined;
 	this.userData = [];
 	
+	
+	const updateMorphTargets = geometry => {
+		var m, ml, name;
+		var morphTargets = geometry.morphTargets;
+		if ( morphTargets !== undefined && morphTargets.length > 0 ) {
+			this.morph.morphTargetInfluences = [];
+			this.morph.morphTargetDictionary = {};
+			for ( m = 0, ml = morphTargets.length; m < ml; m ++ ) {
+				name = morphTargets[ m ].name || String( m );
+				this.morph.morphTargetInfluences.push( 0 );
+				this.morph.morphTargetDictionary[ name ] = m;
+			}
+		}
+	}
+	
+	const updateBufferGeometry = (object, geometry) => {
+		if (object && geometry) {
+			if ( geometry._bufferGeometry === undefined ) {
+				geometry._bufferGeometry = new THREE.BufferGeometry().fromGeometry( geometry );
+			}
+		}
+	}
+			
 	const getCircularTexture = () => {
 		var image = new Image();
 		image.src = require("./assets/disc.png");
@@ -64,6 +95,19 @@ exports.Pointset = function () {
 			  if (this.morph) {
 				  this.morph.userData = this;
 				  this.morph.name = this.groupName;
+				  this.mixer = new THREE.AnimationMixer(this.morph);
+				  this.clipAction = undefined;
+				  if (geometry.morphTargets) {
+					  updateMorphTargets(geometry);
+					  const animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(geometry.morphTargets, 10, true);
+					  if (animationClip && animationClip[0] != undefined) {
+						  this.clipAction = this.mixer.clipAction(animationClip[0]).setDuration(this.duration);
+						  this.clipAction.loop = THREE.loopOnce;
+						  this.clipAction.clampWhenFinished = true;
+						  this.clipAction.play();
+					  }
+					  updateBufferGeometry(this.morph, geometry);
+				  }
 			  }
 		  }
 		  return this.morph;		
@@ -110,6 +154,96 @@ exports.Pointset = function () {
 		}
 		return undefined;
 	}
+	
+	/**
+	 * Get the local time of this geometry, it returns a value between 
+	 * 0 and the duration.
+	 * 
+	 * @return {Number}
+	 */
+	this.getCurrentTime = () => {
+		if (this.clipAction) {
+			const ratio = this.clipAction.time / this.clipAction._clip.duration;
+			return this.duration * ratio;
+		} else {
+			return inbuildTime;
+		}
+	}
 
+	/**
+	 * Set the local time of this geometry.
+	 * 
+	 * @param {Number} time - Can be any value between 0 to duration.
+	 */
+	this.setMorphTime = time => {
+		if (this.clipAction) {
+			const ratio = time / this.duration;
+			const actualDuration = this.clipAction._clip.duration;
+			this.clipAction.time = ratio * actualDuration;
+			if (this.clipAction.time > actualDuration)
+				this.clipAction.time = actualDuration;
+			if (this.clipAction.time < 0.0)
+				this.clipAction.time = 0.0;
+			if (this.timeEnabled == 1)
+				this.mixer.update( 0.0 );
+		} else {
+			if (time > this.duration)
+				inbuildTime = this.duration;
+			else if (0 > time)
+				inbuildTime = 0;
+			else
+				inbuildTime = time;
+		}
+		if (this.morphColour == 1) {
+			if (typeof this.geometry !== "undefined") {
+				if (this.morph.material.vertexColors == THREE.VertexColors)
+				{
+					morphColorsToVertexColors(this.geometry, this.morph, this.clipAction)
+				}
+				this.geometry.colorsNeedUpdate = true;
+			}
+		}
+	}
+
+	/**
+	 * Check if the geometry is time varying.
+	 * 
+	 * @return {Boolean}
+	 */
+	this.isTimeVarying = () => {
+		if (this.timeEnabled || this.morphColour)
+			return true;
+		return false;
+	}
+
+	//Update the geometry and colours depending on the morph.
+	this.render = (delta, playAnimation) => {
+		if (playAnimation == true) 
+		{
+			if ((this.clipAction) && (this.timeEnabled == 1)) {
+				this.mixer.update( delta );
+			}
+			else {
+				let targetTime = inbuildTime + delta;
+				if (targetTime > this.duration)
+					targetTime = targetTime - this.duration;
+				inbuildTime = targetTime;
+			}
+			if (this.morphColour == 1) {
+				if (typeof this.geometry !== "undefined") {
+					
+					if (this.morph.material.vertexColors == THREE.VertexColors)
+					{
+						let clipAction = undefined;
+						if (this.clipAction && (this.timeEnabled == 1))
+							clipAction = this.clipAction;
+						morphColorsToVertexColors(this.geometry, this.morph, clipAction);
+						this.geometry.colorsNeedUpdate = true;
+					}
+					
+				}
+			}	
+		}
+	}
 
 }

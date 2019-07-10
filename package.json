@@ -41,7 +41,7 @@
     "babel-preset-minify": "^0.5.0",
     "better-docs": "^1.0.0",
     "promise-polyfill": "^8.1.0",
-    "three": "^0.92.0",
+    "three": "^0.93.0",
     "three-js-csg": "^72.0.0",
     "url-loader": "^2.0.0",
     "url-polyfill": "^1.1.5",
