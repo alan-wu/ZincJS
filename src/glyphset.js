@@ -84,6 +84,7 @@ exports.Glyphset = function()  {
 		offset = glyphsetData.metadata.offset;
 		scaleFactors = glyphsetData.metadata.scale_factors;
 		const loader = new JSONLoader();
+		loader.crossOrigin = "Anonymous";
 		loader.load( glyphURL, meshloader(finishCallback));
 	}
 	

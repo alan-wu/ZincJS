@@ -565,7 +565,7 @@ Object.assign( JSONLoader.prototype, {
 
 			} else {
 
-				var materials = Loader.prototype.initMaterials( json.materials, texturePath, this.crossOrigin );
+				var materials = Loader.prototype.initMaterials( json.materials, texturePath, 'Anonymous' );
 
 				return { geometry: geometry, materials: materials };
 

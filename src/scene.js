@@ -397,6 +397,7 @@ exports.Scene = function(containerIn, rendererIn) {
 	  if (morphColour != undefined)
 		  localMorphColour = morphColour ? true : false;
 	  let loader = new JSONLoader();
+	  loader.crossOrigin = "Anonymous";
 	  loader.load(url, pointsetloader(localTimeEnabled, localMorphColour, groupName, finishCallback),
 		  this.onProgress(i), this.onError);
   }
@@ -431,11 +432,13 @@ exports.Scene = function(containerIn, rendererIn) {
         loader = new STLLoader();
       } else if (fileFormat == "OBJ") {
         loader = new OBJLoader();
+  	    loader.crossOrigin = "Anonymous";
         loader.load(url, objloader(modelId, colour, opacity, localTimeEnabled,
           localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
         return;
       }
     }
+    loader.crossOrigin = "Anonymous";
     loader.load(url, meshloader(modelId, colour, opacity, localTimeEnabled,
       localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
   };
@@ -490,6 +493,7 @@ exports.Scene = function(containerIn, rendererIn) {
     const colour = require('./zinc').defaultMaterialColor;
     const opacity = require('./zinc').defaultOpacity;
     const loader = new STLLoader();
+    loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(modelId, colour, opacity, false,
       false, groupName, finishCallback));
   }
@@ -509,6 +513,7 @@ exports.Scene = function(containerIn, rendererIn) {
     const colour = require('./zinc').defaultMaterialColor;
     const opacity = require('./zinc').defaultOpacity;
     const loader = new OBJLoader();
+    loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(modelId, colour, opacity, false,
       false, groupName, finishCallback));
   }
@@ -566,7 +571,7 @@ exports.Scene = function(containerIn, rendererIn) {
       let localMorphColour = 0;
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
-
+      loader.crossOrigin = "Anonymous";
       loader.load(resolveURL(filename), meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, undefined,
         finishCallback), this.onProgress(i), this.onError);
     }
