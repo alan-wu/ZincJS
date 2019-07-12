@@ -868,6 +868,10 @@ exports.Scene = function(containerIn, rendererIn) {
       zincGlyphset = zincGlyphsets[i];
       zincGlyphset.setMorphTime(time);
     }
+    for (let i = 0; i < zincPointsets.length; i++) {
+    	zincPointset = zincPointsets[i];
+    	zincPointset.setMorphTime(time);
+      }
   }
 
   /**

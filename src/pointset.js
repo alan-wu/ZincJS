@@ -1,5 +1,5 @@
 const THREE = require('three');
-
+const Points = require('./Points').Points;
 /**
  * Provides an object which stores points and provides method which controls its position.
  * This is created when a valid json file containing point is read into a {@link Zinc.Scene}
@@ -91,7 +91,7 @@ exports.Pointset = function () {
 			  geometry.colorsNeedUpdate = true;
 			  const texture = getCircularTexture();
 			  material.map = texture;
-			  this.morph = new THREE.Points(geometry, material);
+			  this.morph = new Points(geometry, material);
 			  if (this.morph) {
 				  this.morph.userData = this;
 				  this.morph.name = this.groupName;
