@@ -567,6 +567,17 @@ Object.assign( JSONLoader.prototype, {
 
 				var materials = Loader.prototype.initMaterials( json.materials, texturePath, 'Anonymous' );
 
+				
+				if (json.materials[0].video) {
+					
+					var fullPath = texturePath + json.materials[0].video;
+					
+					const videoHandler = new (require('./videoHandler').VideoHandler)(fullPath);
+					
+					geometry._video = videoHandler;
+				
+				}
+				
 				return { geometry: geometry, materials: materials };
 
 			}

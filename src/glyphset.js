@@ -501,6 +501,10 @@ exports.Glyphset = function()  {
       return true;
     return false;
   }
+  
+	this.getCurrentTime = () => {
+		return inbuildTime;
+	}
 	
 	
 	/**

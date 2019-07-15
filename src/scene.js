@@ -20,6 +20,7 @@ exports.Scene = function(containerIn, rendererIn) {
   let zincGeometries = [];
   let zincGlyphsets = [];
   let zincPointsets = [];
+  let videoHandler = undefined;
   const scene = new THREE.Scene();
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
@@ -746,6 +747,8 @@ exports.Scene = function(containerIn, rendererIn) {
         geometry = new THREE.BufferGeometry();
         geometry.copy(geometryIn);
       }
+      if (geometryIn._video)
+    	  geometry._video = geometryIn._video;
       if (external == undefined)
         external = true
       if (external)
@@ -755,27 +758,39 @@ exports.Scene = function(containerIn, rendererIn) {
         isTransparent = true;
 
       let material = undefined;
-      if (materialIn) {
-        material = materialIn;
-        material.morphTargets = localTimeEnabled;
+      if (geometry._video === undefined) {
+	      if (materialIn) {
+	        material = materialIn;
+	        material.morphTargets = localTimeEnabled;
+	      } else {
+	        if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined)
+	          material = new THREE.MeshPhongMaterial({
+	            color : colour,
+	            morphTargets : localTimeEnabled,
+	            morphNormals : false,
+	            transparent : isTransparent,
+	            opacity : opacity
+	          });
+	        else
+	          material = new THREE.MeshPhongMaterial({
+	            color : colour,
+	            morphTargets : localTimeEnabled,
+	            morphNormals : false,
+	            vertexColors : THREE.VertexColors,
+	            transparent : isTransparent,
+	            opacity : opacity
+	          });
+	      }
       } else {
-        if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined)
-          material = new THREE.MeshPhongMaterial({
-            color : colour,
-            morphTargets : localTimeEnabled,
-            morphNormals : false,
-            transparent : isTransparent,
-            opacity : opacity
-          });
-        else
-          material = new THREE.MeshPhongMaterial({
-            color : colour,
-            morphTargets : localTimeEnabled,
-            morphNormals : false,
-            vertexColors : THREE.VertexColors,
-            transparent : isTransparent,
-            opacity : opacity
-          });
+    	  let videoTexture = geometry._video.createCanvasVideoTexture();
+    	  material = new THREE.MeshBasicMaterial({
+    		  morphTargets : localTimeEnabled,
+    		  color : new THREE.Color(1, 1, 1),
+          	  transparent : isTransparent,
+          	  opacity : opacity,
+          	  map : videoTexture
+    	  });
+    	  videoHandler = geometry._video;
       }
 
       if (geometry instanceof THREE.Geometry) {
@@ -846,20 +861,29 @@ exports.Scene = function(containerIn, rendererIn) {
    * @return {Number}
    */
   this.getCurrentTime = () => {
-    let currentTime = 0;
+	if (videoHandler != undefined) {
+		return videoHandler.getCurrentTime(duration);
+	}
     if (zincGeometries[0] != undefined) {
-      const mixer = zincGeometries[0].mixer;
-      currentTime = zincGeometries[0].getCurrentTime();
+      return zincGeometries[0].getCurrentTime();
     }
-    return currentTime;
+    if (zincPointsets[0] != undefined) {
+        return zincPointsets[0].getCurrentTime();
+    }
+    if (zincGlyphsets[0] != undefined) {
+        return zincGlyphsets[0].getCurrentTime();
+    }
+    return 0;
   }
-
 
   /**
    * Set the current time of all the geometries and glyphsets of this scene.
    * @param {Number} time  - Value to set the time to.
    */
   this.setMorphsTime = time => {
+	if (videoHandler != undefined) {
+		return videoHandler.setMorphTime(time, duration);
+	}
     for (let i = 0; i < zincGeometries.length; i++) {
       zincGeometry = zincGeometries[i];
       zincGeometry.setMorphTime(time);
@@ -891,9 +915,12 @@ exports.Scene = function(containerIn, rendererIn) {
       }
     }
     for (let i = 0; i < zincPointsets.length; i++) {
-        if (zincGlyphsets[i].isTimeVarying()) {
+        if (zincPointsets[i].isTimeVarying()) {
           return true;
         }
+    }
+    if (videoHandler && videoHandler.video && !videoHandler.video.error) {
+    	return true;
     }
     return false;
   }
@@ -927,21 +954,39 @@ exports.Scene = function(containerIn, rendererIn) {
    * @private
    */
   this.renderGeometries = (playRate, delta, playAnimation) => {
-    zincCameraControls.update(delta);
-    /* the following check make sure all models are loaded and synchonised */
-    var totalInput = zincGeometries.length + zincPointsets.length;
-    if (totalInput == num_inputs && allGlyphsetsReady()) {
-      for (let i = 0; i < zincGeometries.length; i++) {
-        /* check if morphColour flag is set */
-        zincGeometries[i].render(playRate * delta, playAnimation);
-      }
-      for (let i = 0; i < zincGlyphsets.length; i++) {
-        zincGlyphsets[i].render(playRate * delta, playAnimation);
-      }
-      for (let i = 0; i < zincPointsets.length; i++) {
-    	  zincPointsets[i].render(playRate * delta, playAnimation);
-        }
-    }
+	let myPlayRate = playRate;
+	if (videoHandler) {
+		if (videoHandler.isReadyToPlay()) {
+			if (playAnimation) {
+				videoHandler.video.play();
+			} else {
+				videoHandler.video.pause();
+			}
+			myPlayRate = playRate * duration / (videoHandler.getVideoDuration() * 1000);
+		} else {
+			myPlayRate = 0;
+		}
+	}
+	if (myPlayRate > 0 ) {
+		/* the following check make sure all models are loaded and synchonised */
+	    var totalInput = zincGeometries.length + zincPointsets.length;
+	    if (totalInput == num_inputs && allGlyphsetsReady()) {
+	    	
+	      zincCameraControls.update(delta);
+	      for (let i = 0; i < zincGeometries.length; i++) {
+	        /* check if morphColour flag is set */
+	        zincGeometries[i].render(myPlayRate * delta, playAnimation);
+	      }
+	      for (let i = 0; i < zincGlyphsets.length; i++) {
+	        zincGlyphsets[i].render(myPlayRate * delta, playAnimation);
+	      }
+	      for (let i = 0; i < zincPointsets.length; i++) {
+	    	  zincPointsets[i].render(myPlayRate * delta, playAnimation);
+	        }
+	    }
+	} else {
+		zincCameraControls.update(delta);
+	}
   }
 
   /**
@@ -1139,6 +1184,22 @@ exports.Scene = function(containerIn, rendererIn) {
         scene.remove(zincGlyphset.getGroup());
         zincGlyphsets[i].dispose();
         zincGlyphsets.splice(i, 1);
+        return;
+      }
+    }
+  }
+  
+  /**
+   * Remove a ZincGlyphset from this scene if it presents. This will eventually
+   * destroy the glyphset and free up the memory.
+   * @param {Zinc.Glyphset} zincGlyphset - geometry to be removed from this scene.
+   */
+  this.removeZincPointset= zincPointset => {
+    for (let i = 0; i < zincPointsets.length; i++) {
+      if (zincPointset === zincPointsets[i]) {
+        scene.remove(zincPointset.morph);
+        zincPointsets[i].dispose();
+        zincPointsets.splice(i, 1);
         return;
       }
     }
