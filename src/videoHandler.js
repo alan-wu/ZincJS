@@ -9,7 +9,6 @@ exports.VideoHandler = function(srcIn)  {
 	this.video = undefined;
 	this.videoTexture = undefined;
 	var src = srcIn;
-	var vp;
 	var lastTime = 0;
 	var lastUpdate = 0;
 	var frameRate = 30;
@@ -62,7 +61,6 @@ exports.VideoHandler = function(srcIn)  {
 	 this.getVideoDuration = function() {
 		 return _this.video.duration;
 	}
-
 
 	this.createCanvasVideoTexture = function(){
 		_this.videoTexture = new THREE.VideoTexture( _this.video );

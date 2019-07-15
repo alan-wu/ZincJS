@@ -475,6 +475,8 @@ exports.Scene = function(containerIn, rendererIn) {
         this.loadGlyphsetURL(newURL, newGeometryURL, item.GroupName, finishCallback);
       } else if (item.Type == "Points") {
     	  this.loadPointsetURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
+      } else if (item.Type == "View") {
+    	  this.loadViewURL(newURL);
       }
     }
   };
@@ -971,7 +973,6 @@ exports.Scene = function(containerIn, rendererIn) {
 		/* the following check make sure all models are loaded and synchonised */
 	    var totalInput = zincGeometries.length + zincPointsets.length;
 	    if (totalInput == num_inputs && allGlyphsetsReady()) {
-	    	
 	      zincCameraControls.update(delta);
 	      for (let i = 0; i < zincGeometries.length; i++) {
 	        /* check if morphColour flag is set */
