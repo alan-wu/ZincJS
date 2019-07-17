@@ -771,7 +771,8 @@ exports.Scene = function(containerIn, rendererIn) {
 	            morphTargets : localTimeEnabled,
 	            morphNormals : false,
 	            transparent : isTransparent,
-	            opacity : opacity
+	            opacity : opacity,
+	            side : THREE.DoubleSide
 	          });
 	        else
 	          material = new THREE.MeshPhongMaterial({
@@ -780,7 +781,8 @@ exports.Scene = function(containerIn, rendererIn) {
 	            morphNormals : false,
 	            vertexColors : THREE.VertexColors,
 	            transparent : isTransparent,
-	            opacity : opacity
+	            opacity : opacity,
+	            side : THREE.DoubleSide
 	          });
 	      }
       } else {
@@ -790,7 +792,8 @@ exports.Scene = function(containerIn, rendererIn) {
     		  color : new THREE.Color(1, 1, 1),
           	  transparent : isTransparent,
           	  opacity : opacity,
-          	  map : videoTexture
+          	  map : videoTexture,
+              side : THREE.DoubleSide
     	  });
     	  videoHandler = geometry._video;
       }
@@ -799,7 +802,6 @@ exports.Scene = function(containerIn, rendererIn) {
         geometry.computeMorphNormals();
       }
 
-      material.side = THREE.DoubleSide;
       let mesh = undefined;
       mesh = new THREE.Mesh(geometry, material);
       const newGeometry = addMeshToZincGeometry(mesh, modelId, localTimeEnabled, localMorphColour);
@@ -884,7 +886,7 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.setMorphsTime = time => {
 	if (videoHandler != undefined) {
-		return videoHandler.setMorphTime(time, duration);
+		videoHandler.setMorphTime(time, duration);
 	}
     for (let i = 0; i < zincGeometries.length; i++) {
       zincGeometry = zincGeometries[i];
@@ -956,38 +958,57 @@ exports.Scene = function(containerIn, rendererIn) {
    * @private
    */
   this.renderGeometries = (playRate, delta, playAnimation) => {
-	let myPlayRate = playRate;
-	if (videoHandler) {
-		if (videoHandler.isReadyToPlay()) {
-			if (playAnimation) {
-				videoHandler.video.play();
-			} else {
-				videoHandler.video.pause();
-			}
-			myPlayRate = playRate * duration / (videoHandler.getVideoDuration() * 1000);
-		} else {
-			myPlayRate = 0;
-		}
-	}
-	if (myPlayRate > 0 ) {
-		/* the following check make sure all models are loaded and synchonised */
-	    var totalInput = zincGeometries.length + zincPointsets.length;
-	    if (totalInput == num_inputs && allGlyphsetsReady()) {
-	      zincCameraControls.update(delta);
-	      for (let i = 0; i < zincGeometries.length; i++) {
-	        /* check if morphColour flag is set */
-	        zincGeometries[i].render(myPlayRate * delta, playAnimation);
-	      }
-	      for (let i = 0; i < zincGlyphsets.length; i++) {
-	        zincGlyphsets[i].render(myPlayRate * delta, playAnimation);
-	      }
-	      for (let i = 0; i < zincPointsets.length; i++) {
-	    	  zincPointsets[i].render(myPlayRate * delta, playAnimation);
-	        }
-	    }
-	} else {
-		zincCameraControls.update(delta);
-	}
+	  // Let video dictates the progress if one is present
+	  if (videoHandler) {
+		  if (videoHandler.isReadyToPlay()) {
+			  if (playAnimation) {
+				  videoHandler.video.play();
+			  } else {
+				  videoHandler.video.pause();
+			  }
+			  var currentTime = videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000;
+			  var totalInput = zincGeometries.length + zincPointsets.length;
+			  if (totalInput == num_inputs && allGlyphsetsReady()) {
+				  zincCameraControls.setTime(currentTime);
+				  zincCameraControls.update(0);
+				  for (let i = 0; i < zincGeometries.length; i++) {
+					  /* check if morphColour flag is set */
+					  zincGeometries[i].setMorphTime(currentTime);
+					  zincGeometries[i].render(0, playAnimation);
+				  }
+				  for (let i = 0; i < zincGlyphsets.length; i++) {
+					  zincGlyphsets[i].setMorphTime(currentTime);
+					  zincGlyphsets[i].render(0, playAnimation);
+				  }
+				  for (let i = 0; i < zincPointsets.length; i++) {
+					  zincPointsets[i].setMorphTime(currentTime);
+					  zincPointsets[i].render(0, playAnimation);
+				  }
+			  } else {
+				  zincCameraControls.update(0);
+			  }
+			  //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000);
+		  } else {
+			  myPlayRate = 0;
+		  }
+	  } else {
+		  var totalInput = zincGeometries.length + zincPointsets.length;
+		  if (totalInput == num_inputs && allGlyphsetsReady()) {
+			  zincCameraControls.update(delta);
+			  for (let i = 0; i < zincGeometries.length; i++) {
+				  /* check if morphColour flag is set */
+				  zincGeometries[i].render(playRate * delta, playAnimation);;
+			  }
+			  for (let i = 0; i < zincGlyphsets.length; i++) {
+				  zincGlyphsets[i].render(playRate * delta, playAnimation);
+			  }
+			  for (let i = 0; i < zincPointsets.length; i++) {
+				  zincPointsets[i].render(playRate * delta, playAnimation);
+			  }
+		  } else {
+			  zincCameraControls.update(0);
+		  }
+	  }
   }
 
   /**
