@@ -41,6 +41,10 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 		this.fromMesh(new THREE.Mesh( geometry, material ));
 	}
 	
+	this.getGlyphset = function() {
+		return parent;
+	}
+	
 	this.setLabel = text => {
 		if (text && (typeof text === 'string' || text instanceof String)) {
 			labelString = text;
