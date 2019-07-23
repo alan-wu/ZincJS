@@ -538,9 +538,14 @@ exports.Scene = function(containerIn, rendererIn) {
     	if (referenceURL === undefined)
     		referenceURL = (new URL(requestURL)).href;
         const metadata = JSON.parse(xmlhttp.responseText);
-        const numberOfObjects = metadata.length;
+        let numberOfObjects = metadata.length;
+        // view file does not receive callback
+        for (var i = 0; i < metadata.length; i++) {
+        	if (metadata[i] && metadata[i].Type == "View")
+        		numberOfObjects = numberOfObjects - 1;
+        }   
         var callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
-        for (i = 0; i < numberOfObjects; i++)
+        for (var i = 0; i < metadata.length; i++)
           readMetadataItem(referenceURL, metadata[i], callback);
       }
     }
@@ -764,6 +769,7 @@ exports.Scene = function(containerIn, rendererIn) {
 	      if (materialIn) {
 	        material = materialIn;
 	        material.morphTargets = localTimeEnabled;
+	        material.morphNormals = localTimeEnabled;
 	      } else {
 	        if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined)
 	          material = new THREE.MeshPhongMaterial({
@@ -778,7 +784,7 @@ exports.Scene = function(containerIn, rendererIn) {
 	          material = new THREE.MeshPhongMaterial({
 	            color : colour,
 	            morphTargets : localTimeEnabled,
-	            morphNormals : false,
+	            morphNormals : localTimeEnabled,
 	            vertexColors : THREE.VertexColors,
 	            transparent : isTransparent,
 	            opacity : opacity,
@@ -790,17 +796,18 @@ exports.Scene = function(containerIn, rendererIn) {
     	  material = new THREE.MeshBasicMaterial({
     		  morphTargets : localTimeEnabled,
     		  color : new THREE.Color(1, 1, 1),
-          	  transparent : isTransparent,
-          	  opacity : opacity,
-          	  map : videoTexture,
-              side : THREE.DoubleSide
+    		  transparent : isTransparent,
+    		  opacity : opacity,
+    		  map : videoTexture,
+    		  side : THREE.DoubleSide
     	  });
     	  videoHandler = geometry._video;
       }
 
       if (geometry instanceof THREE.Geometry) {
-        geometry.computeMorphNormals();
+    	  geometry.computeMorphNormals(false);
       }
+
 
       let mesh = undefined;
       mesh = new THREE.Mesh(geometry, material);
