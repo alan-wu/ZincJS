@@ -46,6 +46,7 @@ exports.VideoHandler = function(srcIn)  {
 	var initialise = function(){
 		if (document) {
 		  	_this.video = document.createElement( 'video' );
+		  	_this.video.crossOrigin = "anonymous";
 		  	_this.video.src = src;
 		  	_this.video.load();
 		  	_this.video.loop = true;
