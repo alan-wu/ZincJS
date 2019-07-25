@@ -578,10 +578,14 @@ Object.assign( JSONLoader.prototype, {
 				
 				}
 				
-				if (json.materials[0].singleSided && materials && materials.length > 0) {
-					materials[0].side = THREE.FrontSide;
-				} else {
-					materials[0].side = THREE.DoubleSide;
+				if (materials && materials.length > 0) {
+					if (json.materials[0].singleSided) {
+						materials[0].side = THREE.FrontSide;
+					} else if (json.materials[0].flipSided){
+						materials[0].side = THREE.BackSide;
+					} else {
+						materials[0].side = THREE.DoubleSide;
+					}
 				}
 				
 				return { geometry: geometry, materials: materials };
