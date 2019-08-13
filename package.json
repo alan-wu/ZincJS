@@ -1,6 +1,6 @@
 {
   "name": "zincjs",
-  "version": "0.30.2",
+  "version": "0.31.0",
   "description": "ZincJS (Web-based-Zinc-Visualisation)",
   "main": "build/zinc.js",
   "directories": {
@@ -11,11 +11,13 @@
     "LICENSE",
     "README.md",
     "build/zinc.js",
+    "build/zinc.frontend.js",
     "build/zinc.js.map",
     "webpack.config.js"
   ],
   "scripts": {
-    "build": "webpack --mode=none",
+    "build": "webpack --config webpack.frontend.js --mode=none; webpack --config webpack.backend.js --mode=none",
+    "build-backend": "webpack --config webpack.backend.js --mode=none",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -48,6 +50,7 @@
     "url-polyfill": "^1.1.5",
     "webpack": "^4.29.6",
     "webpack-cli": "^3.1.1",
+    "webpack-node-externals": "^1.7.2",
     "webworkify-webpack": "^2.1.5"
   },
   "dependencies": {}
