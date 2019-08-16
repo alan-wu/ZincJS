@@ -1,0 +1,62 @@
+{
+  "description": "ZincJS Testing",
+  "files": [
+    "package.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "scripts": {
+    "test": "mocha-webpack --watch ",
+    "test-ci": "mocha-webpack",
+    "cover": "cross-env NODE_ENV=coverage nyc --reporter=lcov --reporter=text npm run test-ci"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alan-wu/ZincJS-Testing.git"
+  },
+  "keywords": [
+    "library",
+    "webgl",
+    "3d",
+    "zincjs"
+  ],
+  "author": "Alan Wu <alan.wu@auckland.ac.nz>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/alan-wu/ZincJS-Testing/issues"
+  },
+  "homepage": "https://github.com/alan-wu/ZincJS-Testing/",
+  "devDependencies": {
+    "babel-loader": "^7.1.4",
+    "canvas": "*",
+    "chai": "*",
+    "cross-env": "*",
+    "gl": "^4.2.2",
+    "istanbul-instrumenter-loader": "*",
+    "jsdom": "*",
+    "mocha": "^4.1.0",
+    "mocha-webpack": "^2.0.0-beta.0",
+    "nyc": "^14.1.1",
+    "url-loader": "^2.0.0",
+    "webpack": "^4.6.0",
+    "webpack-cli": "^3.3.6",
+    "webpack-node-externals": "^1.7.2"
+  },
+  "dependencies": {
+    "babel-core": "^6.26.3",
+    "file-system": "^2.2.2",
+    "fs": "0.0.1-security",
+    "nock": "^10.0.6",
+    "three": "^0.93.0",
+    "mem": ">=4.0.0",
+    "diff": ">=3.5.0"
+  },
+  "nyc": {
+    "include": [
+      "../src/*.js"
+    ],
+    "instrument": false,
+    "sourceMap": false
+  },
+  "private": true
+}

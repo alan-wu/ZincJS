@@ -1,88 +1,148 @@
-var THREE = require('three');
-var ThreeBSP = require('three-js-csg')(THREE);
-var Geometry = require('./geometry').Geometry;
+const THREE = require('three');
+const ThreeBSP = require('three-js-csg')(THREE);
+const Geometry = require('./geometry').Geometry;
+const work = require('webworkify-webpack');
+const Promise = require('promise-polyfill').default;
+//const work = undefined;
+const JSONLoader = require('./loader').JSONLoader;
 
-var GeometryCSG = function (hostIn) {
+const GeometryCSG = function (hostIn) {
   //ZincGeoemtry of the main geometry
+  let host = undefined;
   if (hostIn && hostIn.isGeometry)
-    host = hostIn;
-  var host = hostIn;
-  var hostCSG = undefined;
-  var _this = this;
+	host = hostIn;
+  let core = undefined;
+  let worker = undefined;
+  let onProgress = false;
+  let myResolve = undefined;
   
-  this.setGeometry = function(hostIn) {
-    if (hostIn && hostIn.isGeometry)
-	  host = hostIn;
-    hostCSG = undefined;
+  var createGeometryFromJSON = json => {
+	  	const material = host.morph.material.clone();
+	  	material.morphTargets = false;
+	    const newGeometry = new Geometry();
+		const JSONParser = new JSONLoader();
+		const geometry = JSONParser.parse(json);
+        const mesh = new THREE.Mesh(geometry.geometry, material);
+	    newGeometry.geometry = mesh.geometry;
+	    newGeometry.morph = mesh;
+	    newGeometry.morph.userData = newGeometry;
+	    return newGeometry;
   }
   
-  this.getHostGeometry = function() {
-	var tempCSG = new ThreeBSP(host.morph);
+  var workerEventHandler = ev => {
+	  switch (ev.data.action) {
+	  	case 'message':
+	        console.log(ev.data.message);
+	        break;
+	  	case 'result':
+	    	const csg = new GeometryCSG(createGeometryFromJSON(ev.data.object));
+	    	if (myResolve)
+	    		myResolve(csg);
+	    	myResolve = undefined;
+	    	onProgress = false;
+	        break;
+	  	default:
+	    	throw 'Cannot handle specified action.';
+    }
+  }
+    
+  var initialise = hostIn => {
+	  if (work !== undefined) {
+		worker = work(require.resolve('./workers/geometryCSG.worker.js'));
+	  }
+	  if (!worker) {
+	    core = new (require('./workers/geometryCSGInternal').GeometryCSGInternal)(hostIn);
+	  } else {
+		if (hostIn && hostIn.isGeometry) {
+		  let mesh = hostIn.morph;
+		  let json = mesh.geometry.clone().applyMatrix(mesh.matrix).toJSON();
+		  worker.addEventListener('message', function (ev) {
+			  workerEventHandler(ev);
+		  });
+		  worker.postMessage({action: "initialise", object: json});
+		}
+	  }
+  }
+  
+  this.getHostGeometry = () => {
+	const tempCSG = new ThreeBSP(host.morph);
     return new createZincGeometry(tempCSG);
   }
   
-  this.getGeometry = function() {
-	  return host;
+  this.getGeometry = () => host;
+  
+  const createZincGeometry = csgMesh => {
+		const material = host.morph.material.clone();
+		material.morphTargets = false;
+		const newMesh = csgMesh.toMesh(material);
+	    const newGeometry = new Geometry();
+	    newGeometry.geometry = newMesh.geometry;
+	    newGeometry.morph = newMesh;
+	    newGeometry.morph.userData = newGeometry;
+	    return newGeometry;
   }
   
-  var createZincGeometry = function(csgMesh) {
-	var material = host.morph.material.clone();
-	material.morphTargets = false;
-	var newMesh = csgMesh.toMesh(material);
-    var newGeometry = new Geometry();
-    newGeometry.geometry = newMesh.geometry;
-    newGeometry.morph = newMesh;
-    newGeometry.morph.userData = newGeometry;
-    return newGeometry;
-  }
+  this.setCSG = CSG => {
+	  core.setCSG(CSG);
+  } 
   
-  var prepareCSG = function(guestGeometry) {
-	  if (host && host.morph && guestGeometry && guestGeometry.morph) {
-	      if (hostCSG === undefined)
-	        hostCSG = new ThreeBSP(host.morph);
-	      var guestCSG = new ThreeBSP(guestGeometry.morph);
-	      return guestCSG;
+  const sendToWork = (guestGeometry, action, resolve, reject) => {
+	  if (!onProgress) {
+		  let mesh = guestGeometry.morph;
+		  const json = mesh.geometry.clone().applyMatrix(mesh.matrix).toJSON();
+		  myResolve = resolve;
+		  onProgress = true;
+		  worker.postMessage({action: action, object: json});
+	  } else {
+		  reject("On progress");
 	  }
-	  return undefined;
   }
   
-  this.intersect = function(guestGeometry) {
-	  var guestCSG = prepareCSG(guestGeometry);
-	  if (hostCSG && guestCSG) {
-	    var intersect = hostCSG.intersect(guestCSG);
-	    var newCSG = new GeometryCSG(createZincGeometry(intersect));
-	    newCSG.setCSG(intersect);
-	    return newCSG;
-	  }
-	  return undefined;
+  this.intersect = guestGeometry => {
+	  return new Promise((resolve, reject) => {
+		  if (worker) {
+			  sendToWork(guestGeometry, "intersect", resolve, reject);
+		  } else {
+			  const result = core.intersect(guestGeometry);
+			  const newCSG = new GeometryCSG(createZincGeometry(result));
+			  newCSG.setCSG(result);
+			  resolve(newCSG);
+		  }
+	  });
+	};
+  
+  this.subtract = guestGeometry => {
+	  return new Promise((resolve, reject) => {
+		  if (worker) {
+			  sendToWork(guestGeometry, "intersect", resolve, reject);
+		  } else {
+			  const result = core.subtract(guestGeometry);
+			  const newCSG = new GeometryCSG(createZincGeometry(result));
+			  newCSG.setCSG(result);
+			  resolve(newCSG);
+		  }
+	  });
   }
   
-  this.setCSG = function(csg) {
-	  if (hostCSG === undefined)
-		  hostCSG = csg;
+  this.union = guestGeometry => {
+	  return new Promise((resolve, reject) => {
+		  if (worker) {
+			  sendToWork(guestGeometry, "intersect", resolve, reject);
+		  } else {
+			  const result = core.union(guestGeometry);
+			  const newCSG = new GeometryCSG(createZincGeometry(result));
+			  newCSG.setCSG(result);
+			  resolve(newCSG);
+		  }
+	  });
   }
   
-  this.subtract = function(guestGeometry) {
-	  var guestCSG = prepareCSG(guestGeometry);
-	  if (hostCSG && guestCSG) {
-		  var intersect = hostCSG.subtract(guestCSG);
-		  var newCSG = new GeometryCSG(createZincGeometry(intersect));
-		  newCSG.setCSG(intersect);
-		  return newCSG;
-	  }
-	  return undefined;
+  this.terminateWorker = () => {
+	  if (worker)
+		  worker.terminate();
   }
   
-  this.union = function(guestGeometry) {
-	  var guestCSG = prepareCSG(guestGeometry);
-	  if (hostCSG && guestCSG) {
-		  var intersect = hostCSG.union(guestCSG);
-		  var newCSG = new GeometryCSG(createZincGeometry(intersect));
-		  newCSG.setCSG(intersect);
-		  return newCSG;
-	  }
-	  return undefined;
-  }
-}
+  initialise(hostIn);
+};
 
 exports.GeometryCSG = GeometryCSG;

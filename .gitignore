@@ -3,4 +3,7 @@ node_modules
 .settings
 build
 .tern-project
+test/node_modules
+test/coverage
+.nyc_output
 

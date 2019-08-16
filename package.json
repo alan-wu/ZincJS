@@ -1,8 +1,8 @@
 {
   "name": "zincjs",
-  "version": "0.29.6",
+  "version": "0.31.3",
   "description": "ZincJS (Web-based-Zinc-Visualisation)",
-  "main": "build/zinc.min.js",
+  "main": "build/zinc.js",
   "directories": {
     "doc": "docs"
   },
@@ -11,12 +11,14 @@
     "LICENSE",
     "README.md",
     "build/zinc.js",
-    "build/zinc.min.js",
+    "build/zinc.frontend.js",
+    "build/zinc.js.map",
     "webpack.config.js"
   ],
   "scripts": {
-    "build": "webpack --mode=none",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "webpack --config webpack.frontend.js --mode=none; webpack --config webpack.backend.js --mode=none",
+    "build-backend": "webpack --config webpack.backend.js --mode=none",
+    "test": "npm --prefix ./test install && npm --prefix ./test run test-ci"
   },
   "repository": {
     "type": "git",
@@ -35,13 +37,22 @@
   },
   "homepage": "http://alan-wu.github.io/ZincJS/",
   "devDependencies": {
+    "@babel/core": "^7.4.0",
+    "@babel/preset-env": "^7.4.2",
+    "babel-loader": "^8.0.5",
+    "babel-preset-minify": "^0.5.0",
     "better-docs": "^1.0.0",
-    "uglifyjs-webpack-plugin": "^1.2.5",
-    "webpack": "^4.20.2",
-    "webpack-cli": "^3.1.1"
+    "webpack": "^4.29.6",
+    "webpack-cli": "^3.1.1",
+    "webpack-node-externals": "^1.7.2"
   },
   "dependencies": {
-    "three": "^0.92.0",
-    "three-js-csg": "^72.0.0"
+    "lodash": "^4.17.14",
+    "url-loader": "^2.0.0",
+    "promise-polyfill": "^8.1.0",
+    "three": "^0.93.0",
+    "three-js-csg": "^72.0.0",
+    "url-polyfill": "^1.1.5",
+    "webworkify-webpack": "^2.1.5"
   }
 }

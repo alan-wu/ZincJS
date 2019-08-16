@@ -1,11 +1,27 @@
+function resolveURL(url) {
+	let actualURL = url;
+	const prefix = (require("./zinc").modelPrefix);
+	
+	if (prefix) {
+		if (prefix[prefix.length -1] != '/')
+			prefix = prefix + '/';
+		const r = new RegExp('^(?:[a-z]+:)?//', 'i');
+		if (!r.test(url)) {
+			actualURL =  prefix + url;
+		}
+	}
+	
+	return actualURL;
+}
+
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {
     // Set up an asynchronous request
-    var request = new XMLHttpRequest();
-    request.open('GET', url, true);
+    const request = new XMLHttpRequest();
+    request.open('GET', resolveURL(url), true);
 
     // Hook the event that gets called as the request progresses
-    request.onreadystatechange = function () {
+    request.onreadystatechange = () => {
         // If the request is "DONE" (completed or failed)
         if (request.readyState == 4) {
             // If we got HTTP status 200 (OK)
@@ -21,9 +37,9 @@ function loadExternalFile(url, data, callback, errorCallback) {
 }
 
 function loadExternalFiles(urls, callback, errorCallback) {
-    var numUrls = urls.length;
-    var numComplete = 0;
-    var result = [];
+    const numUrls = urls.length;
+    let numComplete = 0;
+    const result = [];
 
     // Callback for a single file
     function partialCallback(text, urlIndex) {
@@ -36,10 +52,11 @@ function loadExternalFiles(urls, callback, errorCallback) {
         }
     }
 
-    for (var i = 0; i < numUrls; i++) {
+    for (let i = 0; i < numUrls; i++) {
     	loadExternalFile(urls[i], i, partialCallback, errorCallback);
     }
 }
 
+exports.resolveURL = resolveURL;
 exports.loadExternalFile = loadExternalFile;
 exports.loadExternalFiles = loadExternalFiles;

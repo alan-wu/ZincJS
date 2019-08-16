@@ -565,8 +565,29 @@ Object.assign( JSONLoader.prototype, {
 
 			} else {
 
-				var materials = Loader.prototype.initMaterials( json.materials, texturePath, this.crossOrigin );
+				var materials = Loader.prototype.initMaterials( json.materials, texturePath, 'Anonymous' );
 
+				
+				if (json.materials[0].video) {
+					
+					var fullPath = texturePath + json.materials[0].video;
+					
+					const videoHandler = new (require('./videoHandler').VideoHandler)(fullPath);
+					
+					geometry._video = videoHandler;
+				
+				}
+				
+				if (materials && materials.length > 0) {
+					if (json.materials[0].singleSided) {
+						materials[0].side = THREE.FrontSide;
+					} else if (json.materials[0].flipSided){
+						materials[0].side = THREE.BackSide;
+					} else {
+						materials[0].side = THREE.DoubleSide;
+					}
+				}
+				
 				return { geometry: geometry, materials: materials };
 
 			}

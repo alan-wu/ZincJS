@@ -1,3 +1,5 @@
+require("url-polyfill");
+
 /**
  * Provides a global namespace for the Zinc javascript library and some default parameters for it.
  * 
@@ -5,15 +7,15 @@
  * @author Alan Wu
  */
 
-var Zinc = function() {
+const Zinc = function() {
   this.Revision = 29;
-
   this.defaultMaterialColor = 0xFFFFFF;
   this.defaultOpacity = 1.0;
-
+  this.modelPrefix = undefined;
   this.Geometry = require('./geometry').Geometry;
   this.Glyph = require('./glyph').Glyph;
   this.Glyphset = require('./glyphset').Glyphset;
+  this.Pointset = require('./pointset').Pointset;
   this.Renderer = require('./renderer').Renderer;
   this.Scene = require('./scene').Scene;
   this.GeometryCSG = require('./geometryCSG').GeometryCSG;
@@ -28,6 +30,6 @@ var Zinc = function() {
   this.StereoEffect = require('./controls').StereoEffect;
   this.THREE = require('three'); 
   
-}
+};
 
 module.exports = new Zinc();
