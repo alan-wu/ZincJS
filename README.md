@@ -61,7 +61,7 @@ For Cmgui users:
 Example: if I have 3 different group of surfaces output under the prefix "new_models" with the following graphics windows
 settings:
 
-	farPlane: 601.1211762872496
+	farPlane: 601.1211762872496 
 	nearPlane: 14.809855917663832
 	upVector: [0.0, 1.0, 0.0]
 	interest point: [9.704483032226562, 6.385875701904297, -5.001008987426758] 
