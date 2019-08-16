@@ -1,0 +1,39 @@
+[
+   {
+      "GroupName" : "test geometry",
+      "MorphColours" : false,
+      "MorphNormals" : false,
+      "MorphVertices" : false,
+      "Type" : "Surfaces",
+      "URL" : "test_geometry.json"
+   },
+   {
+      "GroupName" : "test texture",
+      "MorphColours" : false,
+      "MorphNormals" : false,
+      "MorphVertices" : false,
+      "Type" : "Surfaces",
+      "URL" : "test_texture.json"
+   },
+   {
+      "GroupName" : "test point",
+      "MorphColours" : false,
+      "MorphNormals" : false,
+      "MorphVertices" : false,
+      "Type" : "Points",
+      "URL" : "test_point.json"
+   },
+   {
+      "GroupName" : "test glyph",
+      "GlyphGeometriesURL" : "test_glyph_geometry.json",
+      "MorphColours" : false,
+      "MorphNormals" : false,
+      "MorphVertices" : false,
+      "Type" : "Glyph",
+      "URL" : "test_glyph.json"
+   },
+   {
+      "Type" : "View",
+      "URL" : "test_view.json"
+   }
+]
