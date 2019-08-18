@@ -8,7 +8,7 @@
   "scripts": {
     "test": "mocha-webpack --watch ",
     "test-ci": "mocha-webpack",
-    "cover": "cross-env NODE_ENV=coverage nyc --reporter=lcov --reporter=text npm run test-ci"
+    "cover": "cross-env NODE_ENV=coverage nyc --cwd=../ --reporter=lcov --reporter=text npm run test-ci"
   },
   "repository": {
     "type": "git",
@@ -52,9 +52,7 @@
     "diff": ">=3.5.0"
   },
   "nyc": {
-    "include": [
-      "../src/*.js"
-    ],
+    "all": true,
     "instrument": false,
     "sourceMap": false
   },
