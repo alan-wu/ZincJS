@@ -12,6 +12,8 @@ Webapp developed using ZincJS:
 
 [Fitzlet](https://sites.bioeng.auckland.ac.nz/mwu035/fitzlet/)
 
+[Scaffold Maker](https://mapcore-demo.org/2019/colon/scaffold.html)
+
 Installation:
 -------------
 
