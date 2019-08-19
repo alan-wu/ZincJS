@@ -8,11 +8,11 @@
   "scripts": {
     "test": "mocha-webpack --watch ",
     "test-ci": "mocha-webpack",
-    "cover": "cross-env NODE_ENV=coverage nyc --reporter=lcov --reporter=text npm run test-ci"
+    "cover": "cross-env NODE_ENV=coverage nyc --cwd=../ --reporter=lcov --reporter=text npm run test-ci"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alan-wu/ZincJS-Testing.git"
+    "url": "git+https://github.com/alan-wu/ZincJS.git"
   },
   "keywords": [
     "library",
@@ -23,9 +23,9 @@
   "author": "Alan Wu <alan.wu@auckland.ac.nz>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/alan-wu/ZincJS-Testing/issues"
+    "url": "https://github.com/alan-wu/ZincJS/issues"
   },
-  "homepage": "https://github.com/alan-wu/ZincJS-Testing/",
+  "homepage": "https://github.com/alan-wu/ZincJS/",
   "devDependencies": {
     "babel-loader": "^7.1.4",
     "canvas": "*",
@@ -52,9 +52,7 @@
     "diff": ">=3.5.0"
   },
   "nyc": {
-    "include": [
-      "../src/*.js"
-    ],
+    "all": true,
     "instrument": false,
     "sourceMap": false
   },
