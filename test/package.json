@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alan-wu/ZincJS-Testing.git"
+    "url": "git+https://github.com/alan-wu/ZincJS.git"
   },
   "keywords": [
     "library",
@@ -23,9 +23,9 @@
   "author": "Alan Wu <alan.wu@auckland.ac.nz>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/alan-wu/ZincJS-Testing/issues"
+    "url": "https://github.com/alan-wu/ZincJS/issues"
   },
-  "homepage": "https://github.com/alan-wu/ZincJS-Testing/",
+  "homepage": "https://github.com/alan-wu/ZincJS/",
   "devDependencies": {
     "babel-loader": "^7.1.4",
     "canvas": "*",
