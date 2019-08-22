@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "test": "mocha-webpack --watch ",
-    "test-ci": "mocha-webpack",
+    "test-ci": "mocha-webpack --reporter mocha-junit-reporter",
     "cover": "cross-env NODE_ENV=coverage nyc --cwd=../ --reporter=lcov --reporter=text npm run test-ci"
   },
   "repository": {
@@ -35,6 +35,7 @@
     "istanbul-instrumenter-loader": "*",
     "jsdom": "*",
     "mocha": "^4.1.0",
+    "mocha-junit-reporter": "^1.23.1",
     "mocha-webpack": "^2.0.0-beta.0",
     "nyc": "^14.1.1",
     "url-loader": "^2.0.0",
