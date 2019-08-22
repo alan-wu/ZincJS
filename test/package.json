@@ -7,7 +7,7 @@
   ],
   "scripts": {
     "test": "mocha-webpack --watch ",
-    "test-ci": "mocha-webpack",
+    "test-ci": "mocha-webpack --reporter cypress-junit-reporter",
     "cover": "cross-env NODE_ENV=coverage nyc --cwd=../ --reporter=lcov --reporter=text npm run test-ci"
   },
   "repository": {
@@ -31,6 +31,7 @@
     "canvas": "*",
     "chai": "*",
     "cross-env": "*",
+    "cypress-junit-reporter": "^1.3.1",
     "gl": "^4.2.2",
     "istanbul-instrumenter-loader": "*",
     "jsdom": "*",
