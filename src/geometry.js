@@ -57,6 +57,11 @@ exports.Geometry = function () {
 		material.transparent = isTransparent;
 		material.opacity = alpha;
 	}
+
+	this.setFrustumCulled = flag => {
+		if (this.morph)
+			this.morph.frustumCulled = flag;
+	}
 	
 	
 	/**

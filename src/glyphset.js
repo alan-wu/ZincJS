@@ -399,6 +399,9 @@ exports.Glyphset = function()  {
 			if (labels != undefined && labels[i] != undefined) {
 			  glyph.setLabel(labels[i]);
 			}
+			if (numberOfTimeSteps > 0) {
+				glyph.setFrustumCulled(false);
+			}
 			glyphList[i] = glyph;
 			group.add(glyph.getGroup());
 		}
@@ -448,7 +451,7 @@ exports.Glyphset = function()  {
 	    	if (materials && materials[0]) {
 	    		material = materials[0];
 	    	}
-	    	createGlyphs(geometry, material);
+			createGlyphs(geometry, material);
 	    	if (finishCallback != undefined && (typeof finishCallback == 'function'))
         		finishCallback(this);
 	    };
