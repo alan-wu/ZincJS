@@ -368,7 +368,9 @@ exports.Scene = function(containerIn, rendererIn) {
 		  const points = newPointset.createMesh(geometry, material);
 		  if (points) {
 			  newPointset.timeEnabled = localTimeEnabled;
-			  newPointset.morphColour = localMorphColour;
+        newPointset.morphColour = localMorphColour;
+        if (newPointset.timeEnabled)
+          newPointset.setFrustumCulled(false);
 			  newPointset.setName(groupName);
 			  scene.add(points);
 			  zincPointsets.push(newPointset);
@@ -839,6 +841,8 @@ exports.Scene = function(containerIn, rendererIn) {
       if (zincGeometry.morph) {
         zincGeometry.morph.name = groupName;
         zincGeometry.morph.userData = zincGeometry;
+        if (zincGeometry.timeEnabled)
+          zincGeometry.setFrustumCulled(false);
       }
       zincGeometry.groupName = groupName;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))

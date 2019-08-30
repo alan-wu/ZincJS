@@ -93,6 +93,11 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	this.getMesh = () => {
 		return mesh;
 	}
+
+	this.setFrustumCulled = flag => {
+		if (mesh)
+			mesh.frustumCulled = flag;
+	}
 	
 	/**
 	 * Get the bounding box of this glyph.
@@ -162,6 +167,6 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	this.dispose = () => {
 	  if (this.material)
 	    this.material.dispose();
-		this.mesh = undefined;
+		mesh = undefined;
 	}
 }

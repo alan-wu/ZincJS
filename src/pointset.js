@@ -39,6 +39,11 @@ exports.Pointset = function () {
 			}
 		}
 	}
+
+	this.setFrustumCulled = flag => {
+		if (this.morph)
+			this.morph.frustumCulled = flag;
+	}
 	
 	const updateBufferGeometry = (object, geometry) => {
 		if (object && geometry) {
