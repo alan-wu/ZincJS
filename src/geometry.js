@@ -63,7 +63,6 @@ exports.Geometry = function () {
 			this.morph.frustumCulled = flag;
 	}
 	
-	
 	/**
 	 * Get the local time of this geometry, it returns a value between 
 	 * 0 and the duration.
@@ -246,11 +245,22 @@ exports.Geometry = function () {
 	 */
 	this.getBoundingBox = () => {
 		if (this.morph) {
-			return new THREE.Box3().setFromObject(this.morph);
+			var boundingBox = new THREE.Box3().setFromObject(this.morph);
+			if (this.timeEnabled) {
+				var morphTargets = this.geometry.morphTargets;
+				if (morphTargets) {
+					for ( var t = 0, tl = morphTargets.length; t < tl; t ++ ) {
+						var targets = morphTargets[ t ].vertices;
+						var newBox = new THREE.Box3().setFromPoints(targets);
+						boundingBox.union(newBox);
+					}
+				}
+			}
+			return boundingBox;
 		}
 		return undefined;
 	}
-	
+			
 	/**
 	 * Clear this geometry and free the memory.
 	 */
