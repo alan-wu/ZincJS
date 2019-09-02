@@ -153,11 +153,22 @@ exports.Pointset = function () {
 	 * @return {Three.Box3};
 	 */
 	this.getBoundingBox = () => {
-		if (this.morph.visible) {
+		if (this.morph && this.morph.visible) {
+			var boundingBox = new THREE.Box3();
 			this.morph.geometry.computeBoundingBox();
-			return this.morph.geometry.boundingBox;
+			boundingBox.copy(this.morph.geometry.boundingBox);
+			if (this.timeEnabled) {
+				var morphTargets = this.morph.geometry.morphTargets;
+				if (morphTargets) {
+					for ( var t = 0, tl = morphTargets.length; t < tl; t ++ ) {
+						var targets = morphTargets[ t ].vertices;
+						var newBox = new THREE.Box3().setFromPoints(targets);
+						boundingBox.union(newBox);
+					}
+				}
+			}
+			return boundingBox;
 		}
-		return undefined;
 	}
 	
 	/**
