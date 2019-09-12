@@ -1,5 +1,11 @@
 const THREE = require('three');
 
+function absNumericalSort( a, b ) {
+
+	return Math.abs( b[ 1 ] ) - Math.abs( a[ 1 ] );
+
+}
+
 /**
  * Provides an object which stores geometry and provides method which controls its animations.
  * This is created when a valid json file containging geometry is read into a {@link Zinc.Scene}
@@ -84,32 +90,37 @@ exports.Geometry = function () {
 	 * @param {Number} time - Can be any value between 0 to duration.
 	 */
 	this.setMorphTime = time => {
+		let timeChanged = false;
 		if (this.clipAction) {
 			const ratio = time / this.duration;
 			const actualDuration = this.clipAction._clip.duration;
-			this.clipAction.time = ratio * actualDuration;
+			let newTime = ratio * actualDuration;
+			if (newTime != this.clipAction.time) {
+				this.clipAction.time = newTime;
+				timeChanged = true;
+			}
 			if (this.clipAction.time > actualDuration)
 				this.clipAction.time = actualDuration;
 			if (this.clipAction.time < 0.0)
 				this.clipAction.time = 0.0;
-			if (this.timeEnabled == 1)
+			if (timeChanged && this.timeEnabled == 1)
 				this.mixer.update( 0.0 );
 		} else {
+			let newTime = time; 
 			if (time > this.duration)
-				inbuildTime = this.duration;
+				newTime = this.duration;
 			else if (0 > time)
-				inbuildTime = 0;
+				newTime = 0;
 			else
-				inbuildTime = time;
-		}
-		if (this.morphColour == 1) {
-			if (typeof this.geometry !== "undefined") {
-				if (this.morph.material.vertexColors == THREE.VertexColors)
-				{
-					morphColorsToVertexColors(this.geometry, this.morph, this.clipAction)
-				}
-				this.geometry.colorsNeedUpdate = true;
+				newTime = time;
+			if (newTime != inbuildTime) {
+				inbuildTime = newTime;
+				timeChanged = true;
 			}
+		}
+		if (timeChanged) {
+			updateMorphColorAttribute(this.geometry, this.morph, this.clipAction);
+
 		}
 	}
 	
@@ -166,31 +177,38 @@ exports.Geometry = function () {
 		this.morph.material = material;
 		this.geometry.colorsNeedUpdate = true;
 	}
-	
-	//Get the colours at index		this = undefined;	
-	getColorsRGB = (colors, index) => {
-		const index_in_colors = Math.floor(index/3);
-		const remainder = index%3;
-		let hex_value = 0;
-		if (remainder == 0)
-		{
-			hex_value = colors[index_in_colors].r;
+
+	const updateMorphColorAttribute = (targetGeometry, morph, clipAction) => {
+		if (morph && targetGeometry.morphAttributes[ "color" ]) {
+			const morphColors = targetGeometry.morphAttributes[ "color" ];
+			const influences = morph.morphTargetInfluences;
+			const length = influences.length;
+			targetGeometry.removeAttribute( 'morphColor0' );
+			targetGeometry.removeAttribute( 'morphColor1' );
+			let bound = 0;
+			let morphArray = [];
+			for (let i = 0; (1 > bound) || (i < length); i++) {
+				if (influences[i] > 0) {
+					bound++;
+					morphArray.push([i, influences[i]]);
+				}
+			}
+			morphArray.sort(absNumericalSort);
+			if (morphArray.length == 2) {
+				targetGeometry.addAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
+				targetGeometry.addAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
+			} else if (morphArray.length == 1) {
+				targetGeometry.addAttribute('morphColor0' + bound, morphColors[ morphArray[0][0] ] );
+			}
+
 		}
-		else if (remainder == 1)
-		{
-			hex_value = colors[index_in_colors].g;
-		}
-		else if (remainder == 2)
-		{
-			hex_value = colors[index_in_colors].b;
-		}
-		const mycolor = new THREE.Color(hex_value);
-		return [mycolor.r, mycolor.g, mycolor.b];
 	}
-	
+		
 	//Calculate the interpolated colour at current time
 	const morphColorsToVertexColors = (targetGeometry, morph, clipAction) => {
 		if ( morph && targetGeometry.morphColors && targetGeometry.morphColors.length) {
+			const getColorsRGB = require("./utilities").getColorsRGB;
+
 			let current_time = 0.0;
 			if (clipAction)
 				current_time = clipAction.time/clipAction._clip.duration * (targetGeometry.morphColors.length - 1);
@@ -246,16 +264,6 @@ exports.Geometry = function () {
 	this.getBoundingBox = () => {
 		if (this.morph) {
 			var boundingBox = new THREE.Box3().setFromObject(this.morph);
-			if (this.timeEnabled) {
-				var morphTargets = this.geometry.morphTargets;
-				if (morphTargets) {
-					for ( var t = 0, tl = morphTargets.length; t < tl; t ++ ) {
-						var targets = morphTargets[ t ].vertices;
-						var newBox = new THREE.Box3().setFromPoints(targets);
-						boundingBox.union(newBox);
-					}
-				}
-			}
 			return boundingBox;
 		}
 		return undefined;
@@ -289,7 +297,7 @@ exports.Geometry = function () {
 					targetTime = targetTime - this.duration;
 				inbuildTime = targetTime;
 			}
-			if (this.morphColour == 1) {
+			if (delta != 0 && this.morphColour == 1) {
 				if (typeof this.geometry !== "undefined") {
 					
 					if (this.morph.material.vertexColors == THREE.VertexColors)
@@ -297,10 +305,8 @@ exports.Geometry = function () {
 						let clipAction = undefined;
 						if (this.clipAction && (this.timeEnabled == 1))
 							clipAction = this.clipAction;
-						morphColorsToVertexColors(this.geometry, this.morph, clipAction);
-						this.geometry.colorsNeedUpdate = true;
-					}
-					
+						updateMorphColorAttribute(this.geometry, this.morph, clipAction);
+					}	
 				}
 			}	
 		}

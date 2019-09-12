@@ -659,8 +659,8 @@ exports.Scene = function(containerIn, rendererIn) {
     const mixer = new THREE.AnimationMixer(mesh);
     const geometry = mesh.geometry;
     let clipAction = undefined;
-    if (geometry.morphTargets) {
-      const animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(geometry.morphTargets, 10, true);
+    if (geometry.morphAttributes.position) {
+      let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(geometry.morphAttributes.position, 10, true);
       if (animationClip && animationClip[0] != undefined) {
         clipAction = mixer.clipAction(animationClip[0]).setDuration(duration);
         clipAction.loop = THREE.loopOnce;
@@ -718,6 +718,31 @@ exports.Scene = function(containerIn, rendererIn) {
       }
     }
   };
+
+  const copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
+    if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
+      let array = [];
+      let morphColors = geometry.morphColors;
+      const getColorsRGB = require("./utilities").getColorsRGB;
+      for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
+        let morphColor = morphColors[ i ];
+        let colorArray = [];
+		    for ( var j = 0; j < geometry.faces.length; j ++ ) {
+          let face = geometry.faces[j];
+          let color = getColorsRGB(morphColor.colors, face.a);
+          colorArray.push(color[0], color[1], color[2]);
+          color = getColorsRGB(morphColor.colors, face.b);
+          colorArray.push(color[0], color[1], color[2]);
+          color = getColorsRGB(morphColor.colors, face.c);
+          colorArray.push(color[0], color[1], color[2]);
+        }
+        var attribute = new THREE.Float32BufferAttribute( geometry.faces.length * 3 * 3, 3 );
+        attribute.name = morphColor.name;
+        array.push( attribute.copyArray( colorArray ) );
+      }
+      bufferGeometry.morphAttributes[ "color" ] = array; 
+    }
+  }
   
   /**
    * Add a user provided {THREE.Geometry} into  the scene as zinc geometry.
@@ -748,11 +773,11 @@ exports.Scene = function(containerIn, rendererIn) {
     let geometry = undefined;
     if (geometryIn) {
       if (geometryIn instanceof THREE.Geometry) {
-        geometry = new THREE.Geometry();
-        geometry.copy(geometryIn);
-        copyMorphColors(geometryIn, geometry);
-      }
-      if (geometryIn instanceof THREE.BufferGeometry) {
+        geometryIn.computeMorphNormals(false);
+        geometry = new THREE.BufferGeometry().fromGeometry(geometryIn);
+        if (localMorphColour)
+          copyMorphColorsToBufferGeometry(geometryIn, geometry);
+      } else if (geometryIn instanceof THREE.BufferGeometry) {
         geometry = new THREE.BufferGeometry();
         geometry.copy(geometryIn);
       }
@@ -771,9 +796,10 @@ exports.Scene = function(containerIn, rendererIn) {
 	      if (materialIn) {
 	        material = materialIn;
 	        material.morphTargets = localTimeEnabled;
-	        material.morphNormals = localTimeEnabled;
+          material.morphNormals = localTimeEnabled;
+          
 	      } else {
-	        if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined)
+	        if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined) {
 	          material = new THREE.MeshPhongMaterial({
 	            color : colour,
 	            morphTargets : localTimeEnabled,
@@ -781,8 +807,8 @@ exports.Scene = function(containerIn, rendererIn) {
 	            transparent : isTransparent,
 	            opacity : opacity,
 	            side : THREE.DoubleSide
-	          });
-	        else
+            });
+          } else {
 	          material = new THREE.MeshPhongMaterial({
 	            color : colour,
 	            morphTargets : localTimeEnabled,
@@ -791,8 +817,12 @@ exports.Scene = function(containerIn, rendererIn) {
 	            transparent : isTransparent,
 	            opacity : opacity,
 	            side : THREE.DoubleSide
-	          });
-	      }
+            });
+          }
+        }
+        if (localMorphColour && geometry.morphAttributes[ "color" ]) {
+          material.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
+        }
       } else {
     	  let videoTexture = geometry._video.createCanvasVideoTexture();
     	  material = new THREE.MeshBasicMaterial({
@@ -805,11 +835,6 @@ exports.Scene = function(containerIn, rendererIn) {
     	  });
     	  videoHandler = geometry._video;
       }
-
-      if (geometry instanceof THREE.Geometry) {
-    	  geometry.computeMorphNormals(false);
-      }
-
 
       let mesh = undefined;
       mesh = new THREE.Mesh(geometry, material);

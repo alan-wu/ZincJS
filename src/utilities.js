@@ -1,3 +1,5 @@
+const THREE = require('three');
+
 function resolveURL(url) {
 	let actualURL = url;
 	const prefix = (require("./zinc").modelPrefix);
@@ -55,6 +57,28 @@ function loadExternalFiles(urls, callback, errorCallback) {
     for (let i = 0; i < numUrls; i++) {
     	loadExternalFile(urls[i], i, partialCallback, errorCallback);
     }
+}
+
+
+//Get the colours at index
+exports.getColorsRGB = (colors, index) => {
+    const index_in_colors = Math.floor(index/3);
+    const remainder = index%3;
+    let hex_value = 0;
+    if (remainder == 0)
+    {
+        hex_value = colors[index_in_colors].r;
+    }
+    else if (remainder == 1)
+    {
+        hex_value = colors[index_in_colors].g;
+    }
+    else if (remainder == 2)
+    {
+        hex_value = colors[index_in_colors].b;
+    }
+    const mycolor = new THREE.Color(hex_value);
+    return [mycolor.r, mycolor.g, mycolor.b];
 }
 
 exports.resolveURL = resolveURL;
