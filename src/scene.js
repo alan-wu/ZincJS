@@ -773,8 +773,10 @@ exports.Scene = function(containerIn, rendererIn) {
     let geometry = undefined;
     if (geometryIn) {
       if (geometryIn instanceof THREE.Geometry) {
-        geometryIn.computeMorphNormals(false);
+        if (localTimeEnabled && (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
+          geometryIn.computeMorphNormals();
         geometry = new THREE.BufferGeometry().fromGeometry(geometryIn);
+
         if (localMorphColour)
           copyMorphColorsToBufferGeometry(geometryIn, geometry);
       } else if (geometryIn instanceof THREE.BufferGeometry) {
@@ -797,13 +799,12 @@ exports.Scene = function(containerIn, rendererIn) {
 	        material = materialIn;
 	        material.morphTargets = localTimeEnabled;
           material.morphNormals = localTimeEnabled;
-          
 	      } else {
 	        if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined) {
 	          material = new THREE.MeshPhongMaterial({
 	            color : colour,
 	            morphTargets : localTimeEnabled,
-	            morphNormals : false,
+	            morphNormals : localTimeEnabled,
 	            transparent : isTransparent,
 	            opacity : opacity,
 	            side : THREE.DoubleSide

@@ -1,10 +1,10 @@
 const THREE = require('three');
-const ThreeBSP = require('three-js-csg')(THREE);
+const ThreeBSP = require('./three-js-csg')(THREE);
 const Geometry = require('./geometry').Geometry;
 const work = require('webworkify-webpack');
 const Promise = require('promise-polyfill').default;
 //const work = undefined;
-const JSONLoader = require('./loader').JSONLoader;
+const JSONLoader = THREE.BufferGeometryLoader;
 
 const GeometryCSG = function (hostIn) {
   //ZincGeoemtry of the main geometry

@@ -1,5 +1,5 @@
 const THREE = require('three');
-const ThreeBSP = require('three-js-csg')(THREE);
+const ThreeBSP = require('./three-js-csg')(THREE);
 const Glyphset = require('./glyphset').Glyphset;
 
 /**

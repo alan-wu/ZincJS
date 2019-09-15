@@ -198,9 +198,9 @@ exports.Geometry = function () {
 				targetGeometry.addAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
 				targetGeometry.addAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
 			} else if (morphArray.length == 1) {
-				targetGeometry.addAttribute('morphColor0' + bound, morphColors[ morphArray[0][0] ] );
+				targetGeometry.addAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
+				targetGeometry.addAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
 			}
-
 		}
 	}
 		

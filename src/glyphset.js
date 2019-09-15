@@ -392,8 +392,6 @@ exports.Glyphset = function()  {
 	}
 	
 	const createGlyphs = (geometry, material) => {
-		geometry.computeFaceNormals();
-		geometry.computeVertexNormals();
 		for (let i = 0; i < numberOfVertices; i ++) {
 			const glyph = new (require('./glyph').Glyph)(geometry, material, i + 1, this);
 			if (labels != undefined && labels[i] != undefined) {
@@ -447,11 +445,12 @@ exports.Glyphset = function()  {
 	
 	var meshloader = finishCallback => {
 	    return (geometry, materials) => {
+			let bufferGeometry = new THREE.BufferGeometry().fromGeometry(geometry);
 	    	let material = undefined;
 	    	if (materials && materials[0]) {
 	    		material = materials[0];
 	    	}
-			createGlyphs(geometry, material);
+			createGlyphs(bufferGeometry, material);
 	    	if (finishCallback != undefined && (typeof finishCallback == 'function'))
         		finishCallback(this);
 	    };
