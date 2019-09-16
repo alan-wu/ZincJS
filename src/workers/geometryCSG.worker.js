@@ -1,6 +1,6 @@
-const JSONLoader = require('../loader').JSONLoader;
 const Geometry = require('../geometry').Geometry;
 const THREE = require('three');
+const JSONLoader = THREE.BufferGeometryLoader;
 
 module.exports = function (self) {
 	let jsonParser = new JSONLoader();
@@ -26,7 +26,7 @@ module.exports = function (self) {
 		if (core) {
 			var guest = geometryFromJSON(object);
 			var result = core.intersect(guest);
-			var json = result.toGeometry().toJSON();
+			var json = result.toBufferGeometry().toJSON();
 			self.postMessage({action: "result", object: json});
 		}
 	}
@@ -35,7 +35,7 @@ module.exports = function (self) {
 		if (core) {
 			var guest = geometryFromJSON(object);
 			var result = core.subtract(guest);
-			var json = result.toGeometry().toJSON();
+			var json = result.toBufferGeometry().toJSON();
 			self.postMessage({action: "result", object: json});
 		}
 	}
@@ -44,7 +44,7 @@ module.exports = function (self) {
 		if (core) {
 			var guest = geometryFromJSON(object);
 			var result = core.union(guest);
-			var json = result.toGeometry().toJSON();
+			var json = result.toBufferGeometry().toJSON();
 			self.postMessage({action: "result", object: json});
 		}
 	}

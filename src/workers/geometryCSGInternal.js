@@ -1,5 +1,5 @@
 const THREE = require('three');
-const ThreeBSP = require('three-js-csg')(THREE);
+const ThreeBSP = require('../three-js-csg')(THREE);
 const Geometry = require('../geometry').Geometry;
 const GeometryCSG = require('../geometryCSG').GeometryCSG;
 
