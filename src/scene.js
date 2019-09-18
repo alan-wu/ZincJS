@@ -656,27 +656,7 @@ exports.Scene = function(containerIn, rendererIn) {
   //Internal function for creating a Zinc.Geometry object and add it into the scene for rendering.
   const addMeshToZincGeometry = (mesh, modelId, localTimeEnabled, localMorphColour) => {
     const newGeometry = new (require('./geometry').Geometry)();
-    const mixer = new THREE.AnimationMixer(mesh);
-    const geometry = mesh.geometry;
-    let clipAction = undefined;
-    if (geometry.morphAttributes.position) {
-      let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(geometry.morphAttributes.position, 10, true);
-      if (animationClip && animationClip[0] != undefined) {
-        clipAction = mixer.clipAction(animationClip[0]).setDuration(duration);
-        clipAction.loop = THREE.loopOnce;
-        clipAction.clampWhenFinished = true;
-        clipAction.play();
-      }
-    }
-    newGeometry.duration = 3000;
-    newGeometry.geometry = geometry;
-    newGeometry.timeEnabled = localTimeEnabled;
-    newGeometry.morphColour = localMorphColour;
-    newGeometry.modelId = modelId;
-    newGeometry.morph = mesh;
-    newGeometry.mixer = mixer;
-    newGeometry.clipAction = clipAction;
-    this.addGeometry(newGeometry);
+    newGeometry.setMesh(mesh, modelId, localTimeEnabled, localMorphColour);
     return newGeometry;
   };
 
@@ -695,6 +675,7 @@ exports.Scene = function(containerIn, rendererIn) {
       object.traverse(child => {
         if (child instanceof THREE.Mesh) {
           const zincGeometry = addMeshToZincGeometry(child, modelId, localTimeEnabled, localMorphColour);
+          this.addGeometry(zincGeometry);
           if (zincGeometry.morph)
             zincGeometry.morph.name = groupName;
           zincGeometry.groupName = groupName;
@@ -703,45 +684,6 @@ exports.Scene = function(containerIn, rendererIn) {
         }
       });
     };
-  }
-
-  
-  const copyMorphColors = (sourceGeometry, targetGeometry) => {
-    if (sourceGeometry && sourceGeometry.morphColors) {
-      targetGeometry.morphColors = [];
-      const morphColors = sourceGeometry.morphColors;
-      for ( i = 0, il = morphColors.length; i < il; i ++ ) {
-        const morphColor = {};
-        morphColor.name = morphColors[i].name;
-        morphColor.colors = morphColors[i].colors.slice(0);
-        targetGeometry.morphColors.push( morphColor );
-      }
-    }
-  };
-
-  const copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
-    if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
-      let array = [];
-      let morphColors = geometry.morphColors;
-      const getColorsRGB = require("./utilities").getColorsRGB;
-      for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
-        let morphColor = morphColors[ i ];
-        let colorArray = [];
-		    for ( var j = 0; j < geometry.faces.length; j ++ ) {
-          let face = geometry.faces[j];
-          let color = getColorsRGB(morphColor.colors, face.a);
-          colorArray.push(color[0], color[1], color[2]);
-          color = getColorsRGB(morphColor.colors, face.b);
-          colorArray.push(color[0], color[1], color[2]);
-          color = getColorsRGB(morphColor.colors, face.c);
-          colorArray.push(color[0], color[1], color[2]);
-        }
-        var attribute = new THREE.Float32BufferAttribute( geometry.faces.length * 3 * 3, 3 );
-        attribute.name = morphColor.name;
-        array.push( attribute.copyArray( colorArray ) );
-      }
-      bufferGeometry.morphAttributes[ "color" ] = array; 
-    }
   }
   
   /**
@@ -770,79 +712,24 @@ exports.Scene = function(containerIn, rendererIn) {
     finishCallback,
     materialIn
   ) => {
-    let geometry = undefined;
-    if (geometryIn) {
-      if (geometryIn instanceof THREE.Geometry) {
-        if (localTimeEnabled && (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
-          geometryIn.computeMorphNormals();
-        geometry = new THREE.BufferGeometry().fromGeometry(geometryIn);
-
-        if (localMorphColour)
-          copyMorphColorsToBufferGeometry(geometryIn, geometry);
-      } else if (geometryIn instanceof THREE.BufferGeometry) {
-        geometry = new THREE.BufferGeometry();
-        geometry.copy(geometryIn);
-      }
-      if (geometryIn._video)
-    	  geometry._video = geometryIn._video;
+    let options = {};
+    options.modelId = modelId;
+    options.colour = colour;
+    options.opacity = opacity;
+    options.localTimeEnabled = localTimeEnabled;
+    options.localMorphColour = localMorphColour
+    const newGeometry = new (require('./geometry').Geometry)();
+    newGeometry.createMesh(geometryIn, materialIn, options);
+    if (newGeometry.morph) {
+      this.addGeometry(newGeometry);
       if (external == undefined)
         external = true
       if (external)
         num_inputs++;
-      isTransparent = false;
-      if (1.0 > opacity)
-        isTransparent = true;
-
-      let material = undefined;
-      if (geometry._video === undefined) {
-	      if (materialIn) {
-	        material = materialIn;
-	        material.morphTargets = localTimeEnabled;
-          material.morphNormals = localTimeEnabled;
-	      } else {
-	        if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined) {
-	          material = new THREE.MeshPhongMaterial({
-	            color : colour,
-	            morphTargets : localTimeEnabled,
-	            morphNormals : localTimeEnabled,
-	            transparent : isTransparent,
-	            opacity : opacity,
-	            side : THREE.DoubleSide
-            });
-          } else {
-	          material = new THREE.MeshPhongMaterial({
-	            color : colour,
-	            morphTargets : localTimeEnabled,
-	            morphNormals : localTimeEnabled,
-	            vertexColors : THREE.VertexColors,
-	            transparent : isTransparent,
-	            opacity : opacity,
-	            side : THREE.DoubleSide
-            });
-          }
-        }
-        if (localMorphColour && geometry.morphAttributes[ "color" ]) {
-          material.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
-        }
-      } else {
-    	  let videoTexture = geometry._video.createCanvasVideoTexture();
-    	  material = new THREE.MeshBasicMaterial({
-    		  morphTargets : localTimeEnabled,
-    		  color : new THREE.Color(1, 1, 1),
-    		  transparent : isTransparent,
-    		  opacity : opacity,
-    		  map : videoTexture,
-    		  side : THREE.DoubleSide
-    	  });
-    	  videoHandler = geometry._video;
-      }
-
-      let mesh = undefined;
-      mesh = new THREE.Mesh(geometry, material);
-      const newGeometry = addMeshToZincGeometry(mesh, modelId, localTimeEnabled, localMorphColour);
-
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGeometry);
+      if (!videoHandler && newGeometry.videoHandler)
+        videoHandler = newGeometry.videoHandler;
       return newGeometry;
     }
     return undefined;
