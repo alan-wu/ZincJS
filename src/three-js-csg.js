@@ -27,6 +27,8 @@
         geometry = geometry.geometry;
         if (geometry.isBufferGeometry)
           geometry = new THREE.Geometry().fromBufferGeometry(geometry);
+          geometry.mergeVertices();
+          geometry.computeVertexNormals(false);
       } else if ( geometry instanceof ThreeBSP.Node ) {
         this.tree = geometry;
         this.matrix = new THREE.Matrix4;
@@ -206,7 +208,7 @@
     };
     ThreeBSP.prototype.toBufferGeometry = function( ) {
       var geometry = this.toGeometry();
-      var bufferGeometry = new THREE.BufferGeometry().fromGeoemtry(geometry);
+      var bufferGeometry = new THREE.BufferGeometry().fromGeometry(geometry);
 
       return bufferGeometry;
     };
@@ -438,7 +440,7 @@
 
       return this;
 
-    }
+    };
     
     
     ThreeBSP.Node = function( polygons ) {
