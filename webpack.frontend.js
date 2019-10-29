@@ -2,7 +2,7 @@ var path = require('path');
 var webpack = require('webpack');
 
 module.exports = {
-  mode: "none",
+  mode: "production",
   entry: {
     "zinc": "./src/zinc.js"
   },

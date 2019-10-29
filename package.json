@@ -16,8 +16,8 @@
     "webpack.config.js"
   ],
   "scripts": {
-    "build": "webpack --config webpack.frontend.js --mode=none; webpack --config webpack.backend.js --mode=none",
-    "build-backend": "webpack --config webpack.backend.js --mode=none",
+    "build": "webpack --config webpack.frontend.js; webpack --config webpack.backend.js",
+    "build-backend": "webpack --config webpack.backend.js",
     "test": "npm --prefix ./test install && npm --prefix ./test run test-ci"
   },
   "repository": {
