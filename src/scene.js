@@ -20,6 +20,7 @@ exports.Scene = function(containerIn, rendererIn) {
   let zincGeometries = [];
   let zincGlyphsets = [];
   let zincPointsets = [];
+  let zincLines = [];
   let videoHandler = undefined;
   const scene = new THREE.Scene();
   /**
@@ -193,6 +194,14 @@ exports.Scene = function(containerIn, rendererIn) {
           boundingBox1.union(boundingBox2);
         }
       }
+      for (let i = 0; i < zincLines.length; i++) {
+        boundingBox2 = zincLines[i].getBoundingBox();
+        if (boundingBox1 == undefined) {
+          boundingBox1 = boundingBox2;
+        } else {
+          boundingBox1.union(boundingBox2);
+        }
+      }
     return boundingBox1;
   }
 
@@ -254,9 +263,21 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Function} callbackFunction - Callback function with the pointset
    * as an argument.
    */
-  this.forEachGlyphset = callbackFunction => {
+  this.forEachPointset = callbackFunction => {
     for (let i = zincPointsets.length - 1; i >= 0; i--) {
       callbackFunction(zincPointsets[i]);
+    }
+  }
+
+   /**
+   * A function which iterates through the list of lines and call the callback
+   * function with the lines as the argument.
+   * @param {Function} callbackFunction - Callback function with the lines
+   * as an argument.
+   */
+  this.forEachLine = callbackFunction => {
+    for (let i = zincLines.length - 1; i >= 0; i--) {
+      callbackFunction(zincLines[i]);
     }
   }
   
@@ -307,6 +328,22 @@ exports.Scene = function(containerIn, rendererIn) {
     return glyphsetsArray;
   }
   
+  /** 
+   * Find and return all lines in this scene with the matching GroupName.
+   * 
+   * @param {String} GroupName - Groupname to match with.
+   * @returns {Array}
+   */
+  this.findLinesWithGroupName = GroupName => {
+    const linesArray = [];
+    for (let i = 0; i < zincLines.length; i++) {
+      if (zincLines[i].groupName == GroupName) {
+    	  linesArray.push(zincLines[i]);
+      }
+    }
+    return linesArray;
+  }
+
   this.addGlyphset = glyphset => {
 	  if (glyphset && glyphset.isGlyphset) {
 		  const group = glyphset.getGroup();
@@ -378,7 +415,40 @@ exports.Scene = function(containerIn, rendererIn) {
 		  if (finishCallback != undefined && (typeof finishCallback == 'function'))
 			  finishCallback(newPointset);
 	  };
-  }  
+  }
+
+  //Internal loader for a regular zinc geometry.
+  const linesloader = (localTimeEnabled, localMorphColour, groupName, finishCallback) => {
+    return (geometry, materials) => {
+      const newLines = new (require('./lines').Lines)();
+      let material = undefined;
+      if (materials && materials[0]) {
+        material = new THREE.LineBasicMaterial({color:materials[0].color.clone()});
+        if (1.0 > materials[0].opacity) {
+          material.transparent = true;
+        }
+        material.opacity = materials[0].opacity;
+        material.morphTargets = localTimeEnabled;
+        material.vertexColors = materials[0].vertexColors;
+      }
+      let options = {};
+      options.localTimeEnabled = localTimeEnabled;
+      options.localMorphColour = localMorphColour;
+
+      newLines.createLineSegment(geometry, material, options);
+      if (newLines) {
+        newLines.timeEnabled = localTimeEnabled;
+        newLines.localMorphColour = localMorphColour;
+        if (newLines.timeEnabled)
+          newLines.setFrustumCulled(false);
+        newLines.setName(groupName);
+        scene.add(newLines.morph);
+        zincLines.push(newLines);
+      }
+      if (finishCallback != undefined && (typeof finishCallback == 'function'))
+        finishCallback(newLines);
+    };
+  } 
 
   /**
    * Load a pointset into this scene object.
@@ -402,6 +472,31 @@ exports.Scene = function(containerIn, rendererIn) {
 	  let loader = new JSONLoader();
 	  loader.crossOrigin = "Anonymous";
 	  loader.load(url, pointsetloader(localTimeEnabled, localMorphColour, groupName, finishCallback),
+		  this.onProgress(i), this.onError);
+  }
+
+    /**
+   * Load lines into this scene object.
+   * 
+   * @param {String} metaurl - Provide informations such as transformations, colours 
+   * and others for each of the glyph in the glyphsset.
+   * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
+   * @param {Boolean} morphColour - Indicate if color morphing is enabled.
+   * @param {STRING} groupName - name to assign the pointset's groupname to.
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the glyphset is succssfully load in.
+   */
+  this.loadLinesURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
+	  let localTimeEnabled = 0;
+	  num_inputs += 1;
+	  if (timeEnabled != undefined)
+		  localTimeEnabled = timeEnabled ? true : false;
+	  let localMorphColour = 0;
+	  if (morphColour != undefined)
+		  localMorphColour = morphColour ? true : false;
+	  let loader = new JSONLoader();
+	  loader.crossOrigin = "Anonymous";
+	  loader.load(url, linesloader(localTimeEnabled, localMorphColour, groupName, finishCallback),
 		  this.onProgress(i), this.onError);
   }
 
@@ -477,7 +572,9 @@ exports.Scene = function(containerIn, rendererIn) {
         this.loadGlyphsetURL(newURL, newGeometryURL, item.GroupName, finishCallback);
       } else if (item.Type == "Points") {
     	  this.loadPointsetURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
-      } else if (item.Type == "View") {
+      } else if (item.Type == "Lines") {
+    	  this.loadLinesURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
+      }else if (item.Type == "View") {
     	  this.loadViewURL(newURL);
       }
     }
@@ -824,6 +921,10 @@ exports.Scene = function(containerIn, rendererIn) {
     	zincPointset = zincPointsets[i];
     	zincPointset.setMorphTime(time);
       }
+    for (let i = 0; i < zincLines.length; i++) {
+        zincLine = zincLines[i];
+        zincLine.setMorphTime(time);
+    }
   }
 
   /**
@@ -847,6 +948,11 @@ exports.Scene = function(containerIn, rendererIn) {
           return true;
         }
     }
+    for (let i = 0; i < zincLines.length; i++) {
+      if (zincLines[i].isTimeVarying()) {
+        return true;
+      }
+    } 
     if (videoHandler && videoHandler.video && !videoHandler.video.error) {
     	return true;
     }
@@ -907,6 +1013,10 @@ exports.Scene = function(containerIn, rendererIn) {
 				  for (let i = 0; i < zincPointsets.length; i++) {
 					  zincPointsets[i].setMorphTime(currentTime);
 					  zincPointsets[i].render(0, playAnimation);
+          }
+          for (let i = 0; i < zincLines.length; i++) {
+					  zincLines[i].setMorphTime(currentTime);
+					  zincLines[i].render(0, playAnimation);
 				  }
 			  } else {
 				  zincCameraControls.update(0);
@@ -916,7 +1026,7 @@ exports.Scene = function(containerIn, rendererIn) {
 			  myPlayRate = 0;
 		  }
 	  } else {
-		  var totalInput = zincGeometries.length + zincPointsets.length;
+		  var totalInput = zincGeometries.length + zincPointsets.length + zincLines.length;
 		  if (totalInput == num_inputs && allGlyphsetsReady()) {
 			  zincCameraControls.update(delta);
 			  for (let i = 0; i < zincGeometries.length; i++) {
@@ -928,7 +1038,10 @@ exports.Scene = function(containerIn, rendererIn) {
 			  }
 			  for (let i = 0; i < zincPointsets.length; i++) {
 				  zincPointsets[i].render(playRate * delta, playAnimation);
-			  }
+        }
+        for (let i = 0; i < zincLines.length; i++) {
+          zincLines[i].render(playRate * delta, playAnimation);
+        }
 		  } else {
 			  zincCameraControls.update(0);
 		  }
@@ -1136,9 +1249,9 @@ exports.Scene = function(containerIn, rendererIn) {
   }
   
   /**
-   * Remove a ZincGlyphset from this scene if it presents. This will eventually
-   * destroy the glyphset and free up the memory.
-   * @param {Zinc.Glyphset} zincGlyphset - geometry to be removed from this scene.
+   * Remove a zincPointset from this scene if it presents. This will eventually
+   * destroy the pointset and free up the memory.
+   * @param {Zinc.Pointset} zincPointset - geometry to be removed from this scene.
    */
   this.removeZincPointset= zincPointset => {
     for (let i = 0; i < zincPointsets.length; i++) {
@@ -1146,6 +1259,22 @@ exports.Scene = function(containerIn, rendererIn) {
         scene.remove(zincPointset.morph);
         zincPointsets[i].dispose();
         zincPointsets.splice(i, 1);
+        return;
+      }
+    }
+  }
+
+    /**
+   * Remove a zincPointset from this scene if it presents. This will eventually
+   * destroy the pointset and free up the memory.
+   * @param {Zinc.Line} zincLine - geometry to be removed from this scene.
+   */
+  this.removeZincLine = zincLine => {
+    for (let i = 0; i < zincLines.length; i++) {
+      if (zincLine === zincLines[i]) {
+        scene.remove(zincLine.morph);
+        zincLines[i].dispose();
+        zincLines.splice(i, 1);
         return;
       }
     }

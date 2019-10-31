@@ -16,6 +16,7 @@ const Zinc = function() {
   this.Glyph = require('./glyph').Glyph;
   this.Glyphset = require('./glyphset').Glyphset;
   this.Pointset = require('./pointset').Pointset;
+  this.Lines = require('./lines').Lines;
   this.Renderer = require('./renderer').Renderer;
   this.Scene = require('./scene').Scene;
   this.GeometryCSG = require('./geometryCSG').GeometryCSG;
@@ -25,9 +26,9 @@ const Zinc = function() {
   this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
   this.RayCaster = require('./controls').RayCaster;
   this.CameraAutoTumble = require('./controls').CameraAutoTumble;
+  this.StereoEffect = require('./controls').StereoEffect;
   this.loadExternalFile = require('./utilities').loadExternalFile;
   this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.StereoEffect = require('./controls').StereoEffect;
   this.THREE = require('three'); 
   
 };

@@ -912,6 +912,7 @@ const RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn
 	const hoverCallbackFunction = hoverCallbackFunctionIn;
 	const enabled = true;
 	const raycaster = new THREE.Raycaster();
+	raycaster.linePrecision = 0;
 	const mouse = new THREE.Vector2();
 	
 	this.enable = () => {
