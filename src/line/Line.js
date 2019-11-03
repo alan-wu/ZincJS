@@ -244,8 +244,7 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 			if ( geometry.isBufferGeometry ) {
 
 				var index = geometry.index;
-				var attributes = geometry.attributes;
-				var positions = attributes.position;
+				var positions = geometry.attributes.position;
 				var morphPosition = geometry.morphAttributes.position;
 
 				if ( index !== null ) {
@@ -286,9 +285,10 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 				} else {
 
-					for ( var i = 0, l = positions.length - 1; i < l; i += step ) {
+					for ( var i = 0, l = positions.count - 1; i < l; i += step ) {
 
 						calculatePosition( this, material, positions, morphPosition, i, i + 1 );
+
 
 						var distSq = ray.distanceSqToSegment( vStart, vEnd, interRay, interSegment );
 
