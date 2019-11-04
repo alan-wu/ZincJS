@@ -437,10 +437,6 @@ exports.Scene = function(containerIn, rendererIn) {
 
       newLines.createLineSegment(geometry, material, options);
       if (newLines) {
-        newLines.timeEnabled = localTimeEnabled;
-        newLines.localMorphColour = localMorphColour;
-        if (newLines.timeEnabled)
-          newLines.setFrustumCulled(false);
         newLines.setName(groupName);
         scene.add(newLines.morph);
         zincLines.push(newLines);

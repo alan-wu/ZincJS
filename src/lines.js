@@ -24,21 +24,6 @@ exports.Lines = function () {
 	this.clipAction = undefined;
 	this.userData = [];
 	
-	
-	const updateMorphTargets = geometry => {
-		var m, ml, name;
-		var morphTargets = geometry.morphTargets;
-		if ( morphTargets !== undefined && morphTargets.length > 0 ) {
-			this.morph.morphTargetInfluences = [];
-			this.morph.morphTargetDictionary = {};
-			for ( m = 0, ml = morphTargets.length; m < ml; m ++ ) {
-				name = morphTargets[ m ].name || String( m );
-				this.morph.morphTargetInfluences.push( 0 );
-				this.morph.morphTargetDictionary[ name ] = m;
-			}
-		}
-	}
-
 	this.setFrustumCulled = flag => {
 		if (this.morph)
 			this.morph.frustumCulled = flag;
@@ -72,6 +57,8 @@ exports.Lines = function () {
 		this.timeEnabled = localTimeEnabled;
 		this.morphColour = localMorphColour;
 		this.morph = line;
+		if (this.timeEnabled)
+			this.setFrustumCulled(false);
 	}
 
 	this.createLineSegment = (geometryIn, materialIn, options) => {
@@ -87,14 +74,14 @@ exports.Lines = function () {
 			}
 			geometry.colorsNeedUpdate = true;
 			let line = new (require("./line/LineSegments").LineSegments)(geometry, materialIn);
-			this.setLine(line, options.localTimeEnabled, options.localMorphColouro);
+			this.setLine(line, options.localTimeEnabled, options.localMorphColour);
 		}		
 	}
 
-	this.setSize = size => {
+	this.setWidth = width => {
 		if (this.morph && this.morph.material) {
-			this.morph.material.size = size;
-			material.needsUpdate = true;
+			this.morph.material.linewidth = width;
+			this.morph.material.needsUpdate = true;
 		}
 	}
 
