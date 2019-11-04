@@ -33,6 +33,14 @@
       "URL" : "test_glyph.json"
    },
    {
+      "GroupName" : "test lines",
+      "MorphColours" : false,
+      "MorphNormals" : false,
+      "MorphVertices" : true,
+      "Type" : "Lines",
+      "URL" : "test_lines.json"
+   },
+   {
       "Type" : "View",
       "URL" : "test_view.json"
    }

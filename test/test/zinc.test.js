@@ -276,6 +276,62 @@ function checkGeometry(scene) {
         assert.isUndefined(geometry.setMaterial(material), 'setMaterial is successfully called');;
         assert.equal(geometry.morph.material, material, 'material is correct');
       });
+      it('render', function() {
+        assert.isUndefined(geometry.render(100, true), 'render is successfully called');
+      });
+    });
+  });
+}
+
+function checkLines(lines) {
+  describe('Lines()', function(){
+    describe('Local Variables()', function(){
+      it('lines', function(){
+        assert.isObject(lines.morph, 'geometry is an object');
+      });
+      it('timeEnabled', function(){
+        assert.isTrue(lines.timeEnabled, 'timeEnabled is true');
+      });
+      it('morphColour', function(){
+        assert.isFalse(lines.morphColour, 'morphColour is false');
+      });
+      it('clipAction', function(){
+        assert.isObject(lines.clipAction, 'clipAction is an object');
+      });
+      it('groupName', function(){
+        assert.equal(lines.groupName, "test lines", 'groupName is correct');
+      });
+    });
+    describe('Methods()', function(){
+      it('setMorphTime', function() {
+        assert.isUndefined(lines.setMorphTime(1500), 'setMorphTime is successfully called');
+      });
+      it('getCurrentTime', function() {
+        assert.equal(lines.getCurrentTime(), 1500.0, 'getCurrentTime returns the correct value');
+      });
+      it('getBoundingBox', function() {
+        var boundingBox = lines.getBoundingBox();
+        assert.isObject(boundingBox, 'boundingBox is successfully called');
+        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
+        assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
+      });
+      it('setName', function() {
+        assert.isUndefined(lines.setName("lines1"), 'setName is successfully called');
+        assert.equal(lines.groupName, 'lines1', 'name is correctly set');
+      });
+      it('setVisibility', function() {
+        assert.isUndefined(lines.setVisibility(false), 'setVisibility is successfully called');
+      });
+      it('setWidth', function() {
+        assert.isUndefined(lines.setWidth(3), 'setWidth is successfully called');
+        assert.equal(lines.morph.material.linewidth, 3.0, 'setWidth sets the correct value');
+      });
+      it('isTimeVarying', function() {
+        assert.isTrue(lines.isTimeVarying(), 'isTimeVarying is true');
+      });
+      it('render', function() {
+        assert.isUndefined(lines.render(100, true), 'render is successfully called');
+      });
     });
   });
 }
@@ -352,6 +408,11 @@ function checkScene(renderer) {
       it ('findGlyphsetsWithGroupName', function() {
         assert.lengthOf(scene.findGlyphsetsWithGroupName("test glyph"), 1, 'findGlyphsetsWithGroupName returns 1 glyphset');
       });
+      it ('findLinesWithGroupName', function() {
+        var lines = scene.findLinesWithGroupName("test lines");
+        assert.lengthOf(lines, 1, 'findLinesWithGroupName returns 1 glyphset');
+        checkLines(lines[0]);
+      });
       it ('findPointsetsWithGroupName', function() {
         assert.lengthOf(scene.findPointsetsWithGroupName("test point"), 1, 'findPointsetsWithGroupName returns 1 point');
       });
@@ -389,6 +450,7 @@ function checkScene(renderer) {
         assert.isNull(scene.getZincGeometryByID(id), 'getZincGeometryByID returns the correct object');
       });
     });
+
   });
   return testScene;
 }
