@@ -401,15 +401,15 @@ exports.Scene = function(containerIn, rendererIn) {
 			  material.color = materials[0].color;
 			  material.morphTargets = localTimeEnabled;
 			  material.vertexColors = materials[0].vertexColors;
-		  }
-		  const points = newPointset.createMesh(geometry, material);
-		  if (points) {
-			  newPointset.timeEnabled = localTimeEnabled;
-        newPointset.morphColour = localMorphColour;
-        if (newPointset.timeEnabled)
-          newPointset.setFrustumCulled(false);
+      }
+      let options = {};
+      options.localTimeEnabled = localTimeEnabled;
+      options.localMorphColour = localMorphColour;
+
+		  newPointset.createMesh(geometry, material, options);
+		  if (newPointset) {
 			  newPointset.setName(groupName);
-			  scene.add(points);
+			  scene.add(newPointset.morph);
 			  zincPointsets.push(newPointset);
 		  }
 		  if (finishCallback != undefined && (typeof finishCallback == 'function'))

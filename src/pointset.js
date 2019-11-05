@@ -25,32 +25,9 @@ exports.Pointset = function () {
 	this.clipAction = undefined;
 	this.userData = [];
 	
-	
-	const updateMorphTargets = geometry => {
-		var m, ml, name;
-		var morphTargets = geometry.morphTargets;
-		if ( morphTargets !== undefined && morphTargets.length > 0 ) {
-			this.morph.morphTargetInfluences = [];
-			this.morph.morphTargetDictionary = {};
-			for ( m = 0, ml = morphTargets.length; m < ml; m ++ ) {
-				name = morphTargets[ m ].name || String( m );
-				this.morph.morphTargetInfluences.push( 0 );
-				this.morph.morphTargetDictionary[ name ] = m;
-			}
-		}
-	}
-
 	this.setFrustumCulled = flag => {
 		if (this.morph)
 			this.morph.frustumCulled = flag;
-	}
-	
-	const updateBufferGeometry = (object, geometry) => {
-		if (object && geometry) {
-			if ( geometry._bufferGeometry === undefined ) {
-				geometry._bufferGeometry = new THREE.BufferGeometry().fromGeometry( geometry );
-			}
-		}
 	}
 			
 	const getCircularTexture = () => {
@@ -73,62 +50,57 @@ exports.Pointset = function () {
 	    return false;
 	  }
 
-	  this.createMesh = (geometry, material) => {
-		  if (geometry && material) {
-			  let k = 0;
-			  if (material.vertexColors === THREE.VertexColors) {
-				  if (geometry.faces.length > 0 && geometry.faces[i].vertexColors.length > 0) {
-					  material.color = new THREE.Color(1, 1, 1);
-					  for (let i = 0; i < geometry.faces.length; i++) {
-						  for (let j = 0; j < geometry.faces[i].vertexColors.length; j++) {
-							  geometry.colors.push(geometry.faces[i].vertexColors[j]);
-							  k++;
-						  }
-					  }
-					  if (geometry.vertices.length > k) {
-						  for (k;k < geometry.vertices.length; k++)
-							  geometry.colors.push(new THREE.Color(0,0,0));
-					  }
-				  } else {
-					  material.vertexColors = THREE.NoColors;
-				  }
-			  }
-			  geometry.colorsNeedUpdate = true;
-			  const texture = getCircularTexture();
-			  material.map = texture;
-			  this.morph = new Points(geometry, material);
-			  if (this.morph) {
-				  this.morph.userData = this;
-				  this.morph.name = this.groupName;
-				  this.mixer = new THREE.AnimationMixer(this.morph);
-				  this.clipAction = undefined;
-				  if (geometry.morphTargets) {
-					  updateMorphTargets(geometry);
-					  const animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(geometry.morphTargets, 10, true);
-					  if (animationClip && animationClip[0] != undefined) {
-						  this.clipAction = this.mixer.clipAction(animationClip[0]).setDuration(this.duration);
-						  this.clipAction.loop = THREE.loopOnce;
-						  this.clipAction.clampWhenFinished = true;
-						  this.clipAction.play();
-					  }
-					  updateBufferGeometry(this.morph, geometry);
-				  }
-			  }
-		  }
-		  return this.morph;		
-	  }
+	this.setMesh = (point, localTimeEnabled, localMorphColour) => {
+		this.mixer = new THREE.AnimationMixer(point);
+		this.geometry = point.geometry;
+		this.clipAction = undefined;
+		if (this.geometry.morphAttributes.position) {
+			let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
+				  this.geometry.morphAttributes.position, 10, true);
+			if (animationClip && animationClip[0] != undefined) {
+			  this.clipAction = this.mixer.clipAction(animationClip[0]).setDuration(this.duration);
+			  this.clipAction.loop = THREE.loopOnce;
+			  this.clipAction.clampWhenFinished = true;
+			  this.clipAction.play();
+			}
+		}
+		this.timeEnabled = localTimeEnabled;
+		this.morphColour = localMorphColour;
+		this.morph = point;
+		if (this.timeEnabled)
+			this.setFrustumCulled(false);
+	}
+
+	this.createMesh = (geometryIn, materialIn, options) => {
+		if (geometryIn && materialIn) {
+			let geometry = undefined;
+			if (geometryIn instanceof THREE.Geometry) {
+				geometry = new THREE.BufferGeometry().fromGeometry(geometryIn);
+				if (options.localMorphColour)
+					require("./utilities").copyMorphColorsToBufferGeometry(geometryIn, geometry);
+			} else if (geometryIn instanceof THREE.BufferGeometry) {
+				geometry = new THREE.BufferGeometry();
+				geometry.copy(geometryIn);
+			}
+			geometry.colorsNeedUpdate = true;
+			const texture = getCircularTexture();
+			materialIn.map = texture;
+			let point = new Points(geometry, materialIn);
+			this.setMesh(point, options.localTimeEnabled, options.localMorphColour);
+		}	
+	}
 
 	this.setSize = size => {
 		if (this.morph && this.morph.material) {
 			this.morph.material.size = size;
-			material.needsUpdate = true;
+			this.morph.material.needsUpdate = true;
 		}
 	}
 	
 	this.setSizeAttenuation = flag => {
 		if (this.morph && this.morph.material) {
 			this.morph.material.sizeAttenuation = flag;
-			material.needsUpdate = true;
+			this.morph.material.needsUpdate = true;
 		}
 	}
 	
