@@ -57,6 +57,7 @@ exports.Lines = function () {
 		this.timeEnabled = localTimeEnabled;
 		this.morphColour = localMorphColour;
 		this.morph = line;
+		this.morph.userData = this;
 		if (this.timeEnabled)
 			this.setFrustumCulled(false);
 	}

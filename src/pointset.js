@@ -67,6 +67,8 @@ exports.Pointset = function () {
 		this.timeEnabled = localTimeEnabled;
 		this.morphColour = localMorphColour;
 		this.morph = point;
+		this.morph.userData = this;
+		this.morph.name = this.groupName;
 		if (this.timeEnabled)
 			this.setFrustumCulled(false);
 	}

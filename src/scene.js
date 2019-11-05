@@ -844,13 +844,9 @@ exports.Scene = function(containerIn, rendererIn) {
         material = materials[0];
       }
       const zincGeometry = this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material);
-      if (zincGeometry.morph) {
-        zincGeometry.morph.name = groupName;
-        zincGeometry.morph.userData = zincGeometry;
-        if (zincGeometry.timeEnabled)
-          zincGeometry.setFrustumCulled(false);
+      if (zincGeometry) {
+        zincGeometry.setName(groupName);
       }
-      zincGeometry.groupName = groupName;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
     };
