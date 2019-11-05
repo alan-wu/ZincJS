@@ -1,5 +1,4 @@
 const THREE = require('three');
-const Points = require('./Points').Points;
 /**
  * Provides an object which stores points and provides method which controls its position.
  * This is created when a valid json file containing point is read into a {@link Zinc.Scene}
@@ -7,14 +6,14 @@ const Points = require('./Points').Points;
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Geometry}
+ * @return {Zinc.Lines}
  */
-exports.Pointset = function () {
+exports.Lines = function () {
 	this.morph = undefined;
 	this.groupName = undefined;
 	this.timeEnabled = false;
 	this.morphColour = false;
-	this.isPointset = true;
+	this.isLines = true;
 	let inbuildTime = 0;
 	/**
 	 * Total duration of the animation, this value interacts with the 
@@ -29,30 +28,21 @@ exports.Pointset = function () {
 		if (this.morph)
 			this.morph.frustumCulled = flag;
 	}
-			
-	const getCircularTexture = () => {
-		var image = new Image();
-		image.src = require("./assets/disc.png");
-		const texture = new THREE.Texture();
-		texture.image = image;
-		texture.needsUpdate = true;
-		return texture;
+		
+	/**
+	 * Check if the pointset is time varying.
+	 * 
+	 * @return {Boolean}
+	 */
+	this.isTimeVarying = () => {
+	if (this.timeEnabled || this.morphColour)
+		return true;
+	return false;
 	}
-	
-	  /**
-	   * Check if the pointset is time varying.
-	   * 
-	   * @return {Boolean}
-	   */
-	  this.isTimeVarying = () => {
-	    if (this.timeEnabled || this.morphColour)
-	      return true;
-	    return false;
-	  }
 
-	this.setMesh = (point, localTimeEnabled, localMorphColour) => {
-		this.mixer = new THREE.AnimationMixer(point);
-		this.geometry = point.geometry;
+	this.setLine = (line, localTimeEnabled, localMorphColour) => {
+		this.mixer = new THREE.AnimationMixer(line);
+		this.geometry = line.geometry;
 		this.clipAction = undefined;
 		if (this.geometry.morphAttributes.position) {
 			let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
@@ -66,12 +56,12 @@ exports.Pointset = function () {
 		}
 		this.timeEnabled = localTimeEnabled;
 		this.morphColour = localMorphColour;
-		this.morph = point;
+		this.morph = line;
 		if (this.timeEnabled)
 			this.setFrustumCulled(false);
 	}
 
-	this.createMesh = (geometryIn, materialIn, options) => {
+	this.createLineSegment = (geometryIn, materialIn, options) => {
 		if (geometryIn && materialIn) {
 			let geometry = undefined;
 			if (geometryIn instanceof THREE.Geometry) {
@@ -83,27 +73,18 @@ exports.Pointset = function () {
 				geometry.copy(geometryIn);
 			}
 			geometry.colorsNeedUpdate = true;
-			const texture = getCircularTexture();
-			materialIn.map = texture;
-			let point = new Points(geometry, materialIn);
-			this.setMesh(point, options.localTimeEnabled, options.localMorphColour);
-		}	
+			let line = new (require("./line/LineSegments").LineSegments)(geometry, materialIn);
+			this.setLine(line, options.localTimeEnabled, options.localMorphColour);
+		}		
 	}
 
-	this.setSize = size => {
+	this.setWidth = width => {
 		if (this.morph && this.morph.material) {
-			this.morph.material.size = size;
+			this.morph.material.linewidth = width;
 			this.morph.material.needsUpdate = true;
 		}
 	}
-	
-	this.setSizeAttenuation = flag => {
-		if (this.morph && this.morph.material) {
-			this.morph.material.sizeAttenuation = flag;
-			this.morph.material.needsUpdate = true;
-		}
-	}
-	
+
 	this.setName = groupNameIn => {
 		this.groupName = groupNameIn;
 		if (this.morph) {

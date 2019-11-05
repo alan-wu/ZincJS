@@ -3,13 +3,12 @@ const THREE = require('three');
 const JSONLoader = THREE.BufferGeometryLoader;
 
 module.exports = function (self) {
-	let jsonParser = new JSONLoader();
 	let core = undefined;
 	
 	var geometryFromJSON = function(object) {
 		var JSONParser = new JSONLoader();
 		var geometry = JSONParser.parse(object);
-        var material = new THREE.MeshPhongMaterial();
+		var material = new THREE.MeshPhongMaterial();
         var mesh = new THREE.Mesh(geometry.geometry, material);
         var host = new Geometry();
         host.morph = mesh;

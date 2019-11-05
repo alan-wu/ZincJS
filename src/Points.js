@@ -21,6 +21,7 @@ function Points( geometry, material ) {
 	this.geometry = geometry !== undefined ? geometry : new BufferGeometry();
 	this.material = material !== undefined ? material : new PointsMaterial( { color: Math.random() * 0xffffff } );
 
+	this.updateMorphTargets();
 }
 
 Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
@@ -29,17 +30,119 @@ Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 	isPoints: true,
 
+	copy: function ( source ) {
+
+		Object3D.prototype.copy.call( this, source );
+
+		if ( source.morphTargetInfluences !== undefined ) {
+
+			this.morphTargetInfluences = source.morphTargetInfluences.slice();
+
+		}
+
+		if ( source.morphTargetDictionary !== undefined ) {
+
+			this.morphTargetDictionary = Object.assign( {}, source.morphTargetDictionary );
+
+		}
+
+		return this;
+
+	},
+
+	updateMorphTargets: function () {
+
+		var geometry = this.geometry;
+		var m, ml, name;
+
+		if ( geometry.isBufferGeometry ) {
+
+			var morphAttributes = geometry.morphAttributes;
+			var keys = Object.keys( morphAttributes );
+
+			if ( keys.length > 0 ) {
+
+				var morphAttribute = morphAttributes[ keys[ 0 ] ];
+
+				if ( morphAttribute !== undefined ) {
+
+					this.morphTargetInfluences = [];
+					this.morphTargetDictionary = {};
+
+					for ( m = 0, ml = morphAttribute.length; m < ml; m ++ ) {
+
+						name = morphAttribute[ m ].name || String( m );
+
+						this.morphTargetInfluences.push( 0 );
+						this.morphTargetDictionary[ name ] = m;
+
+					}
+
+				}
+
+			}
+
+		} else {
+
+			var morphTargets = geometry.morphTargets;
+
+			if ( morphTargets !== undefined && morphTargets.length > 0 ) {
+
+				console.error( 'THREE.Line.updateMorphTargets() does not supports THREE.Geometry. Use THREE.BufferGeometry instead.' );
+
+			}
+
+		}
+
+	},
+
 	raycast: ( function () {
 
 		var inverseMatrix = new Matrix4();
 		var ray = new Ray();
 		var sphere = new Sphere();
 
+		var vPoint = new Vector3();
+
+		var morphA = new Vector3();
+
+		var tempA = new Vector3();
+
+		function calculatePosition( object, material, position, morphPosition, a)	{
+
+			vPoint.fromBufferAttribute( position, a );
+
+			var morphInfluences = object.morphTargetInfluences;
+
+			if ( material.morphTargets && morphPosition && morphInfluences ) {
+
+				morphA.set( 0, 0, 0 );
+
+				for ( var i = 0, il = morphPosition.length; i < il; i ++ ) {
+
+					var influence = morphInfluences[ i ];
+					var morphAttribute = morphPosition[ i ];
+
+					if ( influence === 0 ) continue;
+
+					tempA.fromBufferAttribute( morphAttribute, a );
+
+					morphA.addScaledVector( tempA.sub( vPoint ), influence );
+
+				}
+
+				vPoint.add( morphA );
+
+			}
+
+		}
+
 		return function raycast( raycaster, intersects ) {
 
 			var object = this;
 			var geometry = this.geometry;
 			var matrixWorld = this.matrixWorld;
+			var material = this.material;
 			var threshold = raycaster.params.Points.threshold;
 
 			// Checking boundingSphere distance to ray
@@ -62,7 +165,6 @@ Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 			var localThreshold = threshold / ( ( this.scale.x + this.scale.y + this.scale.z ) / 3 );
 			var localThresholdSq = localThreshold * localThreshold;
-			var position = new Vector3();
 			var intersectPoint = new Vector3();
 
 			function testPoint( point, index ) {
@@ -96,8 +198,8 @@ Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
 			if ( geometry.isBufferGeometry ) {
 
 				var index = geometry.index;
-				var attributes = geometry.attributes;
-				var positions = attributes.position.array;
+				var positions = geometry.attributes.position;
+				var morphPosition = geometry.morphAttributes.position;
 
 				if ( index !== null ) {
 
@@ -107,19 +209,19 @@ Points.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 						var a = indices[ i ];
 
-						position.fromArray( positions, a * 3 );
+						calculatePosition( this, material, positions, morphPosition, a );
 
-						testPoint( position, a );
+						testPoint( vPoint, a );
 
 					}
 
 				} else {
 
-					for ( var i = 0, l = positions.length / 3; i < l; i ++ ) {
+					for ( var i = 0, l = positions.count; i < l; i ++ ) {
 
-						position.fromArray( positions, i * 3 );
+						calculatePosition( this, material, positions, morphPosition, i );
 
-						testPoint( position, i );
+						testPoint( vPoint, i );
 
 					}
 

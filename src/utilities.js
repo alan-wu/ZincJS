@@ -81,6 +81,32 @@ exports.getColorsRGB = (colors, index) => {
     return [mycolor.r, mycolor.g, mycolor.b];
 }
 
+
+exports.copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
+    if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
+      let array = [];
+      let morphColors = geometry.morphColors;
+      const getColorsRGB = require("./utilities").getColorsRGB;
+      for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
+        let morphColor = morphColors[ i ];
+        let colorArray = [];
+		    for ( var j = 0; j < geometry.faces.length; j ++ ) {
+          let face = geometry.faces[j];
+          let color = getColorsRGB(morphColor.colors, face.a);
+          colorArray.push(color[0], color[1], color[2]);
+          color = getColorsRGB(morphColor.colors, face.b);
+          colorArray.push(color[0], color[1], color[2]);
+          color = getColorsRGB(morphColor.colors, face.c);
+          colorArray.push(color[0], color[1], color[2]);
+        }
+        var attribute = new THREE.Float32BufferAttribute( geometry.faces.length * 3 * 3, 3 );
+        attribute.name = morphColor.name;
+        array.push( attribute.copyArray( colorArray ) );
+      }
+      bufferGeometry.morphAttributes[ "color" ] = array; 
+    }
+  }
+
 exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
 
     tolerance = Math.max( tolerance, Number.EPSILON );
