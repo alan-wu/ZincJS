@@ -336,6 +336,63 @@ function checkLines(lines) {
   });
 }
 
+function checkPoints(points) {
+  describe('Points()', function(){
+    describe('Local Variables()', function(){
+      it('points', function(){
+        assert.isObject(points.morph, 'geometry is an object');
+      });
+      it('timeEnabled', function(){
+        assert.isFalse(points.timeEnabled, 'timeEnabled is true');
+      });
+      it('morphColour', function(){
+        assert.isFalse(points.morphColour, 'morphColour is false');
+      });
+      it('clipAction', function(){
+        assert.isUndefined(points.clipAction, 'clipAction is an object');
+      });
+      it('groupName', function(){
+        assert.equal(points.groupName, "test point", 'groupName is correct');
+      });
+    });
+    describe('Methods()', function(){
+      it('setMorphTime', function() {
+        assert.isUndefined(points.setMorphTime(1500), 'setMorphTime is successfully called');
+      });
+      it('getCurrentTime', function() {
+        assert.equal(points.getCurrentTime(), 1500.0, 'getCurrentTime returns the correct value');
+      });
+      it('getBoundingBox', function() {
+        var boundingBox = points.getBoundingBox();
+        assert.isObject(boundingBox, 'boundingBox is successfully called');
+        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
+        assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
+      });
+      it('setName', function() {
+        assert.isUndefined(points.setName("points1"), 'setName is successfully called');
+        assert.equal(points.groupName, 'points1', 'name is correctly set');
+      });
+      it('setVisibility', function() {
+        assert.isUndefined(points.setVisibility(false), 'setVisibility is successfully called');
+      });
+      it('setSize', function() {
+        assert.isUndefined(points.setSize(3.0), 'setSize is successfully called');
+        assert.equal(points.morph.material.size, 3.0, 'setSize sets the correct value');
+      });
+      it('setSizeAttenuation', function() {
+        assert.isUndefined(points.setSizeAttenuation(true), 'setSizeAttenuation is successfully called');
+        assert.isTrue(points.morph.material.sizeAttenuation, 'setSizeAttenuation sets the correct value');
+      });
+      it('isTimeVarying', function() {
+        assert.isFalse(points.isTimeVarying(), 'isTimeVarying is true');
+      });
+      it('render', function() {
+        assert.isUndefined(points.render(100, true), 'render is successfully called');
+      });
+    });
+  });
+}
+
 function checkScene(renderer) {
   var testScene = undefined;
   describe('Scene()', function(){
@@ -414,7 +471,9 @@ function checkScene(renderer) {
         checkLines(lines[0]);
       });
       it ('findPointsetsWithGroupName', function() {
-        assert.lengthOf(scene.findPointsetsWithGroupName("test point"), 1, 'findPointsetsWithGroupName returns 1 point');
+        var pointsets = scene.findPointsetsWithGroupName("test point");
+        assert.lengthOf(pointsets, 1, 'findPointsetsWithGroupName returns 1 point');
+        checkPoints(pointsets[0]);
       });
       it('updateDirectionalLight', function(){
         assert.isUndefined(scene.updateDirectionalLight(), 'updateDirectionalLight is successfully called');
