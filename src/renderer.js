@@ -86,8 +86,10 @@ exports.Renderer = function (containerIn) {
 				currentOffset[0] = rect.left;
 				currentOffset[1] = rect.top;
 			}
-			currentSize[0] = renderer.getSize().width;
-			currentSize[1] = renderer.getSize().height;
+			const target = new THREE.Vector2();
+			renderer.getSize(target);
+			currentSize[0] = target.x;
+			currentSize[1] = target.y;
 		}
 	}
 	
