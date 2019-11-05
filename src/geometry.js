@@ -58,6 +58,9 @@ exports.Geometry = function () {
 		this.morphColour = localMorphColour;
 		this.modelId = modelId;
 		this.morph = mesh;
+        this.morph.userData = this;
+        if (this.timeEnabled)
+          this.setFrustumCulled(false);
 	}
 
 	this.createMesh = (geometryIn, materialIn, options) => {
@@ -129,6 +132,13 @@ exports.Geometry = function () {
 		mesh = new THREE.Mesh(geometry, material); 
 		this.setMesh(mesh, options.modelId, options.localTimeEnabled,
 			options.localMorphColour);
+	}
+
+	this.setName = groupNameIn => {
+		this.groupName = groupNameIn;
+		if (this.morph) {
+			this.morph.name = this.groupName;
+		}
 	}
 
 	
