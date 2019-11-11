@@ -206,6 +206,21 @@ exports.Pointset = function () {
 		return false;
 	}
 
+	/**
+	 * Clear this geometry and free the memory.
+	 */
+	this.dispose = () => {
+		if (this.morph && this.morph.geometry)
+		  this.morph.geometry.dispose();
+		if (this.morph && this.morph.material)
+		  this.morph.material.dispose();
+		this.geometry = undefined;
+		this.mixer = undefined;
+		this.morph = undefined;
+		this.clipAction = undefined;
+		this.groupName = undefined;
+	}
+
 	//Update the geometry and colours depending on the morph.
 	this.render = (delta, playAnimation) => {
 		if (playAnimation == true) 

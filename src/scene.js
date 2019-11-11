@@ -878,9 +878,9 @@ exports.Scene = function(containerIn, rendererIn) {
    * @return {Number}
    */
   this.getCurrentTime = () => {
-	if (videoHandler != undefined) {
-		return videoHandler.getCurrentTime(duration);
-	}
+    if (videoHandler != undefined) {
+      return videoHandler.getCurrentTime(duration);
+    }
     if (zincGeometries[0] != undefined) {
       return zincGeometries[0].getCurrentTime();
     }
@@ -890,6 +890,9 @@ exports.Scene = function(containerIn, rendererIn) {
     if (zincGlyphsets[0] != undefined) {
         return zincGlyphsets[0].getCurrentTime();
     }
+    if (zincLines[0] != undefined) {
+      return zincLines[0].getCurrentTime();
+  }
     return 0;
   }
 
@@ -898,9 +901,9 @@ exports.Scene = function(containerIn, rendererIn) {
    * @param {Number} time  - Value to set the time to.
    */
   this.setMorphsTime = time => {
-	if (videoHandler != undefined) {
-		videoHandler.setMorphTime(time, duration);
-	}
+    if (videoHandler != undefined) {
+      videoHandler.setMorphTime(time, duration);
+    }
     for (let i = 0; i < zincGeometries.length; i++) {
       zincGeometry = zincGeometries[i];
       zincGeometry.setMorphTime(time);
@@ -1144,6 +1147,16 @@ exports.Scene = function(containerIn, rendererIn) {
         return true;
       }
     }
+    for (let i = 0; i < zincPointsets.length; i++) {
+      if (zincObject === zincPointsets[i]) {
+        return true;
+      }
+    }
+    for (let i = 0; i < zincLines.length; i++) {
+      if (zincObjects === zincLines[i]) {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -1227,7 +1240,7 @@ exports.Scene = function(containerIn, rendererIn) {
   /**
    * Remove a ZincGlyphset from this scene if it presents. This will eventually
    * destroy the glyphset and free up the memory.
-   * @param {Zinc.Glyphset} zincGlyphset - geometry to be removed from this scene.
+   * @param {Zinc.Glyphset} zincGlyphset - glyphset to be removed from this scene.
    */
   this.removeZincGlyphset = zincGlyphset => {
     for (let i = 0; i < zincGlyphsets.length; i++) {
@@ -1243,7 +1256,7 @@ exports.Scene = function(containerIn, rendererIn) {
   /**
    * Remove a zincPointset from this scene if it presents. This will eventually
    * destroy the pointset and free up the memory.
-   * @param {Zinc.Pointset} zincPointset - geometry to be removed from this scene.
+   * @param {Zinc.Pointset} zincPointset - pointset to be removed from this scene.
    */
   this.removeZincPointset= zincPointset => {
     for (let i = 0; i < zincPointsets.length; i++) {
@@ -1257,9 +1270,9 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
     /**
-   * Remove a zincPointset from this scene if it presents. This will eventually
-   * destroy the pointset and free up the memory.
-   * @param {Zinc.Line} zincLine - geometry to be removed from this scene.
+   * Remove a zincLine from this scene if it presents. This will eventually
+   * destroy the line and free up the memory.
+   * @param {Zinc.Line} zincLine - line to be removed from this scene.
    */
   this.removeZincLine = zincLine => {
     for (let i = 0; i < zincLines.length; i++) {
@@ -1288,5 +1301,15 @@ exports.Scene = function(containerIn, rendererIn) {
       zincGlyphsets[i].dispose();
     }
     zincGlyphsets = [];
+    for (let i = zincPointsets.length - 1; i >= 0; i--) {
+      scene.remove(zincPointsets[i].morph);
+      zincPointsets[i].dispose();
+    }
+    zincPointsets = [];
+    for (let i = zincLines.length - 1; i >= 0; i--) {
+      scene.remove(zincLines[i].morph);
+      zincLines[i].dispose();
+    }
+    zincLines = [];
   }
 }
