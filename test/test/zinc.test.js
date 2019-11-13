@@ -393,6 +393,42 @@ function checkPoints(points) {
   });
 }
 
+
+function checkCleanup(scene) {
+  describe('Cleanup()', function(){
+    describe('Local Variables()', function(){
+      it('scene', function(){
+        assert.isObject(scene, 'scene is an object');
+      });
+    });
+    describe('Methods()', function(){
+      it ('removeZincGlyphset', function() {
+        var glyphsets = scene.findGlyphsetsWithGroupName("test glyph");
+        assert.lengthOf(glyphsets, 1, 'findGlyphsetsWithGroupName returns 1 geometry');
+        assert.isUndefined(scene.removeZincGlyphset(glyphsets[0]), 'removeZincGlyphset is successfully called');
+        assert.lengthOf(scene.findGlyphsetsWithGroupName("test glyph"), 0, 'findLinesWithGroupName returns 0 point');
+      });
+      /*
+      it ('removeZincLine', function() {
+        var lines = scene.findLinesWithGroupName("test lines");
+        assert.lengthOf(lines, 1, 'findLinesWithGroupName returns 1 lines');
+        assert.isUndefined(scene.removeZincLine(lines[0]), 'removeZincLine is successfully called');
+        assert.lengthOf(scene.findLinesWithGroupName("test lines"), 0, 'findLinesWithGroupName returns 0 point');
+      });
+      it ('removeZincPointset', function() {
+        var pointsets = scene.findPointsetsWithGroupName("test point");
+        assert.lengthOf(pointsets, 1, 'findPointsetsWithGroupName returns 1 point');
+        assert.isUndefined(scene.removeZincPointset(pointsets[0]), 'removeZincPointset is successfully called');
+        assert.lengthOf(scene.findPointsetsWithGroupName("test point"), 0, 'findPointsetsWithGroupName returns 0 point');
+      });
+      */
+      it('clearAll', function(){
+        assert.isUndefined(scene.clearAll(), 'renderGeometries is successfully called');
+      });
+    });
+  });
+}
+
 function checkScene(renderer) {
   var testScene = undefined;
   describe('Scene()', function(){
@@ -441,6 +477,7 @@ function checkScene(renderer) {
       });
       it('resetView', function(){
         assert.isUndefined(scene.resetView(), 'resetView is successfully called');
+        testRenderer = renderer;
       });
       it('viewAll', function(){
         assert.isUndefined(scene.viewAll(), 'viewAll is successfully called');
@@ -456,8 +493,24 @@ function checkScene(renderer) {
         assert.isUndefined(scene.viewAllWithBoundingBox(boundingBox), 'viewAllWithBoundingBox is successfully called');
       });
       it ('forEachGeometry', function() {
+        geometryCount = 0;
         scene.forEachGeometry(geometryCallback());
         assert.equal(3, geometryCount, 'forEachGeometry is called successfully.')
+      });
+      it ('forEachGlyphset', function() {
+        geometryCount = 0;
+        scene.forEachGlyphset(geometryCallback());
+        assert.equal(1, geometryCount, 'forEachGeometry is called successfully.')
+      });
+      it ('forEachPointset', function() {
+        geometryCount = 0;
+        scene.forEachPointset(geometryCallback());
+        assert.equal(1, geometryCount, 'forEachGeometry is called successfully.')
+      });
+      it ('forEachLine', function() {
+        geometryCount = 0;
+        scene.forEachLine(geometryCallback());
+        assert.equal(1, geometryCount, 'forEachGeometry is called successfully.')
       });
       it ('findGeometriesWithGroupName', function() {
         assert.lengthOf(scene.findGeometriesWithGroupName("TestGeometry"), 1, 'findGeometriesWithGroupName returns 1 geometry');
@@ -466,17 +519,16 @@ function checkScene(renderer) {
         assert.lengthOf(scene.findGlyphsetsWithGroupName("test glyph"), 1, 'findGlyphsetsWithGroupName returns 1 glyphset');
       });
       it ('findLinesWithGroupName', function() {
-        var lines = scene.findLinesWithGroupName("test lines");
-        assert.lengthOf(lines, 1, 'findLinesWithGroupName returns 1 glyphset');
-        checkLines(lines[0]);
+        assert.lengthOf(scene.findLinesWithGroupName("test lines"), 1, 'findLinesWithGroupName returns 1 glyphset');
       });
       it ('findPointsetsWithGroupName', function() {
-        var pointsets = scene.findPointsetsWithGroupName("test point");
-        assert.lengthOf(pointsets, 1, 'findPointsetsWithGroupName returns 1 point');
-        checkPoints(pointsets[0]);
+        assert.lengthOf(scene.findPointsetsWithGroupName("test point"), 1, 'findPointsetsWithGroupName returns 1 point');
       });
       it('updateDirectionalLight', function(){
         assert.isUndefined(scene.updateDirectionalLight(), 'updateDirectionalLight is successfully called');
+      });
+      it('isTimeVarying', function(){
+        assert.isTrue(scene.isTimeVarying(), 'isTimeVarying is successfully called');
       });
       it('getCurrentTime', function(){
         assert.equal(scene.getCurrentTime(), 0.0, 'getCurrentTime is successfully called');
@@ -502,6 +554,21 @@ function checkScene(renderer) {
       it('isStereoEffectEnable', function(){
         assert.isTrue(scene.isStereoEffectEnable(), 'setStereoEffectEnable is successfully called');
       });
+      it('setDuration', function(){
+        assert.isUndefined(scene.setDuration(4000), 'setDuration is successfully called');
+      });
+      it('getDuration', function(){
+        assert.equal(scene.getDuration(), 4000, 'getDuration returns the correct object');
+      });
+      it('alignObjectToCameraView', function(){
+        assert.isUndefined(scene.alignObjectToCameraView(testGeometry,30000), 'alignObjectToCameraView is successfully called');
+      });
+      it('setCameraTargetToObject', function(){
+        assert.isUndefined(scene.setCameraTargetToObject(testGeometry), 'setCameraTargetToObject is successfully called');
+      });
+      it('renderGeometries', function(){
+        assert.isUndefined(scene.renderGeometries(500, 0.3, true), 'renderGeometries is successfully called');
+      });
       it('removeZincGeometry', function(){
         assert.isUndefined(scene.removeZincGeometry(testGeometry), 'removeZincGeometry is successfully called');
       });
@@ -509,7 +576,23 @@ function checkScene(renderer) {
         assert.isNull(scene.getZincGeometryByID(id), 'getZincGeometryByID returns the correct object');
       });
     });
-
+    describe("primitives()", function(){
+      it ('Lines', function() {
+        var lines = scene.findLinesWithGroupName("test lines");
+        assert.lengthOf(lines, 1, 'findLinesWithGroupName returns 1 glyphset');
+        checkLines(lines[0]);
+      });
+      it ('pointset', function() {
+        var pointsets = scene.findPointsetsWithGroupName("test point");
+        assert.lengthOf(pointsets, 1, 'findPointsetsWithGroupName returns 1 point');
+        checkPoints(pointsets[0]);
+      });
+    });
+    describe('Cleanup()', function(){
+      it ('removeZincGlyphset', function() {
+        checkCleanup(scene);
+      });
+    });
   });
   return testScene;
 }
@@ -606,18 +689,29 @@ function checkRenderer() {
       it('clearAllActiveScene', function() {
         assert.isUndefined(renderer.clearAllActiveScene(), 'clearAllActiveScene is successfully called');
       });
-      it('clearAllActiveScene', function() {
-        assert.isUndefined(renderer.clearAllActiveScene(), 'clearAllActiveScene is successfully called');
-      });
       it('transitionScene', function() {
         assert.isUndefined(renderer.transitionScene(scene2, 3000), 'transitionScene is successfully called');
       });
+      it('animate', function() {
+        assert.isUndefined(renderer.animate(), 'animate is successfully called');
+      });
+      it('stopAnimate', function() {
+        assert.isUndefined(renderer.stopAnimate(), 'stopAnimate is successfully called');
+      });
+      it('getDrawingWidth', function() {
+        assert.equal(renderer.getDrawingWidth(), 0, 'getDrawingWidth is successfully called');
+      });
+      it('getDrawingHeight', function() {
+        assert.equal(renderer.getDrawingHeight(), 0, 'getDrawingHeight is successfully called');
+      });
     })
+
     testRenderer = renderer;
   })
   var testScene = checkScene(testRenderer);
   checkGeometry(testScene);
   checkControls(testScene);
+  //checkCleanup(testScene);
 }
 
 function checkZincObject() {
