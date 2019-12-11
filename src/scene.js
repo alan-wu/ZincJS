@@ -118,10 +118,10 @@ exports.Scene = function(containerIn, rendererIn) {
   //Setup the camera for this scene, it also initialise the lighting
   const setupCamera = () => {
     this.camera = new THREE.PerspectiveCamera(40, getDrawingWidth() / getDrawingHeight(), 0.0, 10.0);
-    this.ambient = new THREE.AmbientLight(0x202020);
+    this.ambient = new THREE.AmbientLight(0x000000);
     scene.add(this.ambient);
 
-    this.directionalLight = new THREE.DirectionalLight(0x777777);
+    this.directionalLight = new THREE.DirectionalLight(0xffffff);
     scene.add(this.directionalLight);
     zincCameraControls = new (require('./controls').CameraControls)(this.camera, rendererIn.domElement, rendererIn, scene);
 
@@ -698,7 +698,7 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   /**
-   * Load a legacy file format containing the viewport and its model file from an external 
+   * Load a legacy file format containing the viewport and its meta file from an external 
    * location provided by the url. Use the new metadata format with
    * {@link Zinc.Scene#loadMetadataURL} instead.
    * 

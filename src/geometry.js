@@ -6,6 +6,24 @@ function absNumericalSort( a, b ) {
 
 }
 
+function PhongToToon(materialIn) {
+	if (materialIn.isMeshPhongMaterial) {
+		let material = new THREE.MeshToonMaterial({
+			color : materialIn.color.clone(),
+			morphTargets : materialIn.morphTargets,
+			morphNormals : materialIn.morphNormals,
+			vertexColors : materialIn.vertexColors,
+			transparent : materialIn.transparent,
+			opacity : materialIn.opacity,
+			side : materialIn.side
+		});
+
+		return material;
+	}
+
+	return materialIn;
+}
+
 /**
  * Provides an object which stores geometry and provides method which controls its animations.
  * This is created when a valid json file containging geometry is read into a {@link Zinc.Scene}
@@ -113,6 +131,7 @@ exports.Geometry = function () {
 					});
 				}
 			}
+			material = PhongToToon(material);
 			if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
 				material.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
 			}
