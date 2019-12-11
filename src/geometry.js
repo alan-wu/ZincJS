@@ -17,7 +17,8 @@ function PhongToToon(materialIn) {
 			opacity : materialIn.opacity,
 			side : materialIn.side
 		});
-
+		if (materialIn.map)
+			material.map = materialIn.map;
 		return material;
 	}
 
