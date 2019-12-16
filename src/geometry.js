@@ -132,7 +132,7 @@ exports.Geometry = function () {
 					});
 				}
 			}
-			material = PhongToToon(material);
+			//material = PhongToToon(material);
 			if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
 				material.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
 			}
