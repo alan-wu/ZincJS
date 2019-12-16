@@ -118,10 +118,10 @@ exports.Scene = function(containerIn, rendererIn) {
   //Setup the camera for this scene, it also initialise the lighting
   const setupCamera = () => {
     this.camera = new THREE.PerspectiveCamera(40, getDrawingWidth() / getDrawingHeight(), 0.0, 10.0);
-    this.ambient = new THREE.AmbientLight(0x000000);
+    this.ambient = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(this.ambient);
 
-    this.directionalLight = new THREE.DirectionalLight(0xffffff);
+    this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     scene.add(this.directionalLight);
     zincCameraControls = new (require('./controls').CameraControls)(this.camera, rendererIn.domElement, rendererIn, scene);
 
