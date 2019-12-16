@@ -1,4 +1,5 @@
 const THREE = require('three');
+const ResizeSensor = require('css-element-queries/src/ResizeSensor');
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
@@ -33,6 +34,7 @@ exports.Renderer = function (containerIn) {
 	let additionalActiveScenes = [];
 	let scenesGroup = new THREE.Group();
 	let canvas = undefined;
+	let sensor = undefined;
 	const _this = this;
 	const currentSize = [0, 0];
 	const currentOffset = [0, 0];
@@ -139,12 +141,14 @@ exports.Renderer = function (containerIn) {
 	  }
       renderer = new THREE.WebGLRenderer(parameters);
       if (container !== undefined) {
-    	  container.appendChild( renderer.domElement );
+		  container.appendChild( renderer.domElement );
+		  sensor = new ResizeSensor(container, resizeIfRequired);
       }
 	  renderer.setClearColor( 0xffffff, 1);
 	  if (canvas && canvas.style) {
 		  canvas.style.height = "100%";
 		  canvas.style.width = "100%";
+		  canvas = new ResizeSensor(canvas, resizeIfRequired);
 	  }
 	  const scene = this.createScene("default");
 	  this.setCurrentScene(scene);
@@ -454,7 +458,6 @@ exports.Renderer = function (containerIn) {
 	 * and finally render the scenes.
 	 */
 	this.render = () => {
-		resizeIfRequired();
 		const delta = clock.getDelta();
 		currentScene.renderGeometries(playRate, delta, this.playAnimation);
 	    for(i = 0; i < additionalActiveScenes.length; i++) {
@@ -556,6 +559,7 @@ exports.Renderer = function (containerIn) {
 	  logoSprite = undefined;
 	  const scene = this.createScene("default");
 	  this.setCurrentScene(scene);
+	  sensor = undefined;
 	}
 	
 	/**
