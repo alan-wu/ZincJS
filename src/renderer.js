@@ -72,7 +72,7 @@ exports.Renderer = function (containerIn) {
 			let rect = undefined;
 			if (container) {
 				rect = container.getBoundingClientRect();
-				renderer.setSize(width, height);		
+				renderer.setSize(width, height);
 			} else if (canvas) {
 				if (typeof canvas.getBoundingClientRect !== 'undefined') {
 					rect = canvas.getBoundingClientRect();
@@ -92,26 +92,6 @@ exports.Renderer = function (containerIn) {
 			renderer.getSize(target);
 			currentSize[0] = target.x;
 			currentSize[1] = target.y;
-		}
-	}
-	
-	const resizeIfRequired = () => {
-		const width = this.getDrawingWidth();
-		const height = this.getDrawingHeight();
-		let rect = undefined;
-		let left = 0, top = 0;
-		if (container)
-			rect = container.getBoundingClientRect();
-		else if (canvas && (typeof canvas.getBoundingClientRect !== 'undefined')) {
-			rect = canvas.getBoundingClientRect();
-		}
-		if (rect) {
-			left = rect.left;
-			top = rect.top;
-		}
-		if (currentSize[0] != width || currentSize[1] != height ||
-			left != currentOffset[0] || top != currentOffset[1]) {
-			this.onWindowResize();
 		}
 	}
 	
@@ -142,13 +122,11 @@ exports.Renderer = function (containerIn) {
       renderer = new THREE.WebGLRenderer(parameters);
       if (container !== undefined) {
 		  container.appendChild( renderer.domElement );
-		  sensor = new ResizeSensor(container, resizeIfRequired);
       }
 	  renderer.setClearColor( 0xffffff, 1);
 	  if (canvas && canvas.style) {
 		  canvas.style.height = "100%";
 		  canvas.style.width = "100%";
-		  canvas = new ResizeSensor(canvas, resizeIfRequired);
 	  }
 	  const scene = this.createScene("default");
 	  this.setCurrentScene(scene);
@@ -458,6 +436,15 @@ exports.Renderer = function (containerIn) {
 	 * and finally render the scenes.
 	 */
 	this.render = () => {
+		if (!sensor) {
+			if (container) {
+				if (container.clientWidth > 0 && container.clientHeight > 0)
+					sensor = new ResizeSensor(container, this.onWindowResize);
+			} else if (canvas) {
+				if (canvas.width > 0 && canvas.height > 0)
+					sensor = new ResizeSensor(canvas, this.onWindowResize);
+			}
+		}
 		const delta = clock.getDelta();
 		currentScene.renderGeometries(playRate, delta, this.playAnimation);
 	    for(i = 0; i < additionalActiveScenes.length; i++) {
