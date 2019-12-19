@@ -1,6 +1,6 @@
 {
   "name": "zincjs",
-  "version": "0.33.5",
+  "version": "0.33.6",
   "description": "ZincJS (Web-based-Zinc-Visualisation)",
   "main": "build/zinc.js",
   "directories": {
