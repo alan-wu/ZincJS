@@ -390,6 +390,20 @@ exports.Glyphset = function()  {
 		for ( let i = 0; i < glyphList.length; i ++ )
 			glyphList[i].showLabel();
 	}
+
+	this.getColourHex = () => {
+		if (!this.morphColour) {
+			if (glyphList.length > 0)
+				return glyphList[0].getColourHex();
+		}
+		return undefined;
+	}
+
+	this.setColourHex = hex => {
+		for (let i = 0; i < glyphList.length; i++) {
+			glyphList[i].setColourHex(hex);
+		}
+	}
 	
 	const createGlyphs = (geometry, material) => {
 		for (let i = 0; i < numberOfVertices; i ++) {
@@ -492,7 +506,7 @@ exports.Glyphset = function()  {
 			updateMorphGlyphsets();
 		}
 	}
-	
+
   /**
    * Check if the glyphset is time varying.
    * 

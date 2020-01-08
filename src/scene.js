@@ -803,7 +803,8 @@ exports.Scene = function(containerIn, rendererIn) {
     localMorphColour,
     external,
     finishCallback,
-    materialIn
+    materialIn,
+    groupName
   ) => {
     let options = {};
     options.modelId = modelId;
@@ -814,6 +815,7 @@ exports.Scene = function(containerIn, rendererIn) {
     const newGeometry = new (require('./geometry').Geometry)();
     newGeometry.createMesh(geometryIn, materialIn, options);
     if (newGeometry.morph) {
+      newGeometry.setName(groupName);
       this.addGeometry(newGeometry);
       if (external == undefined)
         external = true
@@ -843,10 +845,7 @@ exports.Scene = function(containerIn, rendererIn) {
       if (materials && materials[0]) {
         material = materials[0];
       }
-      const zincGeometry = this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material);
-      if (zincGeometry) {
-        zincGeometry.setName(groupName);
-      }
+      const zincGeometry = this.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material, groupName);
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
     };

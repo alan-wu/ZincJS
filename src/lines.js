@@ -40,6 +40,16 @@ exports.Lines = function () {
 	return false;
 	}
 
+	this.setColourHex = hex => {
+		this.morph.material.color.setHex(hex);
+	}
+
+	this.getColourHex = () => {
+		if (!this.morphColour)
+			return this.morph.material.color.getHexString();
+		return undefined;
+	}
+
 	this.setLine = (line, localTimeEnabled, localMorphColour) => {
 		this.mixer = new THREE.AnimationMixer(line);
 		this.geometry = line.geometry;
