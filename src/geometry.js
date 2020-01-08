@@ -160,7 +160,6 @@ exports.Geometry = function () {
 			this.morph.name = this.groupName;
 		}
 	}
-
 	
 	/**
 	 * Set the visibility of this Geometry.
@@ -243,7 +242,6 @@ exports.Geometry = function () {
 		}
 		if (timeChanged) {
 			updateMorphColorAttribute(this.geometry, this.morph, this.clipAction);
-
 		}
 	}
 	
@@ -289,6 +287,16 @@ exports.Geometry = function () {
 	this.setColour = colour => {
 		this.morph.material.color = colour;
 		this.geometry.colorsNeedUpdate = true;
+	}
+
+	this.getColourHex = () => {
+		if (!this.morphColour)
+			return this.morph.material.color.getHexString();
+		return undefined;
+	}
+
+	this.setColourHex = hex => {
+		this.morph.material.color.setHex(hex);
 	}
 	
 	/**
@@ -372,13 +380,12 @@ exports.Geometry = function () {
    * 
    * @return {Boolean}
    */
-  this.isTimeVarying = () => {
-    if (this.timeEnabled || this.morphColour)
-      return true;
-    return false;
-  }
+	this.isTimeVarying = () => {
+		if (this.timeEnabled || this.morphColour)
+			return true;
+		return false;
+	}
   
-	
 	/**
 	 * Get the bounding box of this geometry.
 	 * 

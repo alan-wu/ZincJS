@@ -29,6 +29,16 @@ exports.Pointset = function () {
 		if (this.morph)
 			this.morph.frustumCulled = flag;
 	}
+
+	this.getColourHex = () => {
+		if (!this.morphColour)
+			return this.morph.material.color.getHexString();
+		return undefined;
+	}
+
+	this.setColourHex = hex => {
+		this.morph.material.color.setHex(hex);
+	}
 			
 	const getCircularTexture = () => {
 		var image = new Image();
@@ -38,17 +48,17 @@ exports.Pointset = function () {
 		texture.needsUpdate = true;
 		return texture;
 	}
-	
-	  /**
-	   * Check if the pointset is time varying.
-	   * 
-	   * @return {Boolean}
-	   */
-	  this.isTimeVarying = () => {
-	    if (this.timeEnabled || this.morphColour)
-	      return true;
-	    return false;
-	  }
+
+	/**
+	 * Check if the pointset is time varying.
+	 * 
+	 * @return {Boolean}
+	 */
+	this.isTimeVarying = () => {
+		if (this.timeEnabled || this.morphColour)
+			return true;
+		return false;
+	}
 
 	this.setMesh = (point, localTimeEnabled, localMorphColour) => {
 		this.mixer = new THREE.AnimationMixer(point);

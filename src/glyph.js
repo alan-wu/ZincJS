@@ -127,7 +127,15 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 		mesh.material.color = colorIn;
 		mesh.geometry.colorsNeedUpdate = true;
 	}
+
+	this.getColourHex = () => {
+		return mesh.material.color.getHexString();
+	}
 	
+	this.setColourHex = hex => {
+		mesh.material.color.setHex(hex);
+	}
+
 	/**
 	 * Set the transformation of this glyph.
 	 * @param {Array} position - Three components vectors containing position of the
