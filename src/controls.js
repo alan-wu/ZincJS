@@ -88,7 +88,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		this.pointer_x = event.clientX - rect.left;
 		this.pointer_y = event.clientY - rect.top;
 		
-		if (zincRayCaster !== undefined) {
+		
+		if ((this._state === STATE.NONE) && (zincRayCaster !== undefined)) {
 			zincRayCaster.move(this, event.clientX, event.clientY, this.renderer);
 		}
 	}
@@ -559,13 +560,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			}
 			controlEnabled = false;
 		} else if (currentMode === MODE.ROTATE_CAMERA_TRANSITION && rotateCameraTransitionObject) {
-		  rotateCameraTransitionObject.update(delta);
-      if (rotateCameraTransitionObject.isTransitionCompleted()) {
-        rotateCameraTransitionObject == undefined;
-        currentMode = MODE.DEFAULT;
-      }
-      controlEnabled = false;
-    } else if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject) {
+			rotateCameraTransitionObject.update(delta);
+			if (rotateCameraTransitionObject.isTransitionCompleted()) {
+				rotateCameraTransitionObject == undefined;
+				currentMode = MODE.DEFAULT;
+			}
+			controlEnabled = false;
+		} else if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject) {
 			cameraAutoTumbleObject.update(delta);
 		}
 		if (controlEnabled) {
