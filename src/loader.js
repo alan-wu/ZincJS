@@ -585,7 +585,10 @@ Object.assign( JSONLoader.prototype, {
 						materials[0].side = THREE.BackSide;
 					} else {
 						materials[0].side = THREE.DoubleSide;
-					}
+          }
+          if (json.materials[0].specularCoef) {
+            materials[0].shininess = Math.floor(json.materials[0].specularCoef / 3);
+          }
 				}
 				
 				return { geometry: geometry, materials: materials };
