@@ -31,10 +31,7 @@ exports.Scene = function(containerIn, rendererIn) {
   this.ambient = undefined;
   this.camera = undefined;
   let duration = 3000;
-  let centroid = [ 0, 0, 0 ];
   let zincCameraControls = undefined;
-  let num_inputs = 0;
-  let startingId = 1000;
   this.sceneName = undefined;
   let stereoEffectFlag = false;
   let stereoEffect = undefined;
@@ -297,6 +294,14 @@ exports.Scene = function(containerIn, rendererIn) {
     return linesArray;
   }
 
+  this.findObjectsWithGroupName = GroupName => {
+    let objectsArray = this.findGeometriesWithGroupName(GroupName);
+    objectsArray = objectsArray.concat(this.findPointsetsWithGroupName(GroupName));
+    objectsArray = objectsArray.concat(this.findGlyphsetsWithGroupName(GroupName));
+    objectsArray = objectsArray.concat(this.findLinesWithGroupName(GroupName));
+    return objectsArray;
+  }
+
   this.addGlyphset = glyphset => {
 	  if (glyphset && glyphset.isGlyphset) {
 		  const group = glyphset.getGroup();
@@ -430,16 +435,6 @@ exports.Scene = function(containerIn, rendererIn) {
   this.loadFromViewURL = (jsonFilePrefix, finishCallback) => {
     sceneLoader.loadFromViewURL(jsonFilePrefix, finishCallback);
   }
-
-  const setPositionOfObject = mesh => {
-    geometry = mesh.geometry;
-    geometry.computeBoundingBox();
-
-    const centerX = 0.5 * (geometry.boundingBox.min.x + geometry.boundingBox.max.x);
-    const centerY = 0.5 * (geometry.boundingBox.min.y + geometry.boundingBox.max.y);
-    const centerZ = 0.5 * (geometry.boundingBox.min.z + geometry.boundingBox.max.z);
-    centroid = [ centerX, centerY, centerZ ]
-  };
 
   this.addGeometry = zincGeometry => {
     if (zincGeometry && zincGeometry.morph) {
