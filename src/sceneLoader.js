@@ -171,7 +171,7 @@ exports.SceneLoader = function (sceneIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the glyphset is succssfully load in.
    */
-  this.loadLinesURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
+  this.loadLinesURL = (url, timeEnabled, morphColour, groupName, finishCallback, isInline) => {
 	  let localTimeEnabled = 0;
 	  this.num_inputs += 1;
 	  if (timeEnabled != undefined)
@@ -179,17 +179,27 @@ exports.SceneLoader = function (sceneIn) {
 	  let localMorphColour = 0;
 	  if (morphColour != undefined)
 		  localMorphColour = morphColour ? true : false;
-	  let loader = new JSONLoader();
-	  loader.crossOrigin = "Anonymous";
-	  loader.load(url, linesloader(localTimeEnabled, localMorphColour, groupName, finishCallback),
-		  this.onProgress(i), this.onError);
+    let loader = new JSONLoader();
+    if (isInline) {
+      var object = loader.parse( url );
+			(linesloader(localTimeEnabled, localMorphColour, groupName, finishCallback))( object.geometry, object.materials );
+    } else {
+      loader.crossOrigin = "Anonymous";
+      loader.load(url, linesloader(localTimeEnabled, localMorphColour, groupName, finishCallback),
+        this.onProgress(i), this.onError);
+    }
   }
 
 
-  const loadGlyphset = (glyphsetData, glyphurl, groupName, finishCallback) => {
+  const loadGlyphset = (glyphsetData, glyphurl, groupName, finishCallback, isInline) => {
     const newGlyphset = new (require('./glyphset').Glyphset)();
     newGlyphset.duration = 3000;
-    newGlyphset.load(glyphsetData, resolveURL(glyphurl), finishCallback);
+    if (isInline) {
+      newGlyphset.load(glyphsetData, glyphurl, finishCallback, isInline);
+    }
+    else{
+      newGlyphset.load(glyphsetData, resolveURL(glyphurl), finishCallback, isInline);
+    }
     newGlyphset.groupName = groupName;
     scene.addGlyphset(newGlyphset);
   };
@@ -199,7 +209,7 @@ exports.SceneLoader = function (sceneIn) {
     return () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
         const glyphsetData = JSON.parse(xmlhttp.responseText);
-        loadGlyphset(glyphsetData, glyphurl, groupName, finishCallback);
+        loadGlyphset(glyphsetData, glyphurl, groupName, finishCallback, false);
       }
     };
   };
@@ -312,7 +322,7 @@ exports.SceneLoader = function (sceneIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the geometry is succssfully loaded in.
    */
-  const loadMetaModel = (url, timeEnabled, morphColour, groupName, fileFormat, finishCallback) => {
+  const loadMetaModel = (url, timeEnabled, morphColour, groupName, fileFormat, finishCallback, isInline) => {
     this.num_inputs += 1;
     const modelId = this.nextAvailableInternalZincModelId();
     const colour = require('./zinc').defaultMaterialColor;
@@ -335,9 +345,15 @@ exports.SceneLoader = function (sceneIn) {
         return;
       }
     }
-    loader.crossOrigin = "Anonymous";
-    loader.load(url, meshloader(modelId, colour, opacity, localTimeEnabled,
-      localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
+    if (isInline) {
+      var object = loader.parse( url );
+			(meshloader(modelId, colour, opacity, localTimeEnabled,
+        localMorphColour, groupName, finishCallback))( object.geometry, object.materials );
+    } else {
+      loader.crossOrigin = "Anonymous";
+      loader.load(url, meshloader(modelId, colour, opacity, localTimeEnabled,
+        localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
+    }
   };
 
   //Object to keep track of number of items downloaded and when add items are downloaded
@@ -365,7 +381,7 @@ exports.SceneLoader = function (sceneIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the glyphset is succssfully load in.
    */
-  this.loadPointsetURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
+  this.loadPointsetURL = (url, timeEnabled, morphColour, groupName, finishCallback, isInline) => {
     let localTimeEnabled = 0;
     this.num_inputs += 1;
     if (timeEnabled != undefined)
@@ -374,9 +390,15 @@ exports.SceneLoader = function (sceneIn) {
     if (morphColour != undefined)
       localMorphColour = morphColour ? true : false;
     let loader = new JSONLoader();
-    loader.crossOrigin = "Anonymous";
-    loader.load(url, pointsetloader(localTimeEnabled, localMorphColour, groupName, finishCallback),
-      this.onProgress(i), this.onError);
+    if (isInline) {
+      var object = loader.parse( url );
+			(pointsetloader(localTimeEnabled, localMorphColour, groupName, finishCallback))(
+         object.geometry, object.materials );
+    } else {
+      loader.crossOrigin = "Anonymous";
+      loader.load(url, pointsetloader(localTimeEnabled, localMorphColour, groupName, finishCallback),
+        this.onProgress(i), this.onError);
+    }
   }
 
   /**
@@ -389,11 +411,15 @@ exports.SceneLoader = function (sceneIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the glyphset is succssfully load in.
    */
-  this.loadGlyphsetURL = (metaurl, glyphurl, groupName, finishCallback) => {
-    const xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl, groupName, finishCallback);
-    xmlhttp.open("GET", resolveURL(metaurl), true);
-    xmlhttp.send();
+  this.loadGlyphsetURL = (metaurl, glyphurl, groupName, finishCallback, isInline) => {
+    if (isInline) {
+      loadGlyphset(metaurl, glyphurl, groupName, finishCallback, isInline);
+    } else {
+      const xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl, groupName, finishCallback);
+      xmlhttp.open("GET", resolveURL(metaurl), true);
+      xmlhttp.send();
+    }
   }
 
   //Internal loader for a regular zinc geometry.
@@ -421,23 +447,36 @@ exports.SceneLoader = function (sceneIn) {
   //one for Zinc.Geometry and one for Zinc.Glyphset.
   const readMetadataItem = (referenceURL, item, finishCallback) => {
     if (item) {
-      let newURL = item.URL;
-      if (referenceURL)
-        newURL = (new URL(item.URL, referenceURL)).href;
+      let newURL = undefined;
+      let isInline = false;
+      if (item.URL) {
+        newURL = item.URL;
+        if (referenceURL)
+          newURL = (new URL(item.URL, referenceURL)).href;
+      } else if (item.Inline) {
+        newURL = item.Inline.URL;
+        isInline = true;
+      }
       if (item.Type == "Surfaces") {
-        loadMetaModel(newURL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback);
+        loadMetaModel(newURL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback, isInline );
       } else if (item.Type == "Glyph") {
-        let newGeometryURL = item.GlyphGeometriesURL;
-        if (referenceURL) {
+        let newGeometryURL = undefined;
+        if (!isInline) {
+          newGeometryURL = item.GlyphGeometriesURL;
           newGeometryURL = (new URL(item.GlyphGeometriesURL, referenceURL)).href;
+        } else {
+          newGeometryURL = item.Inline.GlyphGeometriesURL;
         }
-        this.loadGlyphsetURL(newURL, newGeometryURL, item.GroupName, finishCallback);
+        this.loadGlyphsetURL(newURL, newGeometryURL, item.GroupName, finishCallback, isInline);
       } else if (item.Type == "Points") {
-        this.loadPointsetURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
+        this.loadPointsetURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback, isInline);
       } else if (item.Type == "Lines") {
-        this.loadLinesURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback);
+        this.loadLinesURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback, isInline);
       } else if (item.Type == "View") {
-        this.loadViewURL(newURL);
+        if (isInline)
+          scene.loadView(newURL);
+        else
+          this.loadViewURL(newURL);
       }
     }
   };
