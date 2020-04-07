@@ -63,7 +63,7 @@ exports.Glyphset = function()  {
 	 * @param {Function} finishCallback - User's function to be called once glyph's
 	 * geometry is loaded.
 	 */
-	this.load = (glyphsetData, glyphURL, finishCallback) => {
+	this.load = (glyphsetData, glyphURL, finishCallback, isInline) => {
 		axis1s = glyphsetData.axis1;
 		axis2s = glyphsetData.axis2;
 		axis3s = glyphsetData.axis3;
@@ -83,9 +83,14 @@ exports.Glyphset = function()  {
 		baseSize = glyphsetData.metadata.base_size;
 		offset = glyphsetData.metadata.offset;
 		scaleFactors = glyphsetData.metadata.scale_factors;
-		const loader = new JSONLoader();
-		loader.crossOrigin = "Anonymous";
-		loader.load( glyphURL, meshloader(finishCallback));
+    const loader = new JSONLoader();
+    if (isInline) {
+      var object = loader.parse( glyphURL );
+      (meshloader(finishCallback))( object.geometry, object.materials );
+    } else {
+      loader.crossOrigin = "Anonymous";
+      loader.load( glyphURL, meshloader(finishCallback));
+    }
 	}
 	
 	/**

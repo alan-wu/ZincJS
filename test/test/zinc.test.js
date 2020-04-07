@@ -7,6 +7,7 @@ var THREE= Zinc.THREE;
 var fs = require('file-system');
 const container = window.document.querySelector("#container");
 var geometryCount = 0;
+global.XMLHttpRequest = require("xhr2");
 
 var testBoxGeometry = new THREE.BoxGeometry( 10, 10, 10 );
 
@@ -574,6 +575,10 @@ function checkScene(renderer) {
       });
       it('getZincGeometryByID', function(){
         assert.isNull(scene.getZincGeometryByID(id), 'getZincGeometryByID returns the correct object');
+      });
+      if ('getNamedObjectsScreenXY', function() {
+        assert.isObject(scene.getNamedObjectsScreenXY("TestGeometry"), 
+          'getNamedObjectsScreenXY is successfully called');
       });
     });
     describe("primitives()", function(){
