@@ -576,6 +576,10 @@ function checkScene(renderer) {
       it('getZincGeometryByID', function(){
         assert.isNull(scene.getZincGeometryByID(id), 'getZincGeometryByID returns the correct object');
       });
+      if ('getNamedObjectsScreenXY', function() {
+        assert.isObject(scene.getNamedObjectsScreenXY("TestGeometry"), 
+          'getNamedObjectsScreenXY is successfully called');
+      });
     });
     describe("primitives()", function(){
       it ('Lines', function() {
