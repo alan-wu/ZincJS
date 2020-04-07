@@ -302,6 +302,47 @@ exports.Scene = function(containerIn, rendererIn) {
     return objectsArray;
   }
 
+  this.getBoundingBoxOfZincObjects = objectsArray => {
+    let boundingBox = undefined;
+    for (let i = 0; i < objectsArray.length; i++) {
+      let box = objectsArray[i].getBoundingBox();
+      if (box) {
+        if (!boundingBox)
+          boundingBox = box;
+        else
+          boundingBox.union(box);
+      }
+    }
+    return boundingBox;
+  }
+
+  this.vectorToScreenXY = point => {
+    const vector = new THREE.Vector3();
+    point.project(this.camera);
+    let width = getDrawingWidth();
+    let height = getDrawingHeight();
+    var widthHalf = (width/2);
+    var heightHalf = (height/2);
+    vector.x = ( point.x * widthHalf ) + widthHalf;
+    vector.y = - ( point.y * heightHalf ) + heightHalf;
+    return vector;
+  }
+
+  this.getObjectsScreenXY = zincObjects => {
+    if (zincObjects && zincObjects.length > 0) {
+      let boundingBox = this.getBoundingBoxOfZincObjects(zincObjects);
+      const center = new THREE.Vector3();
+      boundingBox.getCenter(center);
+      return this.vectorToScreenXY(center);
+    }
+    return undefined;
+  }
+
+  this.getNamedObjectsScreenXY = name => {
+    let zincObjects = this.findObjectsWithGroupName(name);
+    return this.getObjectsScreenXY(zincObjects);
+  };
+
   this.addGlyphset = glyphset => {
 	  if (glyphset && glyphset.isGlyphset) {
 		  const group = glyphset.getGroup();
@@ -815,12 +856,11 @@ exports.Scene = function(containerIn, rendererIn) {
     return false;
   }
 
-  this.alignObjectToCameraView = (zincObject, transitionTime) => {
-    if (this.objectIsInScene(zincObject)) {
+  this.alignBoundingBoxToCameraView = (boundingBox, transitionTime) => {
+    if (boundingBox) {
       const center = new THREE.Vector3();
-      const boundingBox = zincObject.getBoundingBox();
-      const viewport = this.getZincCameraControls().getCurrentViewport();
       boundingBox.getCenter(center);
+      const viewport = this.getZincCameraControls().getCurrentViewport();
       const target = new THREE.Vector3(viewport.targetPosition[0],
         viewport.targetPosition[1], viewport.targetPosition[2]);
       const eyePosition = new THREE.Vector3(viewport.eyePosition[0],
@@ -841,6 +881,13 @@ exports.Scene = function(containerIn, rendererIn) {
       } else {
         this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
       }
+    }
+  }
+
+  this.alignObjectToCameraView = (zincObject, transitionTime) => {
+    if (this.objectIsInScene(zincObject)) {
+      const boundingBox = zincObject.getBoundingBox();
+      this.alignBoundingBoxToCameraView(boundingBox, transitionTime);
     }
   }
 
