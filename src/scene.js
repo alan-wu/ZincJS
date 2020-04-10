@@ -317,15 +317,14 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   this.vectorToScreenXY = point => {
-    const vector = new THREE.Vector3();
     point.project(this.camera);
     let width = getDrawingWidth();
     let height = getDrawingHeight();
     var widthHalf = (width/2);
     var heightHalf = (height/2);
-    vector.x = ( point.x * widthHalf ) + widthHalf;
-    vector.y = - ( point.y * heightHalf ) + heightHalf;
-    return vector;
+    point.x = ( point.x * widthHalf ) + widthHalf;
+    point.y = - ( point.y * heightHalf ) + heightHalf;
+    return point;
   }
 
   this.getObjectsScreenXY = zincObjects => {

@@ -27,7 +27,9 @@ exports.Renderer = function (containerIn) {
 	/* default animation update rate, rate is 500 and duration is default to 3000, 6s to finish a full animation */
 	let playRate = 500;
 	let preRenderCallbackFunctions = [];
-	let preRenderCallbackFunctions_id = 0;
+  let preRenderCallbackFunctions_id = 0;
+  let postRenderCallbackFunctions = [];
+	let postRenderCallbackFunctions_id  = 0;
 	let animated_id = undefined;
 	let cameraOrtho = undefined, sceneOrtho = undefined, logoSprite = undefined;
 	let sceneMap = [];
@@ -343,7 +345,29 @@ exports.Renderer = function (containerIn) {
    			delete preRenderCallbackFunctions[id];
 		}
 	}
+  
+	/**
+	 * Add a callback function which will be called everytime after the renderer renders its scene.
+	 * @param {Function} callbackFunction - callbackFunction to be added.
+	 * 
+	 * @return {Number}
+	 */
+	this.addPostRenderCallbackFunction = callbackFunction => {
+		postRenderCallbackFunctions_id = postRenderCallbackFunctions_id + 1;
+		postRenderCallbackFunctions[postRenderCallbackFunctions_id] = callbackFunction;
+		return postRenderCallbackFunctions_id;
+	}
 	
+	/**
+	 * Remove a callback function that is previously added to the scene.
+	 * @param {Number} id - identifier of the previously added callback function.
+	 */
+	this.removePostRenderCallbackFunction = id => {
+		if (id in postRenderCallbackFunctions) {
+   			delete postRenderCallbackFunctions[id];
+		}
+	}
+
 	/**
 	 * Get the current play rate, playrate affects how fast an animated object animates.
 	 * Also see {@link Zinc.Scene#duration}.
@@ -433,7 +457,7 @@ exports.Renderer = function (containerIn) {
 	/**
 	 * Render the current and all additional scenes. It will first update all geometries and glyphsets
 	 * in scenes, clear depth buffer and render the ortho scene, call the preRenderCallbackFunctions stack
-	 * and finally render the scenes.
+	 * , render the scenes then postRenderCallback.
 	 */
 	this.render = () => {
 		if (!sensor) {
@@ -455,12 +479,17 @@ exports.Renderer = function (containerIn) {
 			renderer.clearDepth();
 			renderer.render( sceneOrtho, cameraOrtho );
 		}
-	    for (key in preRenderCallbackFunctions) {
-	      if (preRenderCallbackFunctions.hasOwnProperty(key)) {
-	        preRenderCallbackFunctions[key].call();
-	      }
-	    }
-		currentScene.render(renderer);
+    for (key in preRenderCallbackFunctions) {
+      if (preRenderCallbackFunctions.hasOwnProperty(key)) {
+        preRenderCallbackFunctions[key].call();
+      }
+    }
+    currentScene.render(renderer);
+    for (key in postRenderCallbackFunctions) {
+      if (postRenderCallbackFunctions.hasOwnProperty(key)) {
+        postRenderCallbackFunctions[key].call();
+      }
+    }
 	}
 	
 	/**
