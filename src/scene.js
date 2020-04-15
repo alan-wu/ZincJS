@@ -125,7 +125,8 @@ exports.Scene = function(containerIn, rendererIn) {
       if (boundingBox1 == undefined) {
         boundingBox1 = boundingBox2;
       } else {
-        boundingBox1.union(boundingBox2);
+        if (boundingBox2)
+          boundingBox1.union(boundingBox2);
       }
     }
     for (let i = 0; i < zincGlyphsets.length; i++) {
@@ -133,25 +134,28 @@ exports.Scene = function(containerIn, rendererIn) {
       if (boundingBox1 == undefined) {
         boundingBox1 = boundingBox2;
       } else {
-        boundingBox1.union(boundingBox2);
+        if (boundingBox2)
+          boundingBox1.union(boundingBox2);
       }
     }
     for (let i = 0; i < zincPointsets.length; i++) {
-        boundingBox2 = zincPointsets[i].getBoundingBox();
-        if (boundingBox1 == undefined) {
-          boundingBox1 = boundingBox2;
-        } else {
+      boundingBox2 = zincPointsets[i].getBoundingBox();
+      if (boundingBox1 == undefined) {
+        boundingBox1 = boundingBox2;
+      } else {
+        if (boundingBox2)
           boundingBox1.union(boundingBox2);
-        }
       }
-      for (let i = 0; i < zincLines.length; i++) {
-        boundingBox2 = zincLines[i].getBoundingBox();
-        if (boundingBox1 == undefined) {
-          boundingBox1 = boundingBox2;
-        } else {
+    }
+    for (let i = 0; i < zincLines.length; i++) {
+      boundingBox2 = zincLines[i].getBoundingBox();
+      if (boundingBox1 == undefined) {
+        boundingBox1 = boundingBox2;
+      } else {
+        if (boundingBox2)
           boundingBox1.union(boundingBox2);
-        }
       }
+    }
     return boundingBox1;
   }
 
