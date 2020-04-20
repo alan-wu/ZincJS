@@ -779,7 +779,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		return (currentMode === MODE.SMOOTH_CAMERA_TRANSITION ||
 		    currentMode === MODE.ROTATE_CAMERA_TRANSITION);
 	}
-	
+  
+  /* tumble rate is in radians per second */
 	this.autoTumble = (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn) => {
 		cameraAutoTumbleObject = new CameraAutoTumble(tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, this);
 	}
@@ -1020,7 +1021,7 @@ const CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCamera
 			computeTumbleAxisAngle(tumbleDirection);
 			this.requireUpdate = false;
 		}
-		targetCamera.rotateAboutLookAtpoint(tumbleAxis, angle);
+		targetCamera.rotateAboutLookAtpoint(tumbleAxis, angle * delta/1000);
 
 	}
 	
