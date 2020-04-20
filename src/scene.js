@@ -80,6 +80,13 @@ exports.Scene = function(containerIn, rendererIn) {
     zincCameraControls.resetView();
   }
 
+  /**
+   * Set the zoom level by unit scroll rate
+   */
+  this.changeZoomByScrollRateUnit = unit => {
+    zincCameraControls.changeZoomByScrollRateUnit(unit);
+  }
+
   //Setup the camera for this scene, it also initialise the lighting
   const setupCamera = () => {
     this.camera = new THREE.PerspectiveCamera(40, getDrawingWidth() / getDrawingHeight(), 0.0, 10.0);

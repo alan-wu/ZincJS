@@ -328,18 +328,21 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.touchZoomDistanceStart = this.touchZoomDistanceEnd;
 		}
 		return delta;
-	}
-	
-	const flyZoom = () => {
+  }
+
+  this.changeZoomByScrollRateUnit = unit => {
+    const delta_y = unit * this.scrollRate;
+    this.changeZoomByValue(delta_y);
+  }
+  
+  this.changeZoomByValue = delta_y => {
 		if (typeof this.cameraObject !== "undefined")
 		{
 			const width = rect.width;
-			const height = rect.height;
+      const height = rect.height;
+           
 			const a = this.cameraObject.position.clone();
 			a.sub(this.cameraObject.target);
-			
-			const delta_y=calculateZoomDelta();
-
 			const dist = a.length();				
 			const dy = 1.5 * delta_y/height;
 			if ((dist + dy*dist) > 0.01) {
@@ -378,6 +381,12 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 				
 			}
 		}
+  }
+	
+	const flyZoom = () => {
+    const delta_y=calculateZoomDelta();
+    this.changeZoomByValue(delta_y);
+ 
 		if (this._state === STATE.ZOOM) {
 			this.previous_pointer_x = this.pointer_x;
 			this.previous_pointer_y = this.pointer_y;
@@ -770,7 +779,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		return (currentMode === MODE.SMOOTH_CAMERA_TRANSITION ||
 		    currentMode === MODE.ROTATE_CAMERA_TRANSITION);
 	}
-	
+  
+  /* tumble rate is in radians per second */
 	this.autoTumble = (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn) => {
 		cameraAutoTumbleObject = new CameraAutoTumble(tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, this);
 	}
@@ -1011,7 +1021,7 @@ const CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCamera
 			computeTumbleAxisAngle(tumbleDirection);
 			this.requireUpdate = false;
 		}
-		targetCamera.rotateAboutLookAtpoint(tumbleAxis, angle);
+		targetCamera.rotateAboutLookAtpoint(tumbleAxis, angle * delta/1000);
 
 	}
 	
