@@ -15,8 +15,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
 	const CLICK_ACTION = {};
 	CLICK_ACTION.MAIN = STATE.ROTATE;
-	CLICK_ACTION.AUXILIARY = STATE.PAN;
-	CLICK_ACTION.SECONDARY = STATE.ZOOM;
+	CLICK_ACTION.AUXILIARY = STATE.ZOOM;
+	CLICK_ACTION.SECONDARY = STATE.PAN;
 	this.cameraObject = object;
 	this.domElement = ( domElement !== undefined ) ? domElement : document;
 	this.renderer = renderer;
@@ -65,8 +65,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	const onDocumentMouseDown = event => {
 		if (rect === undefined)
 			rect = this.domElement.getBoundingClientRect();
-		if (event.button == 0) { 
-	 		this._state = CLICK_ACTION.MAIN;
+		if (event.button == 0) {
+      if (event.ctrlKey)
+        this._state = CLICK_ACTION.AUXILIARY;
+      else if (event.shiftKey)
+        this._state = CLICK_ACTION.SECONDARY;
+      else
+        this._state = CLICK_ACTION.MAIN;
 		} else if (event.button == 1) {
 			event.preventDefault();
 			this._state = CLICK_ACTION.AUXILIARY;
