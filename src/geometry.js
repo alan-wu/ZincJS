@@ -392,7 +392,7 @@ exports.Geometry = function () {
 	 * @return {THREE.Box3}.
 	 */
 	this.getBoundingBox = () => {
-		if (this.morph) {
+		if (this.morph && this.morph.visible) {
 			var boundingBox = new THREE.Box3().setFromObject(this.morph);
 			return boundingBox;
 		}

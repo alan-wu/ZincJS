@@ -810,7 +810,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	
 	 this.enableRaycaster = (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) => {
 	    if (zincRayCaster == undefined)
-	      zincRayCaster = new RayCaster(sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, this.renderer);
+	      zincRayCaster = new RayCaster(sceneIn, this.scene, callbackFunctionIn, hoverCallbackFunctionIn, this.renderer);
 	  }
 	  
 	  this.disableRaycaster = () => {
@@ -921,8 +921,9 @@ const RotateCameraTransition = function(axisIn, angleIn, targetCameraIn, duratio
   }
 }
 
-const RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn, rendererIn) {
-	const scene = sceneIn;
+const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallbackFunctionIn, rendererIn) {
+  const scene = sceneIn;
+  const hostScene = hostSceneIn;
 	const renderer = rendererIn;
 	const callbackFunction = callbackFunctionIn;
 	const hoverCallbackFunction = hoverCallbackFunctionIn;
@@ -930,7 +931,9 @@ const RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn
 	const raycaster = new THREE.Raycaster();
 	raycaster.linePrecision = 0.1;
 	raycaster.params.Points.threshold = 0.1;
-	const mouse = new THREE.Vector2();
+  const mouse = new THREE.Vector2();
+  let lastHovered = undefined;
+  let cooldown = false;
 	
 	this.enable = () => {
 		enable = true;
@@ -943,9 +946,10 @@ const RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn
 	const getIntersectsObject = (zincCamera, x, y) => {
 		const rect = zincCamera.domElement.getBoundingClientRect();
 		mouse.x = ((x - rect.left) / rect.width) * 2 - 1;
-		mouse.y = -((y - rect.top) / rect.height) * 2 + 1;
-		const threejsScene = scene.getThreeJSScene();
-		renderer.render(threejsScene, zincCamera.cameraObject);
+    mouse.y = -((y - rect.top) / rect.height) * 2 + 1;
+    const threejsScene = scene.getThreeJSScene();
+    if (hostScene !== scene)
+		  renderer.render(threejsScene, zincCamera.cameraObject);
 		raycaster.setFromCamera( mouse, zincCamera.cameraObject);
 		return raycaster.intersectObjects( threejsScene.children, true );
 	};
@@ -955,15 +959,37 @@ const RayCaster = function (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn
 			const intersects = getIntersectsObject(zincCamera, x, y);
 			callbackFunction(intersects, x, y);
 		}
-	}
+  }
+  
+  let hovered = (zincCamera, x, y) => {
+    if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
+      const intersects = getIntersectsObject(zincCamera, x, y);
+      lastHovered = new Date();
+      hoverCallbackFunction(intersects, x, y);
+    }
+  }
 	
 	this.move = (zincCamera, x, y) => {
-		if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
-			const intersects = getIntersectsObject(zincCamera, x, y);
-			hoverCallbackFunction(intersects, x, y);
-		}
-	}
-	
+    if (!cooldown) {
+      if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
+        let now = new Date();
+        let time_diff = 0;
+        if (!lastHovered || ( (time_diff = now.getTime() - lastHovered.getTime()) > 250)) {
+          hovered(zincCamera, x, y);
+        } else {
+          cooldown = true;
+          setTimeout(awaitMove(zincCamera, x, y), 250);
+        }
+      }
+    }
+  }
+  
+  let awaitMove = (zincCamera,x,y) => {
+    return function() {
+      cooldown = false;
+      hovered(zincCamera, x, y);
+    }
+  }
 };
 
 const CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, targetCameraIn) {
