@@ -121,6 +121,14 @@ exports.Pointset = function () {
 		if (this.morph) {
 			this.morph.name = this.groupName;
 		}
+  }
+  
+  /**
+	 * Get the visibility of this Geometry.
+	 * 
+	 */
+	this.getVisibility = () => {
+		return this.morph.visible;
 	}
 	
 	/**

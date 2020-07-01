@@ -159,6 +159,14 @@ exports.Geometry = function () {
 		if (this.morph) {
 			this.morph.name = this.groupName;
 		}
+  }
+  
+  /**
+	 * Get the visibility of this Geometry.
+	 * 
+	 */
+	this.getVisibility = () => {
+		return this.morph.visible;
 	}
 	
 	/**
@@ -393,8 +401,30 @@ exports.Geometry = function () {
 	 */
 	this.getBoundingBox = () => {
 		if (this.morph && this.morph.visible) {
-			var boundingBox = new THREE.Box3().setFromObject(this.morph);
-			return boundingBox;
+			//var boundingBox = new THREE.Box3().setFromObject(this.morph);
+      //return boundingBox;
+      let influences = this.morph.morphTargetInfluences;
+      let attributes = this.morph.geometry.morphAttributes;
+      if (influences && attributes && attributes.position) {
+        let min = new THREE.Vector3();
+        let max = new THREE.Vector3();
+        let found = false;
+        for (let i = 0; i < influences.length; i++) {
+          if (influences[i] > 0) {
+            found = true;
+            let box = new THREE.Box3().setFromArray(
+              attributes.position[i].array);
+            min.add(box.min.multiplyScalar(influences[i]));
+            max.add(box.max.multiplyScalar(influences[i]));
+          }
+        }
+        if (found) {
+          let boundingBox = new THREE.Box3(min, max);
+          return boundingBox;
+        }
+      }
+      var boundingBox = new THREE.Box3().setFromObject(this.morph);
+      return boundingBox;
 		}
 		return undefined;
 	}

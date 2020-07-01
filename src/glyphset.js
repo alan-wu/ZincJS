@@ -42,6 +42,13 @@ exports.Glyphset = function()  {
 	 */
 	this.getGroup = () => {
 		return group;
+  }
+  
+  /**
+	 * Get the visibility of this glyphset.
+	 */
+	this.getVisibility = () => {
+	  return	group.visible;
 	}
 	
 	/**
