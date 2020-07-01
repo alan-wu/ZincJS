@@ -190,7 +190,6 @@ exports.SceneLoader = function (sceneIn) {
     }
   }
 
-
   const loadGlyphset = (glyphsetData, glyphurl, groupName, finishCallback, isInline) => {
     const newGlyphset = new (require('./glyphset').Glyphset)();
     newGlyphset.duration = 3000;
