@@ -1,5 +1,5 @@
 const THREE = require('three');
-const SceneLoader =require('./sceneLoader').SceneLoader;
+const SceneLoader = require('./sceneLoader').SceneLoader;
 
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
@@ -12,7 +12,7 @@ const SceneLoader =require('./sceneLoader').SceneLoader;
  * @author Alan Wu
  * @return {Zinc.Scene}
  */
-exports.Scene = function(containerIn, rendererIn) {
+exports.Scene = function (containerIn, rendererIn) {
   const container = containerIn;
   let zincGeometries = [];
   let zincGlyphsets = [];
@@ -20,6 +20,7 @@ exports.Scene = function(containerIn, rendererIn) {
   let zincLines = [];
   let videoHandler = undefined;
   let sceneLoader = new SceneLoader(this);
+  let minimap = undefined;
   const scene = new THREE.Scene();
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
@@ -38,21 +39,21 @@ exports.Scene = function(containerIn, rendererIn) {
   this.autoClearFlag = true;
 
   const getDrawingWidth = () => {
-	  if (container)
-		  if (typeof container.clientWidth !== "undefined")
-			  return container.clientWidth;
-		  else
-			  return container.width;
-	  return 0;
+    if (container)
+      if (typeof container.clientWidth !== "undefined")
+        return container.clientWidth;
+      else
+        return container.width;
+    return 0;
   }
-  
+
   const getDrawingHeight = () => {
-	  if (container)
-		  if (typeof container.clientHeight !== "undefined")
-			  return container.clientHeight;
-		  else
-			  return container.height;
-	  return 0;
+    if (container)
+      if (typeof container.clientHeight !== "undefined")
+        return container.clientHeight;
+      else
+        return container.height;
+    return 0;
   }
 
   /**
@@ -99,6 +100,9 @@ exports.Scene = function(containerIn, rendererIn) {
 
     zincCameraControls.setDirectionalLight(this.directionalLight);
     zincCameraControls.resetView();
+
+    minimap = new (require('./minimap').Minimap)(this);
+    console.log(minimap)
   };
 
   setupCamera();
@@ -109,7 +113,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * 
    * @param {Zinc.Viewport} viewData - Viewport data to be loaded. 
    */
-  this.loadView = ({nearPlane, farPlane, eyePosition, targetPosition, upVector}) => {
+  this.loadView = ({ nearPlane, farPlane, eyePosition, targetPosition, upVector }) => {
     const viewPort = new (require('./controls').Viewport)();
     viewPort.nearPlane = nearPlane;
     viewPort.farPlane = farPlane;
@@ -230,18 +234,18 @@ exports.Scene = function(containerIn, rendererIn) {
     }
   }
 
-   /**
-   * A function which iterates through the list of lines and call the callback
-   * function with the lines as the argument.
-   * @param {Function} callbackFunction - Callback function with the lines
-   * as an argument.
-   */
+  /**
+  * A function which iterates through the list of lines and call the callback
+  * function with the lines as the argument.
+  * @param {Function} callbackFunction - Callback function with the lines
+  * as an argument.
+  */
   this.forEachLine = callbackFunction => {
     for (let i = zincLines.length - 1; i >= 0; i--) {
       callbackFunction(zincLines[i]);
     }
   }
-  
+
   /** 
    * Find and return all geometries in this scene with the matching GroupName.
    * 
@@ -257,7 +261,7 @@ exports.Scene = function(containerIn, rendererIn) {
     }
     return geometriesArray;
   }
-  
+
   /** 
    * Find and return all pointsets in this scene with the matching GroupName.
    * 
@@ -268,7 +272,7 @@ exports.Scene = function(containerIn, rendererIn) {
     const pointsetsArray = [];
     for (let i = 0; i < zincPointsets.length; i++) {
       if (zincPointsets[i].groupName == GroupName) {
-    	  pointsetsArray.push(zincPointsets[i]);
+        pointsetsArray.push(zincPointsets[i]);
       }
     }
     return pointsetsArray;
@@ -288,7 +292,7 @@ exports.Scene = function(containerIn, rendererIn) {
     }
     return glyphsetsArray;
   }
-  
+
   /** 
    * Find and return all lines in this scene with the matching GroupName.
    * 
@@ -299,7 +303,7 @@ exports.Scene = function(containerIn, rendererIn) {
     const linesArray = [];
     for (let i = 0; i < zincLines.length; i++) {
       if (zincLines[i].groupName == GroupName) {
-    	  linesArray.push(zincLines[i]);
+        linesArray.push(zincLines[i]);
       }
     }
     return linesArray;
@@ -331,10 +335,10 @@ exports.Scene = function(containerIn, rendererIn) {
     point.project(this.camera);
     let width = getDrawingWidth();
     let height = getDrawingHeight();
-    var widthHalf = (width/2);
-    var heightHalf = (height/2);
-    point.x = ( point.x * widthHalf ) + widthHalf;
-    point.y = - ( point.y * heightHalf ) + heightHalf;
+    var widthHalf = (width / 2);
+    var heightHalf = (height / 2);
+    point.x = (point.x * widthHalf) + widthHalf;
+    point.y = - (point.y * heightHalf) + heightHalf;
     return point;
   }
 
@@ -354,11 +358,11 @@ exports.Scene = function(containerIn, rendererIn) {
   };
 
   this.addGlyphset = glyphset => {
-	  if (glyphset && glyphset.isGlyphset) {
-		  const group = glyphset.getGroup();
-		  scene.add(group);
-		  zincGlyphsets.push(glyphset) ;
-	  }  
+    if (glyphset && glyphset.isGlyphset) {
+      const group = glyphset.getGroup();
+      scene.add(group);
+      zincGlyphsets.push(glyphset);
+    }
   }
 
   this.addLines = lines => {
@@ -404,30 +408,30 @@ exports.Scene = function(containerIn, rendererIn) {
     sceneLoader.loadPointsetURL(url, timeEnabled, morphColour, groupName, finishCallback);
   }
 
-    /**
-   * Load lines into this scene object.
-   * 
-   * @param {String} metaurl - Provide informations such as transformations, colours 
-   * and others for each of the glyph in the glyphsset.
-   * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
-   * @param {Boolean} morphColour - Indicate if color morphing is enabled.
-   * @param {STRING} groupName - name to assign the pointset's groupname to.
-   * @param {Function} finishCallback - Callback function which will be called
-   * once the glyphset is succssfully load in.
-   */
+  /**
+ * Load lines into this scene object.
+ * 
+ * @param {String} metaurl - Provide informations such as transformations, colours 
+ * and others for each of the glyph in the glyphsset.
+ * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
+ * @param {Boolean} morphColour - Indicate if color morphing is enabled.
+ * @param {STRING} groupName - name to assign the pointset's groupname to.
+ * @param {Function} finishCallback - Callback function which will be called
+ * once the glyphset is succssfully load in.
+ */
   this.loadLinesURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
     sceneLoader.loadPointsetURL(url, timeEnabled, morphColour, groupName, finishCallback);
   }
 
-   /**
-   * Read a STL file into this scene, the geometry will be presented as
-   * {@link Zinc.Geometry}. 
-   * 
-   * @param {STRING} url - location to the STL file.
-   * @param {STRING} groupName - name to assign the geometry's groupname to.
-   * @param {Function} finishCallback - Callback function which will be called
-   * once the STL geometry is succssfully loaded.
-   */
+  /**
+  * Read a STL file into this scene, the geometry will be presented as
+  * {@link Zinc.Geometry}. 
+  * 
+  * @param {STRING} url - location to the STL file.
+  * @param {STRING} groupName - name to assign the geometry's groupname to.
+  * @param {Function} finishCallback - Callback function which will be called
+  * once the STL geometry is succssfully loaded.
+  */
   this.loadSTL = (url, groupName, finishCallback) => {
     sceneLoader.loadSTL(url, groupName, finishCallback);
   }
@@ -494,7 +498,7 @@ exports.Scene = function(containerIn, rendererIn) {
         zincGeometry.modelId = sceneLoader.nextAvailableInternalZincModelId();
       }
       scene.add(zincGeometry.morph);
-      zincGeometries.push(zincGeometry) ;
+      zincGeometries.push(zincGeometry);
     }
   }
 
@@ -505,8 +509,8 @@ exports.Scene = function(containerIn, rendererIn) {
     return newGeometry;
   };
 
-  
-  
+
+
   /**
    * Add a user provided {THREE.Geometry} into  the scene as zinc geometry.
    * 
@@ -591,14 +595,14 @@ exports.Scene = function(containerIn, rendererIn) {
       return zincGeometries[0].getCurrentTime();
     }
     if (zincPointsets[0] != undefined) {
-        return zincPointsets[0].getCurrentTime();
+      return zincPointsets[0].getCurrentTime();
     }
     if (zincGlyphsets[0] != undefined) {
-        return zincGlyphsets[0].getCurrentTime();
+      return zincGlyphsets[0].getCurrentTime();
     }
     if (zincLines[0] != undefined) {
       return zincLines[0].getCurrentTime();
-  }
+    }
     return 0;
   }
 
@@ -619,12 +623,12 @@ exports.Scene = function(containerIn, rendererIn) {
       zincGlyphset.setMorphTime(time);
     }
     for (let i = 0; i < zincPointsets.length; i++) {
-    	zincPointset = zincPointsets[i];
-    	zincPointset.setMorphTime(time);
-      }
+      zincPointset = zincPointsets[i];
+      zincPointset.setMorphTime(time);
+    }
     for (let i = 0; i < zincLines.length; i++) {
-        zincLine = zincLines[i];
-        zincLine.setMorphTime(time);
+      zincLine = zincLines[i];
+      zincLine.setMorphTime(time);
     }
   }
 
@@ -645,17 +649,17 @@ exports.Scene = function(containerIn, rendererIn) {
       }
     }
     for (let i = 0; i < zincPointsets.length; i++) {
-        if (zincPointsets[i].isTimeVarying()) {
-          return true;
-        }
+      if (zincPointsets[i].isTimeVarying()) {
+        return true;
+      }
     }
     for (let i = 0; i < zincLines.length; i++) {
       if (zincLines[i].isTimeVarying()) {
         return true;
       }
-    } 
+    }
     if (videoHandler && videoHandler.video && !videoHandler.video.error) {
-    	return true;
+      return true;
     }
     return false;
   }
@@ -689,64 +693,64 @@ exports.Scene = function(containerIn, rendererIn) {
    * @private
    */
   this.renderGeometries = (playRate, delta, playAnimation) => {
-	  // Let video dictates the progress if one is present
-	  if (videoHandler) {
-		  if (videoHandler.isReadyToPlay()) {
-			  if (playAnimation) {
-				  videoHandler.video.play();
-			  } else {
-				  videoHandler.video.pause();
-			  }
-			  var currentTime = videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000;
-			  var totalInput = zincGeometries.length + zincPointsets.length;
-			  if (totalInput == sceneLoader.num_inputs && allGlyphsetsReady()) {
-				  zincCameraControls.setTime(currentTime);
-				  zincCameraControls.update(0);
-				  for (let i = 0; i < zincGeometries.length; i++) {
-					  /* check if morphColour flag is set */
-					  zincGeometries[i].setMorphTime(currentTime);
-					  zincGeometries[i].render(0, playAnimation);
-				  }
-				  for (let i = 0; i < zincGlyphsets.length; i++) {
-					  zincGlyphsets[i].setMorphTime(currentTime);
-					  zincGlyphsets[i].render(0, playAnimation);
-				  }
-				  for (let i = 0; i < zincPointsets.length; i++) {
-					  zincPointsets[i].setMorphTime(currentTime);
-					  zincPointsets[i].render(0, playAnimation);
+    // Let video dictates the progress if one is present
+    if (videoHandler) {
+      if (videoHandler.isReadyToPlay()) {
+        if (playAnimation) {
+          videoHandler.video.play();
+        } else {
+          videoHandler.video.pause();
+        }
+        var currentTime = videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000;
+        var totalInput = zincGeometries.length + zincPointsets.length;
+        if (totalInput == sceneLoader.num_inputs && allGlyphsetsReady()) {
+          zincCameraControls.setTime(currentTime);
+          zincCameraControls.update(0);
+          for (let i = 0; i < zincGeometries.length; i++) {
+            /* check if morphColour flag is set */
+            zincGeometries[i].setMorphTime(currentTime);
+            zincGeometries[i].render(0, playAnimation);
+          }
+          for (let i = 0; i < zincGlyphsets.length; i++) {
+            zincGlyphsets[i].setMorphTime(currentTime);
+            zincGlyphsets[i].render(0, playAnimation);
+          }
+          for (let i = 0; i < zincPointsets.length; i++) {
+            zincPointsets[i].setMorphTime(currentTime);
+            zincPointsets[i].render(0, playAnimation);
           }
           for (let i = 0; i < zincLines.length; i++) {
-					  zincLines[i].setMorphTime(currentTime);
-					  zincLines[i].render(0, playAnimation);
-				  }
-			  } else {
-				  zincCameraControls.update(0);
-			  }
-			  //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000);
-		  } else {
-			  myPlayRate = 0;
-		  }
-	  } else {
-		  var totalInput = zincGeometries.length + zincPointsets.length + zincLines.length;
-		  if (totalInput == sceneLoader.num_inputs && allGlyphsetsReady()) {
-			  zincCameraControls.update(delta);
-			  for (let i = 0; i < zincGeometries.length; i++) {
-				  /* check if morphColour flag is set */
-				  zincGeometries[i].render(playRate * delta, playAnimation);;
-			  }
-			  for (let i = 0; i < zincGlyphsets.length; i++) {
-				  zincGlyphsets[i].render(playRate * delta, playAnimation);
-			  }
-			  for (let i = 0; i < zincPointsets.length; i++) {
-				  zincPointsets[i].render(playRate * delta, playAnimation);
+            zincLines[i].setMorphTime(currentTime);
+            zincLines[i].render(0, playAnimation);
+          }
+        } else {
+          zincCameraControls.update(0);
+        }
+        //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000);
+      } else {
+        myPlayRate = 0;
+      }
+    } else {
+      var totalInput = zincGeometries.length + zincPointsets.length + zincLines.length;
+      if (totalInput == sceneLoader.num_inputs && allGlyphsetsReady()) {
+        zincCameraControls.update(delta);
+        for (let i = 0; i < zincGeometries.length; i++) {
+          /* check if morphColour flag is set */
+          zincGeometries[i].render(playRate * delta, playAnimation);;
+        }
+        for (let i = 0; i < zincGlyphsets.length; i++) {
+          zincGlyphsets[i].render(playRate * delta, playAnimation);
+        }
+        for (let i = 0; i < zincPointsets.length; i++) {
+          zincPointsets[i].render(playRate * delta, playAnimation);
         }
         for (let i = 0; i < zincLines.length; i++) {
           zincLines[i].render(playRate * delta, playAnimation);
         }
-		  } else {
-			  zincCameraControls.update(0);
-		  }
-	  }
+      } else {
+        zincCameraControls.update(0);
+      }
+    }
   }
 
   /**
@@ -766,18 +770,44 @@ exports.Scene = function(containerIn, rendererIn) {
     scene.add(scenesGroup);
   }
 
+  const renderMinimap = (renderer, options) => {
+    if (options && options.minimap === true) {
+      renderer.setScissorTest(true);
+      const target = new THREE.Vector2();
+      const minimapScissor = options.minimapScissor;
+      renderer.getSize(target);
+      renderer.setScissor(
+        minimapScissor.x,
+        target.y - minimapScissor.height - minimapScissor.y,
+        minimapScissor.width,
+        minimapScissor.height);
+      renderer.setViewport(minimapScissor.x,
+        target.y - minimapScissor.height - minimapScissor.y,
+        minimapScissor.width,
+        minimapScissor.height);
+      renderer.clearDepth();
+      minimap.camera.position.copy(this.camera.position);
+      minimap.camera.up.copy(this.camera.up);
+      renderer.render(scene, minimap.camera);
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, target.x, target.y);
+    }
+  }
+
   /**
    * Render the scene.
    * @private
    */
-  this.render = renderer => {
+  this.render = (renderer, options) => {
     if (this.autoClearFlag)
       renderer.clear();
     if (stereoEffectFlag && stereoEffect) {
       stereoEffect.render(scene, this.camera);
     }
-    else
+    else {
       renderer.render(scene, this.camera);
+      renderMinimap(renderer, options);
+    }
   }
 
   /**
@@ -964,13 +994,13 @@ exports.Scene = function(containerIn, rendererIn) {
       }
     }
   }
-  
+
   /**
    * Remove a zincPointset from this scene if it presents. This will eventually
    * destroy the pointset and free up the memory.
    * @param {Zinc.Pointset} zincPointset - pointset to be removed from this scene.
    */
-  this.removeZincPointset= zincPointset => {
+  this.removeZincPointset = zincPointset => {
     for (let i = 0; i < zincPointsets.length; i++) {
       if (zincPointset === zincPointsets[i]) {
         scene.remove(zincPointset.morph);
@@ -981,11 +1011,11 @@ exports.Scene = function(containerIn, rendererIn) {
     }
   }
 
-    /**
-   * Remove a zincLine from this scene if it presents. This will eventually
-   * destroy the line and free up the memory.
-   * @param {Zinc.Line} zincLine - line to be removed from this scene.
-   */
+  /**
+ * Remove a zincLine from this scene if it presents. This will eventually
+ * destroy the line and free up the memory.
+ * @param {Zinc.Line} zincLine - line to be removed from this scene.
+ */
   this.removeZincLine = zincLine => {
     for (let i = 0; i < zincLines.length; i++) {
       if (zincLine === zincLines[i]) {
