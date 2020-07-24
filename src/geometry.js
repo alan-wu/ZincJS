@@ -45,7 +45,9 @@ exports.Geometry = function () {
 	// THREE.Mesh
 	this.morph = undefined;
 	this.clipAction = undefined;
-	this.isGeometry = true;
+  this.isGeometry = true;
+  this.marker = undefined;
+  let markerUpdateRequired = true;
 	/**
 	 * Total duration of the animation, this value interacts with the 
 	 * {@link Zinc.Renderer#playRate} to produce the actual duration of the
@@ -468,7 +470,25 @@ exports.Geometry = function () {
 						updateMorphColorAttribute(this.geometry, this.morph, clipAction);
 					}	
 				}
-			}	
-		}
+      }
+      if (this.marker) {
+        this.marker.disable();
+      }
+      markerUpdateRequired = true;  
+    }
+    else {
+      if (!this.marker) {
+        this.marker = new (require("./marker").Marker)();
+        this.morph.add(this.marker.sprite);
+        markerUpdateRequired = true;
+      }
+      if (markerUpdateRequired) {
+        markerUpdateRequired = false;
+        this.marker.enable();
+        let center = this.getBoundingBox().getCenter();
+        console.log(center);
+        this.marker.setPosition(center.x, center.y, center.z);
+      }
+    }
 	}
 }
