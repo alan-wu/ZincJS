@@ -6,11 +6,15 @@ texture.image = markerImage;
 texture.needsUpdate = true;
 
 //Marker - used to indicate there is a 
-exports.Marker = function() {
+exports.Marker = function(zincObject) {
   this.texture = texture;
   let spriteMaterial = undefined;
-  this.sprite = undefined;
-  let isEnable = true;
+  let sprite = undefined;
+  this.graphicsObject = new THREE.Group();
+  console.log(zincObject);
+  this.parent = zincObject;
+  this.isMarker = true;
+  let enabled = true;
 
 	let initialise = () => {
     spriteMaterial = new THREE.SpriteMaterial({
@@ -21,24 +25,48 @@ exports.Marker = function() {
       depthWrite: false,
       sizeAttenuation: false
     });
-    this.sprite = new THREE.Sprite(spriteMaterial);
-    this.sprite.position.set(0, 0, 0);
-    this.sprite.scale.set(0.01, 0.01, 1);
+    sprite = new (require("./three/Sprite").Sprite)(spriteMaterial);
+    this.graphicsObject.add(sprite);
+    this.graphicsObject.position.set(0, 0, 0);
+    sprite.scale.set(0.015, 0.02, 1);
+    sprite.userData = this;
+  }
+
+  this.updateDistanceBasedOpacity = camera => {
+    if (camera.target) {
+      const spriteDistance = camera.position.distanceTo(
+        this.graphicsObject.position);
+      const targetDistance = camera.position.distanceTo(
+        camera.target);
+      if (spriteDistance > targetDistance) {
+        sprite.material.opacity = 1.0;
+      } else {
+        sprite.material.opacity = 1.0;
+      }
+    }
   }
 
   this.setPosition = (x, y, z) => {
-    console.log(x, y, z);
-    this.sprite.position.set(x, y, z);
+    this.graphicsObject.position.set(x, y, z);
+  }
+
+  this.setSpriteSize = size => {
+    sprite.scale.set(0.015, 0.02, 1);
+    sprite.scale.multiplyScalar(size);
+  }
+
+  this.isEnabled = () => {
+    return enabled;
   }
 
   this.enable = () => {
-    isEnable = true;
-    this.sprite.visible = true;
+    enabled = true;
+    this.graphicsObject.visible = true;
   }
   
   this.disable = () => {
-    isEnable = false;
-    this.sprite.visible = false;
+    enabled = false;
+    this.graphicsObject.visible = false;
   }
 
 	//this should be handle by scene... check the sync at 

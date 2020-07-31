@@ -79,9 +79,9 @@ exports.Geometry = function () {
 		this.morphColour = localMorphColour;
 		this.modelId = modelId;
 		this.morph = mesh;
-        this.morph.userData = this;
-        if (this.timeEnabled)
-          this.setFrustumCulled(false);
+    this.morph.userData = this;
+    if (this.timeEnabled)
+      this.setFrustumCulled(false);
 	}
 
 	this.createMesh = (geometryIn, materialIn, options) => {
@@ -444,10 +444,42 @@ exports.Geometry = function () {
 		this.morph = undefined;
 		this.clipAction = undefined;
 		this.groupName = undefined;
-	}
+  }
+  
+  let updateMarker = (playAnimation, options) => {
+    if (playAnimation == true || 
+      (false == (options && options.displayMarkers)))
+		{
+      if (this.marker) {
+        this.marker.disable();
+      }
+      markerUpdateRequired = true;  
+    } else {
+      if (this.groupName) {
+        if (!this.marker) {
+          this.marker = new (require("./marker").Marker)(this);
+          markerUpdateRequired = true;
+        }
+        if (markerUpdateRequired) {
+          markerUpdateRequired = false;
+          this.marker.enable();
+          //Remove the marker to get the accurate box
+          this.morph.remove(this.marker.graphicsObject);
+          let center = new THREE.Vector3();
+          this.getBoundingBox().getCenter(center);
+          this.marker.setPosition(center.x, center.y, center.z);
+          this.morph.add(this.marker.graphicsObject);
+        }
+      }
+    }
+    if (this.marker && this.marker.isEnabled() && 
+      options && options.camera && options.displayMarkers) {
+      this.marker.updateDistanceBasedOpacity(options.camera.cameraObject);
+    }
+  }
 	
 	//Update the geometry and colours depending on the morph.
-	this.render = (delta, playAnimation) => {
+	this.render = (delta, playAnimation, options) => {
 		if (playAnimation == true) 
 		{
 			if ((this.clipAction) && (this.timeEnabled == 1)) {
@@ -471,24 +503,7 @@ exports.Geometry = function () {
 					}	
 				}
       }
-      if (this.marker) {
-        this.marker.disable();
-      }
-      markerUpdateRequired = true;  
     }
-    else {
-      if (!this.marker) {
-        this.marker = new (require("./marker").Marker)();
-        this.morph.add(this.marker.sprite);
-        markerUpdateRequired = true;
-      }
-      if (markerUpdateRequired) {
-        markerUpdateRequired = false;
-        this.marker.enable();
-        let center = this.getBoundingBox().getCenter();
-        console.log(center);
-        this.marker.setPosition(center.x, center.y, center.z);
-      }
-    }
+    updateMarker(playAnimation, options);
 	}
 }
