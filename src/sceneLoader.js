@@ -6,8 +6,7 @@ const OBJLoader = require('./OBJLoader').OBJLoader;
 
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
-  this.num_inputs = 0;
-  let startingId = 0;
+  this.toBeDownloaded = 0;
   this.progressMap = [];
   let errorDownload = false;
 
@@ -45,7 +44,7 @@ exports.SceneLoader = function (sceneIn) {
   }
 
   this.onError = xhr => {
-    this.num_inputs = this.num_inputs - 1;
+    this.toBeDownloaded = this.toBeDownloaded - 1;
     errorDownload = true;
   };
 
@@ -74,9 +73,8 @@ exports.SceneLoader = function (sceneIn) {
    */
   this.loadModelsURL = (urls, colours, opacities, timeEnabled, morphColour, finishCallback) => {
     const number = urls.length;
-    this.num_inputs += number;
+    this.toBeDownloaded += number;
     for (let i = 0; i < number; i++) {
-      const modelId = this.nextAvailableInternalZincModelId();
       const filename = urls[i];
       const loader = new JSONLoader();
       let colour = require('./zinc').defaultMaterialColor;
@@ -92,7 +90,7 @@ exports.SceneLoader = function (sceneIn) {
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
       loader.crossOrigin = "Anonymous";
-      loader.load(resolveURL(filename), meshloader(modelId, colour, opacity, localTimeEnabled, localMorphColour, undefined,
+      loader.load(resolveURL(filename), meshloader(colour, opacity, localTimeEnabled, localMorphColour, undefined,
         finishCallback), this.onProgress(i), this.onError);
     }
   }
@@ -125,12 +123,6 @@ exports.SceneLoader = function (sceneIn) {
     xmlhttp.send();
   }
 
-  //Get the next available unique identifier for Zinc.Geometry
-  this.nextAvailableInternalZincModelId = () => {
-    return startingId++;
-  };
-
-
   //Internal loader for a regular zinc geometry.
   const linesloader = (localTimeEnabled, localMorphColour, groupName, finishCallback) => {
     return (geometry, materials) => {
@@ -154,6 +146,7 @@ exports.SceneLoader = function (sceneIn) {
         newLines.setName(groupName);
         scene.addLines(newLines);
       }
+      --this.toBeDownloaded;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newLines);
     };
@@ -173,7 +166,7 @@ exports.SceneLoader = function (sceneIn) {
    */
   this.loadLinesURL = (url, timeEnabled, morphColour, groupName, finishCallback, isInline) => {
 	  let localTimeEnabled = 0;
-	  this.num_inputs += 1;
+	  this.toBeDownloaded += 1;
 	  if (timeEnabled != undefined)
 		  localTimeEnabled = timeEnabled ? true : false;
 	  let localMorphColour = 0;
@@ -236,6 +229,7 @@ exports.SceneLoader = function (sceneIn) {
         newPointset.setName(groupName);
         scene.addPointset(newPointset);
       }
+      --this.toBeDownloaded;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newPointset);
     };
@@ -252,13 +246,12 @@ exports.SceneLoader = function (sceneIn) {
    * once the STL geometry is succssfully loaded.
    */
   this.loadSTL = (url, groupName, finishCallback) => {
-    this.num_inputs += 1;
-    const modelId = this.nextAvailableInternalZincModelId();
+    this.toBeDownloaded += 1;
     const colour = require('./zinc').defaultMaterialColor;
     const opacity = require('./zinc').defaultOpacity;
     const loader = new STLLoader();
     loader.crossOrigin = "Anonymous";
-    loader.load(resolveURL(url), meshloader(modelId, colour, opacity, false,
+    loader.load(resolveURL(url), meshloader(colour, opacity, false,
       false, groupName, finishCallback));
   }
 
@@ -272,19 +265,17 @@ exports.SceneLoader = function (sceneIn) {
    * once the OBJ geometry is succssfully loaded.
    */
   this.loadOBJ = (url, groupName, finishCallback) => {
-    this.num_inputs += 1;
-    const modelId = this.nextAvailableInternalZincModelId();
+    this.toBeDownloaded += 1;
     const colour = require('./zinc').defaultMaterialColor;
     const opacity = require('./zinc').defaultOpacity;
     const loader = new OBJLoader();
     loader.crossOrigin = "Anonymous";
-    loader.load(resolveURL(url), meshloader(modelId, colour, opacity, false,
+    loader.load(resolveURL(url), meshloader(colour, opacity, false,
       false, groupName, finishCallback));
   }
 
   //Loader for the OBJ format, 
   const objloader = (
-    modelId,
     colour,
     opacity,
     localTimeEnabled,
@@ -293,10 +284,10 @@ exports.SceneLoader = function (sceneIn) {
     finishCallback
   ) => {
     return object => {
-      this.num_inputs++;
+      this.toBeDownloaded++;
       object.traverse(child => {
         if (child instanceof THREE.Mesh) {
-          const zincGeometry = addMeshToZincGeometry(child, modelId, localTimeEnabled, localMorphColour);
+          const zincGeometry = addMeshToZincGeometry(child, localTimeEnabled, localMorphColour);
           scene.addGeometry(zincGeometry);
           if (zincGeometry.morph)
             zincGeometry.morph.name = groupName;
@@ -322,8 +313,7 @@ exports.SceneLoader = function (sceneIn) {
    * once the geometry is succssfully loaded in.
    */
   const loadMetaModel = (url, timeEnabled, morphColour, groupName, fileFormat, finishCallback, isInline) => {
-    this.num_inputs += 1;
-    const modelId = this.nextAvailableInternalZincModelId();
+    this.toBeDownloaded += 1;
     const colour = require('./zinc').defaultMaterialColor;
     const opacity = require('./zinc').defaultOpacity;
     let localTimeEnabled = 0;
@@ -339,18 +329,18 @@ exports.SceneLoader = function (sceneIn) {
       } else if (fileFormat == "OBJ") {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
-        loader.load(url, objloader(modelId, colour, opacity, localTimeEnabled,
+        loader.load(url, objloader(colour, opacity, localTimeEnabled,
           localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
         return;
       }
     }
     if (isInline) {
       var object = loader.parse( url );
-			(meshloader(modelId, colour, opacity, localTimeEnabled,
+			(meshloader(colour, opacity, localTimeEnabled,
         localMorphColour, groupName, finishCallback))( object.geometry, object.materials );
     } else {
       loader.crossOrigin = "Anonymous";
-      loader.load(url, meshloader(modelId, colour, opacity, localTimeEnabled,
+      loader.load(url, meshloader(colour, opacity, localTimeEnabled,
         localMorphColour, groupName, finishCallback), this.onProgress(i), this.onError);
     }
   };
@@ -382,7 +372,7 @@ exports.SceneLoader = function (sceneIn) {
    */
   this.loadPointsetURL = (url, timeEnabled, morphColour, groupName, finishCallback, isInline) => {
     let localTimeEnabled = 0;
-    this.num_inputs += 1;
+    this.toBeDownloaded += 1;
     if (timeEnabled != undefined)
       localTimeEnabled = timeEnabled ? true : false;
     let localMorphColour = 0;
@@ -423,7 +413,6 @@ exports.SceneLoader = function (sceneIn) {
 
   //Internal loader for a regular zinc geometry.
   const meshloader = (
-    modelId,
     colour,
     opacity,
     localTimeEnabled,
@@ -436,7 +425,8 @@ exports.SceneLoader = function (sceneIn) {
       if (materials && materials[0]) {
         material = materials[0];
       }
-      const zincGeometry = scene.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, false, undefined, material, groupName);
+      const zincGeometry = scene.addZincGeometry(geometry, colour, opacity, localTimeEnabled, localMorphColour, undefined, material, groupName);
+      --this.toBeDownloaded;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
     };

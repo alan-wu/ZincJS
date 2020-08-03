@@ -490,29 +490,15 @@ exports.Scene = function(containerIn, rendererIn) {
 
   this.addGeometry = zincGeometry => {
     if (zincGeometry && zincGeometry.morph) {
-      if (zincGeometry.modelId === -1) {
-        sceneLoader.num_inputs++;
-        zincGeometry.modelId = sceneLoader.nextAvailableInternalZincModelId();
-      }
       scene.add(zincGeometry.morph);
       zincGeometries.push(zincGeometry) ;
     }
   }
-
-  //Internal function for creating a Zinc.Geometry object and add it into the scene for rendering.
-  const addMeshToZincGeometry = (mesh, modelId, localTimeEnabled, localMorphColour) => {
-    const newGeometry = new (require('./geometry').Geometry)();
-    newGeometry.setMesh(mesh, modelId, localTimeEnabled, localMorphColour);
-    return newGeometry;
-  };
-
-  
   
   /**
    * Add a user provided {THREE.Geometry} into  the scene as zinc geometry.
    * 
    * @param {Three.Geometry} geometry - The threejs geometry to be added as {@link Zinc.Geometry}.
-   * @param {Number} modelId - The numeric ID to be given to the newly created geometry.
    * @param {THREE.Color} color - Colour to be assigned to this geometry, overrided if materialIn is provided.
    * @param {Number} opacity - Opacity to be set for this geometry, overrided if materialIn is provided.
    * @param {Boolean} localTimeEnabled - Set this to true if morph geometry is present, overrided if materialIn is provided.
@@ -525,18 +511,15 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.addZincGeometry = (
     geometryIn,
-    modelId,
     colour,
     opacity,
     localTimeEnabled,
     localMorphColour,
-    external,
     finishCallback,
     materialIn,
     groupName
   ) => {
     let options = {};
-    options.modelId = modelId;
     options.colour = colour;
     options.opacity = opacity;
     options.localTimeEnabled = localTimeEnabled;
@@ -546,10 +529,6 @@ exports.Scene = function(containerIn, rendererIn) {
     if (newGeometry.morph) {
       newGeometry.setName(groupName);
       this.addGeometry(newGeometry);
-      if (external == undefined)
-        external = true
-      if (external)
-        sceneLoader.num_inputs++;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGeometry);
       if (!videoHandler && newGeometry.videoHandler)
@@ -661,20 +640,6 @@ exports.Scene = function(containerIn, rendererIn) {
     return false;
   }
 
-  /**
-   * Get {Zinc.Geoemtry} in this scene by its id.
-   * @return {Zinc.Geometry}
-   */
-  this.getZincGeometryByID = id => {
-    for (let i = 0; i < zincGeometries.length; i++) {
-      if (zincGeometries[i].modelId == id) {
-        return zincGeometries[i];
-      }
-    }
-
-    return null;
-  }
-
   // Used to check if all glyphsets are ready.
   const allGlyphsetsReady = () => {
     for (let i = 0; i < zincGlyphsets.length; i++) {
@@ -701,8 +666,7 @@ exports.Scene = function(containerIn, rendererIn) {
 				  videoHandler.video.pause();
 			  }
 			  var currentTime = videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000;
-			  var totalInput = zincGeometries.length + zincPointsets.length;
-			  if (totalInput == sceneLoader.num_inputs && allGlyphsetsReady()) {
+			  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
 				  zincCameraControls.setTime(currentTime);
 				  zincCameraControls.update(0);
 				  for (let i = 0; i < zincGeometries.length; i++) {
@@ -730,8 +694,7 @@ exports.Scene = function(containerIn, rendererIn) {
 			  myPlayRate = 0;
 		  }
 	  } else {
-      var totalInput = zincGeometries.length + zincPointsets.length + zincLines.length;
-		  if (totalInput == sceneLoader.num_inputs && allGlyphsetsReady()) {
+		  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
         zincCameraControls.update(delta);
 			  for (let i = 0; i < zincGeometries.length; i++) {
 				  /* check if morphColour flag is set */
@@ -1046,6 +1009,6 @@ exports.Scene = function(containerIn, rendererIn) {
       zincLines[i].dispose();
     }
     zincLines = [];
-    sceneLoader.num_inputs = 0;
+    sceneLoader.toBeDwonloaded = 0;
   }
 }

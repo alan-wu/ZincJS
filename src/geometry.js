@@ -19,12 +19,11 @@ function absNumericalSort( a, b ) {
 const Geometry = function () {
   (require('./primitives/zincObject').ZincObject).call(this);
 	// THREE.Geometry or THREE.BufferGeometry
-	this.modelId = -1;
 	this.videoHandler = undefined;
   this.isGeometry = true;
 
 
-	this.setMesh = (mesh, modelId, localTimeEnabled, localMorphColour) => {
+	this.setMesh = (mesh, localTimeEnabled, localMorphColour) => {
 		this.mixer = new THREE.AnimationMixer(mesh);
 		this.geometry = mesh.geometry;
 		this.clipAction = undefined;
@@ -40,7 +39,6 @@ const Geometry = function () {
 		}
 		this.timeEnabled = localTimeEnabled;
 		this.morphColour = localMorphColour;
-		this.modelId = modelId;
 		this.morph = mesh;
     this.morph.userData = this;
     if (this.timeEnabled)
@@ -115,8 +113,7 @@ const Geometry = function () {
 		}
 		let mesh = undefined;
 		mesh = new THREE.Mesh(geometry, material); 
-		this.setMesh(mesh, options.modelId, options.localTimeEnabled,
-			options.localMorphColour);
+		this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
 	}
 	
 	this.calculateUVs = () => {
