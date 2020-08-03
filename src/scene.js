@@ -36,6 +36,7 @@ exports.Scene = function(containerIn, rendererIn) {
   let stereoEffectFlag = false;
   let stereoEffect = undefined;
   this.autoClearFlag = true;
+  this.displayMarkers = false;
 
   const getDrawingWidth = () => {
 	  if (container)
@@ -677,8 +678,7 @@ exports.Scene = function(containerIn, rendererIn) {
   // Used to check if all glyphsets are ready.
   const allGlyphsetsReady = () => {
     for (let i = 0; i < zincGlyphsets.length; i++) {
-      zincGlyphset = zincGlyphsets[i];
-      if (zincGlyphset.ready == false)
+      if (zincGlyphsets[i].ready == false)
         return false;
     }
     return true;
@@ -689,7 +689,10 @@ exports.Scene = function(containerIn, rendererIn) {
    * @private
    */
   this.renderGeometries = (playRate, delta, playAnimation) => {
-	  // Let video dictates the progress if one is present
+    // Let video dictates the progress if one is present
+    let options = {};
+    options.camera = zincCameraControls;
+    options.displayMarkers =  this.displayMarkers;
 	  if (videoHandler) {
 		  if (videoHandler.isReadyToPlay()) {
 			  if (playAnimation) {
@@ -727,12 +730,12 @@ exports.Scene = function(containerIn, rendererIn) {
 			  myPlayRate = 0;
 		  }
 	  } else {
-		  var totalInput = zincGeometries.length + zincPointsets.length + zincLines.length;
+      var totalInput = zincGeometries.length + zincPointsets.length + zincLines.length;
 		  if (totalInput == sceneLoader.num_inputs && allGlyphsetsReady()) {
-			  zincCameraControls.update(delta);
+        zincCameraControls.update(delta);
 			  for (let i = 0; i < zincGeometries.length; i++) {
 				  /* check if morphColour flag is set */
-				  zincGeometries[i].render(playRate * delta, playAnimation);;
+				  zincGeometries[i].render(playRate * delta, playAnimation, options);
 			  }
 			  for (let i = 0; i < zincGlyphsets.length; i++) {
 				  zincGlyphsets[i].render(playRate * delta, playAnimation);
@@ -997,6 +1000,26 @@ exports.Scene = function(containerIn, rendererIn) {
     }
   }
 
+    /**
+   * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
+   * This does not remove obejcts that are added using the addObject APIs.
+
+   */
+  this.getPickableThreeJSObjects = () => {
+    let returnedObjects = [];
+    if (this.displayMarkers) {
+      for (let i = zincGeometries.length - 1; i >= 0; i--) {
+        let marker = zincGeometries[i].marker;
+        if (marker && marker.isEnabled()) {
+          returnedObjects.push(marker.graphicsObject);
+        }
+      }
+      return returnedObjects;
+    } else {
+      return this.scene.children;
+    }
+  }
+
   /**
    * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
    * This does not remove obejcts that are added using the addObject APIs.
@@ -1023,5 +1046,6 @@ exports.Scene = function(containerIn, rendererIn) {
       zincLines[i].dispose();
     }
     zincLines = [];
+    sceneLoader.num_inputs = 0;
   }
 }
