@@ -31,7 +31,6 @@ const GlyphsetCSG = function (hostIn) {
 	  return glyph => {
 		  const mesh = glyph.getMesh();
 		  const label = glyph.getLabel();
-		  const colour = glyph.getColor();
 		  if (mesh) {
 			  const csg = new ThreeBSP(mesh.geometry.clone().applyMatrix(mesh.matrix));
 			  const store = [];

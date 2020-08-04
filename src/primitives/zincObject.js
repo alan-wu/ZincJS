@@ -206,6 +206,17 @@ ZincObject.prototype.setVertexColors = function(vertexColors) {
   this.morph.material.vertexColors = vertexColors;
   this.geometry.colorsNeedUpdate = true;
 }
+
+/**
+ * Set the colour of the geometry.
+ * 
+ * @param {THREE.Color} colour - Colour to be set for this geometry.
+ */
+ZincObject.prototype.getColour = function(colour) {
+  if (this.morph && this.morph.material)
+    return this.morph.material.color;
+	return undefined;
+}
   
 /**
  * Set the colour of the geometry.

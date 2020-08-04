@@ -11,7 +11,8 @@ const JSONLoader = require('./loader').JSONLoader;
  * @author Alan Wu
  * @return {Zinc.Glyphset}
  */
-exports.Glyphset = function()  {
+const Glyphset = function()  {
+  (require('./primitives/zincObject').ZincObject).call(this);
 	const glyphList = [];
 	let axis1s = undefined;
 	let axis2s = undefined;
@@ -26,15 +27,11 @@ exports.Glyphset = function()  {
 	let offset = [0, 0, 0];
 	let scaleFactors = [ 0, 0, 0 ];
 	let repeat_mode = "NONE";
-	this.duration = 3000;
-	let inbuildTime = 0;
 	this.ready = false;
 	const group = new THREE.Group();
 	let morphColours = false;
 	let morphVertices = false;
-	this.groupName = undefined;
 	this.isGlyphset = true;
-	this.userData = [];
 	
 	/**
 	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
@@ -334,7 +331,7 @@ exports.Glyphset = function()  {
 		let current_axis3s = [];
 		let current_scales = [];
 		let current_colors = [];
-		const current_time = inbuildTime/this.duration * (numberOfTimeSteps - 1);
+		const current_time = this.inbuildTime/this.duration * (numberOfTimeSteps - 1);
 		const bottom_frame =  Math.floor(current_time);
 		const proportion = 1 - (current_time - bottom_frame);
 		const top_frame =  Math.ceil(current_time);
@@ -509,11 +506,11 @@ exports.Glyphset = function()  {
 	 */
 	this.setMorphTime = time => {
 		if (time > this.duration)
-			inbuildTime = this.duration;
+			this.inbuildTime = this.duration;
 		else if (0 > time)
-			inbuildTime = 0;
+			this.inbuildTime = 0;
 		else
-			inbuildTime = time;
+			this.inbuildTime = time;
 		if (morphColours || morphVertices) {
 			updateMorphGlyphsets();
 		}
@@ -531,7 +528,7 @@ exports.Glyphset = function()  {
   }
   
 	this.getCurrentTime = () => {
-		return inbuildTime;
+		return this.inbuildTime;
 	}
 	
 	
@@ -556,13 +553,16 @@ exports.Glyphset = function()  {
 	this.render = (delta, playAnimation) => {
 		if (playAnimation == true) 
 		{
-			let targetTime = inbuildTime + delta;
+			let targetTime = this.inbuildTime + delta;
 			if (targetTime > this.duration)
 				targetTime = targetTime - this.duration
-			inbuildTime = targetTime;
+			this.inbuildTime = targetTime;
 			if (morphColours || morphVertices) {
 				updateMorphGlyphsets();
 			}
 		}
 	}
 }
+
+Glyphset.prototype = Object.create((require('./primitives/zincObject').ZincObject).prototype);
+exports.Glyphset = Glyphset;
