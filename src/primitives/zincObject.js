@@ -27,6 +27,46 @@ const ZincObject = function() {
   this.markerUpdateRequired = true;
 }
 
+ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
+  let geometry = undefined;
+  if (geometryIn instanceof THREE.Geometry) {
+    if (options.localTimeEnabled && (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
+      geometryIn.computeMorphNormals();
+    geometry = new THREE.BufferGeometry().fromGeometry(geometryIn);
+    if (options.localMorphColour)
+      require("../utilities").copyMorphColorsToBufferGeometry(geometryIn, geometry);
+  } else if (geometryIn instanceof THREE.BufferGeometry) {
+    geometry = new THREE.BufferGeometry();
+    geometry.copy(geometryIn);
+  }
+  geometry.colorsNeedUpdate = true;
+  if (geometryIn._video)
+    geometry._video = geometryIn._video;
+  return geometry;
+}
+
+ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour) {
+  this.mixer = new THREE.AnimationMixer(mesh);
+  this.geometry = mesh.geometry;
+  this.clipAction = undefined;
+  if (this.geometry.morphAttributes.position) {
+    let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
+      this.geometry.morphAttributes.position, 10, true);
+    if (animationClip && animationClip[0] != undefined) {
+      this.clipAction = this.mixer.clipAction(animationClip[0]).setDuration(this.duration);
+      this.clipAction.loop = THREE.loopOnce;
+      this.clipAction.clampWhenFinished = true;
+      this.clipAction.play();
+    }
+  }
+  this.timeEnabled = localTimeEnabled;
+  this.morphColour = localMorphColour;
+  this.morph = mesh;
+  this.morph.userData = this;
+  if (this.timeEnabled)
+    this.setFrustumCulled(false);
+}
+
 ZincObject.prototype.setName = function(groupNameIn) {
   this.groupName = groupNameIn;
   if (this.morph) {

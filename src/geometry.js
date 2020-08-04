@@ -22,46 +22,11 @@ const Geometry = function () {
 	this.videoHandler = undefined;
   this.isGeometry = true;
 
-
-	this.setMesh = (mesh, localTimeEnabled, localMorphColour) => {
-		this.mixer = new THREE.AnimationMixer(mesh);
-		this.geometry = mesh.geometry;
-		this.clipAction = undefined;
-		if (this.geometry.morphAttributes.position) {
-		  let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
-				this.geometry.morphAttributes.position, 10, true);
-		  if (animationClip && animationClip[0] != undefined) {
-			this.clipAction = this.mixer.clipAction(animationClip[0]).setDuration(this.duration);
-			this.clipAction.loop = THREE.loopOnce;
-			this.clipAction.clampWhenFinished = true;
-			this.clipAction.play();
-		  }
-		}
-		this.timeEnabled = localTimeEnabled;
-		this.morphColour = localMorphColour;
-		this.morph = mesh;
-    this.morph.userData = this;
-    if (this.timeEnabled)
-      this.setFrustumCulled(false);
-	}
-
 	this.createMesh = (geometryIn, materialIn, options) => {
 		if (this.geometry && this.morph && (geometryIn != undefined))
 			return;
 		// First copy the geometry
-		let geometry = undefined;
-		if (geometryIn instanceof THREE.Geometry) {
-			if (options.localTimeEnabled && (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
-				geometryIn.computeMorphNormals();
-			geometry = new THREE.BufferGeometry().fromGeometry(geometryIn);
-			if (options.localMorphColour)
-				require("./utilities").copyMorphColorsToBufferGeometry(geometryIn, geometry);
-		} else if (geometryIn instanceof THREE.BufferGeometry) {
-			geometry = new THREE.BufferGeometry();
-			geometry.copy(geometryIn);
-		}
-		if (geometryIn._video)
-			geometry._video = geometryIn._video;
+		let geometry = this.toBufferGeometry(geometryIn, options);
 
 		let isTransparent = false;
 		if (1.0 > options.opacity)
@@ -111,8 +76,7 @@ const Geometry = function () {
 			});
 			this.videoHandler = geometry._video;
 		}
-		let mesh = undefined;
-		mesh = new THREE.Mesh(geometry, material); 
+		let mesh = new THREE.Mesh(geometry, material); 
 		this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
 	}
 	
