@@ -12,16 +12,15 @@ const THREE = require('three');
  * @author Alan Wu
  * @return {Zinc.Glyph}
  */
-exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
+const Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
+  (require('./zincObject').ZincObject).call(this);
 	let material = undefined;
 	if (materialIn) {
 		material = materialIn.clone();
 		material.vertexColors = THREE.FaceColors;
 	}
 	const parent = glyphsetIn;
-	let mesh = undefined;
 	this.id = idIn;
-	this.userData = [];
 	let label = undefined;
 	let labelString = undefined;
 	const group = new THREE.Group();
@@ -29,9 +28,9 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	
 	this.fromMesh = meshIn => {
 		if (meshIn && meshIn.isMesh) {
-			mesh = meshIn.clone();
-			mesh.userData = this;
-			group.add(mesh);
+			this.morph = meshIn.clone();
+			this.morph.userData = this;
+			group.add(this.morph);
 			return true;
 		} 
 		return false;
@@ -48,8 +47,8 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	this.setLabel = text => {
 		if (text && (typeof text === 'string' || text instanceof String)) {
 			labelString = text;
-			if (mesh)
-				mesh.name = text;
+			if (this.morph)
+      this.morph.name = text;
 		}
 		if (label)
 			this.showLabel();
@@ -72,7 +71,7 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	
 	/**
 	 * Get the group containing the label and mesh.
-	 * @return {THREE.Mesh}
+	 * @return {THREE.Group}
 	 */
 	this.getGroup = () => {
 		return group;
@@ -91,50 +90,8 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * @return {THREE.Mesh}
 	 */
 	this.getMesh = () => {
-		return mesh;
-	}
-
-	this.setFrustumCulled = flag => {
-		if (mesh)
-			mesh.frustumCulled = flag;
-	}
-	
-	/**
-	 * Get the bounding box of this glyph.
-	 * @return {THREE.Box3}
-	 */
-	this.getBoundingBox = () => {
-		if (mesh)
-			return new THREE.Box3().setFromObject(mesh);
-		return undefined;
-	}
-	
-	/**
-	 * get the Colour of this glyph.
-	 * return {THREE.Color}
-	 */
-	this.getColor = colorIn => {
-		if (mesh && mesh.material)
-			return mesh.material;
-		return undefined;
-	}
-	
-	/**
-	 * Set the Colour of this glyph.
-	 * @param {THREE.Color} colorIn - Colour to be set of this mesh.
-	 */
-	this.setColor = colorIn => {
-		mesh.material.color = colorIn;
-		mesh.geometry.colorsNeedUpdate = true;
-	}
-
-	this.getColourHex = () => {
-		return mesh.material.color.getHexString();
-	}
-	
-	this.setColourHex = hex => {
-		mesh.material.color.setHex(hex);
-	}
+		return this.morph;
+  }
 
 	/**
 	 * Set the transformation of this glyph.
@@ -148,23 +105,23 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * transformation.
 	 */
 	this.setTransformation = (position, axis1, axis2, axis3) => {
-		mesh.matrix.elements[0] = axis1[0];
-		mesh.matrix.elements[1] = axis1[1];
-		mesh.matrix.elements[2] = axis1[2];
-		mesh.matrix.elements[3] = 0.0;
-		mesh.matrix.elements[4] = axis2[0];
-		mesh.matrix.elements[5] = axis2[1];
-		mesh.matrix.elements[6] = axis2[2];
-		mesh.matrix.elements[7] = 0.0;
-		mesh.matrix.elements[8] = axis3[0];
-		mesh.matrix.elements[9] = axis3[1];
-		mesh.matrix.elements[10] = axis3[2];
-		mesh.matrix.elements[11] = 0.0;
-		mesh.matrix.elements[12] = position[0];
-		mesh.matrix.elements[13] = position[1];
-		mesh.matrix.elements[14] = position[2];
-		mesh.matrix.elements[15] = 1.0;
-		mesh.matrixAutoUpdate = false;
+		this.morph.matrix.elements[0] = axis1[0];
+		this.morph.matrix.elements[1] = axis1[1];
+		this.morph.matrix.elements[2] = axis1[2];
+		this.morph.matrix.elements[3] = 0.0;
+		this.morph.matrix.elements[4] = axis2[0];
+		this.morph.matrix.elements[5] = axis2[1];
+		this.morph.matrix.elements[6] = axis2[2];
+		this.morph.matrix.elements[7] = 0.0;
+		this.morph.matrix.elements[8] = axis3[0];
+		this.morph.matrix.elements[9] = axis3[1];
+		this.morph.matrix.elements[10] = axis3[2];
+		this.morph.matrix.elements[11] = 0.0;
+		this.morph.matrix.elements[12] = position[0];
+		this.morph.matrix.elements[13] = position[1];
+		this.morph.matrix.elements[14] = position[2];
+		this.morph.matrix.elements[15] = 1.0;
+		this.morph.matrixAutoUpdate = false;
 		if (label)
 		  label.setPosition(position[0],  position[1], position[2]);
 	}
@@ -175,6 +132,9 @@ exports.Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	this.dispose = () => {
 	  if (this.material)
 	    this.material.dispose();
-		mesh = undefined;
+		this.morph = undefined;
 	}
 }
+
+Glyph.prototype = Object.create((require('./zincObject').ZincObject).prototype);
+exports.Glyph = Glyph;
