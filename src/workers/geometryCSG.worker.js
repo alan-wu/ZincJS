@@ -1,4 +1,4 @@
-const Geometry = require('../geometry').Geometry;
+const Geometry = require('../primitives/geometry').Geometry;
 const THREE = require('three');
 const JSONLoader = THREE.BufferGeometryLoader;
 

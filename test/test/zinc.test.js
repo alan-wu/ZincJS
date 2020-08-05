@@ -202,9 +202,8 @@ function checkControls(scene) {
 function checkGeometry(scene) {
   describe('Geometry()', function(){
     var geometry = undefined;
-    var id = 4001;
     before('New Zinc Geometry', function() {
-      geometry = scene.addZincGeometry(testBoxGeometry, id, 0x00ff00, 1.0, false, false);
+      geometry = scene.addZincGeometry(testBoxGeometry, 0x00ff00, 1.0, false, false);
       geometry.groupName = "TestGeometry";
       assert.isObject(geometry, 'ZincGeometry has been created');
       assert.equal(geometry.groupName, "TestGeometry", 'ZincGeometry group name has been set');
@@ -222,9 +221,6 @@ function checkGeometry(scene) {
       it('morphColour', function(){
         assert.isFalse(geometry.morphColour, 'morphColour is an object');
       });
-      it('modelId', function(){
-        assert.equal(geometry.modelId, id, 'modelId is correct');
-      });
       it('morph', function(){
         assert.isObject(geometry.morph, 'morph is an object');
       });
@@ -236,6 +232,12 @@ function checkGeometry(scene) {
       });
     });
     describe('Methods()', function(){
+      it('getBoundingBox', function() {
+        var boundingBox = geometry.getBoundingBox();
+        assert.isObject(boundingBox, 'boundingBox is successfully called');
+        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
+        assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
+      });
       it('setVisibility', function() {
         assert.isUndefined(geometry.setVisibility(false), 'setVisibility is successfully called');
         assert.isFalse(geometry.morph.visible, 'visibility is false');
@@ -263,12 +265,6 @@ function checkGeometry(scene) {
       it('setVertexColour', function() {
         assert.isUndefined(geometry.setVertexColors(THREE.NoColors), 'setVertexColour is successfully called');
         assert.equal(geometry.morph.material.vertexColors , THREE.NoColors, 'colour is correct');
-      });
-      it('getBoundingBox', function() {
-        var boundingBox = geometry.getBoundingBox();
-        assert.isObject(boundingBox, 'boundingBox is successfully called');
-        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
-        assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
       });
       it('setMaterial', function() {
         var material = new THREE.MeshBasicMaterial( {
@@ -449,10 +445,9 @@ function checkScene(renderer) {
     });
     describe('Methods()', function(){
       var testGeometry = undefined;
-      var id = 3001;
       this.timeout(5000); 
       before('addZincGeometry', function() {
-        testGeometry = scene.addZincGeometry(testBoxGeometry, id, 0x00ff00, 1.0, false, false);
+        testGeometry = scene.addZincGeometry(testBoxGeometry, 0x00ff00, 1.0, false, false);
         testGeometry.groupName = "TestGeometry";
         assert.isObject(testGeometry, 'ZincGeometry has been created');
         assert.equal(testGeometry.groupName, "TestGeometry", 'ZincGeometry group name has been set');
@@ -537,9 +532,6 @@ function checkScene(renderer) {
       it('setMorphsTime', function(){
         assert.isUndefined(scene.setMorphsTime(1000.0), 'setMorphsTime is successfully called');
       });
-      it('getZincGeometryByID', function(){
-        assert.equal(scene.getZincGeometryByID(id), testGeometry, 'getZincGeometryByID returns the correct object');
-      });
       it('getZincCameraControls', function() {
         assert.isObject(scene.getZincCameraControls(), 'getZincCameraControls returns the correct object');
       });
@@ -572,9 +564,6 @@ function checkScene(renderer) {
       });
       it('removeZincGeometry', function(){
         assert.isUndefined(scene.removeZincGeometry(testGeometry), 'removeZincGeometry is successfully called');
-      });
-      it('getZincGeometryByID', function(){
-        assert.isNull(scene.getZincGeometryByID(id), 'getZincGeometryByID returns the correct object');
       });
       if ('getNamedObjectsScreenXY', function() {
         assert.isObject(scene.getNamedObjectsScreenXY("TestGeometry"), 

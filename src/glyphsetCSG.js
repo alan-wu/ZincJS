@@ -1,6 +1,6 @@
 const THREE = require('three');
 const ThreeBSP = require('./three-js-csg')(THREE);
-const Glyphset = require('./glyphset').Glyphset;
+const Glyphset = require('./primitives/glyphset').Glyphset;
 
 /**
  * Provides an object which takes in a glyphset, convert it into a CSG and further
@@ -31,7 +31,6 @@ const GlyphsetCSG = function (hostIn) {
 	  return glyph => {
 		  const mesh = glyph.getMesh();
 		  const label = glyph.getLabel();
-		  const colour = glyph.getColor();
 		  if (mesh) {
 			  const csg = new ThreeBSP(mesh.geometry.clone().applyMatrix(mesh.matrix));
 			  const store = [];
@@ -58,7 +57,7 @@ const GlyphsetCSG = function (hostIn) {
   this.intersect = guestGeometry => {
 	  const guestCSG = prepareCSG(guestGeometry);
 	  if ((hostCSGs.length > 0) && guestCSG) {
-		const glyphset = new (require('./glyphset').Glyphset)();
+		const glyphset = new (require('./primitives/glyphset').Glyphset)();
 		for (let i = 0; i < hostCSGs.length; i++) {
 			const hostCSG = hostCSGs[i];
 		    const intersect = hostCSG.csg.intersect(guestCSG);

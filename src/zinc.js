@@ -8,15 +8,15 @@ require("url-polyfill");
  */
 
 const Zinc = function() {
-  this.Revision = 29;
+  this.Revision = 34;
   this.defaultMaterialColor = 0xFFFFFF;
   this.defaultOpacity = 1.0;
   this.modelPrefix = undefined;
-  this.Geometry = require('./geometry').Geometry;
-  this.Glyph = require('./glyph').Glyph;
-  this.Glyphset = require('./glyphset').Glyphset;
-  this.Pointset = require('./pointset').Pointset;
-  this.Lines = require('./lines').Lines;
+  this.Geometry = require('./primitives/geometry').Geometry;
+  this.Glyph = require('./primitives/glyph').Glyph;
+  this.Glyphset = require('./primitives/glyphset').Glyphset;
+  this.Pointset = require('./primitives/pointset').Pointset;
+  this.Lines = require('./primitives/lines').Lines;
   this.Renderer = require('./renderer').Renderer;
   this.Scene = require('./scene').Scene;
   this.GeometryCSG = require('./geometryCSG').GeometryCSG;
