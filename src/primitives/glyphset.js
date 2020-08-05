@@ -1,5 +1,5 @@
 const THREE = require('three');
-const JSONLoader = require('./loader').JSONLoader;
+const JSONLoader = require('../loader').JSONLoader;
 
 /**
  * This is a container of {@link Zinc.Glyph} and their graphical properties 
@@ -12,7 +12,7 @@ const JSONLoader = require('./loader').JSONLoader;
  * @return {Zinc.Glyphset}
  */
 const Glyphset = function()  {
-  (require('./primitives/zincObject').ZincObject).call(this);
+  (require('./zincObject').ZincObject).call(this);
 	const glyphList = [];
 	let axis1s = undefined;
 	let axis2s = undefined;
@@ -564,5 +564,5 @@ const Glyphset = function()  {
 	}
 }
 
-Glyphset.prototype = Object.create((require('./primitives/zincObject').ZincObject).prototype);
+Glyphset.prototype = Object.create((require('./zincObject').ZincObject).prototype);
 exports.Glyphset = Glyphset;

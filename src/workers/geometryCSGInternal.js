@@ -1,6 +1,6 @@
 const THREE = require('three');
 const ThreeBSP = require('../three-js-csg')(THREE);
-const Geometry = require('../geometry').Geometry;
+const Geometry = require('../primitives/geometry').Geometry;
 const GeometryCSG = require('../geometryCSG').GeometryCSG;
 
 const GeometryCSGInternal = function (hostIn) {

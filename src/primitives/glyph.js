@@ -13,7 +13,7 @@ const THREE = require('three');
  * @return {Zinc.Glyph}
  */
 const Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
-  (require('./primitives/zincObject').ZincObject).call(this);
+  (require('./zincObject').ZincObject).call(this);
 	let material = undefined;
 	if (materialIn) {
 		material = materialIn.clone();
@@ -136,5 +136,5 @@ const Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	}
 }
 
-Glyph.prototype = Object.create((require('./primitives/zincObject').ZincObject).prototype);
+Glyph.prototype = Object.create((require('./zincObject').ZincObject).prototype);
 exports.Glyph = Glyph;

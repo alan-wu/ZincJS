@@ -9,13 +9,13 @@ const THREE = require('three');
  * @return {Zinc.Lines}
  */
 const Lines = function () {
-  (require('./primitives/zincObject').ZincObject).call(this);
+  (require('./zincObject').ZincObject).call(this);
 	this.isLines = true;
 
 	this.createLineSegment = (geometryIn, materialIn, options) => {
 		if (geometryIn && materialIn) {
 			let geometry = this.toBufferGeometry(geometryIn, options);
-			let line = new (require("./line/LineSegments").LineSegments)(geometry, materialIn);
+			let line = new (require("../three/line/LineSegments").LineSegments)(geometry, materialIn);
 			this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
 		}		
 	}
@@ -29,5 +29,5 @@ const Lines = function () {
 
 }
 
-Lines.prototype = Object.create((require('./primitives/zincObject').ZincObject).prototype);
+Lines.prototype = Object.create((require('./zincObject').ZincObject).prototype);
 exports.Lines = Lines;

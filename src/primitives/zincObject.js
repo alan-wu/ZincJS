@@ -309,7 +309,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
   } else {
     if (this.groupName) {
       if (!this.marker) {
-        this.marker = new (require("../marker").Marker)(this);
+        this.marker = new (require("./marker").Marker)(this);
         this.markerUpdateRequired = true;
       }
       if (this.markerUpdateRequired) {

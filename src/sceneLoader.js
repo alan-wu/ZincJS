@@ -126,7 +126,7 @@ exports.SceneLoader = function (sceneIn) {
   //Internal loader for a regular zinc geometry.
   const linesloader = (localTimeEnabled, localMorphColour, groupName, finishCallback) => {
     return (geometry, materials) => {
-      const newLines = new (require('./lines').Lines)();
+      const newLines = new (require('./primitives/lines').Lines)();
       let material = undefined;
       if (materials && materials[0]) {
         material = new THREE.LineBasicMaterial({color:materials[0].color.clone()});
@@ -184,7 +184,7 @@ exports.SceneLoader = function (sceneIn) {
   }
 
   const loadGlyphset = (glyphsetData, glyphurl, groupName, finishCallback, isInline) => {
-    const newGlyphset = new (require('./glyphset').Glyphset)();
+    const newGlyphset = new (require('./primitives/glyphset').Glyphset)();
     newGlyphset.duration = 3000;
     if (isInline) {
       newGlyphset.load(glyphsetData, glyphurl, finishCallback, isInline);
@@ -209,7 +209,7 @@ exports.SceneLoader = function (sceneIn) {
   //Internal loader for a regular zinc geometry.
   const pointsetloader = (localTimeEnabled, localMorphColour, groupName, finishCallback) => {
     return (geometry, materials) => {
-      const newPointset = new (require('./pointset').Pointset)();
+      const newPointset = new (require('./primitives/pointset').Pointset)();
       let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 5, sizeAttenuation: false });
       if (materials && materials[0]) {
         if (1.0 > materials[0].opacity) {

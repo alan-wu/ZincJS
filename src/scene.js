@@ -524,7 +524,7 @@ exports.Scene = function(containerIn, rendererIn) {
     options.opacity = opacity;
     options.localTimeEnabled = localTimeEnabled;
     options.localMorphColour = localMorphColour
-    const newGeometry = new (require('./geometry').Geometry)();
+    const newGeometry = new (require('./primitives/geometry').Geometry)();
     newGeometry.createMesh(geometryIn, materialIn, options);
     if (newGeometry.morph) {
       newGeometry.setName(groupName);

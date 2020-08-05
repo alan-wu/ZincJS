@@ -1,6 +1,6 @@
 var THREE = require('three');
 const markerImage = new Image(64, 64);
-markerImage.src = require("./assets/mapMarker.svg");
+markerImage.src = require("../assets/mapMarker.svg");
 const texture = new THREE.Texture();
 texture.image = markerImage;
 texture.needsUpdate = true;
@@ -25,7 +25,7 @@ exports.Marker = function(zincObject) {
       depthWrite: false,
       sizeAttenuation: false
     });
-    sprite = new (require("./three/Sprite").Sprite)(spriteMaterial);
+    sprite = new (require("../three/Sprite").Sprite)(spriteMaterial);
     this.graphicsObject.add(sprite);
     this.graphicsObject.position.set(0, 0, 0);
     sprite.scale.set(0.015, 0.02, 1);

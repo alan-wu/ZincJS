@@ -1,5 +1,5 @@
 const THREE = require('three');
-const Points = require('./Points').Points;
+const Points = require('../three/Points').Points;
 /**
  * Provides an object which stores points and provides method which controls its position.
  * This is created when a valid json file containing point is read into a {@link Zinc.Scene}
@@ -10,13 +10,13 @@ const Points = require('./Points').Points;
  * @return {Zinc.Geometry}
  */
 const Pointset = function () {
-  (require('./primitives/zincObject').ZincObject).call(this);
+  (require('./zincObject').ZincObject).call(this);
 	this.isPointset = true;
 
     /** Shape of the points is created using the function below */
 	const getCircularTexture = () => {
 		var image = new Image();
-		image.src = require("./assets/disc.png");
+		image.src = require("../assets/disc.png");
 		const texture = new THREE.Texture();
 		texture.image = image;
 		texture.needsUpdate = true;
@@ -48,5 +48,5 @@ const Pointset = function () {
 	}
 }
 
-Pointset.prototype = Object.create((require('./primitives/zincObject').ZincObject).prototype);
+Pointset.prototype = Object.create((require('./zincObject').ZincObject).prototype);
 exports.Pointset = Pointset;

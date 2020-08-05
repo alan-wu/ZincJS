@@ -17,7 +17,7 @@ function absNumericalSort( a, b ) {
  * @return {Zinc.Geometry}
  */
 const Geometry = function () {
-  (require('./primitives/zincObject').ZincObject).call(this);
+  (require('./zincObject').ZincObject).call(this);
 	// THREE.Geometry or THREE.BufferGeometry
 	this.videoHandler = undefined;
   this.isGeometry = true;
@@ -111,5 +111,5 @@ const Geometry = function () {
 	
 }
 
-Geometry.prototype = Object.create((require('./primitives/zincObject').ZincObject).prototype);
+Geometry.prototype = Object.create((require('./zincObject').ZincObject).prototype);
 exports.Geometry = Geometry;
