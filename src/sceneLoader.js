@@ -144,7 +144,7 @@ exports.SceneLoader = function (sceneIn) {
       newLines.createLineSegment(geometry, material, options);
       if (newLines) {
         newLines.setName(groupName);
-        scene.addLines(newLines);
+        scene.addZincObject(newLines);
       }
       --this.toBeDownloaded;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
@@ -193,7 +193,7 @@ exports.SceneLoader = function (sceneIn) {
       newGlyphset.load(glyphsetData, resolveURL(glyphurl), finishCallback, isInline);
     }
     newGlyphset.groupName = groupName;
-    scene.addGlyphset(newGlyphset);
+    scene.addZincObject(newGlyphset);
   };
 
   //Load a glyphset into this scene.
@@ -227,7 +227,7 @@ exports.SceneLoader = function (sceneIn) {
       newPointset.createMesh(geometry, material, options);
       if (newPointset) {
         newPointset.setName(groupName);
-        scene.addPointset(newPointset);
+        scene.addZincObject(newPointset);
       }
       --this.toBeDownloaded;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
@@ -288,7 +288,7 @@ exports.SceneLoader = function (sceneIn) {
       object.traverse(child => {
         if (child instanceof THREE.Mesh) {
           const zincGeometry = addMeshToZincGeometry(child, localTimeEnabled, localMorphColour);
-          scene.addGeometry(zincGeometry);
+          scene.addZincObject(zincGeometry);
           if (zincGeometry.morph)
             zincGeometry.morph.name = groupName;
           zincGeometry.groupName = groupName;

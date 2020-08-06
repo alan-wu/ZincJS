@@ -1,5 +1,5 @@
 var THREE = require('three');
-const markerImage = new Image(64, 64);
+const markerImage = new Image(128, 128);
 markerImage.src = require("../assets/mapMarker.svg");
 const texture = new THREE.Texture();
 texture.image = markerImage;

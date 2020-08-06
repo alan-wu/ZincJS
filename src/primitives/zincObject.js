@@ -253,8 +253,8 @@ ZincObject.prototype.setMaterial = function(material) {
 ZincObject.prototype.getClosestVertexIndex = function() {
   let closestIndex = -1;
   if (this.morph) {
-    let boundingBox = new THREE.Box3().setFromObject(this.morph);
     let position = this.morph.geometry.attributes.position;
+    let boundingBox = new THREE.Box3().setFromBufferAttribute(position);
     let center = new THREE.Vector3();
     boundingBox.getCenter(center);
     if (position && boundingBox) {
@@ -332,13 +332,11 @@ ZincObject.prototype.getBoundingBox = function() {
         }
       }
       if (found) {
-        let boundingBox = new THREE.Box3(min, max);
-        return boundingBox;
+        return new THREE.Box3(min, max);
       }
     }
-    let boundingBox = new THREE.Box3().setFromBufferAttribute(
+    return new THREE.Box3().setFromBufferAttribute(
       this.morph.geometry.attributes.position);
-    return boundingBox;
   }
   return undefined;
 }
@@ -365,23 +363,22 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
     if (this.groupName) {
       if (!this.marker) {
         this.marker = new (require("./marker").Marker)(this);
+        this.morph.add(this.marker.graphicsObject);
         this.markerUpdateRequired = true;
       }
       if (this.markerUpdateRequired) {
         this.markerUpdateRequired = false;
-        this.marker.enable();
-        //Remove the marker to get the accurate box
-        this.morph.remove(this.marker.graphicsObject);
         let position = this.getClosestVertex();
         this.marker.setPosition(position.x, position.y, position.z);
-        this.morph.add(this.marker.graphicsObject);
       }
-      if (options && options.camera) {
-        this.marker.updateDistanceBasedOpacity(options.camera.cameraObject);
-      }
+      //if (options && options.camera) {
+      //  this.marker.updateDistanceBasedOpacity(options.camera.cameraObject);
+      //}
+      if (!this.marker.isEnabled())
+        this.marker.enable();
     }
   } else {
-    if (this.marker) {
+    if (this.marker && this.marker.isEnabled()) {
       this.marker.disable();
     }
     this.markerUpdateRequired = true;

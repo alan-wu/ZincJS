@@ -14,10 +14,7 @@ const SceneLoader =require('./sceneLoader').SceneLoader;
  */
 exports.Scene = function(containerIn, rendererIn) {
   const container = containerIn;
-  let zincGeometries = [];
-  let zincGlyphsets = [];
-  let zincPointsets = [];
-  let zincLines = [];
+  let zincObjects = [];
   let videoHandler = undefined;
   let sceneLoader = new SceneLoader(this);
   const scene = new THREE.Scene();
@@ -128,35 +125,8 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.getBoundingBox = () => {
     let boundingBox1 = undefined, boundingBox2 = undefined;
-    for (let i = 0; i < zincGeometries.length; i++) {
-      boundingBox2 = zincGeometries[i].getBoundingBox();
-      if (boundingBox1 == undefined) {
-        boundingBox1 = boundingBox2;
-      } else {
-        if (boundingBox2)
-          boundingBox1.union(boundingBox2);
-      }
-    }
-    for (let i = 0; i < zincGlyphsets.length; i++) {
-      boundingBox2 = zincGlyphsets[i].getBoundingBox();
-      if (boundingBox1 == undefined) {
-        boundingBox1 = boundingBox2;
-      } else {
-        if (boundingBox2)
-          boundingBox1.union(boundingBox2);
-      }
-    }
-    for (let i = 0; i < zincPointsets.length; i++) {
-      boundingBox2 = zincPointsets[i].getBoundingBox();
-      if (boundingBox1 == undefined) {
-        boundingBox1 = boundingBox2;
-      } else {
-        if (boundingBox2)
-          boundingBox1.union(boundingBox2);
-      }
-    }
-    for (let i = 0; i < zincLines.length; i++) {
-      boundingBox2 = zincLines[i].getBoundingBox();
+    for (let i = 0; i < zincObjects.length; i++) {
+      boundingBox2 = zincObjects[i].getBoundingBox();
       if (boundingBox1 == undefined) {
         boundingBox1 = boundingBox2;
       } else {
@@ -202,8 +172,9 @@ exports.Scene = function(containerIn, rendererIn) {
    * as an argument.
    */
   this.forEachGeometry = callbackFunction => {
-    for (let i = zincGeometries.length - 1; i >= 0; i--) {
-      callbackFunction(zincGeometries[i]);
+    for (let i = zincObjects.length - 1; i >= 0; i--) {
+      if (zincObjects[i].isGeometry)
+        callbackFunction(zincObjects[i]);
     }
   }
 
@@ -214,8 +185,9 @@ exports.Scene = function(containerIn, rendererIn) {
    * as an argument.
    */
   this.forEachGlyphset = callbackFunction => {
-    for (let i = zincGlyphsets.length - 1; i >= 0; i--) {
-      callbackFunction(zincGlyphsets[i]);
+    for (let i = zincObjects.length - 1; i >= 0; i--) {
+      if (zincObjects[i].isGlyphset)
+        callbackFunction(zincObjects[i]);
     }
   }
 
@@ -226,8 +198,9 @@ exports.Scene = function(containerIn, rendererIn) {
    * as an argument.
    */
   this.forEachPointset = callbackFunction => {
-    for (let i = zincPointsets.length - 1; i >= 0; i--) {
-      callbackFunction(zincPointsets[i]);
+    for (let i = zincObjects.length - 1; i >= 0; i--) {
+      if (zincObjects[i].isPointset)
+        callbackFunction(zincObjects[i]);
     }
   }
 
@@ -238,8 +211,9 @@ exports.Scene = function(containerIn, rendererIn) {
    * as an argument.
    */
   this.forEachLine = callbackFunction => {
-    for (let i = zincLines.length - 1; i >= 0; i--) {
-      callbackFunction(zincLines[i]);
+    for (let i = zincObjects.length - 1; i >= 0; i--) {
+      if (zincObjects[i].isLines)
+        callbackFunction(zincObjects[i]);
     }
   }
   
@@ -251,9 +225,10 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.findGeometriesWithGroupName = GroupName => {
     const geometriesArray = [];
-    for (let i = 0; i < zincGeometries.length; i++) {
-      if (zincGeometries[i].groupName == GroupName) {
-        geometriesArray.push(zincGeometries[i]);
+    for (let i = 0; i < zincObjects.length; i++) {
+      if (zincObjects[i].isGeometry &&
+        (zincObjects[i].groupName == GroupName)) {
+        geometriesArray.push(zincObjects[i]);
       }
     }
     return geometriesArray;
@@ -267,9 +242,10 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.findPointsetsWithGroupName = GroupName => {
     const pointsetsArray = [];
-    for (let i = 0; i < zincPointsets.length; i++) {
-      if (zincPointsets[i].groupName == GroupName) {
-    	  pointsetsArray.push(zincPointsets[i]);
+    for (let i = 0; i < zincObjects.length; i++) {
+      if (zincObjects[i].isPointset &&
+        (zincObjects[i].groupName == GroupName)) {
+    	  pointsetsArray.push(zincObjects[i]);
       }
     }
     return pointsetsArray;
@@ -282,9 +258,10 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.findGlyphsetsWithGroupName = GroupName => {
     const glyphsetsArray = [];
-    for (let i = 0; i < zincGlyphsets.length; i++) {
-      if (zincGlyphsets[i].groupName == GroupName) {
-        glyphsetsArray.push(zincGlyphsets[i]);
+    for (let i = 0; i < zincObjects.length; i++) {
+      if (zincObjects[i].isGlyphset &&
+        (zincObjects[i].groupName == GroupName)) {
+        glyphsetsArray.push(zincObjects[i]);
       }
     }
     return glyphsetsArray;
@@ -298,19 +275,22 @@ exports.Scene = function(containerIn, rendererIn) {
    */
   this.findLinesWithGroupName = GroupName => {
     const linesArray = [];
-    for (let i = 0; i < zincLines.length; i++) {
-      if (zincLines[i].groupName == GroupName) {
-    	  linesArray.push(zincLines[i]);
+    for (let i = 0; i < zincObjects.length; i++) {
+      if (zincObjects[i].isLines &&
+        (zincObjects[i].groupName == GroupName)) {
+    	  linesArray.push(zincObjects[i]);
       }
     }
     return linesArray;
   }
 
   this.findObjectsWithGroupName = GroupName => {
-    let objectsArray = this.findGeometriesWithGroupName(GroupName);
-    objectsArray = objectsArray.concat(this.findPointsetsWithGroupName(GroupName));
-    objectsArray = objectsArray.concat(this.findGlyphsetsWithGroupName(GroupName));
-    objectsArray = objectsArray.concat(this.findLinesWithGroupName(GroupName));
+    const objectsArray = [];
+    for (let i = 0; i < zincObjects.length; i++) {
+      if (zincObjects[i].groupName == GroupName) {
+    	  objectsArray.push(zincObjects[i]);
+      }
+    }
     return objectsArray;
   }
 
@@ -354,25 +334,10 @@ exports.Scene = function(containerIn, rendererIn) {
     return this.getObjectsScreenXY(zincObjects);
   };
 
-  this.addGlyphset = glyphset => {
-	  if (glyphset && glyphset.isGlyphset) {
-		  const group = glyphset.getGroup();
-		  scene.add(group);
-		  zincGlyphsets.push(glyphset) ;
-	  }  
-  }
-
-  this.addLines = lines => {
-    if (lines && lines.isLines) {
-      scene.add(lines.morph);
-      zincLines.push(lines);
-    }
-  }
-
-  this.addPointset = pointset => {
-    if (pointset && pointset.isPointset) {
-      scene.add(pointset.morph);
-      zincPointsets.push(pointset);
+  this.addZincObject = zincObject => {
+    if (zincObject) {
+      scene.add(zincObject.morph);
+      zincObjects.push(zincObject);
     }
   }
 
@@ -487,13 +452,6 @@ exports.Scene = function(containerIn, rendererIn) {
   this.loadFromViewURL = (jsonFilePrefix, finishCallback) => {
     sceneLoader.loadFromViewURL(jsonFilePrefix, finishCallback);
   }
-
-  this.addGeometry = zincGeometry => {
-    if (zincGeometry && zincGeometry.morph) {
-      scene.add(zincGeometry.morph);
-      zincGeometries.push(zincGeometry) ;
-    }
-  }
   
   /**
    * Add a user provided {THREE.Geometry} into  the scene as zinc geometry.
@@ -528,7 +486,7 @@ exports.Scene = function(containerIn, rendererIn) {
     newGeometry.createMesh(geometryIn, materialIn, options);
     if (newGeometry.morph) {
       newGeometry.setName(groupName);
-      this.addGeometry(newGeometry);
+      this.addZincObject(newGeometry);
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGeometry);
       if (!videoHandler && newGeometry.videoHandler)
@@ -567,18 +525,9 @@ exports.Scene = function(containerIn, rendererIn) {
     if (videoHandler != undefined) {
       return videoHandler.getCurrentTime(duration);
     }
-    if (zincGeometries[0] != undefined) {
-      return zincGeometries[0].getCurrentTime();
+    if (zincObjects[0] != undefined) {
+      return zincObjects[0].getCurrentTime();
     }
-    if (zincPointsets[0] != undefined) {
-        return zincPointsets[0].getCurrentTime();
-    }
-    if (zincGlyphsets[0] != undefined) {
-        return zincGlyphsets[0].getCurrentTime();
-    }
-    if (zincLines[0] != undefined) {
-      return zincLines[0].getCurrentTime();
-  }
     return 0;
   }
 
@@ -590,21 +539,8 @@ exports.Scene = function(containerIn, rendererIn) {
     if (videoHandler != undefined) {
       videoHandler.setMorphTime(time, duration);
     }
-    for (let i = 0; i < zincGeometries.length; i++) {
-      zincGeometry = zincGeometries[i];
-      zincGeometry.setMorphTime(time);
-    }
-    for (let i = 0; i < zincGlyphsets.length; i++) {
-      zincGlyphset = zincGlyphsets[i];
-      zincGlyphset.setMorphTime(time);
-    }
-    for (let i = 0; i < zincPointsets.length; i++) {
-    	zincPointset = zincPointsets[i];
-    	zincPointset.setMorphTime(time);
-      }
-    for (let i = 0; i < zincLines.length; i++) {
-        zincLine = zincLines[i];
-        zincLine.setMorphTime(time);
+    for (let i = 0; i < zincObjects.length; i++) {
+      zincObjects[i].setMorphTime(time);
     }
   }
 
@@ -614,36 +550,18 @@ exports.Scene = function(containerIn, rendererIn) {
    * @return {Boolean}
    */
   this.isTimeVarying = () => {
-    for (let i = 0; i < zincGeometries.length; i++) {
-      if (zincGeometries[i].isTimeVarying()) {
+    for (let i = 0; i < zincObjects[i].length; i++) {
+      if (zincObjects[i].isTimeVarying()) {
         return true;
       }
-    }
-    for (let i = 0; i < zincGlyphsets.length; i++) {
-      if (zincGlyphsets[i].isTimeVarying()) {
-        return true;
-      }
-    }
-    for (let i = 0; i < zincPointsets.length; i++) {
-        if (zincPointsets[i].isTimeVarying()) {
-          return true;
-        }
-    }
-    for (let i = 0; i < zincLines.length; i++) {
-      if (zincLines[i].isTimeVarying()) {
-        return true;
-      }
-    } 
-    if (videoHandler && videoHandler.video && !videoHandler.video.error) {
-    	return true;
     }
     return false;
   }
 
   // Used to check if all glyphsets are ready.
   const allGlyphsetsReady = () => {
-    for (let i = 0; i < zincGlyphsets.length; i++) {
-      if (zincGlyphsets[i].ready == false)
+    for (let i = 0; i < zincObjects.length; i++) {
+      if (zincObjects[i].isGlyphset && (zincObjects[i].ready == false))
         return false;
     }
     return true;
@@ -669,22 +587,9 @@ exports.Scene = function(containerIn, rendererIn) {
 			  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
 				  zincCameraControls.setTime(currentTime);
 				  zincCameraControls.update(0);
-				  for (let i = 0; i < zincGeometries.length; i++) {
-					  /* check if morphColour flag is set */
-					  zincGeometries[i].setMorphTime(currentTime);
-					  zincGeometries[i].render(0, playAnimation);
-				  }
-				  for (let i = 0; i < zincGlyphsets.length; i++) {
-					  zincGlyphsets[i].setMorphTime(currentTime);
-					  zincGlyphsets[i].render(0, playAnimation);
-				  }
-				  for (let i = 0; i < zincPointsets.length; i++) {
-					  zincPointsets[i].setMorphTime(currentTime);
-					  zincPointsets[i].render(0, playAnimation);
-          }
-          for (let i = 0; i < zincLines.length; i++) {
-					  zincLines[i].setMorphTime(currentTime);
-					  zincLines[i].render(0, playAnimation);
+				  for (let i = 0; i < zincObjects.length; i++) {
+					  zincObjects[i].setMorphTime(currentTime);
+					  zincObjects[i].render(0, playAnimation);
 				  }
 			  } else {
 				  zincCameraControls.update(0);
@@ -696,19 +601,9 @@ exports.Scene = function(containerIn, rendererIn) {
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
         zincCameraControls.update(delta);
-			  for (let i = 0; i < zincGeometries.length; i++) {
-				  /* check if morphColour flag is set */
-				  zincGeometries[i].render(playRate * delta, playAnimation, options);
+			  for (let i = 0; i < zincObjects.length; i++) {
+				  zincObjects[i].render(playRate * delta, playAnimation, options);
 			  }
-			  for (let i = 0; i < zincGlyphsets.length; i++) {
-				  zincGlyphsets[i].render(playRate * delta, playAnimation, options);
-			  }
-			  for (let i = 0; i < zincPointsets.length; i++) {
-				  zincPointsets[i].render(playRate * delta, playAnimation, options);
-        }
-        for (let i = 0; i < zincLines.length; i++) {
-          zincLines[i].render(playRate * delta, playAnimation, options);
-        }
 		  } else {
 			  zincCameraControls.update(0);
 		  }
@@ -809,23 +704,8 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   this.objectIsInScene = zincObject => {
-    for (let i = 0; i < zincGeometries.length; i++) {
-      if (zincObject === zincGeometries[i]) {
-        return true;
-      }
-    }
-    for (let i = 0; i < zincGlyphsets.length; i++) {
-      if (zincObjects === zincGlyphsets[i]) {
-        return true;
-      }
-    }
-    for (let i = 0; i < zincPointsets.length; i++) {
-      if (zincObject === zincPointsets[i]) {
-        return true;
-      }
-    }
-    for (let i = 0; i < zincLines.length; i++) {
-      if (zincObjects === zincLines[i]) {
+    for (let i = 0; i < zincObjects.length; i++) {
+      if (zincObject === zincObjects[i]) {
         return true;
       }
     }
@@ -900,64 +780,16 @@ exports.Scene = function(containerIn, rendererIn) {
   }
 
   /**
-   * Remove a ZincGeometry from this scene if it presents. This will eventually
-   * destroy the geometry and free up the memory.
-   * @param {Zinc.Geometry} zincGeometry - geometry to be removed from this scene.
+   * Remove a ZincObject from this scene if it presents. This will eventually
+   * destroy the object and free up the memory.
+   * @param {Zinc.Object} zincObject - object to be removed from this scene.
    */
-  this.removeZincGeometry = zincGeometry => {
-    for (let i = 0; i < zincGeometries.length; i++) {
-      if (zincGeometry === zincGeometries[i]) {
-        scene.remove(zincGeometry.morph);
-        zincGeometries.splice(i, 1);
-        zincGeometry.dispose();
-        return;
-      }
-    }
-  }
-
-  /**
-   * Remove a ZincGlyphset from this scene if it presents. This will eventually
-   * destroy the glyphset and free up the memory.
-   * @param {Zinc.Glyphset} zincGlyphset - glyphset to be removed from this scene.
-   */
-  this.removeZincGlyphset = zincGlyphset => {
-    for (let i = 0; i < zincGlyphsets.length; i++) {
-      if (zincGlyphset === zincGlyphsets[i]) {
-        scene.remove(zincGlyphset.getGroup());
-        zincGlyphsets[i].dispose();
-        zincGlyphsets.splice(i, 1);
-        return;
-      }
-    }
-  }
-  
-  /**
-   * Remove a zincPointset from this scene if it presents. This will eventually
-   * destroy the pointset and free up the memory.
-   * @param {Zinc.Pointset} zincPointset - pointset to be removed from this scene.
-   */
-  this.removeZincPointset= zincPointset => {
-    for (let i = 0; i < zincPointsets.length; i++) {
-      if (zincPointset === zincPointsets[i]) {
-        scene.remove(zincPointset.morph);
-        zincPointsets[i].dispose();
-        zincPointsets.splice(i, 1);
-        return;
-      }
-    }
-  }
-
-    /**
-   * Remove a zincLine from this scene if it presents. This will eventually
-   * destroy the line and free up the memory.
-   * @param {Zinc.Line} zincLine - line to be removed from this scene.
-   */
-  this.removeZincLine = zincLine => {
-    for (let i = 0; i < zincLines.length; i++) {
-      if (zincLine === zincLines[i]) {
-        scene.remove(zincLine.morph);
-        zincLines[i].dispose();
-        zincLines.splice(i, 1);
+  this.removeZincObject = zincObject => {
+    for (let i = 0; i < zincObjects.length; i++) {
+      if (zincObject === zincObjects[i]) {
+        scene.remove(zincObject.morph);
+        zincObjects.splice(i, 1);
+        zincObject.dispose();
         return;
       }
     }
@@ -971,8 +803,8 @@ exports.Scene = function(containerIn, rendererIn) {
   this.getPickableThreeJSObjects = () => {
     let returnedObjects = [];
     if (this.displayMarkers) {
-      for (let i = zincGeometries.length - 1; i >= 0; i--) {
-        let marker = zincGeometries[i].marker;
+      for (let i = zincObjects.length - 1; i >= 0; i--) {
+        let marker = zincObjects[i].marker;
         if (marker && marker.isEnabled()) {
           returnedObjects.push(marker.graphicsObject);
         }
@@ -989,26 +821,11 @@ exports.Scene = function(containerIn, rendererIn) {
 
    */
   this.clearAll = () => {
-    for (let i = zincGeometries.length - 1; i >= 0; i--) {
-      scene.remove(zincGeometries[i].morph);
-      zincGeometries[i].dispose();
+    for (let i = zincObjects.length - 1; i >= 0; i--) {
+        scene.remove(zincObjects[i].morph);
+      zincObjects[i].dispose();
     }
-    zincGeometries = [];
-    for (let i = zincGlyphsets.length - 1; i >= 0; i--) {
-      scene.remove(zincGlyphsets[i].getGroup());
-      zincGlyphsets[i].dispose();
-    }
-    zincGlyphsets = [];
-    for (let i = zincPointsets.length - 1; i >= 0; i--) {
-      scene.remove(zincPointsets[i].morph);
-      zincPointsets[i].dispose();
-    }
-    zincPointsets = [];
-    for (let i = zincLines.length - 1; i >= 0; i--) {
-      scene.remove(zincLines[i].morph);
-      zincLines[i].dispose();
-    }
-    zincLines = [];
+    zincObjects = [];
     sceneLoader.toBeDwonloaded = 0;
   }
 }

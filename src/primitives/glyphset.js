@@ -28,7 +28,7 @@ const Glyphset = function()  {
 	let scaleFactors = [ 0, 0, 0 ];
 	let repeat_mode = "NONE";
 	this.ready = false;
-	const group = new THREE.Group();
+	this.morph = new THREE.Group();
 	let morphColours = false;
 	let morphVertices = false;
 	this.isGlyphset = true;
@@ -38,23 +38,8 @@ const Glyphset = function()  {
 	 * @returns {Three.Group}
 	 */
 	this.getGroup = () => {
-		return group;
+		return this.morph;
   }
-  
-  /**
-	 * Get the visibility of this glyphset.
-	 */
-	this.getVisibility = () => {
-	  return	group.visible;
-	}
-	
-	/**
-	 * Set the visibility of this glyphset.
-	 * @param {Boolean} flag - visibility to be set for this glyphset.
-	 */
-	this.setVisibility = flag => {
-		group.visible = flag;
-	}
 	
 	/**
 	 * Copy glyphset data into this glyphset then load the glyph's geoemtry 
@@ -424,7 +409,7 @@ const Glyphset = function()  {
 				glyph.setFrustumCulled(false);
 			}
 			glyphList[i] = glyph;
-			group.add(glyph.getGroup());
+			this.morph.add(glyph.getGroup());
 		}
 		//Update the transformation of the glyphs.
 		updateGlyphsetTransformation(positions["0"], axis1s["0"],
@@ -447,7 +432,7 @@ const Glyphset = function()  {
 			const glyph = new (require('./glyph').Glyph)(undefined, undefined, id, this);
 			glyph.fromMesh(mesh);
 			glyphList.push(glyph);
-			group.add(glyph.getGroup())
+			this.morph.add(glyph.getGroup())
 			this.ready = true;
 			return glyph;
 		}
@@ -477,7 +462,18 @@ const Glyphset = function()  {
 	    	if (finishCallback != undefined && (typeof finishCallback == 'function'))
         		finishCallback(this);
 	    };
-	}
+  }
+  
+  /**
+   * Get the  closest vertex to centroid.
+   */
+  this.getClosestVertex = function() {
+    let position = new THREE.Vector3();
+    if (glyphList && glyphList.length > 1) {
+      glyphList[0].getBoundingBox().getCenter(position);
+    }
+    return position;
+  }
 	
 	/**
 	 * Get the bounding box for the whole set of glyphs.
@@ -486,7 +482,7 @@ const Glyphset = function()  {
 	 */
 	this.getBoundingBox = () => {
 		let boundingBox1 = undefined, boundingBox2 = undefined;
-		if (group.visible) {
+		if (this.morph.visible) {
 			for ( let i = 0; i < glyphList.length; i ++ ) {
 				boundingBox2 = glyphList[i].getBoundingBox();
 				if (boundingBox1 == undefined) {
@@ -550,7 +546,7 @@ const Glyphset = function()  {
 	}
 	
 	//Update the geometry and colours depending on the morph.
-	this.render = (delta, playAnimation) => {
+	this.render = (delta, playAnimation, options) => {
 		if (playAnimation == true) 
 		{
 			let targetTime = this.inbuildTime + delta;
@@ -560,7 +556,8 @@ const Glyphset = function()  {
 			if (morphColours || morphVertices) {
 				updateMorphGlyphsets();
 			}
-		}
+    }
+    this.updateMarker(playAnimation, options);
 	}
 }
 
