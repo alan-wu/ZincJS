@@ -701,13 +701,13 @@ exports.Scene = function(containerIn, rendererIn) {
 				  zincGeometries[i].render(playRate * delta, playAnimation, options);
 			  }
 			  for (let i = 0; i < zincGlyphsets.length; i++) {
-				  zincGlyphsets[i].render(playRate * delta, playAnimation);
+				  zincGlyphsets[i].render(playRate * delta, playAnimation, options);
 			  }
 			  for (let i = 0; i < zincPointsets.length; i++) {
-				  zincPointsets[i].render(playRate * delta, playAnimation);
+				  zincPointsets[i].render(playRate * delta, playAnimation, options);
         }
         for (let i = 0; i < zincLines.length; i++) {
-          zincLines[i].render(playRate * delta, playAnimation);
+          zincLines[i].render(playRate * delta, playAnimation, options);
         }
 		  } else {
 			  zincCameraControls.update(0);
@@ -979,7 +979,7 @@ exports.Scene = function(containerIn, rendererIn) {
       }
       return returnedObjects;
     } else {
-      return this.scene.children;
+      return scene.children;
     }
   }
 

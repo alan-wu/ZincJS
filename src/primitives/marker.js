@@ -11,7 +11,6 @@ exports.Marker = function(zincObject) {
   let spriteMaterial = undefined;
   let sprite = undefined;
   this.graphicsObject = new THREE.Group();
-  console.log(zincObject);
   this.parent = zincObject;
   this.isMarker = true;
   let enabled = true;
