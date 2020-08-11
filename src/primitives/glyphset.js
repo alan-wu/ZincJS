@@ -1,5 +1,5 @@
 const THREE = require('three');
-const JSONLoader = require('./loader').JSONLoader;
+const JSONLoader = require('../loader').JSONLoader;
 
 /**
  * This is a container of {@link Zinc.Glyph} and their graphical properties 
@@ -11,7 +11,8 @@ const JSONLoader = require('./loader').JSONLoader;
  * @author Alan Wu
  * @return {Zinc.Glyphset}
  */
-exports.Glyphset = function()  {
+const Glyphset = function()  {
+  (require('./zincObject').ZincObject).call(this);
 	const glyphList = [];
 	let axis1s = undefined;
 	let axis2s = undefined;
@@ -26,38 +27,19 @@ exports.Glyphset = function()  {
 	let offset = [0, 0, 0];
 	let scaleFactors = [ 0, 0, 0 ];
 	let repeat_mode = "NONE";
-	this.duration = 3000;
-	let inbuildTime = 0;
 	this.ready = false;
-	const group = new THREE.Group();
+	this.morph = new THREE.Group();
 	let morphColours = false;
 	let morphVertices = false;
-	this.groupName = undefined;
 	this.isGlyphset = true;
-	this.userData = [];
 	
 	/**
 	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
 	 * @returns {Three.Group}
 	 */
 	this.getGroup = () => {
-		return group;
+		return this.morph;
   }
-  
-  /**
-	 * Get the visibility of this glyphset.
-	 */
-	this.getVisibility = () => {
-	  return	group.visible;
-	}
-	
-	/**
-	 * Set the visibility of this glyphset.
-	 * @param {Boolean} flag - visibility to be set for this glyphset.
-	 */
-	this.setVisibility = flag => {
-		group.visible = flag;
-	}
 	
 	/**
 	 * Copy glyphset data into this glyphset then load the glyph's geoemtry 
@@ -334,7 +316,7 @@ exports.Glyphset = function()  {
 		let current_axis3s = [];
 		let current_scales = [];
 		let current_colors = [];
-		const current_time = inbuildTime/this.duration * (numberOfTimeSteps - 1);
+		const current_time = this.inbuildTime/this.duration * (numberOfTimeSteps - 1);
 		const bottom_frame =  Math.floor(current_time);
 		const proportion = 1 - (current_time - bottom_frame);
 		const top_frame =  Math.ceil(current_time);
@@ -427,7 +409,7 @@ exports.Glyphset = function()  {
 				glyph.setFrustumCulled(false);
 			}
 			glyphList[i] = glyph;
-			group.add(glyph.getGroup());
+			this.morph.add(glyph.getGroup());
 		}
 		//Update the transformation of the glyphs.
 		updateGlyphsetTransformation(positions["0"], axis1s["0"],
@@ -450,7 +432,7 @@ exports.Glyphset = function()  {
 			const glyph = new (require('./glyph').Glyph)(undefined, undefined, id, this);
 			glyph.fromMesh(mesh);
 			glyphList.push(glyph);
-			group.add(glyph.getGroup())
+			this.morph.add(glyph.getGroup())
 			this.ready = true;
 			return glyph;
 		}
@@ -470,17 +452,65 @@ exports.Glyphset = function()  {
 	}
 	
 	var meshloader = finishCallback => {
-	    return (geometry, materials) => {
-			let bufferGeometry = new THREE.BufferGeometry().fromGeometry(geometry);
-	    	let material = undefined;
-	    	if (materials && materials[0]) {
-	    		material = materials[0];
-	    	}
-			createGlyphs(bufferGeometry, material);
-	    	if (finishCallback != undefined && (typeof finishCallback == 'function'))
-        		finishCallback(this);
-	    };
-	}
+    return (geometry, materials) => {
+      let bufferGeometry = new THREE.BufferGeometry().fromGeometry(geometry);
+      let material = undefined;
+      if (materials && materials[0]) {
+        material = materials[0];
+      }
+      createGlyphs(bufferGeometry, material);
+      this.morph.userData = this;
+      if (finishCallback != undefined && (typeof finishCallback == 'function'))
+       finishCallback(this);
+    };
+  }
+
+  /**
+ * Get the index of the closest vertex to centroid.
+ */
+  this.getClosestVertexIndex = function() {
+    let closestIndex = -1;
+    if (this.morph) {
+      let center = new THREE.Vector3();
+      this.getBoundingBox().getCenter(center);
+      let current_positions = positions["0"];
+      const numberOfPositions = current_positions.length / 3;
+      let position = new THREE.Vector3();
+      let distance = -1;
+      let currentDistance = 0;
+      for (let i = 0; i < numberOfPositions; i++) {
+        const current_index = i * 3;
+        position.set(current_positions[current_index], 
+          current_positions[current_index+1],
+          current_positions[current_index+2]);
+        currentDistance = center.distanceTo(position);
+        if (distance == -1)
+          distance = currentDistance;
+        else if (distance > (currentDistance)) {
+          distance = currentDistance;
+          closestIndex = i;
+        }
+      }
+    }
+    return closestIndex;
+  }
+  
+  /**
+   * Get the  closest vertex to centroid.
+   */
+  this.getClosestVertex = function() {
+    let position = new THREE.Vector3();
+    if (this.markerVertexIndex == -1) {
+      this.markerVertexIndex = this.getClosestVertexIndex();
+    }
+    if (this.markerVertexIndex >= 0) {
+      if (glyphList && glyphList[this.markerVertexIndex]) {
+        glyphList[this.markerVertexIndex].getBoundingBox().getCenter(position);
+      }
+    }
+
+    return position;
+  }
 	
 	/**
 	 * Get the bounding box for the whole set of glyphs.
@@ -489,7 +519,7 @@ exports.Glyphset = function()  {
 	 */
 	this.getBoundingBox = () => {
 		let boundingBox1 = undefined, boundingBox2 = undefined;
-		if (group.visible) {
+		if (this.morph.visible) {
 			for ( let i = 0; i < glyphList.length; i ++ ) {
 				boundingBox2 = glyphList[i].getBoundingBox();
 				if (boundingBox1 == undefined) {
@@ -509,11 +539,11 @@ exports.Glyphset = function()  {
 	 */
 	this.setMorphTime = time => {
 		if (time > this.duration)
-			inbuildTime = this.duration;
+			this.inbuildTime = this.duration;
 		else if (0 > time)
-			inbuildTime = 0;
+			this.inbuildTime = 0;
 		else
-			inbuildTime = time;
+			this.inbuildTime = time;
 		if (morphColours || morphVertices) {
 			updateMorphGlyphsets();
 		}
@@ -531,7 +561,7 @@ exports.Glyphset = function()  {
   }
   
 	this.getCurrentTime = () => {
-		return inbuildTime;
+		return this.inbuildTime;
 	}
 	
 	
@@ -553,16 +583,20 @@ exports.Glyphset = function()  {
 	}
 	
 	//Update the geometry and colours depending on the morph.
-	this.render = (delta, playAnimation) => {
+	this.render = (delta, playAnimation, options) => {
 		if (playAnimation == true) 
 		{
-			let targetTime = inbuildTime + delta;
+			let targetTime = this.inbuildTime + delta;
 			if (targetTime > this.duration)
 				targetTime = targetTime - this.duration
-			inbuildTime = targetTime;
+			this.inbuildTime = targetTime;
 			if (morphColours || morphVertices) {
 				updateMorphGlyphsets();
 			}
-		}
+    }
+    this.updateMarker(playAnimation, options);
 	}
 }
+
+Glyphset.prototype = Object.create((require('./zincObject').ZincObject).prototype);
+exports.Glyphset = Glyphset;

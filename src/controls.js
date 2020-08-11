@@ -928,7 +928,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	const callbackFunction = callbackFunctionIn;
 	const hoverCallbackFunction = hoverCallbackFunctionIn;
 	const enabled = true;
-	const raycaster = new THREE.Raycaster();
+	const raycaster = new (require("./three/Raycaster").Raycaster)();
 	raycaster.linePrecision = 0.1;
 	raycaster.params.Points.threshold = 0.1;
   const mouse = new THREE.Vector2();
@@ -950,11 +950,12 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
     const threejsScene = scene.getThreeJSScene();
     if (hostScene !== scene)
 		  renderer.render(threejsScene, zincCamera.cameraObject);
-		raycaster.setFromCamera( mouse, zincCamera.cameraObject);
-		return raycaster.intersectObjects( threejsScene.children, true );
+    raycaster.setFromCamera( mouse, zincCamera.cameraObject);
+    let objects = scene.getPickableThreeJSObjects();
+		return raycaster.intersectObjects( objects, true );
 	};
 	
-	this.pick = (zincCamera, x, y) => {
+	this.pick = (zincCamera, x, y) => { 
 		if (enabled && renderer && scene && zincCamera && callbackFunction) {
 			const intersects = getIntersectsObject(zincCamera, x, y);
 			callbackFunction(intersects, x, y);
@@ -970,15 +971,18 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
   }
 	
 	this.move = (zincCamera, x, y) => {
-    if (!cooldown) {
-      if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
-        let now = new Date();
-        let time_diff = 0;
-        if (!lastHovered || ( (time_diff = now.getTime() - lastHovered.getTime()) > 250)) {
-          hovered(zincCamera, x, y);
-        } else {
-          cooldown = true;
-          setTimeout(awaitMove(zincCamera, x, y), 250);
+    if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
+      if (scene.displayMarkers) {
+        hovered(zincCamera, x, y);
+      } else {
+        if (!cooldown) {
+          let now = new Date();
+          if (!lastHovered || ( (now.getTime() - lastHovered.getTime()) > 250)) {
+            hovered(zincCamera, x, y);
+          } else {
+            cooldown = true;
+            setTimeout(awaitMove(zincCamera, x, y), 250);
+          }
         }
       }
     }
@@ -1203,7 +1207,7 @@ ModifiedDeviceOrientationControls = function ( object ) {
 
 	const scope = this;
 
-	this.object = object;
+	this.object = object; 
 	this.object.rotation.reorder( "YXZ" );
 
 	this.enabled = true;

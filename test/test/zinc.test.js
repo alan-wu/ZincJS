@@ -202,9 +202,8 @@ function checkControls(scene) {
 function checkGeometry(scene) {
   describe('Geometry()', function(){
     var geometry = undefined;
-    var id = 4001;
     before('New Zinc Geometry', function() {
-      geometry = scene.addZincGeometry(testBoxGeometry, id, 0x00ff00, 1.0, false, false);
+      geometry = scene.addZincGeometry(testBoxGeometry, 0x00ff00, 1.0, false, false);
       geometry.groupName = "TestGeometry";
       assert.isObject(geometry, 'ZincGeometry has been created');
       assert.equal(geometry.groupName, "TestGeometry", 'ZincGeometry group name has been set');
@@ -222,9 +221,6 @@ function checkGeometry(scene) {
       it('morphColour', function(){
         assert.isFalse(geometry.morphColour, 'morphColour is an object');
       });
-      it('modelId', function(){
-        assert.equal(geometry.modelId, id, 'modelId is correct');
-      });
       it('morph', function(){
         assert.isObject(geometry.morph, 'morph is an object');
       });
@@ -236,6 +232,12 @@ function checkGeometry(scene) {
       });
     });
     describe('Methods()', function(){
+      it('getBoundingBox', function() {
+        var boundingBox = geometry.getBoundingBox();
+        assert.isObject(boundingBox, 'boundingBox is successfully called');
+        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
+        assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
+      });
       it('setVisibility', function() {
         assert.isUndefined(geometry.setVisibility(false), 'setVisibility is successfully called');
         assert.isFalse(geometry.morph.visible, 'visibility is false');
@@ -263,12 +265,6 @@ function checkGeometry(scene) {
       it('setVertexColour', function() {
         assert.isUndefined(geometry.setVertexColors(THREE.NoColors), 'setVertexColour is successfully called');
         assert.equal(geometry.morph.material.vertexColors , THREE.NoColors, 'colour is correct');
-      });
-      it('getBoundingBox', function() {
-        var boundingBox = geometry.getBoundingBox();
-        assert.isObject(boundingBox, 'boundingBox is successfully called');
-        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
-        assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
       });
       it('setMaterial', function() {
         var material = new THREE.MeshBasicMaterial( {
@@ -403,26 +399,12 @@ function checkCleanup(scene) {
       });
     });
     describe('Methods()', function(){
-      it ('removeZincGlyphset', function() {
+      it ('removeZincObject', function() {
         var glyphsets = scene.findGlyphsetsWithGroupName("test glyph");
         assert.lengthOf(glyphsets, 1, 'findGlyphsetsWithGroupName returns 1 geometry');
-        assert.isUndefined(scene.removeZincGlyphset(glyphsets[0]), 'removeZincGlyphset is successfully called');
+        assert.isUndefined(scene.removeZincObject(glyphsets[0]), 'removeZincGlyphset is successfully called');
         assert.lengthOf(scene.findGlyphsetsWithGroupName("test glyph"), 0, 'findLinesWithGroupName returns 0 point');
       });
-      /*
-      it ('removeZincLine', function() {
-        var lines = scene.findLinesWithGroupName("test lines");
-        assert.lengthOf(lines, 1, 'findLinesWithGroupName returns 1 lines');
-        assert.isUndefined(scene.removeZincLine(lines[0]), 'removeZincLine is successfully called');
-        assert.lengthOf(scene.findLinesWithGroupName("test lines"), 0, 'findLinesWithGroupName returns 0 point');
-      });
-      it ('removeZincPointset', function() {
-        var pointsets = scene.findPointsetsWithGroupName("test point");
-        assert.lengthOf(pointsets, 1, 'findPointsetsWithGroupName returns 1 point');
-        assert.isUndefined(scene.removeZincPointset(pointsets[0]), 'removeZincPointset is successfully called');
-        assert.lengthOf(scene.findPointsetsWithGroupName("test point"), 0, 'findPointsetsWithGroupName returns 0 point');
-      });
-      */
       it('clearAll', function(){
         assert.isUndefined(scene.clearAll(), 'renderGeometries is successfully called');
       });
@@ -449,10 +431,9 @@ function checkScene(renderer) {
     });
     describe('Methods()', function(){
       var testGeometry = undefined;
-      var id = 3001;
       this.timeout(5000); 
       before('addZincGeometry', function() {
-        testGeometry = scene.addZincGeometry(testBoxGeometry, id, 0x00ff00, 1.0, false, false);
+        testGeometry = scene.addZincGeometry(testBoxGeometry, 0x00ff00, 1.0, false, false);
         testGeometry.groupName = "TestGeometry";
         assert.isObject(testGeometry, 'ZincGeometry has been created');
         assert.equal(testGeometry.groupName, "TestGeometry", 'ZincGeometry group name has been set');
@@ -537,9 +518,6 @@ function checkScene(renderer) {
       it('setMorphsTime', function(){
         assert.isUndefined(scene.setMorphsTime(1000.0), 'setMorphsTime is successfully called');
       });
-      it('getZincGeometryByID', function(){
-        assert.equal(scene.getZincGeometryByID(id), testGeometry, 'getZincGeometryByID returns the correct object');
-      });
       it('getZincCameraControls', function() {
         assert.isObject(scene.getZincCameraControls(), 'getZincCameraControls returns the correct object');
       });
@@ -570,11 +548,8 @@ function checkScene(renderer) {
       it('renderGeometries', function(){
         assert.isUndefined(scene.renderGeometries(500, 0.3, true), 'renderGeometries is successfully called');
       });
-      it('removeZincGeometry', function(){
-        assert.isUndefined(scene.removeZincGeometry(testGeometry), 'removeZincGeometry is successfully called');
-      });
-      it('getZincGeometryByID', function(){
-        assert.isNull(scene.getZincGeometryByID(id), 'getZincGeometryByID returns the correct object');
+      it('removeZincObject', function(){
+        assert.isUndefined(scene.removeZincObject(testGeometry), 'removeZincGeometry is successfully called');
       });
       if ('getNamedObjectsScreenXY', function() {
         assert.isObject(scene.getNamedObjectsScreenXY("TestGeometry"), 
