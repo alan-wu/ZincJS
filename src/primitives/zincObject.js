@@ -1,6 +1,7 @@
 const THREE = require('three');
 
 const ZincObject = function() {
+  this.isZincObject = true;
   this.geometry = undefined;
   // THREE.Mesh
   this.morph = undefined;
@@ -363,7 +364,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
     if (this.groupName) {
       if (!this.marker) {
         this.marker = new (require("./marker").Marker)(this);
-        this.morph.add(this.marker.graphicsObject);
+        this.morph.add(this.marker.morph);
         this.markerUpdateRequired = true;
       }
       if (this.markerUpdateRequired) {
@@ -387,7 +388,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
 
 //Update the geometry and colours depending on the morph.
 ZincObject.prototype.render = function(delta, playAnimation, options) {
-  if (playAnimation == true) 
+  if (playAnimation == true)
   {
     if ((this.clipAction) && (this.timeEnabled == 1)) {
       this.mixer.update( delta );

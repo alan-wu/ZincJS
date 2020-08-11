@@ -6,11 +6,12 @@ texture.image = markerImage;
 texture.needsUpdate = true;
 
 //Marker - used to indicate there is a 
-exports.Marker = function(zincObject) {
+const Marker = function(zincObject) {
+  (require('./zincObject').ZincObject).call(this);
   this.texture = texture;
   let spriteMaterial = undefined;
   let sprite = undefined;
-  this.graphicsObject = new THREE.Group();
+  this.morph = new THREE.Group();
   this.parent = zincObject;
   this.isMarker = true;
   let enabled = true;
@@ -25,8 +26,8 @@ exports.Marker = function(zincObject) {
       sizeAttenuation: false
     });
     sprite = new (require("../three/Sprite").Sprite)(spriteMaterial);
-    this.graphicsObject.add(sprite);
-    this.graphicsObject.position.set(0, 0, 0);
+    this.morph.add(sprite);
+    this.morph.position.set(0, 0, 0);
     sprite.scale.set(0.015, 0.02, 1);
     sprite.userData = this;
   }
@@ -34,7 +35,7 @@ exports.Marker = function(zincObject) {
   this.updateDistanceBasedOpacity = camera => {
     if (camera.target) {
       const spriteDistance = camera.position.distanceTo(
-        this.graphicsObject.position);
+        this.morph.position);
       const targetDistance = camera.position.distanceTo(
         camera.target);
       if (spriteDistance > targetDistance) {
@@ -46,7 +47,7 @@ exports.Marker = function(zincObject) {
   }
 
   this.setPosition = (x, y, z) => {
-    this.graphicsObject.position.set(x, y, z);
+    this.morph.position.set(x, y, z);
   }
 
   this.setSpriteSize = size => {
@@ -60,15 +61,18 @@ exports.Marker = function(zincObject) {
 
   this.enable = () => {
     enabled = true;
-    this.graphicsObject.visible = true;
+    this.morph.visible = true;
   }
   
   this.disable = () => {
     enabled = false;
-    this.graphicsObject.visible = false;
+    this.morph.visible = false;
   }
 
 	//this should be handle by scene... check the sync at 
 	initialise();
 
 }
+
+Marker.prototype = Object.create((require('./zincObject').ZincObject).prototype);
+exports.Marker = Marker;

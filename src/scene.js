@@ -806,7 +806,7 @@ exports.Scene = function(containerIn, rendererIn) {
       for (let i = zincObjects.length - 1; i >= 0; i--) {
         let marker = zincObjects[i].marker;
         if (marker && marker.isEnabled()) {
-          returnedObjects.push(marker.graphicsObject);
+          returnedObjects.push(marker.morph);
         }
       }
       return returnedObjects;
