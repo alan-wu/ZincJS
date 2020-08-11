@@ -399,26 +399,12 @@ function checkCleanup(scene) {
       });
     });
     describe('Methods()', function(){
-      it ('removeZincGlyphset', function() {
+      it ('removeZincObject', function() {
         var glyphsets = scene.findGlyphsetsWithGroupName("test glyph");
         assert.lengthOf(glyphsets, 1, 'findGlyphsetsWithGroupName returns 1 geometry');
-        assert.isUndefined(scene.removeZincGlyphset(glyphsets[0]), 'removeZincGlyphset is successfully called');
+        assert.isUndefined(scene.removeZincObject(glyphsets[0]), 'removeZincGlyphset is successfully called');
         assert.lengthOf(scene.findGlyphsetsWithGroupName("test glyph"), 0, 'findLinesWithGroupName returns 0 point');
       });
-      /*
-      it ('removeZincLine', function() {
-        var lines = scene.findLinesWithGroupName("test lines");
-        assert.lengthOf(lines, 1, 'findLinesWithGroupName returns 1 lines');
-        assert.isUndefined(scene.removeZincLine(lines[0]), 'removeZincLine is successfully called');
-        assert.lengthOf(scene.findLinesWithGroupName("test lines"), 0, 'findLinesWithGroupName returns 0 point');
-      });
-      it ('removeZincPointset', function() {
-        var pointsets = scene.findPointsetsWithGroupName("test point");
-        assert.lengthOf(pointsets, 1, 'findPointsetsWithGroupName returns 1 point');
-        assert.isUndefined(scene.removeZincPointset(pointsets[0]), 'removeZincPointset is successfully called');
-        assert.lengthOf(scene.findPointsetsWithGroupName("test point"), 0, 'findPointsetsWithGroupName returns 0 point');
-      });
-      */
       it('clearAll', function(){
         assert.isUndefined(scene.clearAll(), 'renderGeometries is successfully called');
       });
@@ -562,8 +548,8 @@ function checkScene(renderer) {
       it('renderGeometries', function(){
         assert.isUndefined(scene.renderGeometries(500, 0.3, true), 'renderGeometries is successfully called');
       });
-      it('removeZincGeometry', function(){
-        assert.isUndefined(scene.removeZincGeometry(testGeometry), 'removeZincGeometry is successfully called');
+      it('removeZincObject', function(){
+        assert.isUndefined(scene.removeZincObject(testGeometry), 'removeZincGeometry is successfully called');
       });
       if ('getNamedObjectsScreenXY', function() {
         assert.isObject(scene.getNamedObjectsScreenXY("TestGeometry"), 
