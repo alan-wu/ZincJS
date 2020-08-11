@@ -1,10 +1,11 @@
 const THREE = require('three');
 
 const ZincObject = function() {
+  this.isZincObject = true;
   this.geometry = undefined;
   // THREE.Mesh
   this.morph = undefined;
-  	/**
+  /**
 	 * Groupname given to this geometry.
 	 */
   this.groupName = undefined;
@@ -21,10 +22,9 @@ const ZincObject = function() {
   this.clipAction = undefined;
   this.userData = [];
   this.videoHandler = undefined;
-
-
   this.marker = undefined;
   this.markerUpdateRequired = true;
+  this.markerVertexIndex = -1;
 }
 
 ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
@@ -130,10 +130,7 @@ ZincObject.prototype.setMorphTime = function(time) {
       this.clipAction.time = newTime;
       timeChanged = true;
     }
-    if (this.clipAction.time > actualDuration)
-      this.clipAction.time = actualDuration;
-    if (this.clipAction.time < 0.0)
-      this.clipAction.time = 0.0;
+
     if (timeChanged && this.timeEnabled == 1)
       this.mixer.update( 0.0 );
   } else {
@@ -149,8 +146,11 @@ ZincObject.prototype.setMorphTime = function(time) {
       timeChanged = true;
     }
   }
-  if (timeChanged)
+  if (timeChanged) {
     updateMorphColorAttribute(this.geometry, this.morph);
+    if (this.timeEnabled)
+      this.markerUpdateRequired = true;
+  }
 }
 
 /**
@@ -249,14 +249,74 @@ ZincObject.prototype.setMaterial = function(material) {
 }
 
 /**
+ * Get the index of the closest vertex to centroid.
+ */
+ZincObject.prototype.getClosestVertexIndex = function() {
+  let closestIndex = -1;
+  if (this.morph) {
+    let position = this.morph.geometry.attributes.position;
+    let boundingBox = new THREE.Box3().setFromBufferAttribute(position);
+    let center = new THREE.Vector3();
+    boundingBox.getCenter(center);
+    if (position && boundingBox) {
+      let distance = -1;
+      let currentDistance = 0;
+      let current = new THREE.Vector3();
+      for (let i = 0; i < position.count; i++) {
+        current.fromArray(position.array, i * 3);
+        currentDistance = current.distanceTo(center);
+        if (distance == -1)
+          distance = currentDistance;
+        else if (distance > (currentDistance)) {
+          distance = currentDistance;
+          closestIndex = i;
+        }
+      }
+    }
+  }
+  return closestIndex;
+}
+
+/**
+ * Get the  closest vertex to centroid.
+ */
+ZincObject.prototype.getClosestVertex = function() {
+  let position = new THREE.Vector3();
+  if (this.markerVertexIndex == -1) {
+    this.markerVertexIndex = this.getClosestVertexIndex();
+  }
+  if (this.markerVertexIndex >= 0) {
+    let influences = this.morph.morphTargetInfluences;
+    let attributes = this.morph.geometry.morphAttributes;
+    if (influences && attributes && attributes.position) {
+      let found = false;
+      for (let i = 0; i < influences.length; i++) {
+        if (influences[i] > 0) {
+          found = true;
+          let vertex = new THREE.Vector3().fromArray(
+            attributes.position[i].array, this.markerVertexIndex * 3);
+          position.add(vertex.multiplyScalar(influences[i]));
+        }
+      }
+      if (found)
+        return position;
+    } else {
+      position.fromArray(this.morph.geometry.attributes.position.array,
+        this.markerVertexIndex * 3);
+      return position;
+    }
+  }
+  this.getBoundingBox().getCenter(position);
+  return position;
+}
+
+/**
  * Get the bounding box of this geometry.
  * 
  * @return {THREE.Box3}.
  */
 ZincObject.prototype.getBoundingBox = function() {
   if (this.morph && this.morph.visible) {
-    //var boundingBox = new THREE.Box3().setFromObject(this.morph);
-    //return boundingBox;
     let influences = this.morph.morphTargetInfluences;
     let attributes = this.morph.geometry.morphAttributes;
     if (influences && attributes && attributes.position) {
@@ -273,12 +333,11 @@ ZincObject.prototype.getBoundingBox = function() {
         }
       }
       if (found) {
-        let boundingBox = new THREE.Box3(min, max);
-        return boundingBox;
+        return new THREE.Box3(min, max);
       }
     }
-    var boundingBox = new THREE.Box3().setFromObject(this.morph);
-    return boundingBox;
+    return new THREE.Box3().setFromBufferAttribute(
+      this.morph.geometry.attributes.position);
   }
   return undefined;
 }
@@ -299,40 +358,37 @@ ZincObject.prototype.dispose = function() {
 }
 
 ZincObject.prototype.updateMarker = function(playAnimation, options) {
-  if (playAnimation == true || 
-    (false == (options && options.displayMarkers)))
+  if ((playAnimation == false) &&
+    ((options && options.displayMarkers)))
   {
-    if (this.marker) {
-      this.marker.disable();
-    }
-    this.markerUpdateRequired = true;  
-  } else {
     if (this.groupName) {
       if (!this.marker) {
         this.marker = new (require("./marker").Marker)(this);
+        this.morph.add(this.marker.morph);
         this.markerUpdateRequired = true;
       }
       if (this.markerUpdateRequired) {
         this.markerUpdateRequired = false;
-        this.marker.enable();
-        //Remove the marker to get the accurate box
-        this.morph.remove(this.marker.graphicsObject);
-        let center = new THREE.Vector3();
-        this.getBoundingBox().getCenter(center);
-        this.marker.setPosition(center.x, center.y, center.z);
-        this.morph.add(this.marker.graphicsObject);
+        let position = this.getClosestVertex();
+        this.marker.setPosition(position.x, position.y, position.z);
       }
+      //if (options && options.camera) {
+      //  this.marker.updateDistanceBasedOpacity(options.camera.cameraObject);
+      //}
+      if (!this.marker.isEnabled())
+        this.marker.enable();
     }
-  }
-  if (this.marker && this.marker.isEnabled() && 
-    options && options.camera && options.displayMarkers) {
-    this.marker.updateDistanceBasedOpacity(options.camera.cameraObject);
+  } else {
+    if (this.marker && this.marker.isEnabled()) {
+      this.marker.disable();
+    }
+    this.markerUpdateRequired = true;
   }
 }
 
 //Update the geometry and colours depending on the morph.
 ZincObject.prototype.render = function(delta, playAnimation, options) {
-  if (playAnimation == true) 
+  if (playAnimation == true)
   {
     if ((this.clipAction) && (this.timeEnabled == 1)) {
       this.mixer.update( delta );
@@ -357,4 +413,3 @@ ZincObject.prototype.render = function(delta, playAnimation, options) {
 }
 
 exports.ZincObject = ZincObject;
-
