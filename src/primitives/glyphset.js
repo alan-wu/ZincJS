@@ -452,16 +452,47 @@ const Glyphset = function()  {
 	}
 	
 	var meshloader = finishCallback => {
-	    return (geometry, materials) => {
-			let bufferGeometry = new THREE.BufferGeometry().fromGeometry(geometry);
-	    	let material = undefined;
-	    	if (materials && materials[0]) {
-	    		material = materials[0];
-	    	}
-			createGlyphs(bufferGeometry, material);
-	    	if (finishCallback != undefined && (typeof finishCallback == 'function'))
-        		finishCallback(this);
-	    };
+    return (geometry, materials) => {
+      let bufferGeometry = new THREE.BufferGeometry().fromGeometry(geometry);
+      let material = undefined;
+      if (materials && materials[0]) {
+        material = materials[0];
+      }
+      createGlyphs(bufferGeometry, material);
+      this.morph.userData = this;
+      if (finishCallback != undefined && (typeof finishCallback == 'function'))
+       finishCallback(this);
+    };
+  }
+
+  /**
+ * Get the index of the closest vertex to centroid.
+ */
+  this.getClosestVertexIndex = function() {
+    let closestIndex = -1;
+    if (this.morph) {
+      let center = new THREE.Vector3();
+      this.getBoundingBox().getCenter(center);
+      let current_positions = positions["0"];
+      const numberOfPositions = current_positions.length / 3;
+      let position = new THREE.Vector3();
+      let distance = -1;
+      let currentDistance = 0;
+      for (let i = 0; i < numberOfPositions; i++) {
+        const current_index = i * 3;
+        position.set(current_positions[current_index], 
+          current_positions[current_index+1],
+          current_positions[current_index+2]);
+        currentDistance = center.distanceTo(position);
+        if (distance == -1)
+          distance = currentDistance;
+        else if (distance > (currentDistance)) {
+          distance = currentDistance;
+          closestIndex = i;
+        }
+      }
+    }
+    return closestIndex;
   }
   
   /**
@@ -469,9 +500,15 @@ const Glyphset = function()  {
    */
   this.getClosestVertex = function() {
     let position = new THREE.Vector3();
-    if (glyphList && glyphList.length > 1) {
-      glyphList[0].getBoundingBox().getCenter(position);
+    if (this.markerVertexIndex == -1) {
+      this.markerVertexIndex = this.getClosestVertexIndex();
     }
+    if (this.markerVertexIndex >= 0) {
+      if (glyphList && glyphList[this.markerVertexIndex]) {
+        glyphList[this.markerVertexIndex].getBoundingBox().getCenter(position);
+      }
+    }
+
     return position;
   }
 	
