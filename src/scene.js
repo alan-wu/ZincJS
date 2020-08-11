@@ -550,7 +550,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * @return {Boolean}
    */
   this.isTimeVarying = () => {
-    for (let i = 0; i < zincObjects[i].length; i++) {
+    for (let i = 0; i < zincObjects.length; i++) {
       if (zincObjects[i].isTimeVarying()) {
         return true;
       }
