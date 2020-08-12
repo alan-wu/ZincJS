@@ -288,26 +288,7 @@ exports.Renderer = function (containerIn) {
 	this.loadFromViewURL = (jsonFilePrefix, finishCallback) => {
 		currentScene.loadFromViewURL(jsonFilePrefix, finishCallback);
 	}
-
-	/**
-	 * Manually add a zinc geometry to the scene. This should be
-	 * called from {@link Zinc.Scene};
-	 * 
-	 * @deprecated
-	 */
-	this.addZincGeometry = (
-        geometry,
-        modelId,
-        colour,
-        opacity,
-        localTimeEnabled,
-        localMorphColour,
-        external,
-        finishCallback
-    ) => {
-		return currentScene.addZincGeometry(geometry, modelId, colour, opacity, localTimeEnabled, localMorphColour, external, finishCallback);
-	}
-			
+	
 	this.updateDirectionalLight = () => {
 		currentScene.updateDirectionalLight();
 	}

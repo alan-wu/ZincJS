@@ -274,6 +274,27 @@ exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
 
 }
 
+function PhongToToon(materialIn) {
+	if (materialIn.isMeshPhongMaterial) {
+		let material = new THREE.MeshToonMaterial({
+			color : materialIn.color.clone(),
+			morphTargets : materialIn.morphTargets,
+			morphNormals : materialIn.morphNormals,
+			vertexColors : materialIn.vertexColors,
+			transparent : materialIn.transparent,
+			opacity : materialIn.opacity,
+			side : materialIn.side
+		});
+		if (materialIn.map)
+			material.map = materialIn.map;
+		return material;
+	}
+
+	return materialIn;
+}
+
+
 exports.resolveURL = resolveURL;
 exports.loadExternalFile = loadExternalFile;
 exports.loadExternalFiles = loadExternalFiles;
+exports.PhongToToon = PhongToToon;
