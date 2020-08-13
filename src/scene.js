@@ -642,13 +642,15 @@ exports.Scene = function (containerIn, rendererIn) {
         target.y - minimapScissor.height - minimapScissor.y,
         minimapScissor.width,
         minimapScissor.height);
-      renderer.setViewport(minimapScissor.x,
+      renderer.setViewport(
+        minimapScissor.x,
         target.y - minimapScissor.height - minimapScissor.y,
         minimapScissor.width,
         minimapScissor.height);
       renderer.clearDepth();
-      minimap.camera.position.copy(this.camera.position);
-      minimap.camera.up.copy(this.camera.up);
+      //minimap.camera.position.copy(this.camera.position);
+      //minimap.camera.matrix.copy(this.camera.matrix);
+      minimap.updateCamera();
       renderer.render(scene, minimap.camera);
       renderer.setScissorTest(false);
       renderer.setViewport(0, 0, target.x, target.y);

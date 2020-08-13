@@ -40,8 +40,8 @@ exports.Renderer = function (containerIn) {
   this.minimapScissor = {
     x: 16,
     y: 16,
-    width: 64,
-    height: 64 
+    width: 128,
+    height: 128 
   };
 	const _this = this;
 	const currentSize = [0, 0];
