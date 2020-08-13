@@ -1,9 +1,10 @@
 const THREE = require('three');
 
 exports.Minimap = function(sceneIn) {
-  let scene = sceneIn;
+  let targetScene = sceneIn;
   this.camera = new THREE.OrthographicCamera(
     -0.5, 0.5 , 0.5, -0.5, 0.01, 10);
+  this.helper = undefined;
 
   this.setCurrentCameraSettings = (diameter, newViewport) => {
 		if (newViewport.nearPlane)
@@ -25,9 +26,13 @@ exports.Minimap = function(sceneIn) {
 	}
 
   this.updateCamera = () => {
-    let cameraControl = scene.getZincCameraControls();
-
-    let boundingBox = scene.getBoundingBox();
+    if (!this.helper) {
+      this.helper = new THREE.CameraHelper(targetScene.camera);
+    }
+    this.helper.update();
+    console.log(this.helper)
+    let cameraControl = targetScene.getZincCameraControls();
+    let boundingBox = targetScene.getBoundingBox();
     if (boundingBox) {
       // enlarge radius to keep image within edge of window
       const diameter = boundingBox.min.distanceTo(boundingBox.max);

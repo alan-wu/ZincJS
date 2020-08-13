@@ -100,7 +100,6 @@ exports.Scene = function (containerIn, rendererIn) {
     zincCameraControls.resetView();
 
     minimap = new (require('./minimap').Minimap)(this);
-    console.log(minimap)
   };
 
   setupCamera();
@@ -647,11 +646,13 @@ exports.Scene = function (containerIn, rendererIn) {
         target.y - minimapScissor.height - minimapScissor.y,
         minimapScissor.width,
         minimapScissor.height);
-      renderer.clearDepth();
+      //renderer.clearDepth();
       //minimap.camera.position.copy(this.camera.position);
       //minimap.camera.matrix.copy(this.camera.matrix);
       minimap.updateCamera();
+      scene.add(minimap.helper);
       renderer.render(scene, minimap.camera);
+      scene.remove(minimap.helper);
       renderer.setScissorTest(false);
       renderer.setViewport(0, 0, target.x, target.y);
     }
