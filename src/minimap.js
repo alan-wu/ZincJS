@@ -8,7 +8,7 @@ exports.Minimap = function(sceneIn) {
 
   this.setCurrentCameraSettings = (diameter, newViewport) => {
 		if (newViewport.nearPlane)
-			this.camera.near = newViewport.nearPlane;
+			this.camera.near = 0;
 		if (newViewport.farPlane)
 			this.camera.far = newViewport.farPlane;
 		if (newViewport.eyePosition)
