@@ -7,8 +7,7 @@ exports.Minimap = function(sceneIn) {
   this.helper = undefined;
 
   this.setCurrentCameraSettings = (diameter, newViewport) => {
-		if (newViewport.nearPlane)
-			this.camera.near = 0;
+		this.camera.near = 0;
 		if (newViewport.farPlane)
 			this.camera.far = newViewport.farPlane;
 		if (newViewport.eyePosition)
@@ -30,7 +29,6 @@ exports.Minimap = function(sceneIn) {
       this.helper = new THREE.CameraHelper(targetScene.camera);
     }
     this.helper.update();
-    console.log(this.helper)
     let cameraControl = targetScene.getZincCameraControls();
     let boundingBox = targetScene.getBoundingBox();
     if (boundingBox) {
