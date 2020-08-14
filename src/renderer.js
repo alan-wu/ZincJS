@@ -37,12 +37,6 @@ exports.Renderer = function (containerIn) {
 	let scenesGroup = new THREE.Group();
 	let canvas = undefined;
   let sensor = undefined;
-  this.minimapScissor = {
-    x: 16,
-    y: 16,
-    width: 128,
-    height: 128 
-  };
 	const _this = this;
 	const currentSize = [0, 0];
 	const currentOffset = [0, 0];
@@ -471,10 +465,7 @@ exports.Renderer = function (containerIn) {
         preRenderCallbackFunctions[key].call();
       }
     }
-    const options = {};
-    options.minimap = true;
-    options.minimapScissor = this.minimapScissor;
-    currentScene.render(renderer, options);
+    currentScene.render(renderer);
     for (key in postRenderCallbackFunctions) {
       if (postRenderCallbackFunctions.hasOwnProperty(key)) {
         postRenderCallbackFunctions[key].call();

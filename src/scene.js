@@ -35,6 +35,14 @@ exports.Scene = function (containerIn, rendererIn) {
   let stereoEffect = undefined;
   this.autoClearFlag = true;
   this.displayMarkers = false;
+  let minimapEnabled = true;
+  this.minimapScissor = {
+    x_offset: 16,
+    y_offset: 16,
+    width: 128,
+    height: 128,
+    align: "top-left"
+  };
 
   const getDrawingWidth = () => {
     if (container)
@@ -630,22 +638,52 @@ exports.Scene = function (containerIn, rendererIn) {
     scene.add(scenesGroup);
   }
 
-  const renderMinimap = (renderer, options) => {
-    if (options && options.minimap === true) {
+  let getWindowsPosition = (align, x_offset, y_offset, width, height,
+    renderer_width, renderer_height) => {
+    let x = 0;
+    let y = 0;
+    if (align.includes("top")) {
+      y = renderer_height - height - y_offset;
+    } else if (align.includes("bottom")) {
+      y = y_offset;
+    } else {
+      y = Math.floor((renderer_height - height) / 2.0);
+    }
+    if (align.includes("left")) {
+      x = x_offset;
+    } else if (align.includes("right")) {
+      x = renderer_width - x_offset- width;
+    } else {
+      x = Math.floor((renderer_width - width) / 2.0);
+    }
+    return {x: x, y: y};
+  }
+  
+  this.enableMinimap = flag => {
+    minimapEnabled = flag;
+  }
+
+  const renderMinimap = renderer => {
+    if (minimapEnabled === true) {
       renderer.setScissorTest(true);
       const target = new THREE.Vector2();
-      const minimapScissor = options.minimapScissor;
       renderer.getSize(target);
+      let scissor = getWindowsPosition(this.minimapScissor.align,
+        this.minimapScissor.x_offset, 
+        this.minimapScissor.y_offset, 
+        this.minimapScissor.width,
+        this.minimapScissor.height,
+        target.x, target.y);
       renderer.setScissor(
-        minimapScissor.x,
-        target.y - minimapScissor.height - minimapScissor.y,
-        minimapScissor.width,
-        minimapScissor.height);
+        scissor.x,
+        scissor.y,
+        this.minimapScissor.width,
+        this.minimapScissor.height);
       renderer.setViewport(
-        minimapScissor.x,
-        target.y - minimapScissor.height - minimapScissor.y,
-        minimapScissor.width,
-        minimapScissor.height);
+        scissor.x,
+        scissor.y,
+        this.minimapScissor.width,
+        this.minimapScissor.height);
       //renderer.clearDepth();
       //minimap.camera.position.copy(this.camera.position);
       //minimap.camera.matrix.copy(this.camera.matrix);
@@ -662,7 +700,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * Render the scene.
    * @private
    */
-  this.render = (renderer, options) => {
+  this.render = renderer => {
     if (this.autoClearFlag)
       renderer.clear();
     if (stereoEffectFlag && stereoEffect) {
@@ -670,7 +708,7 @@ exports.Scene = function (containerIn, rendererIn) {
     }
     else {
       renderer.render(scene, this.camera);
-      renderMinimap(renderer, options);
+      renderMinimap(renderer);
     }
   }
 
