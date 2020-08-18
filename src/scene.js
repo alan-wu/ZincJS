@@ -35,7 +35,7 @@ exports.Scene = function (containerIn, rendererIn) {
   let stereoEffect = undefined;
   this.autoClearFlag = true;
   this.displayMarkers = false;
-  let minimapEnabled = true;
+  this.displayMinimap = false;
   this.minimapScissor = {
     x_offset: 16,
     y_offset: 16,
@@ -658,13 +658,9 @@ exports.Scene = function (containerIn, rendererIn) {
     }
     return {x: x, y: y};
   }
-  
-  this.enableMinimap = flag => {
-    minimapEnabled = flag;
-  }
 
   const renderMinimap = renderer => {
-    if (minimapEnabled === true) {
+    if (this.displayMinimap === true) {
       renderer.setScissorTest(true);
       const target = new THREE.Vector2();
       renderer.getSize(target);
