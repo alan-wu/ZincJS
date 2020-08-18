@@ -43,6 +43,8 @@ exports.Scene = function (containerIn, rendererIn) {
     height: 128,
     align: "top-left"
   };
+  let cachedBoundingBox = new THREE.Box3();
+  let boundingBoxUpdateRequired = true;
 
   const getDrawingWidth = () => {
     if (container)
@@ -135,17 +137,24 @@ exports.Scene = function (containerIn, rendererIn) {
    * @returns {THREE.Box3} 
    */
   this.getBoundingBox = () => {
-    let boundingBox1 = undefined, boundingBox2 = undefined;
-    for (let i = 0; i < zincObjects.length; i++) {
-      boundingBox2 = zincObjects[i].getBoundingBox();
-      if (boundingBox1 == undefined) {
-        boundingBox1 = boundingBox2;
-      } else {
-        if (boundingBox2)
-          boundingBox1.union(boundingBox2);
+    if (boundingBoxUpdateRequired) {
+      let boundingBox1 = undefined, boundingBox2 = undefined;
+      for (let i = 0; i < zincObjects.length; i++) {
+        boundingBox2 = zincObjects[i].getBoundingBox();
+        if (boundingBox1 == undefined) {
+          boundingBox1 = boundingBox2;
+        } else {
+          if (boundingBox2)
+            boundingBox1.union(boundingBox2);
+        }
+      }
+      if (boundingBox1) {
+        cachedBoundingBox.copy(boundingBox1);
+        if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady())
+          boundingBoxUpdateRequired = false;
       }
     }
-    return boundingBox1;
+    return cachedBoundingBox;
   }
 
   /**
@@ -590,7 +599,8 @@ exports.Scene = function (containerIn, rendererIn) {
 	  if (videoHandler) {
 		  if (videoHandler.isReadyToPlay()) {
 			  if (playAnimation) {
-				  videoHandler.video.play();
+          videoHandler.video.play();
+          boundingBoxUpdateRequired = true;
 			  } else {
 				  videoHandler.video.pause();
 			  }
@@ -614,7 +624,9 @@ exports.Scene = function (containerIn, rendererIn) {
         zincCameraControls.update(delta);
 			  for (let i = 0; i < zincObjects.length; i++) {
 				  zincObjects[i].render(playRate * delta, playAnimation, options);
-			  }
+        }
+        if (playAnimation && (delta !== 0))
+          boundingBoxUpdateRequired = true;
 		  } else {
 			  zincCameraControls.update(0);
 		  }
