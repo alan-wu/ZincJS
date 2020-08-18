@@ -3,26 +3,26 @@ const THREE = require('three');
 exports.Minimap = function(sceneIn) {
   let targetScene = sceneIn;
   this.camera = new THREE.OrthographicCamera(
-    -0.5, 0.5 , 0.5, -0.5, 0.01, 10);
+    -0.5, 0.5, 0.5, -0.5, 0.01, 10);
   this.helper = undefined;
 
   this.setCurrentCameraSettings = (diameter, newViewport) => {
-		this.camera.near = 0;
-		if (newViewport.farPlane)
-			this.camera.far = newViewport.farPlane;
-		if (newViewport.eyePosition)
-			this.camera.position.set( newViewport.eyePosition[0], 
-          newViewport.eyePosition[1], newViewport.eyePosition[2]);
+    this.camera.near = 0;
+    if (newViewport.farPlane)
+      this.camera.far = newViewport.farPlane;
+    if (newViewport.eyePosition)
+      this.camera.position.set(newViewport.eyePosition[0],
+        newViewport.eyePosition[1], newViewport.eyePosition[2]);
     if (newViewport.upVector)
-      this.camera.up.set( newViewport.upVector[0], newViewport.upVector[1],
+      this.camera.up.set(newViewport.upVector[0], newViewport.upVector[1],
         newViewport.upVector[2]);
-		if (newViewport.targetPosition) {
-			this.camera.lookAt( new THREE.Vector3(newViewport.targetPosition[0],
-          newViewport.targetPosition[1], newViewport.targetPosition[2]  ));
+    if (newViewport.targetPosition) {
+      this.camera.lookAt(new THREE.Vector3(newViewport.targetPosition[0],
+        newViewport.targetPosition[1], newViewport.targetPosition[2]));
     }
-    this.camera.zoom = 1 / diameter ;
-		this.camera.updateProjectionMatrix();
-	}
+    this.camera.zoom = 1 / diameter;
+    this.camera.updateProjectionMatrix();
+  }
 
   this.updateCamera = () => {
     if (!this.helper) {

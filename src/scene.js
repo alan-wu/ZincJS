@@ -118,7 +118,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * 
    * @param {Zinc.Viewport} viewData - Viewport data to be loaded. 
    */
-  this.loadView = ({ nearPlane, farPlane, eyePosition, targetPosition, upVector }) => {
+  this.loadView = ({ nearPlane, farPlane, eyePosition, targetPosition, upVector}) => {
     const viewPort = new (require('./controls').Viewport)();
     viewPort.nearPlane = nearPlane;
     viewPort.farPlane = farPlane;
