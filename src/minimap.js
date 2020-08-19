@@ -6,7 +6,7 @@ exports.Minimap = function(sceneIn) {
     -0.5, 0.5, 0.5, -0.5, 0.01, 10);
   this.helper = undefined;
 
-  this.setCurrentCameraSettings = (diameter, newViewport) => {
+  this.setCurrentCameraSettings = (diameter, newViewport, aspect) => {
     this.camera.near = 0;
     if (newViewport.farPlane)
       this.camera.far = newViewport.farPlane;
@@ -20,7 +20,10 @@ exports.Minimap = function(sceneIn) {
       this.camera.lookAt(new THREE.Vector3(newViewport.targetPosition[0],
         newViewport.targetPosition[1], newViewport.targetPosition[2]));
     }
-    this.camera.zoom = 1 / diameter;
+    if (aspect > 1)
+      this.camera.zoom = 1 / (diameter * aspect);
+    else
+      this.camera.zoom = aspect / diameter;
     this.camera.updateProjectionMatrix();
   }
 
@@ -41,7 +44,8 @@ exports.Minimap = function(sceneIn) {
       const clip_factor = 4.0;
       const viewport = cameraControl.getViewportFromCentreAndRadius(
         centreX, centreY, centreZ, radius, 40, radius * clip_factor);
-      this.setCurrentCameraSettings(diameter, viewport);
+      let aspect = cameraControl.cameraObject.aspect;
+      this.setCurrentCameraSettings(diameter, viewport, aspect);
     }
   }
 }
