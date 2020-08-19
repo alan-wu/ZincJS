@@ -372,6 +372,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * once the glyphset is succssfully load in.
    */
   this.loadGlyphsetURL = (metaurl, glyphurl, groupName, finishCallback) => {
+    boundingBoxUpdateRequired = true;
     sceneLoader.loadGlyphsetURL(metaurl, glyphurl, groupName, finishCallback);
   }
 
@@ -387,6 +388,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * once the glyphset is succssfully load in.
    */
   this.loadPointsetURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
+    boundingBoxUpdateRequired = true;
     sceneLoader.loadPointsetURL(url, timeEnabled, morphColour, groupName, finishCallback);
   }
 
@@ -402,7 +404,8 @@ exports.Scene = function (containerIn, rendererIn) {
  * once the glyphset is succssfully load in.
  */
   this.loadLinesURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
-    sceneLoader.loadPointsetURL(url, timeEnabled, morphColour, groupName, finishCallback);
+    boundingBoxUpdateRequired = true;
+    sceneLoader.loadLinesURL(url, timeEnabled, morphColour, groupName, finishCallback);
   }
 
   /**
@@ -415,6 +418,7 @@ exports.Scene = function (containerIn, rendererIn) {
   * once the STL geometry is succssfully loaded.
   */
   this.loadSTL = (url, groupName, finishCallback) => {
+    boundingBoxUpdateRequired = true;
     sceneLoader.loadSTL(url, groupName, finishCallback);
   }
 
@@ -428,6 +432,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * once the OBJ geometry is succssfully loaded.
    */
   this.loadOBJ = (url, groupName, finishCallback) => {
+    boundingBoxUpdateRequired = true;
     sceneLoader.loadOBJ(url, groupName, finishCallback);
   }
 
@@ -440,6 +445,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * for each glyphset and geometry that has been written in.
    */
   this.loadMetadataURL = (url, finishCallback, allCompletedCallback) => {
+    boundingBoxUpdateRequired = true;
     sceneLoader.loadMetadataURL(url, finishCallback, allCompletedCallback);
   }
 
@@ -450,6 +456,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * @deprecated
    */
   this.loadModelsURL = (urls, colours, opacities, timeEnabled, morphColour, finishCallback) => {
+    boundingBoxUpdateRequired = true;
     sceneLoader.loadModelsURL(urls, colours, opacities, timeEnabled, morphColour, finishCallback);
   }
 
@@ -470,6 +477,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * @deprecated
    */
   this.loadFromViewURL = (jsonFilePrefix, finishCallback) => {
+    boundingBoxUpdateRequired = true;
     sceneLoader.loadFromViewURL(jsonFilePrefix, finishCallback);
   }
   
@@ -562,6 +570,7 @@ exports.Scene = function (containerIn, rendererIn) {
     for (let i = 0; i < zincObjects.length; i++) {
       zincObjects[i].setMorphTime(time);
     }
+    boundingBoxUpdateRequired = true;
   }
 
   /**
@@ -906,5 +915,6 @@ exports.Scene = function (containerIn, rendererIn) {
     }
     zincObjects = [];
     sceneLoader.toBeDwonloaded = 0;
+    boundingBoxUpdateRequired = true;
   }
 }
