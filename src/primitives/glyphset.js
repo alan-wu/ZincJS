@@ -347,8 +347,8 @@ const Glyphset = function()  {
 			current_scales = scales["0"];
 		}
 		updateGlyphsetTransformation(current_positions, current_axis1s, current_axis2s, current_axis3s,
-				current_scales);
-		
+        current_scales);
+    this.boundingBoxUpdateRequired = true;
 		if (colors != undefined) {
 			if (morphColours) {
 				const bottom_colors = colors[bottom_frame.toString()];
@@ -418,13 +418,15 @@ const Glyphset = function()  {
 		if (colors != undefined) {
 			updateGlyphsetHexColors(colors["0"]);
 		}
-		this.ready = true;
+    this.ready = true;
+    this.boundingBoxUpdateRequired = true;
 	};
 	
 	this.addCustomGlyph = glyph => {
 		if (glyph.isGlyph)
 			glyphList.push(glyph);
-		this.ready = true;
+    this.ready = true;
+    this.boundingBoxUpdateRequired = true;
 	}
 	
 	this.addMeshAsGlyph = (mesh, id) => {
@@ -433,7 +435,8 @@ const Glyphset = function()  {
 			glyph.fromMesh(mesh);
 			glyphList.push(glyph);
 			this.morph.add(glyph.getGroup())
-			this.ready = true;
+      this.ready = true;
+      this.boundingBoxUpdateRequired = true;
 			return glyph;
 		}
 		return undefined;
@@ -520,16 +523,24 @@ const Glyphset = function()  {
 	this.getBoundingBox = () => {
 		let boundingBox1 = undefined, boundingBox2 = undefined;
 		if (this.morph.visible) {
-			for ( let i = 0; i < glyphList.length; i ++ ) {
-				boundingBox2 = glyphList[i].getBoundingBox();
-				if (boundingBox1 == undefined) {
-					boundingBox1 = boundingBox2;
-				} else {
-					boundingBox1.union(boundingBox2);
-				}
-			}
+      if (this.boundingBoxUpdateRequired) {
+        for ( let i = 0; i < glyphList.length; i ++ ) {
+          boundingBox2 = glyphList[i].getBoundingBox();
+          if (boundingBox1 == undefined) {
+            boundingBox1 = boundingBox2;
+          } else {
+            boundingBox1.union(boundingBox2);
+          }
+        }
+        if (boundingBox1) {
+          this.cachedBoundingBox.copy(boundingBox1);
+          this.boundingBoxUpdateRequired = false;
+        } else
+          return undefined;
+      }
+      return this.cachedBoundingBox;
 		}
-		return boundingBox1;
+		return undefined;
 	}
 	
 	/**
