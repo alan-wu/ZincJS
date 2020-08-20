@@ -65,6 +65,7 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.morphColour = localMorphColour;
   this.morph = mesh;
   this.morph.userData = this;
+  this.morph.matrixAutoUpdate = false;
   if (this.timeEnabled)
     this.setFrustumCulled(false);
   this.boundingBoxUpdateRequired = true;
