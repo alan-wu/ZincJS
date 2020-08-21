@@ -1,13 +1,31 @@
 const THREE = require('three');
 
-exports.Minimap = function(sceneIn) {
+exports.Minimap = function (sceneIn) {
   let targetScene = sceneIn;
   this.camera = new THREE.OrthographicCamera(
     -0.5, 0.5, 0.5, -0.5, 0.01, 10);
   this.helper = undefined;
+  let geometry = new THREE.BufferGeometry();
+  var vertices = new Float32Array( [
+    -1.0, -1.0,  1.0,
+     1.0, -1.0,  1.0,
+     1.0,  1.0,  1.0,
+     1.0,  1.0,  1.0,
+    -1.0,  1.0,  1.0,
+    -1.0, -1.0,  1.0
+  ] );
+  let positionAttributes = new THREE.BufferAttribute( vertices, 3 );
+  geometry.addAttribute( 'position', positionAttributes);
+  var material = new THREE.MeshBasicMaterial( { color: 0x333333, 
+    depthTest: false,
+    depthWrite: false,
+    opacity: 0.5,
+    transparent: true } );
+  this.mask = new THREE.Mesh( geometry, material );
 
-  this.setCurrentCameraSettings = (diameter, newViewport, aspect) => {
-    this.camera.near = 0;
+  let setCurrentCameraSettings = (diameter, newViewport, aspect)  => {
+    if (targetScene.camera.near)
+      this.camera.near = targetScene.camera.near;
     if (newViewport.farPlane)
       this.camera.far = newViewport.farPlane;
     if (newViewport.eyePosition)
@@ -16,10 +34,9 @@ exports.Minimap = function(sceneIn) {
     if (newViewport.upVector)
       this.camera.up.set(newViewport.upVector[0], newViewport.upVector[1],
         newViewport.upVector[2]);
-    if (newViewport.targetPosition) {
+    if (newViewport.targetPosition)
       this.camera.lookAt(new THREE.Vector3(newViewport.targetPosition[0],
         newViewport.targetPosition[1], newViewport.targetPosition[2]));
-    }
     if (aspect > 1)
       this.camera.zoom = 1 / (diameter * aspect);
     else
@@ -27,11 +44,20 @@ exports.Minimap = function(sceneIn) {
     this.camera.updateProjectionMatrix();
   }
 
+  this.getBoundary = () => {
+    let eye = new THREE.Vector3().copy(
+      targetScene.camera.target).project(targetScene.camera);
+    let v1 = new THREE.Vector3(-1, -1, eye.z).unproject(targetScene.camera);
+    let v2 = new THREE.Vector3(1, -1, eye.z).unproject(targetScene.camera);
+    let v3 = new THREE.Vector3(1, 1, eye.z).unproject(targetScene.camera);
+    let v4 = new THREE.Vector3(-1, 1, eye.z).unproject(targetScene.camera);
+    let array = [v1, v2, v3, v3, v4, v1];
+    positionAttributes.copyVector3sArray(array);
+    positionAttributes.needsUpdate = true;
+  }
+
   this.updateCamera = () => {
-    if (!this.helper) {
-      this.helper = new THREE.CameraHelper(targetScene.camera);
-    }
-    this.helper.update();
+    this.getBoundary();
     let cameraControl = targetScene.getZincCameraControls();
     let boundingBox = targetScene.getBoundingBox();
     if (boundingBox) {
@@ -45,7 +71,7 @@ exports.Minimap = function(sceneIn) {
       const viewport = cameraControl.getViewportFromCentreAndRadius(
         centreX, centreY, centreZ, radius, 40, radius * clip_factor);
       let aspect = cameraControl.cameraObject.aspect;
-      this.setCurrentCameraSettings(diameter, viewport, aspect);
+      setCurrentCameraSettings(diameter, viewport, aspect);
     }
   }
 }

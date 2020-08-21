@@ -26,6 +26,7 @@ const Marker = function(zincObject) {
       sizeAttenuation: false
     });
     sprite = new (require("../three/Sprite").Sprite)(spriteMaterial);
+    sprite.center.set(0.5, 0);
     this.morph.add(sprite);
     this.morph.position.set(0, 0, 0);
     sprite.scale.set(0.015, 0.02, 1);

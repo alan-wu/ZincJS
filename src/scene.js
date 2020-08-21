@@ -323,8 +323,8 @@ exports.Scene = function (containerIn, rendererIn) {
     point.project(this.camera);
     let width = getDrawingWidth();
     let height = getDrawingHeight();
-    var widthHalf = (width / 2);
-    var heightHalf = (height / 2);
+    let widthHalf = (width / 2);
+    let heightHalf = (height / 2);
     point.x = (point.x * widthHalf) + widthHalf;
     point.y = - (point.y * heightHalf) + heightHalf;
     return point;
@@ -679,14 +679,11 @@ exports.Scene = function (containerIn, rendererIn) {
         scissor.x,
         scissor.y,
         this.minimapScissor.width,
-        this.minimapScissor.height);
-      //renderer.clearDepth();
-      //minimap.camera.position.copy(this.camera.position);
-      //minimap.camera.matrix.copy(this.camera.matrix);
+        this.minimapScissor.height); 
       minimap.updateCamera();
-      scene.add(minimap.helper);
+      scene.add(minimap.mask);
       renderer.render(scene, minimap.camera);
-      scene.remove(minimap.helper);
+      scene.remove(minimap.mask);
       renderer.setScissorTest(false);
       renderer.setViewport(0, 0, target.x, target.y);
     }
