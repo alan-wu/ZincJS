@@ -23,7 +23,7 @@ exports.Minimap = function (sceneIn) {
     transparent: true } );
   this.mask = new THREE.Mesh( geometry, material );
 
-  let setCurrentCameraSettings = (diameter, newViewport, aspect)  => {
+  let setCurrentCameraSettings = (diameter, newViewport)  => {
     if (targetScene.camera.near)
       this.camera.near = targetScene.camera.near;
     if (newViewport.farPlane)
@@ -37,10 +37,7 @@ exports.Minimap = function (sceneIn) {
     if (newViewport.targetPosition)
       this.camera.lookAt(new THREE.Vector3(newViewport.targetPosition[0],
         newViewport.targetPosition[1], newViewport.targetPosition[2]));
-    if (aspect > 1)
-      this.camera.zoom = 1 / (diameter * aspect);
-    else
-      this.camera.zoom = aspect / diameter;
+    this.camera.zoom = 1 / diameter;
     this.camera.updateProjectionMatrix();
   }
 
@@ -70,8 +67,7 @@ exports.Minimap = function (sceneIn) {
       const clip_factor = 4.0;
       const viewport = cameraControl.getViewportFromCentreAndRadius(
         centreX, centreY, centreZ, radius, 40, radius * clip_factor);
-      let aspect = cameraControl.cameraObject.aspect;
-      setCurrentCameraSettings(diameter, viewport, aspect);
+      setCurrentCameraSettings(diameter, viewport);
     }
   }
 }
