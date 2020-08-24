@@ -1,5 +1,5 @@
 const THREE = require('three');
-const SceneLoader =require('./sceneLoader').SceneLoader;
+const SceneLoader = require('./sceneLoader').SceneLoader;
 
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
@@ -12,11 +12,12 @@ const SceneLoader =require('./sceneLoader').SceneLoader;
  * @author Alan Wu
  * @return {Zinc.Scene}
  */
-exports.Scene = function(containerIn, rendererIn) {
+exports.Scene = function (containerIn, rendererIn) {
   const container = containerIn;
   let zincObjects = [];
   let videoHandler = undefined;
   let sceneLoader = new SceneLoader(this);
+  let minimap = undefined;
   const scene = new THREE.Scene();
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
@@ -34,23 +35,31 @@ exports.Scene = function(containerIn, rendererIn) {
   let stereoEffect = undefined;
   this.autoClearFlag = true;
   this.displayMarkers = false;
+  this.displayMinimap = false;
+  this.minimapScissor = {
+    x_offset: 16,
+    y_offset: 16,
+    width: 128,
+    height: 128,
+    align: "top-left"
+  };
 
   const getDrawingWidth = () => {
-	  if (container)
-		  if (typeof container.clientWidth !== "undefined")
-			  return container.clientWidth;
-		  else
-			  return container.width;
-	  return 0;
+    if (container)
+      if (typeof container.clientWidth !== "undefined")
+        return container.clientWidth;
+      else
+        return container.width;
+    return 0;
   }
-  
+
   const getDrawingHeight = () => {
-	  if (container)
-		  if (typeof container.clientHeight !== "undefined")
-			  return container.clientHeight;
-		  else
-			  return container.height;
-	  return 0;
+    if (container)
+      if (typeof container.clientHeight !== "undefined")
+        return container.clientHeight;
+      else
+        return container.height;
+    return 0;
   }
 
   /**
@@ -97,6 +106,8 @@ exports.Scene = function(containerIn, rendererIn) {
 
     zincCameraControls.setDirectionalLight(this.directionalLight);
     zincCameraControls.resetView();
+
+    minimap = new (require('./minimap').Minimap)(this);
   };
 
   setupCamera();
@@ -107,7 +118,7 @@ exports.Scene = function(containerIn, rendererIn) {
    * 
    * @param {Zinc.Viewport} viewData - Viewport data to be loaded. 
    */
-  this.loadView = ({nearPlane, farPlane, eyePosition, targetPosition, upVector}) => {
+  this.loadView = ({ nearPlane, farPlane, eyePosition, targetPosition, upVector}) => {
     const viewPort = new (require('./controls').Viewport)();
     viewPort.nearPlane = nearPlane;
     viewPort.farPlane = farPlane;
@@ -204,19 +215,19 @@ exports.Scene = function(containerIn, rendererIn) {
     }
   }
 
-   /**
-   * A function which iterates through the list of lines and call the callback
-   * function with the lines as the argument.
-   * @param {Function} callbackFunction - Callback function with the lines
-   * as an argument.
-   */
+  /**
+  * A function which iterates through the list of lines and call the callback
+  * function with the lines as the argument.
+  * @param {Function} callbackFunction - Callback function with the lines
+  * as an argument.
+  */
   this.forEachLine = callbackFunction => {
     for (let i = zincObjects.length - 1; i >= 0; i--) {
       if (zincObjects[i].isLines)
         callbackFunction(zincObjects[i]);
     }
   }
-  
+
   /** 
    * Find and return all geometries in this scene with the matching GroupName.
    * 
@@ -233,7 +244,7 @@ exports.Scene = function(containerIn, rendererIn) {
     }
     return geometriesArray;
   }
-  
+
   /** 
    * Find and return all pointsets in this scene with the matching GroupName.
    * 
@@ -266,7 +277,7 @@ exports.Scene = function(containerIn, rendererIn) {
     }
     return glyphsetsArray;
   }
-  
+
   /** 
    * Find and return all lines in this scene with the matching GroupName.
    * 
@@ -312,10 +323,10 @@ exports.Scene = function(containerIn, rendererIn) {
     point.project(this.camera);
     let width = getDrawingWidth();
     let height = getDrawingHeight();
-    var widthHalf = (width/2);
-    var heightHalf = (height/2);
-    point.x = ( point.x * widthHalf ) + widthHalf;
-    point.y = - ( point.y * heightHalf ) + heightHalf;
+    let widthHalf = (width / 2);
+    let heightHalf = (height / 2);
+    point.x = (point.x * widthHalf) + widthHalf;
+    point.y = - (point.y * heightHalf) + heightHalf;
     return point;
   }
 
@@ -370,30 +381,30 @@ exports.Scene = function(containerIn, rendererIn) {
     sceneLoader.loadPointsetURL(url, timeEnabled, morphColour, groupName, finishCallback);
   }
 
-    /**
-   * Load lines into this scene object.
-   * 
-   * @param {String} metaurl - Provide informations such as transformations, colours 
-   * and others for each of the glyph in the glyphsset.
-   * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
-   * @param {Boolean} morphColour - Indicate if color morphing is enabled.
-   * @param {STRING} groupName - name to assign the pointset's groupname to.
-   * @param {Function} finishCallback - Callback function which will be called
-   * once the glyphset is succssfully load in.
-   */
+  /**
+ * Load lines into this scene object.
+ * 
+ * @param {String} metaurl - Provide informations such as transformations, colours 
+ * and others for each of the glyph in the glyphsset.
+ * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
+ * @param {Boolean} morphColour - Indicate if color morphing is enabled.
+ * @param {STRING} groupName - name to assign the pointset's groupname to.
+ * @param {Function} finishCallback - Callback function which will be called
+ * once the glyphset is succssfully load in.
+ */
   this.loadLinesURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
-    sceneLoader.loadPointsetURL(url, timeEnabled, morphColour, groupName, finishCallback);
+    sceneLoader.loadLinesURL(url, timeEnabled, morphColour, groupName, finishCallback);
   }
 
-   /**
-   * Read a STL file into this scene, the geometry will be presented as
-   * {@link Zinc.Geometry}. 
-   * 
-   * @param {STRING} url - location to the STL file.
-   * @param {STRING} groupName - name to assign the geometry's groupname to.
-   * @param {Function} finishCallback - Callback function which will be called
-   * once the STL geometry is succssfully loaded.
-   */
+  /**
+  * Read a STL file into this scene, the geometry will be presented as
+  * {@link Zinc.Geometry}. 
+  * 
+  * @param {STRING} url - location to the STL file.
+  * @param {STRING} groupName - name to assign the geometry's groupname to.
+  * @param {Function} finishCallback - Callback function which will be called
+  * once the STL geometry is succssfully loaded.
+  */
   this.loadSTL = (url, groupName, finishCallback) => {
     sceneLoader.loadSTL(url, groupName, finishCallback);
   }
@@ -579,7 +590,7 @@ exports.Scene = function(containerIn, rendererIn) {
 	  if (videoHandler) {
 		  if (videoHandler.isReadyToPlay()) {
 			  if (playAnimation) {
-				  videoHandler.video.play();
+          videoHandler.video.play();
 			  } else {
 				  videoHandler.video.pause();
 			  }
@@ -603,7 +614,7 @@ exports.Scene = function(containerIn, rendererIn) {
         zincCameraControls.update(delta);
 			  for (let i = 0; i < zincObjects.length; i++) {
 				  zincObjects[i].render(playRate * delta, playAnimation, options);
-			  }
+        }
 		  } else {
 			  zincCameraControls.update(0);
 		  }
@@ -627,6 +638,57 @@ exports.Scene = function(containerIn, rendererIn) {
     scene.add(scenesGroup);
   }
 
+  let getWindowsPosition = (align, x_offset, y_offset, width, height,
+    renderer_width, renderer_height) => {
+    let x = 0;
+    let y = 0;
+    if (align.includes("top")) {
+      y = renderer_height - height - y_offset;
+    } else if (align.includes("bottom")) {
+      y = y_offset;
+    } else {
+      y = Math.floor((renderer_height - height) / 2.0);
+    }
+    if (align.includes("left")) {
+      x = x_offset;
+    } else if (align.includes("right")) {
+      x = renderer_width - x_offset- width;
+    } else {
+      x = Math.floor((renderer_width - width) / 2.0);
+    }
+    return {x: x, y: y};
+  }
+
+  const renderMinimap = renderer => {
+    if (this.displayMinimap === true) {
+      renderer.setScissorTest(true);
+      const target = new THREE.Vector2();
+      renderer.getSize(target);
+      let scissor = getWindowsPosition(this.minimapScissor.align,
+        this.minimapScissor.x_offset, 
+        this.minimapScissor.y_offset, 
+        this.minimapScissor.width,
+        this.minimapScissor.height,
+        target.x, target.y);
+      renderer.setScissor(
+        scissor.x,
+        scissor.y,
+        this.minimapScissor.width,
+        this.minimapScissor.height);
+      renderer.setViewport(
+        scissor.x,
+        scissor.y,
+        this.minimapScissor.width,
+        this.minimapScissor.height); 
+      minimap.updateCamera();
+      scene.add(minimap.mask);
+      renderer.render(scene, minimap.camera);
+      scene.remove(minimap.mask);
+      renderer.setScissorTest(false);
+      renderer.setViewport(0, 0, target.x, target.y);
+    }
+  }
+
   /**
    * Render the scene.
    * @private
@@ -637,8 +699,10 @@ exports.Scene = function(containerIn, rendererIn) {
     if (stereoEffectFlag && stereoEffect) {
       stereoEffect.render(scene, this.camera);
     }
-    else
+    else {
       renderer.render(scene, this.camera);
+      renderMinimap(renderer);
+    }
   }
 
   /**

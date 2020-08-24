@@ -25,6 +25,8 @@ const ZincObject = function() {
   this.marker = undefined;
   this.markerUpdateRequired = true;
   this.markerVertexIndex = -1;
+  this.boundingBoxUpdateRequired = true;
+  this.cachedBoundingBox = new THREE.Box3();
 }
 
 ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
@@ -63,8 +65,10 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.morphColour = localMorphColour;
   this.morph = mesh;
   this.morph.userData = this;
+  this.morph.matrixAutoUpdate = false;
   if (this.timeEnabled)
     this.setFrustumCulled(false);
+  this.boundingBoxUpdateRequired = true;
 }
 
 ZincObject.prototype.setName = function(groupNameIn) {
@@ -147,6 +151,7 @@ ZincObject.prototype.setMorphTime = function(time) {
     }
   }
   if (timeChanged) {
+    this.boundingBoxUpdateRequired = true;
     updateMorphColorAttribute(this.geometry, this.morph);
     if (this.timeEnabled)
       this.markerUpdateRequired = true;
@@ -317,27 +322,31 @@ ZincObject.prototype.getClosestVertex = function() {
  */
 ZincObject.prototype.getBoundingBox = function() {
   if (this.morph && this.morph.visible) {
-    let influences = this.morph.morphTargetInfluences;
-    let attributes = this.morph.geometry.morphAttributes;
-    if (influences && attributes && attributes.position) {
-      let min = new THREE.Vector3();
-      let max = new THREE.Vector3();
+    if (this.boundingBoxUpdateRequired) {
+      let influences = this.morph.morphTargetInfluences;
+      let attributes = this.morph.geometry.morphAttributes;
       let found = false;
-      for (let i = 0; i < influences.length; i++) {
-        if (influences[i] > 0) {
-          found = true;
-          let box = new THREE.Box3().setFromArray(
-            attributes.position[i].array);
-          min.add(box.min.multiplyScalar(influences[i]));
-          max.add(box.max.multiplyScalar(influences[i]));
+      if (influences && attributes && attributes.position) {
+        let min = new THREE.Vector3();
+        let max = new THREE.Vector3();
+        for (let i = 0; i < influences.length; i++) {
+          if (influences[i] > 0) {
+            found = true;
+            let box = new THREE.Box3().setFromArray(
+              attributes.position[i].array);
+            min.add(box.min.multiplyScalar(influences[i]));
+            max.add(box.max.multiplyScalar(influences[i]));
+          }
         }
+        if (found)
+          this.cachedBoundingBox.set(min, max);
       }
-      if (found) {
-        return new THREE.Box3(min, max);
-      }
+      if (!found)
+        this.cachedBoundingBox.setFromBufferAttribute(
+          this.morph.geometry.attributes.position);
+      this.boundingBoxUpdateRequired = false;
     }
-    return new THREE.Box3().setFromBufferAttribute(
-      this.morph.geometry.attributes.position);
+    return this.cachedBoundingBox;
   }
   return undefined;
 }
@@ -399,14 +408,11 @@ ZincObject.prototype.render = function(delta, playAnimation, options) {
         targetTime = targetTime - this.duration;
       this.inbuildTime = targetTime;
     }
-    if (delta != 0 && this.morphColour == 1) {
-      if (typeof this.geometry !== "undefined") {
-        
-        if (this.morph.material.vertexColors == THREE.VertexColors)
-        {
-          updateMorphColorAttribute(this.geometry, this.morph);
-        }	
-      }
+    if (delta != 0) {
+      this.boundingBoxUpdateRequired = true;
+      if ((this.morphColour == 1) && (typeof this.geometry !== "undefined") &&
+          (this.morph.material.vertexColors == THREE.VertexColors))
+        updateMorphColorAttribute(this.geometry, this.morph);
     }
   }
   this.updateMarker(playAnimation, options);
