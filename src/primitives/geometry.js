@@ -1,12 +1,5 @@
 const THREE = require('three');
 
-function absNumericalSort( a, b ) {
-
-	return Math.abs( b[ 1 ] ) - Math.abs( a[ 1 ] );
-
-}
-
-
 /**
  * Provides an object which stores geometry and provides method which controls its animations.
  * This is created when a valid json file containging geometry is read into a {@link Zinc.Scene}

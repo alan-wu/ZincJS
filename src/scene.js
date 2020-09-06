@@ -43,6 +43,7 @@ exports.Scene = function (containerIn, rendererIn) {
     height: 128,
     align: "top-left"
   };
+  this.metadata = {};
 
   const getDrawingWidth = () => {
     if (container)
