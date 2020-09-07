@@ -41,8 +41,10 @@ exports.Scene = function (containerIn, rendererIn) {
     y_offset: 16,
     width: 128,
     height: 128,
-    align: "top-left"
+    align: "top-left",
+    updateRequired: true
   };
+  let scissor = {x: 0,  y: 0};
   this.metadata = {};
 
   const getDrawingWidth = () => {
@@ -78,6 +80,7 @@ exports.Scene = function (containerIn, rendererIn) {
     zincCameraControls.onResize();
     this.camera.aspect = getDrawingWidth() / getDrawingHeight();
     this.camera.updateProjectionMatrix();
+    this.minimapScissor.updateRequired = true;
   }
 
   /**
@@ -103,7 +106,7 @@ exports.Scene = function (containerIn, rendererIn) {
 
     this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     scene.add(this.directionalLight);
-    zincCameraControls = new (require('./controls').CameraControls)(this.camera, rendererIn.domElement, rendererIn, scene);
+    zincCameraControls = new (require('./controls').CameraControls)(this.camera, rendererIn.domElement, rendererIn, this);
 
     zincCameraControls.setDirectionalLight(this.directionalLight);
     zincCameraControls.resetView();
@@ -665,12 +668,15 @@ exports.Scene = function (containerIn, rendererIn) {
       renderer.setScissorTest(true);
       const target = new THREE.Vector2();
       renderer.getSize(target);
-      let scissor = getWindowsPosition(this.minimapScissor.align,
-        this.minimapScissor.x_offset, 
-        this.minimapScissor.y_offset, 
-        this.minimapScissor.width,
-        this.minimapScissor.height,
-        target.x, target.y);
+      if (this.minimapScissor.updateRequired) {
+        scissor = getWindowsPosition(this.minimapScissor.align,
+          this.minimapScissor.x_offset, 
+          this.minimapScissor.y_offset, 
+          this.minimapScissor.width,
+          this.minimapScissor.height,
+          target.x, target.y);
+        this.minimapScissor.updateRequired = false;
+      }
       renderer.setScissor(
         scissor.x,
         scissor.y,
@@ -878,6 +884,31 @@ exports.Scene = function (containerIn, rendererIn) {
     } else {
       return scene.children;
     }
+  }
+
+  this.getNormalisedMinimapCoordinates = (renderer, event) => {
+    if (this.displayMinimap) {
+      const target = new THREE.Vector2();
+      renderer.getSize(target);
+      let offsetY = target.y - event.clientY;
+      if (((scissor.x + this.minimapScissor.width) > event.clientX) &&
+        (event.clientX > scissor.x) && 
+        ((scissor.y + this.minimapScissor.height) > offsetY) &&
+        (offsetY > scissor.y)) {
+          let x = ((event.clientX - scissor.x) /
+            this.minimapScissor.width) * 2.0  - 1.0;
+          let y = ((offsetY - scissor.y) /
+            this.minimapScissor.height) * 2.0  - 1.0;
+          return {"x": x, "y": y};
+      }
+    }
+    return undefined;
+  }
+
+  this.getMinimapDiffFromNormalised = (x, y) => {
+    if (minimap)
+      return minimap.getDiffFromNormalised(x, y);
+    return undefined;
   }
 
   /**

@@ -23,6 +23,14 @@ exports.Minimap = function (sceneIn) {
     transparent: true } );
   this.mask = new THREE.Mesh( geometry, material );
 
+  this.getDiffFromNormalised = (x, y) => {
+    let centre = new THREE.Box3().setFromBufferAttribute(
+      positionAttributes).getCenter();
+    let coord = centre.clone().project(this.camera);
+    let new_coord = new THREE.Vector3(x, y, coord.z).unproject(this.camera);
+    return new_coord.sub(centre);
+  }
+
   let setCurrentCameraSettings = (diameter, newViewport)  => {
     if (targetScene.camera.near)
       this.camera.near = targetScene.camera.near;
@@ -42,12 +50,12 @@ exports.Minimap = function (sceneIn) {
   }
 
   this.getBoundary = () => {
-    let eye = new THREE.Vector3().copy(
+    let target = new THREE.Vector3().copy(
       targetScene.camera.target).project(targetScene.camera);
-    let v1 = new THREE.Vector3(-1, -1, eye.z).unproject(targetScene.camera);
-    let v2 = new THREE.Vector3(1, -1, eye.z).unproject(targetScene.camera);
-    let v3 = new THREE.Vector3(1, 1, eye.z).unproject(targetScene.camera);
-    let v4 = new THREE.Vector3(-1, 1, eye.z).unproject(targetScene.camera);
+    let v1 = new THREE.Vector3(-1, -1, target.z).unproject(targetScene.camera);
+    let v2 = new THREE.Vector3(1, -1, target.z).unproject(targetScene.camera);
+    let v3 = new THREE.Vector3(1, 1, target.z).unproject(targetScene.camera);
+    let v4 = new THREE.Vector3(-1, 1, target.z).unproject(targetScene.camera);
     let array = [v1, v2, v3, v3, v4, v1];
     positionAttributes.copyVector3sArray(array);
     positionAttributes.needsUpdate = true;
