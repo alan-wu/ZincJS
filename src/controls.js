@@ -976,9 +976,10 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 		const rect = zincCamera.domElement.getBoundingClientRect();
 		mouse.x = ((x - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((y - rect.top) / rect.height) * 2 + 1;
-    const threejsScene = scene.getThreeJSScene();
-    if (hostScene !== scene)
-		  renderer.render(threejsScene, zincCamera.cameraObject);
+    if (hostScene !== scene) {
+      const threejsScene = scene.getThreeJSScene();
+      renderer.render(threejsScene, zincCamera.cameraObject);
+    }
     raycaster.setFromCamera( mouse, zincCamera.cameraObject);
     let objects = scene.getPickableThreeJSObjects();
 		return raycaster.intersectObjects( objects, true );
