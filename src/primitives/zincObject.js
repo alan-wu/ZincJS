@@ -1,5 +1,9 @@
 const THREE = require('three');
 
+function absNumericalSort( a, b ) {
+	return Math.abs( b[ 1 ] ) - Math.abs( a[ 1 ] );
+}
+
 const ZincObject = function() {
   this.isZincObject = true;
   this.geometry = undefined;

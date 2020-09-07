@@ -11,7 +11,7 @@ const Viewport = function () {
 };
 
 const CameraControls = function ( object, domElement, renderer, scene ) {
-	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4 };
+	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5 };
 	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
 	const CLICK_ACTION = {};
 	CLICK_ACTION.MAIN = STATE.ROTATE;
@@ -60,47 +60,74 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	
 	this.setMouseButtonAction = (buttonName, actionName) => {
 		CLICK_ACTION[buttonName] = STATE[actionName];
-	}
+  }
+  
+  const translateViewport = translation => {
+    this.cameraObject.target.add(translation);
+    this.cameraObject.position.add(translation);
+    this.updateDirectionalLight();
+  }
 	
 	const onDocumentMouseDown = event => {
 		if (rect === undefined)
-			rect = this.domElement.getBoundingClientRect();
-		if (event.button == 0) {
-      if (event.ctrlKey)
+      rect = this.domElement.getBoundingClientRect();
+    // Check if mouse event hapens inside the minimap
+    let minimapCoordinates = undefined;
+    if (currentMode === MODE.DEFAULT)
+      minimapCoordinates = this.scene.getNormalisedMinimapCoordinates(
+        this.renderer, event);
+    if (!minimapCoordinates) {
+      if (event.button == 0) {
+        if (event.ctrlKey)
+          this._state = CLICK_ACTION.AUXILIARY;
+        else if (event.shiftKey)
+          this._state = CLICK_ACTION.SECONDARY;
+        else
+          this._state = CLICK_ACTION.MAIN;
+      } else if (event.button == 1) {
+        event.preventDefault();
         this._state = CLICK_ACTION.AUXILIARY;
-      else if (event.shiftKey)
-        this._state = CLICK_ACTION.SECONDARY;
-      else
-        this._state = CLICK_ACTION.MAIN;
-		} else if (event.button == 1) {
-			event.preventDefault();
-			this._state = CLICK_ACTION.AUXILIARY;
-	    } 
-	   	else if (event.button == 2) {
-	    	this._state = CLICK_ACTION.SECONDARY;
-	    }
-		this.pointer_x = event.clientX - rect.left;
-		this.pointer_y = event.clientY - rect.top;
-		this.pointer_x_start = this.pointer_x;
-		this.pointer_y_start = this.pointer_y;
-		this.previous_pointer_x = this.pointer_x;
-		this.previous_pointer_y= this.pointer_y;
-	}
+        } 
+        else if (event.button == 2) {
+          this._state = CLICK_ACTION.SECONDARY;
+        }
+      this.pointer_x = event.clientX - rect.left;
+      this.pointer_y = event.clientY - rect.top;
+      this.pointer_x_start = this.pointer_x;
+      this.pointer_y_start = this.pointer_y;
+      this.previous_pointer_x = this.pointer_x;
+      this.previous_pointer_y= this.pointer_y;
+    } else {
+      currentMode = MODE.MINIMAP;
+      let translation = this.scene.getMinimapDiffFromNormalised(
+        minimapCoordinates.x, minimapCoordinates.y);
+      translateViewport(translation);
+    }
+  }
 
 	const onDocumentMouseMove = event => {
 		if (rect === undefined)
 			rect = this.domElement.getBoundingClientRect();
 		this.pointer_x = event.clientX - rect.left;
 		this.pointer_y = event.clientY - rect.top;
-		
-		
-		if ((this._state === STATE.NONE) && (zincRayCaster !== undefined)) {
-			zincRayCaster.move(this, event.clientX, event.clientY, this.renderer);
-		}
+    if (currentMode === MODE.MINIMAP) {
+      let minimapCoordinates = this.scene.getNormalisedMinimapCoordinates(this.renderer, event);
+      if (minimapCoordinates) {
+        let translation = this.scene.getMinimapDiffFromNormalised(
+          minimapCoordinates.x, minimapCoordinates.y);
+        translateViewport(translation);
+      }
+    } else {
+      if ((this._state === STATE.NONE) && (zincRayCaster !== undefined)) {
+        zincRayCaster.move(this, event.clientX, event.clientY, this.renderer);
+      }
+    }
 	}
 	
 	const onDocumentMouseUp = event => {
-		this._state = STATE.NONE;
+    this._state = STATE.NONE;
+    if (currentMode == MODE.MINIMAP)
+      currentMode = MODE.DEFAULT;
 		if (zincRayCaster !== undefined) {
 			if (this.pointer_x_start==(event.clientX - rect.left) && this.pointer_y_start==(event.clientY- rect.top)) {
 				zincRayCaster.pick(this, event.clientX, event.clientY, this.renderer);
@@ -213,13 +240,15 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			old_far.unproject(this.cameraObject);
 			new_near.unproject(this.cameraObject);
 			new_far.unproject( this.cameraObject);
-			const translate_rate = 0.002;
-			const dx=translate_rate*((1.0-fact)*(new_near.x-old_near.x) + fact*(new_far.x-old_far.x));
-			const dy=translate_rate*((1.0-fact)*(new_near.y-old_near.y) + fact*(new_far.y-old_far.y));
-			const dz=translate_rate*((1.0-fact)*(new_near.z-old_near.z) + fact*(new_far.z-old_far.z));
-			this.cameraObject.position.set(this.cameraObject.position.x - dx, this.cameraObject.position.y - dy, this.cameraObject.position.z - dz);
-			this.updateDirectionalLight();
-			this.cameraObject.target.set(this.cameraObject.target.x - dx, this.cameraObject.target.y - dy, this.cameraObject.target.z - dz);
+      const translate_rate = -0.002;
+      let translation = new THREE.Vector3(
+        translate_rate*((1.0-fact)*(new_near.x-old_near.x) + 
+          fact*(new_far.x-old_far.x)),
+        translate_rate*((1.0-fact)*(new_near.y-old_near.y) + 
+          fact*(new_far.y-old_far.y)),
+        translate_rate*((1.0-fact)*(new_near.z-old_near.z) + 
+          fact*(new_far.z-old_far.z)));
+      translateViewport(translation);
 		}
 		this.previous_pointer_x = this.pointer_x;
 		this.previous_pointer_y = this.pointer_y;
@@ -947,9 +976,10 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 		const rect = zincCamera.domElement.getBoundingClientRect();
 		mouse.x = ((x - rect.left) / rect.width) * 2 - 1;
     mouse.y = -((y - rect.top) / rect.height) * 2 + 1;
-    const threejsScene = scene.getThreeJSScene();
-    if (hostScene !== scene)
-		  renderer.render(threejsScene, zincCamera.cameraObject);
+    if (hostScene !== scene) {
+      const threejsScene = scene.getThreeJSScene();
+      renderer.render(threejsScene, zincCamera.cameraObject);
+    }
     raycaster.setFromCamera( mouse, zincCamera.cameraObject);
     let objects = scene.getPickableThreeJSObjects();
 		return raycaster.intersectObjects( objects, true );
