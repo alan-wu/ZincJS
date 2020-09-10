@@ -45,7 +45,7 @@ exports.Scene = function (containerIn, rendererIn) {
     updateRequired: true
   };
   let scissor = {x: 0,  y: 0};
-  this.metadata = {};
+  let metadata = {};
 
   const getDrawingWidth = () => {
     if (container)
@@ -502,6 +502,7 @@ exports.Scene = function (containerIn, rendererIn) {
     if (newGeometry.morph) {
       newGeometry.setName(groupName);
       this.addZincObject(newGeometry);
+      newGeometry.setDuration(duration);
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGeometry);
       if (!videoHandler && newGeometry.videoHandler)
@@ -598,7 +599,8 @@ exports.Scene = function (containerIn, rendererIn) {
 			  } else {
 				  videoHandler.video.pause();
 			  }
-			  var currentTime = videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000;
+        var currentTime = videoHandler.video.currentTime /
+          videoHandler.getVideoDuration() * duration;
 			  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
 				  zincCameraControls.setTime(currentTime);
 				  zincCameraControls.update(0);
@@ -742,12 +744,16 @@ exports.Scene = function (containerIn, rendererIn) {
   }
 
   /**
-   * Set the default duration value for geometries and glyphsets that are to be loaded
-   * into this scene.
+   * Set the default duration value for geometries and glyphsets
+   * that are to be loaded into this scene.
    * @param {Number} durationIn - duration of the scene.
    */
   this.setDuration = durationIn => {
     duration = durationIn;
+    for (let i = 0; i < zincObjects.length; i++) {
+      zincObjects[i].setDuration(duration);
+    }
+    zincCameraControls.setPathDuration(durationIn);
   }
 
   /**
@@ -866,10 +872,9 @@ exports.Scene = function (containerIn, rendererIn) {
     }
   }
 
-    /**
+  /**
    * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
    * This does not remove obejcts that are added using the addObject APIs.
-
    */
   this.getPickableThreeJSObjects = () => {
     let returnedObjects = [];
@@ -886,6 +891,10 @@ exports.Scene = function (containerIn, rendererIn) {
     }
   }
 
+  /**
+   * Get the Normalised coordinates on minimap if mouse event is
+   * inside the minimap 
+   */
   this.getNormalisedMinimapCoordinates = (renderer, event) => {
     if (this.displayMinimap) {
       const target = new THREE.Vector2();
@@ -905,6 +914,10 @@ exports.Scene = function (containerIn, rendererIn) {
     return undefined;
   }
 
+  /**
+   * Get the coordinates difference of the current viewing
+   * point and projected coordinates.
+   */
   this.getMinimapDiffFromNormalised = (x, y) => {
     if (minimap)
       return minimap.getDiffFromNormalised(x, y);
@@ -914,7 +927,6 @@ exports.Scene = function (containerIn, rendererIn) {
   /**
    * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
    * This does not remove obejcts that are added using the addObject APIs.
-
    */
   this.clearAll = () => {
     for (let i = zincObjects.length - 1; i >= 0; i--) {
@@ -923,5 +935,5 @@ exports.Scene = function (containerIn, rendererIn) {
     }
     zincObjects = [];
     sceneLoader.toBeDwonloaded = 0;
-  }
+  
 }

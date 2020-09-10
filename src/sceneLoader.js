@@ -141,10 +141,11 @@ exports.SceneLoader = function (sceneIn) {
       options.localTimeEnabled = localTimeEnabled;
       options.localMorphColour = localMorphColour;
 
-      newLines.createLineSegment(geometry, material, options);
       if (newLines) {
+        newLines.createLineSegment(geometry, material, options);
         newLines.setName(groupName);
         scene.addZincObject(newLines);
+        newLines.setDuration(scene.getDuration());
       }
       --this.toBeDownloaded;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
@@ -185,7 +186,7 @@ exports.SceneLoader = function (sceneIn) {
 
   const loadGlyphset = (glyphsetData, glyphurl, groupName, finishCallback, isInline) => {
     const newGlyphset = new (require('./primitives/glyphset').Glyphset)();
-    newGlyphset.duration = 3000;
+    newGlyphset.setDuration(scene.getDuration());
     if (isInline) {
       newGlyphset.load(glyphsetData, glyphurl, finishCallback, isInline);
     }

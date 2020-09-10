@@ -494,7 +494,11 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 	this.setPathDuration = durationIn => {
-		duration = durationIn;
+    duration = durationIn;
+    if (smoothCameraTransitionObject)
+      smoothCameraTransitionObject.setDuration(duration);
+    if (rotateCameraTransitionObject)
+      rotateCameraTransitionObject.setDuration(duration);
 	}
 	
 	 this.getPlayRate = () => {
@@ -859,7 +863,7 @@ const SmoothCameraTransition = function(startingViewport, endingViewport, target
 	const endingTargetPosition = endingViewport.targetPosition;
 	const endingUp = endingViewport.upVector;
 	const targetCamera = targetCameraIn;
-	const duration = durationIn;
+	let duration = durationIn;
 	let inbuildTime = 0;
 	const enabled = true;
 	const updateLightWithPathFlag = true;
@@ -867,7 +871,11 @@ const SmoothCameraTransition = function(startingViewport, endingViewport, target
 	targetCamera.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
 	targetCamera.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
 	targetCamera.cameraObject.up.set( endingViewport.upVector[0],  endingViewport.upVector[1],
-	    endingViewport.upVector[2]);
+      endingViewport.upVector[2]);
+      
+  this.setDuration = newDuration => {
+    duration = newDuration;
+  }
 	
 	const updateTime = delta => {
 		let targetTime = inbuildTime + delta;
@@ -915,11 +923,16 @@ const RotateCameraTransition = function(axisIn, angleIn, targetCameraIn, duratio
   const axis = axisIn;
   const angle = angleIn;
   const targetCamera = targetCameraIn;
-  const duration = durationIn;
+  let duration = durationIn;
   let inbuildTime = 0;
   const enabled = true;
   const ratio = inbuildTime / duration;
   let completed = false;
+
+  this.setDuration = newDuration => {
+    duration = newDuration;
+  }
+	
   
   const updateCameraSettings = delta => {
     const previousTime = inbuildTime;

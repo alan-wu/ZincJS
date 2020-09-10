@@ -33,6 +33,18 @@ const ZincObject = function() {
   this.cachedBoundingBox = new THREE.Box3();
 }
 
+ZincObject.prototype.setDuration = function(durationIn) {
+  this.duration = durationIn;
+  if (this.clipAction) {
+    this.clipAction.setDuration(this.duration);
+    console.log("duration set");
+  }
+}
+
+ZincObject.prototype.getDuration = function() {
+  return this.duration;
+}
+
 ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
   let geometry = undefined;
   if (geometryIn instanceof THREE.Geometry) {
@@ -59,7 +71,8 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
     let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
       this.geometry.morphAttributes.position, 10, true);
     if (animationClip && animationClip[0] != undefined) {
-      this.clipAction = this.mixer.clipAction(animationClip[0]).setDuration(this.duration);
+      this.clipAction = this.mixer.clipAction(animationClip[0]).setDuration(
+        this.duration);
       this.clipAction.loop = THREE.loopOnce;
       this.clipAction.clampWhenFinished = true;
       this.clipAction.play();
