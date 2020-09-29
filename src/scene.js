@@ -878,17 +878,19 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.getPickableThreeJSObjects = () => {
     let returnedObjects = [];
-    if (this.displayMarkers) {
-      for (let i = zincObjects.length - 1; i >= 0; i--) {
-        let marker = zincObjects[i].marker;
-        if (marker && marker.isEnabled()) {
-          returnedObjects.push(marker.morph);
+    for (let i = zincObjects.length - 1; i >= 0; i--) {
+      if (zincObjects[i].morph && (zincObjects[i].morph.visible === true)) {
+        if (this.displayMarkers) {
+          let marker = zincObjects[i].marker;
+          if (marker && marker.isEnabled()) {
+            returnedObjects.push(marker.morph);
+          }
+        } else {
+          returnedObjects.push(zincObjects[i].morph);
         }
       }
-      return returnedObjects;
-    } else {
-      return scene.children;
     }
+    return returnedObjects;
   }
 
   /**
@@ -935,5 +937,14 @@ exports.Scene = function (containerIn, rendererIn) {
     }
     zincObjects = [];
     sceneLoader.toBeDwonloaded = 0;
-  
+  }
+
+  this.addMetadataTag = (key, value) => {
+    metadata[key] = value;
+  }
+
+  this.removeMetadataTag = key => {
+    delete metadata[key];
+  }
+
 }

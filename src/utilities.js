@@ -233,7 +233,7 @@ exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
 
         }
 
-        result.addAttribute( name, attribute );
+        result.setAttribute( name, attribute );
 
         // Update the attribute arrays
         if ( name in morphAttrsArrays ) {

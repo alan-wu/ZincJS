@@ -66,7 +66,7 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 					}
 
-					geometry.addAttribute( 'lineDistance', new Float32BufferAttribute( lineDistances, 1 ) );
+					geometry.setAttribute( 'lineDistance', new Float32BufferAttribute( lineDistances, 1 ) );
 
 				} else {
 
@@ -213,7 +213,7 @@ Line.prototype = Object.assign( Object.create( Object3D.prototype ), {
 
 		return function raycast( raycaster, intersects ) {
 
-			var precision = raycaster.linePrecision;
+			var precision = raycaster.params.Line.threshold;
 
 			var geometry = this.geometry;
 			var material = this.material;

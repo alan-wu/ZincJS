@@ -187,13 +187,13 @@ exports.SceneLoader = function (sceneIn) {
   const loadGlyphset = (glyphsetData, glyphurl, groupName, finishCallback, isInline) => {
     const newGlyphset = new (require('./primitives/glyphset').Glyphset)();
     newGlyphset.setDuration(scene.getDuration());
+    newGlyphset.groupName = groupName;
     if (isInline) {
       newGlyphset.load(glyphsetData, glyphurl, finishCallback, isInline);
     }
     else{
       newGlyphset.load(glyphsetData, resolveURL(glyphurl), finishCallback, isInline);
     }
-    newGlyphset.groupName = groupName;
     scene.addZincObject(newGlyphset);
   };
 
@@ -224,11 +224,11 @@ exports.SceneLoader = function (sceneIn) {
       let options = {};
       options.localTimeEnabled = localTimeEnabled;
       options.localMorphColour = localMorphColour;
-
-      newPointset.createMesh(geometry, material, options);
       if (newPointset) {
+        newPointset.createMesh(geometry, material, options);
         newPointset.setName(groupName);
         scene.addZincObject(newPointset);
+        newPointset.setDuration(scene.getDuration());
       }
       --this.toBeDownloaded;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))

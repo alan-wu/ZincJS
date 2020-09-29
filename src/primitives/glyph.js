@@ -117,23 +117,25 @@ const Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 	 * transformation.
 	 */
 	this.setTransformation = (position, axis1, axis2, axis3) => {
-		this.morph.matrix.elements[0] = axis1[0];
-		this.morph.matrix.elements[1] = axis1[1];
-		this.morph.matrix.elements[2] = axis1[2];
-		this.morph.matrix.elements[3] = 0.0;
-		this.morph.matrix.elements[4] = axis2[0];
-		this.morph.matrix.elements[5] = axis2[1];
-		this.morph.matrix.elements[6] = axis2[2];
-		this.morph.matrix.elements[7] = 0.0;
-		this.morph.matrix.elements[8] = axis3[0];
-		this.morph.matrix.elements[9] = axis3[1];
-		this.morph.matrix.elements[10] = axis3[2];
-		this.morph.matrix.elements[11] = 0.0;
-		this.morph.matrix.elements[12] = position[0];
-		this.morph.matrix.elements[13] = position[1];
-		this.morph.matrix.elements[14] = position[2];
-		this.morph.matrix.elements[15] = 1.0;
-		this.morph.matrixAutoUpdate = false;
+    if (this.morph) {
+      this.morph.matrix.elements[0] = axis1[0];
+      this.morph.matrix.elements[1] = axis1[1];
+      this.morph.matrix.elements[2] = axis1[2];
+      this.morph.matrix.elements[3] = 0.0;
+      this.morph.matrix.elements[4] = axis2[0];
+      this.morph.matrix.elements[5] = axis2[1];
+      this.morph.matrix.elements[6] = axis2[2];
+      this.morph.matrix.elements[7] = 0.0;
+      this.morph.matrix.elements[8] = axis3[0];
+      this.morph.matrix.elements[9] = axis3[1];
+      this.morph.matrix.elements[10] = axis3[2];
+      this.morph.matrix.elements[11] = 0.0;
+      this.morph.matrix.elements[12] = position[0];
+      this.morph.matrix.elements[13] = position[1];
+      this.morph.matrix.elements[14] = position[2];
+      this.morph.matrix.elements[15] = 1.0;
+      this.morph.matrixAutoUpdate = false;
+    }
 		if (label)
 		  label.setPosition(position[0],  position[1], position[2]);
 	}

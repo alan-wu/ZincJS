@@ -58,6 +58,8 @@ ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
     geometry.copy(geometryIn);
   }
   geometry.colorsNeedUpdate = true;
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
   if (geometryIn._video)
     geometry._video = geometryIn._video;
   return geometry;
@@ -83,8 +85,9 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.morph = mesh;
   this.morph.userData = this;
   this.morph.matrixAutoUpdate = false;
-  if (this.timeEnabled)
+  if (this.timeEnabled) {
     this.setFrustumCulled(false);
+  }
   this.boundingBoxUpdateRequired = true;
 }
 
@@ -127,11 +130,11 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
     }
     morphArray.sort(absNumericalSort);
     if (morphArray.length == 2) {
-      targetGeometry.addAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.addAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
+      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
+      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
     } else if (morphArray.length == 1) {
-      targetGeometry.addAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.addAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
+      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
+      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
     }
   }
 }
@@ -220,8 +223,9 @@ ZincObject.prototype.setAlpha = function(alpha) {
 }
 
 ZincObject.prototype.setFrustumCulled = function(flag) {
-  if (this.morph)
+  if (this.morph) {
     this.morph.frustumCulled = flag;
+  }
 }
 
 ZincObject.prototype.setVertexColors = function(vertexColors) {
@@ -376,7 +380,8 @@ ZincObject.prototype.dispose = function() {
     this.morph.geometry.dispose();
   if (this.morph && this.morph.material)
     this.morph.material.dispose();
-  this.geometry = undefined;
+  if (this.geometry)
+    this.geometry.dispose();
   this.mixer = undefined;
   this.morph = undefined;
   this.clipAction = undefined;
@@ -390,7 +395,6 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
     if (this.groupName) {
       if (!this.marker) {
         this.marker = new (require("./marker").Marker)(this);
-        this.morph.add(this.marker.morph);
         this.markerUpdateRequired = true;
       }
       if (this.markerUpdateRequired) {
@@ -401,12 +405,15 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
       //if (options && options.camera) {
       //  this.marker.updateDistanceBasedOpacity(options.camera.cameraObject);
       //}
-      if (!this.marker.isEnabled())
+      if (!this.marker.isEnabled()) {
         this.marker.enable();
+        this.morph.add(this.marker.morph);
+      }
     }
   } else {
     if (this.marker && this.marker.isEnabled()) {
       this.marker.disable();
+      this.morph.remove(this.marker.morph);
     }
     this.markerUpdateRequired = true;
   }
