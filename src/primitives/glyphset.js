@@ -30,7 +30,10 @@ const Glyphset = function()  {
 	this.ready = false;
 	let morphColours = false;
 	let morphVertices = false;
-	this.isGlyphset = true;
+  this.isGlyphset = true;
+  let _transformMatrix = new THREE.Matrix4();
+  const _bot_colour = new THREE.Color();
+  const _top_colour = new THREE.Color();
 	
 	/**
 	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
@@ -253,7 +256,6 @@ const Glyphset = function()  {
 			numberOfGlyphs = 3;
 		const numberOfPositions = current_positions.length / 3;
     let current_glyph_index = 0;
-    let matrix = new THREE.Matrix4();
 		for (let i = 0; i < numberOfPositions; i++) {
 			const current_index = i * 3;
 			const current_position = [current_positions[current_index], current_positions[current_index+1],
@@ -272,23 +274,23 @@ const Glyphset = function()  {
 			{
 				for (let j = 0; j < numberOfGlyphs; j++)
 				{
-          matrix.elements[0] = arrays[j][1][0];
-          matrix.elements[1] = arrays[j][1][1];
-          matrix.elements[2] = arrays[j][1][2];
-          matrix.elements[3] = 0.0;
-          matrix.elements[4] = arrays[j][2][0];
-          matrix.elements[5] = arrays[j][2][1];
-          matrix.elements[6] = arrays[j][2][2];
-          matrix.elements[7] = 0.0;
-          matrix.elements[8] = arrays[j][3][0];
-          matrix.elements[9] = arrays[j][3][1];
-          matrix.elements[10] = arrays[j][3][2];
-          matrix.elements[11] = 0.0;
-          matrix.elements[12] = arrays[j][0][0];
-          matrix.elements[13] = arrays[j][0][1];
-          matrix.elements[14] = arrays[j][0][2];
-          matrix.elements[15] = 1.0;
-          this.morph.setMatrixAt( current_glyph_index, matrix );
+          _transformMatrix.elements[0] = arrays[j][1][0];
+          _transformMatrix.elements[1] = arrays[j][1][1];
+          _transformMatrix.elements[2] = arrays[j][1][2];
+          _transformMatrix.elements[3] = 0.0;
+          _transformMatrix.elements[4] = arrays[j][2][0];
+          _transformMatrix.elements[5] = arrays[j][2][1];
+          _transformMatrix.elements[6] = arrays[j][2][2];
+          _transformMatrix.elements[7] = 0.0;
+          _transformMatrix.elements[8] = arrays[j][3][0];
+          _transformMatrix.elements[9] = arrays[j][3][1];
+          _transformMatrix.elements[10] = arrays[j][3][2];
+          _transformMatrix.elements[11] = 0.0;
+          _transformMatrix.elements[12] = arrays[j][0][0];
+          _transformMatrix.elements[13] = arrays[j][0][1];
+          _transformMatrix.elements[14] = arrays[j][0][2];
+          _transformMatrix.elements[15] = 1.0;
+          this.morph.setMatrixAt( current_glyph_index, _transformMatrix );
           const glyph = glyphList[current_glyph_index];
           if (glyph)
             glyph.setTransformation(arrays[j][0], arrays[j][1],
@@ -311,18 +313,15 @@ const Glyphset = function()  {
 			numberOfGlyphs = 3;
 		const numberOfColours = current_colors.length;
     let current_glyph_index = 0;
-    var colour = new THREE.Color();
 		for (let i = 0; i < numberOfColours; i++) {
 			const hex_values = current_colors[i];
 			for (let j = 0; j < numberOfGlyphs; j++)
 			{
-        this.morph.setColorAt( current_glyph_index,
-          colour.setHex( hex_values ) );
+        _bot_colour.setHex( hex_values )
+        this.morph.setColorAt( current_glyph_index, _bot_colour);
         const glyph = glyphList[current_glyph_index];
-				if (glyph) {
-					const mycolor = new THREE.Color(hex_values);
-					glyph.setColor(mycolor);
-				}
+				if (glyph) 
+					glyph.setColor(_bot_colour);
 				current_glyph_index++;
 			}
     }
@@ -379,12 +378,12 @@ const Glyphset = function()  {
 				const bottom_colors = colors[bottom_frame.toString()];
 				const top_colors = colors[top_frame.toString()];
 				for (let i = 0; i < bottom_colors.length; i++) {
-					const bot = new THREE.Color(bottom_colors[i]);
-					const top = new THREE.Color(top_colors[i]);
-					const resulting_color = new THREE.Color(bot.r * proportion + top.r * (1 - proportion),
-					                       bot.g * proportion + top.g * (1 - proportion),
-					                       bot.b * proportion + top.b * (1 - proportion));
-					current_colors.push(resulting_color.getHex());
+					_bot_colour.setHex(bottom_colors[i]);
+          _top_colour.setHex(top_colors[i]);
+          _bot_colour.setRGB(_bot_colour.r * proportion + _top_colour.r * (1 - proportion),
+            _bot_colour.g * proportion + _top_colour.g * (1 - proportion),
+            _bot_colour.b * proportion + _top_colour.b * (1 - proportion));
+					current_colors.push(_bot_colour.getHex());
 				}
 				/*
 				for (var i = 0; i < bottom_colors.length; i++) {
@@ -474,6 +473,8 @@ const Glyphset = function()  {
       this.geometry.computeBoundingBox();
       if (materials && materials[0]) {
         this.morph.material = materials[0];
+        if (morphColours)
+          this.morph.material.vertexColors = THREE.VertexColors;
       }
       createGlyphs();
       this.morph.name = this.groupName;
@@ -528,9 +529,8 @@ const Glyphset = function()  {
       }
       */
       if (this.morph) {
-        let matrix = new THREE.Matrix4();
-        this.morph.getMatrixAt(this.markerVertexIndex, matrix);
-        position.setFromMatrixPosition(matrix);
+        this.morph.getMatrixAt(this.markerVertexIndex, _transformMatrix);
+        position.setFromMatrixPosition(_transformMatrix);
       }
     }
 

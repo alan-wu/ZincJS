@@ -31,13 +31,13 @@ const ZincObject = function() {
   this.markerVertexIndex = -1;
   this.boundingBoxUpdateRequired = true;
   this.cachedBoundingBox = new THREE.Box3();
+  this._vertex = new THREE.Vector3();
 }
 
 ZincObject.prototype.setDuration = function(durationIn) {
   this.duration = durationIn;
   if (this.clipAction) {
     this.clipAction.setDuration(this.duration);
-    console.log("duration set");
   }
 }
 
@@ -319,9 +319,9 @@ ZincObject.prototype.getClosestVertex = function() {
       for (let i = 0; i < influences.length; i++) {
         if (influences[i] > 0) {
           found = true;
-          let vertex = new THREE.Vector3().fromArray(
+          this._vertex.fromArray(
             attributes.position[i].array, this.markerVertexIndex * 3);
-          position.add(vertex.multiplyScalar(influences[i]));
+          position.add(this._vertex.multiplyScalar(influences[i]));
         }
       }
       if (found)

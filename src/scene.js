@@ -46,6 +46,7 @@ exports.Scene = function (containerIn, rendererIn) {
   };
   let scissor = {x: 0,  y: 0};
   let metadata = {};
+  let _markerTarget = new THREE.Vector2();
 
   const getDrawingWidth = () => {
     if (container)
@@ -668,15 +669,14 @@ exports.Scene = function (containerIn, rendererIn) {
   const renderMinimap = renderer => {
     if (this.displayMinimap === true) {
       renderer.setScissorTest(true);
-      const target = new THREE.Vector2();
-      renderer.getSize(target);
+      renderer.getSize(_markerTarget);
       if (this.minimapScissor.updateRequired) {
         scissor = getWindowsPosition(this.minimapScissor.align,
           this.minimapScissor.x_offset, 
           this.minimapScissor.y_offset, 
           this.minimapScissor.width,
           this.minimapScissor.height,
-          target.x, target.y);
+          _markerTarget.x, _markerTarget.y);
         this.minimapScissor.updateRequired = false;
       }
       renderer.setScissor(
@@ -694,7 +694,7 @@ exports.Scene = function (containerIn, rendererIn) {
       renderer.render(scene, minimap.camera);
       scene.remove(minimap.mask);
       renderer.setScissorTest(false);
-      renderer.setViewport(0, 0, target.x, target.y);
+      renderer.setViewport(0, 0, _markerTarget.x, _markerTarget.y);
     }
   }
 

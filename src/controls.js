@@ -49,7 +49,16 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this._state = STATE.NONE;
 	let zincRayCaster = undefined;
 	this.targetTouchId = -1;
-	let rect = undefined;
+  let rect = undefined;
+  const _a = new THREE.Vector3();
+  const _b = new THREE.Vector3();
+  const _c = new THREE.Vector3();
+  const _new_b = new THREE.Vector3();
+  const _new_c = new THREE.Vector3();
+  const _axis = new THREE.Vector3();
+  const _v = new THREE.Vector3();
+  const _rel_eye = new THREE.Vector3();
+
 	if (this.cameraObject.target === undefined)
 		this.cameraObject.target = new THREE.Vector3( 0, 0, 0  );
 	
@@ -223,7 +232,6 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	const translate = () => {
 		if (typeof this.cameraObject !== "undefined")
 		{
-			const width = rect.width;
 			const height = rect.height;
 			const distance = this.cameraObject.position.distanceTo(this.cameraObject.target);
 			let fact = 0.0;
@@ -231,73 +239,65 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 				(distance <= this.cameraObject.far))
 			{
 				 fact = (distance-this.cameraObject.near)/(this.cameraObject.far-this.cameraObject.near);
-			}
-			const old_near = new THREE.Vector3(this.previous_pointer_x,height - this.previous_pointer_y,0.0);
-			const old_far = new THREE.Vector3(this.previous_pointer_x, height - this.previous_pointer_y,1.0);
-			const new_near = new THREE.Vector3(this.pointer_x,height - this.pointer_y,0.0);
-			const new_far = new THREE.Vector3(this.pointer_x,height - this.pointer_y,1.0);
-			old_near.unproject(this.cameraObject);
-			old_far.unproject(this.cameraObject);
-			new_near.unproject(this.cameraObject);
-			new_far.unproject( this.cameraObject);
+      }
+      //_b == old_near, _c = old_far, _new_b = new_near, _new_c = new_far
+			_b.set(this.previous_pointer_x,height - this.previous_pointer_y,0.0);
+			_c.set(this.previous_pointer_x, height - this.previous_pointer_y,1.0);
+			_new_b.set(this.pointer_x,height - this.pointer_y,0.0);
+			_new_c.set(this.pointer_x,height - this.pointer_y,1.0);
+			_b.unproject(this.cameraObject);
+			_c.unproject(this.cameraObject);
+			_new_b.unproject(this.cameraObject);
+			_new_c.unproject( this.cameraObject);
       const translate_rate = -0.002;
-      let translation = new THREE.Vector3(
-        translate_rate*((1.0-fact)*(new_near.x-old_near.x) + 
-          fact*(new_far.x-old_far.x)),
-        translate_rate*((1.0-fact)*(new_near.y-old_near.y) + 
-          fact*(new_far.y-old_far.y)),
-        translate_rate*((1.0-fact)*(new_near.z-old_near.z) + 
-          fact*(new_far.z-old_far.z)));
-      translateViewport(translation);
+      _new_b.sub(_b).multiplyScalar(1.0-fact);
+      _new_c.sub(_c).multiplyScalar(fact);
+      _new_b.add(_new_c).multiplyScalar(translate_rate);
+      translateViewport(_new_b);
 		}
 		this.previous_pointer_x = this.pointer_x;
 		this.previous_pointer_y = this.pointer_y;
 	}
-	
-	this.getVectorsFromRotateAboutLookAtPoints = (a, angle) => {
-	   a.normalize()
-	    let v = this.cameraObject.position.clone();
-	    v.sub(this.cameraObject.target)
-	    const rel_eye = v.clone();
-	    v.normalize()
-	    if (0.8 < Math.abs(v.x*a.x+v.y*a.y+v.z*a.z)) {
-	      v = this.cameraObject.up.clone();
-	    }
-	    const b = new THREE.Vector3 (a.y*v.z-a.z*v.y, a.z*v.x-a.x*v.z, a.x*v.y-a.y*v.x);
-	    b.normalize()
-	    const c = new THREE.Vector3 (a.y*b.z-a.z*b.y, a.z*b.x-a.x*b.z, a.x*b.y-a.y*b.x);
-	    const rel_eyea = a.x*rel_eye.x+a.y*rel_eye.y+a.z*rel_eye.z;
-	    const rel_eyeb = b.x*rel_eye.x+b.y*rel_eye.y+b.z*rel_eye.z;
-	    const rel_eyec = c.x*rel_eye.x+c.y*rel_eye.y+c.z*rel_eye.z;
-	    const upa = a.x*this.cameraObject.up.x+a.y*this.cameraObject.up.y+a.z*this.cameraObject.up.z;
-	    const upb = b.x*this.cameraObject.up.x+b.y*this.cameraObject.up.y+b.z*this.cameraObject.up.z;
-	    const upc = c.x*this.cameraObject.up.x+c.y*this.cameraObject.up.y+c.z*this.cameraObject.up.z;
+
+	this.getVectorsFromRotateAboutLookAtPoints = (axis, angle) => {
+      axis.normalize();
+	    _v.copy(this.cameraObject.position).sub(this.cameraObject.target);
+	    _rel_eye.copy(_v);
+	    _v.normalize()
+	    if (0.8 < Math.abs(_v.dot(axis))) {
+	      _v.copy(this.cameraObject.up);
+      }
+      _b.crossVectors(axis, _v).normalize();
+      _c.crossVectors(axis, _b);
+	    const rel_eyea = axis.dot(_rel_eye);
+	    const rel_eyeb = _b.dot(_rel_eye);
+	    const rel_eyec = _c.dot(_rel_eye);
+	    const upa = axis.dot(this.cameraObject.up); 
+	    const upb = _b.dot(this.cameraObject.up);
+	    const upc = _c.dot(this.cameraObject.up);
 	    const cos_angle = Math.cos(angle);
 	    const sin_angle = Math.sin(angle);
-	    const new_b = new THREE.Vector3(cos_angle*b.x+sin_angle*c.x,
-	                  cos_angle*b.y+sin_angle*c.y,
-	                  cos_angle*b.z+sin_angle*c.z);
-	    const new_c = new THREE.Vector3(cos_angle*c.x-sin_angle*b.x,
-	                  cos_angle*c.y-sin_angle*b.y,
-	                  cos_angle*c.z-sin_angle*b.z);               
-	    let eye_position = this.cameraObject.target.clone();
-	    eye_position.x = eye_position.x + a.x*rel_eyea + new_b.x*rel_eyeb+new_c.x*rel_eyec
-	    eye_position.y = eye_position.y + a.y*rel_eyea + new_b.y*rel_eyeb+new_c.y*rel_eyec
-	    eye_position.z = eye_position.z + a.z*rel_eyea + new_b.z*rel_eyeb+new_c.z*rel_eyec
-	    eye_position = [eye_position.x, eye_position.y, eye_position.z];
-	    const up_vector = [a.x*upa+new_b.x*upb+new_c.x*upc,
-            a.y*upa+new_b.y*upb+new_c.y*upc,
-            a.z*upa+new_b.z*upb+new_c.z*upc];
-	    return {position: eye_position, up: up_vector};
+      _new_b.set(cos_angle*_b.x+sin_angle*_c.x,
+	                  cos_angle*_b.y+sin_angle*_c.y,
+	                  cos_angle*_b.z+sin_angle*_c.z);
+	    _new_c.set(cos_angle*_c.x-sin_angle*_b.x,
+	                  cos_angle*_c.y-sin_angle*_b.y,
+	                  cos_angle*_c.z-sin_angle*_b.z);               
+      _v.copy(this.cameraObject.target);
+	    _v.x = _v.x + axis.x*rel_eyea + _new_b.x*rel_eyeb+_new_c.x*rel_eyec;
+	    _v.y = _v.y + axis.y*rel_eyea + _new_b.y*rel_eyeb+_new_c.y*rel_eyec;
+	    _v.z = _v.z + axis.z*rel_eyea + _new_b.z*rel_eyeb+_new_c.z*rel_eyec;
+	    _a.set(axis.x*upa+_new_b.x*upb+_new_c.x*upc,
+            axis.y*upa+_new_b.y*upb+_new_c.y*upc,
+            axis.z*upa+_new_b.z*upb+_new_c.z*upc);
+	    return {position: _v, up: _a};
 	}
 	
-	this.rotateAboutLookAtpoint = (a, angle) => {
-	  const returned_values = this.getVectorsFromRotateAboutLookAtPoints(a, angle);
-	  const eye_position = returned_values.position;
-	  const up_vector = returned_values.up;
-	  this.cameraObject.position.set(eye_position[0], eye_position[1], eye_position[2]);
+	this.rotateAboutLookAtpoint = (axis, angle) => {
+	  const returned_values = this.getVectorsFromRotateAboutLookAtPoints(axis, angle);
+	  this.cameraObject.position.copy(returned_values.position);
 	  this.updateDirectionalLight();
-	  this.cameraObject.up.set(up_vector[0], up_vector[1], up_vector[2]);
+	  this.cameraObject.up.copy(returned_values.up);
 	}
 
 	const tumble = () => {
@@ -326,23 +326,14 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 					}
 					const phi=Math.acos(d/radius)-0.5*Math.PI;
 					const angle=this.tumble_rate*tangent_dist/radius;
-					const a = this.cameraObject.position.clone();
-					a.sub(this.cameraObject.target);
-					a.normalize();
-					
-					const b = this.cameraObject.up.clone();
-					b.normalize();
-					
-					const c = b.clone();
-					c.cross(a);
-					c.normalize();
-
-					const e = [dx*c.x + dy*b.x, dx*c.y + dy*b.y, dx*c.z + dy*b.z];
-					const axis = new THREE.Vector3();
-					axis.set(Math.sin(phi)*a.x+Math.cos(phi)*e[0],
-						Math.sin(phi)*a.y+Math.cos(phi)*e[1],
-						Math.sin(phi)*a.z+Math.cos(phi)*e[2]);
-					this.rotateAboutLookAtpoint(axis, -angle);
+					_a.copy(this.cameraObject.position).sub(this.cameraObject.target).normalize();
+					_b.copy(this.cameraObject.up).normalize();
+          _c.copy(_b).cross(_a).normalize().multiplyScalar(dx);
+          _b.multiplyScalar(dy);
+          _axis.addVectors(_c, _b).multiplyScalar(Math.cos(phi));
+          _a.multiplyScalar(Math.sin(phi));
+          _axis.add(_a);
+					this.rotateAboutLookAtpoint(_axis, -angle);
 				}
 			}
 		}
@@ -1047,7 +1038,9 @@ const CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCamera
 	const updateLightWithPathFlag = true;
 	const tumbleDirection = tumbleDirectionIn;
 	this.stopOnCameraInput = stopOnCameraInputIn;
-	this.requireUpdate = true;
+  this.requireUpdate = true;
+  const b = new THREE.Vector3();
+  const c = new THREE.Vector3();
 	
 	const computeTumbleAxisAngle = tumbleDirection => {
 		const tangent_dist = Math.sqrt(tumbleDirection[0]*tumbleDirection[0] +
@@ -1073,24 +1066,15 @@ const CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCamera
 		
 		const phi=Math.acos(d/radius)-0.5*Math.PI;
 		/* get axis to rotate about */
-		const a = new THREE.Vector3(targetCamera.cameraObject.position.x - targetCamera.cameraObject.target.x,
-		         targetCamera.cameraObject.position.y - targetCamera.cameraObject.target.y,
-		         targetCamera.cameraObject.position.z - targetCamera.cameraObject.target.z);
-		a.normalize();
-		const b = new THREE.Vector3(targetCamera.cameraObject.up.x, targetCamera.cameraObject.up.y,
-		         					targetCamera.cameraObject.up.z);
-		b.normalize();
-		const c = new THREE.Vector3();
-		c.crossVectors(b, a);
-		c.normalize();
-		const e = new THREE.Vector3(dx*c.x + dy*b.x, dx*c.y + dy*b.y, dx*c.z + dy*b.z);
-		tumbleAxis.x = Math.sin(phi) * a.x + Math.cos(phi) * e.x;
-		tumbleAxis.y = Math.sin(phi) * a.y + Math.cos(phi) * e.y;
-		tumbleAxis.z = Math.sin(phi) * a.z + Math.cos(phi) * e.z;
+		tumbleAxis.copy(targetCamera.cameraObject.position).sub(
+      targetCamera.cameraObject.target).normalize();
+		b.copy(targetCamera.cameraObject.up).normalize();
+    c.crossVectors(b, tumbleAxis).normalize().multiplyScalar(dx);
+    b.multiplyScalar(dy);
+    b.add(c).multiplyScalar(Math.cos(phi));
+    tumbleAxis.multiplyScalar(Math.sin(phi)).add(b);
 	};
-	
-	
-	
+		
 	this.update = delta => {
 
 		if ( this.enabled === false ) return;
