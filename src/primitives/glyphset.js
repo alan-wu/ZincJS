@@ -471,11 +471,8 @@ const Glyphset = function()  {
       this.geometry.fromGeometry(geometry);
       this.geometry.computeBoundingSphere();
       this.geometry.computeBoundingBox();
-      if (materials && materials[0]) {
+      if (materials && materials[0])
         this.morph.material = materials[0];
-        if (morphColours)
-          this.morph.material.vertexColors = THREE.VertexColors;
-      }
       createGlyphs();
       this.morph.name = this.groupName;
       this.morph.userData = this;
