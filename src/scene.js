@@ -45,7 +45,8 @@ exports.Scene = function (containerIn, rendererIn) {
     updateRequired: true
   };
   let scissor = {x: 0,  y: 0};
-  this.metadata = {};
+  let metadata = {};
+  let _markerTarget = new THREE.Vector2();
 
   const getDrawingWidth = () => {
     if (container)
@@ -502,6 +503,7 @@ exports.Scene = function (containerIn, rendererIn) {
     if (newGeometry.morph) {
       newGeometry.setName(groupName);
       this.addZincObject(newGeometry);
+      newGeometry.setDuration(duration);
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGeometry);
       if (!videoHandler && newGeometry.videoHandler)
@@ -598,7 +600,8 @@ exports.Scene = function (containerIn, rendererIn) {
 			  } else {
 				  videoHandler.video.pause();
 			  }
-			  var currentTime = videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000;
+        var currentTime = videoHandler.video.currentTime /
+          videoHandler.getVideoDuration() * duration;
 			  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
 				  zincCameraControls.setTime(currentTime);
 				  zincCameraControls.update(0);
@@ -666,15 +669,14 @@ exports.Scene = function (containerIn, rendererIn) {
   const renderMinimap = renderer => {
     if (this.displayMinimap === true) {
       renderer.setScissorTest(true);
-      const target = new THREE.Vector2();
-      renderer.getSize(target);
+      renderer.getSize(_markerTarget);
       if (this.minimapScissor.updateRequired) {
         scissor = getWindowsPosition(this.minimapScissor.align,
           this.minimapScissor.x_offset, 
           this.minimapScissor.y_offset, 
           this.minimapScissor.width,
           this.minimapScissor.height,
-          target.x, target.y);
+          _markerTarget.x, _markerTarget.y);
         this.minimapScissor.updateRequired = false;
       }
       renderer.setScissor(
@@ -692,7 +694,7 @@ exports.Scene = function (containerIn, rendererIn) {
       renderer.render(scene, minimap.camera);
       scene.remove(minimap.mask);
       renderer.setScissorTest(false);
-      renderer.setViewport(0, 0, target.x, target.y);
+      renderer.setViewport(0, 0, _markerTarget.x, _markerTarget.y);
     }
   }
 
@@ -742,12 +744,16 @@ exports.Scene = function (containerIn, rendererIn) {
   }
 
   /**
-   * Set the default duration value for geometries and glyphsets that are to be loaded
-   * into this scene.
+   * Set the default duration value for geometries and glyphsets
+   * that are to be loaded into this scene.
    * @param {Number} durationIn - duration of the scene.
    */
   this.setDuration = durationIn => {
     duration = durationIn;
+    for (let i = 0; i < zincObjects.length; i++) {
+      zincObjects[i].setDuration(duration);
+    }
+    zincCameraControls.setPathDuration(durationIn);
   }
 
   /**
@@ -866,26 +872,31 @@ exports.Scene = function (containerIn, rendererIn) {
     }
   }
 
-    /**
+  /**
    * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
    * This does not remove obejcts that are added using the addObject APIs.
-
    */
   this.getPickableThreeJSObjects = () => {
     let returnedObjects = [];
-    if (this.displayMarkers) {
-      for (let i = zincObjects.length - 1; i >= 0; i--) {
-        let marker = zincObjects[i].marker;
-        if (marker && marker.isEnabled()) {
-          returnedObjects.push(marker.morph);
+    for (let i = zincObjects.length - 1; i >= 0; i--) {
+      if (zincObjects[i].morph && (zincObjects[i].morph.visible === true)) {
+        if (this.displayMarkers) {
+          let marker = zincObjects[i].marker;
+          if (marker && marker.isEnabled()) {
+            returnedObjects.push(marker.morph);
+          }
+        } else {
+          returnedObjects.push(zincObjects[i].morph);
         }
       }
-      return returnedObjects;
-    } else {
-      return scene.children;
     }
+    return returnedObjects;
   }
 
+  /**
+   * Get the Normalised coordinates on minimap if mouse event is
+   * inside the minimap 
+   */
   this.getNormalisedMinimapCoordinates = (renderer, event) => {
     if (this.displayMinimap) {
       const target = new THREE.Vector2();
@@ -905,6 +916,10 @@ exports.Scene = function (containerIn, rendererIn) {
     return undefined;
   }
 
+  /**
+   * Get the coordinates difference of the current viewing
+   * point and projected coordinates.
+   */
   this.getMinimapDiffFromNormalised = (x, y) => {
     if (minimap)
       return minimap.getDiffFromNormalised(x, y);
@@ -914,7 +929,6 @@ exports.Scene = function (containerIn, rendererIn) {
   /**
    * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
    * This does not remove obejcts that are added using the addObject APIs.
-
    */
   this.clearAll = () => {
     for (let i = zincObjects.length - 1; i >= 0; i--) {
@@ -924,4 +938,13 @@ exports.Scene = function (containerIn, rendererIn) {
     zincObjects = [];
     sceneLoader.toBeDwonloaded = 0;
   }
+
+  this.addMetadataTag = (key, value) => {
+    metadata[key] = value;
+  }
+
+  this.removeMetadataTag = key => {
+    delete metadata[key];
+  }
+
 }

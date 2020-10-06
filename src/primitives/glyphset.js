@@ -26,12 +26,14 @@ const Glyphset = function()  {
 	let baseSize = [0, 0, 0];
 	let offset = [0, 0, 0];
 	let scaleFactors = [ 0, 0, 0 ];
-	let repeat_mode = "NONE";
+  let repeat_mode = "NONE";
 	this.ready = false;
-	this.morph = new THREE.Group();
 	let morphColours = false;
 	let morphVertices = false;
-	this.isGlyphset = true;
+  this.isGlyphset = true;
+  let _transformMatrix = new THREE.Matrix4();
+  const _bot_colour = new THREE.Color();
+  const _top_colour = new THREE.Color();
 	
 	/**
 	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
@@ -73,6 +75,8 @@ const Glyphset = function()  {
 		offset = glyphsetData.metadata.offset;
 		scaleFactors = glyphsetData.metadata.scale_factors;
     const loader = new JSONLoader();
+    this.geometry =  new THREE.BufferGeometry();
+    this.morph = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
     if (isInline) {
       var object = loader.parse( glyphURL );
       (meshloader(finishCallback))( object.geometry, object.materials );
@@ -251,7 +255,7 @@ const Glyphset = function()  {
 		else if (repeat_mode == "AXES_3D")
 			numberOfGlyphs = 3;
 		const numberOfPositions = current_positions.length / 3;
-		let current_glyph_index = 0;
+    let current_glyph_index = 0;
 		for (let i = 0; i < numberOfPositions; i++) {
 			const current_index = i * 3;
 			const current_position = [current_positions[current_index], current_positions[current_index+1],
@@ -270,13 +274,32 @@ const Glyphset = function()  {
 			{
 				for (let j = 0; j < numberOfGlyphs; j++)
 				{
-					const glyph = glyphList[current_glyph_index];
-					if(glyph)
-						glyph.setTransformation(arrays[j][0], arrays[j][1], arrays[j][2], arrays[j][3]);
-					current_glyph_index++;
+          _transformMatrix.elements[0] = arrays[j][1][0];
+          _transformMatrix.elements[1] = arrays[j][1][1];
+          _transformMatrix.elements[2] = arrays[j][1][2];
+          _transformMatrix.elements[3] = 0.0;
+          _transformMatrix.elements[4] = arrays[j][2][0];
+          _transformMatrix.elements[5] = arrays[j][2][1];
+          _transformMatrix.elements[6] = arrays[j][2][2];
+          _transformMatrix.elements[7] = 0.0;
+          _transformMatrix.elements[8] = arrays[j][3][0];
+          _transformMatrix.elements[9] = arrays[j][3][1];
+          _transformMatrix.elements[10] = arrays[j][3][2];
+          _transformMatrix.elements[11] = 0.0;
+          _transformMatrix.elements[12] = arrays[j][0][0];
+          _transformMatrix.elements[13] = arrays[j][0][1];
+          _transformMatrix.elements[14] = arrays[j][0][2];
+          _transformMatrix.elements[15] = 1.0;
+          this.morph.setMatrixAt( current_glyph_index, _transformMatrix );
+          const glyph = glyphList[current_glyph_index];
+          if (glyph)
+            glyph.setTransformation(arrays[j][0], arrays[j][1],
+              arrays[j][2], arrays[j][3]);
+          current_glyph_index++;
 				}
 			}
-		}
+    }
+    this.morph.instanceMatrix.needsUpdate = true;
 	};
 	
 	/**
@@ -289,19 +312,20 @@ const Glyphset = function()  {
 		else if (repeat_mode == "AXES_3D")
 			numberOfGlyphs = 3;
 		const numberOfColours = current_colors.length;
-		let current_glyph_index = 0;
+    let current_glyph_index = 0;
 		for (let i = 0; i < numberOfColours; i++) {
 			const hex_values = current_colors[i];
 			for (let j = 0; j < numberOfGlyphs; j++)
 			{
-				const glyph = glyphList[current_glyph_index];
-				if (glyph) {
-					const mycolor = new THREE.Color(hex_values);
-					glyph.setColor(mycolor);
-				}
+        _bot_colour.setHex( hex_values )
+        this.morph.setColorAt( current_glyph_index, _bot_colour);
+        const glyph = glyphList[current_glyph_index];
+				if (glyph) 
+					glyph.setColor(_bot_colour);
 				current_glyph_index++;
 			}
-		}
+    }
+    this.morph.instanceColor.needsUpdate = true;
 	};
 	
 	/**
@@ -354,14 +378,13 @@ const Glyphset = function()  {
 				const bottom_colors = colors[bottom_frame.toString()];
 				const top_colors = colors[top_frame.toString()];
 				for (let i = 0; i < bottom_colors.length; i++) {
-					const bot = new THREE.Color(bottom_colors[i]);
-					const top = new THREE.Color(top_colors[i]);
-					const resulting_color = new THREE.Color(bot.r * proportion + top.r * (1 - proportion),
-					                       bot.g * proportion + top.g * (1 - proportion),
-					                       bot.b * proportion + top.b * (1 - proportion));
-					current_colors.push(resulting_color.getHex());
-				}				
-				
+					_bot_colour.setHex(bottom_colors[i]);
+          _top_colour.setHex(top_colors[i]);
+          _bot_colour.setRGB(_bot_colour.r * proportion + _top_colour.r * (1 - proportion),
+            _bot_colour.g * proportion + _top_colour.g * (1 - proportion),
+            _bot_colour.b * proportion + _top_colour.b * (1 - proportion));
+					current_colors.push(_bot_colour.getHex());
+				}
 				/*
 				for (var i = 0; i < bottom_colors.length; i++) {
 					current_colors.push(proportion * bottom_colors[i] + (1.0 - proportion) * top_colors[i]);
@@ -384,33 +407,22 @@ const Glyphset = function()  {
 		for ( let i = 0; i < glyphList.length; i ++ )
 			glyphList[i].showLabel();
 	}
-
-	this.getColourHex = () => {
-		if (!this.morphColour) {
-			if (glyphList.length > 0)
-				return glyphList[0].getColourHex();
-		}
-		return undefined;
-	}
-
-	this.setColourHex = hex => {
-		for (let i = 0; i < glyphList.length; i++) {
-			glyphList[i].setColourHex(hex);
-		}
-	}
 	
-	const createGlyphs = (geometry, material) => {
-		for (let i = 0; i < numberOfVertices; i ++) {
-			const glyph = new (require('./glyph').Glyph)(geometry, material, i + 1, this);
-			if (labels != undefined && labels[i] != undefined) {
-			  glyph.setLabel(labels[i]);
-			}
-			if (numberOfTimeSteps > 0) {
-				glyph.setFrustumCulled(false);
-			}
-			glyphList[i] = glyph;
-			this.morph.add(glyph.getGroup());
-		}
+	const createGlyphs = () => {
+    if (labels != undefined) {
+      for (let i = 0; i < numberOfVertices; i ++) {
+        const glyph = new (require('./glyph').Glyph)(undefined, undefined, i, this);
+        if (labels != undefined && labels[i] != undefined) {
+          glyph.setLabel(labels[i]);
+        }
+        if (numberOfTimeSteps > 0) {
+          glyph.setFrustumCulled(false);
+        }
+        glyphList[i] = glyph;
+        this.morph.add(glyph.getGroup());
+      }
+    }
+
 		//Update the transformation of the glyphs.
 		updateGlyphsetTransformation(positions["0"], axis1s["0"],
 				axis2s["0"], axis3s["0"], scales["0"]);
@@ -456,12 +468,13 @@ const Glyphset = function()  {
 	
 	var meshloader = finishCallback => {
     return (geometry, materials) => {
-      let bufferGeometry = new THREE.BufferGeometry().fromGeometry(geometry);
-      let material = undefined;
-      if (materials && materials[0]) {
-        material = materials[0];
-      }
-      createGlyphs(bufferGeometry, material);
+      this.geometry.fromGeometry(geometry);
+      this.geometry.computeBoundingSphere();
+      this.geometry.computeBoundingBox();
+      if (materials && materials[0])
+        this.morph.material = materials[0];
+      createGlyphs();
+      this.morph.name = this.groupName;
       this.morph.userData = this;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
        finishCallback(this);
@@ -473,7 +486,7 @@ const Glyphset = function()  {
  */
   this.getClosestVertexIndex = function() {
     let closestIndex = -1;
-    if (this.morph) {
+    if (this.morph &&  this.ready) {
       let center = new THREE.Vector3();
       this.getBoundingBox().getCenter(center);
       let current_positions = positions["0"];
@@ -487,9 +500,10 @@ const Glyphset = function()  {
           current_positions[current_index+1],
           current_positions[current_index+2]);
         currentDistance = center.distanceTo(position);
-        if (distance == -1)
+        if (distance == -1) {
           distance = currentDistance;
-        else if (distance > (currentDistance)) {
+          closestIndex = i;
+        } else if (distance > currentDistance) {
           distance = currentDistance;
           closestIndex = i;
         }
@@ -502,17 +516,25 @@ const Glyphset = function()  {
    * Get the  closest vertex to centroid.
    */
   this.getClosestVertex = function() {
-    let position = new THREE.Vector3();
+    
     if (this.markerVertexIndex == -1) {
       this.markerVertexIndex = this.getClosestVertexIndex();
     }
     if (this.markerVertexIndex >= 0) {
+      /*
       if (glyphList && glyphList[this.markerVertexIndex]) {
         glyphList[this.markerVertexIndex].getBoundingBox().getCenter(position);
       }
+      */
+      if (this.morph) {
+        let position = new THREE.Vector3();
+        this.morph.getMatrixAt(this.markerVertexIndex, _transformMatrix);
+        position.setFromMatrixPosition(_transformMatrix);
+        return position;
+      }
     }
 
-    return position;
+    return undefined;
   }
 	
 	/**
@@ -521,19 +543,21 @@ const Glyphset = function()  {
 	 * @return {Three.Box3};
 	 */
 	this.getBoundingBox = () => {
-		let boundingBox1 = undefined, boundingBox2 = undefined;
-		if (this.morph.visible) {
+    if (this.morph && this.ready && this.morph.visible) {
       if (this.boundingBoxUpdateRequired) {
-        for ( let i = 0; i < glyphList.length; i ++ ) {
-          boundingBox2 = glyphList[i].getBoundingBox();
-          if (boundingBox1 == undefined) {
-            boundingBox1 = boundingBox2;
-          } else {
-            boundingBox1.union(boundingBox2);
-          }
+        let boundingBox1 = new THREE.Box3();
+        let boundingBox2 = undefined;
+        boundingBox1.setFromBufferAttribute(
+          this.morph.geometry.attributes.position);
+        for (let i = 0; i < numberOfVertices; i++) {
+          this.morph.getMatrixAt(i, _transformMatrix);
+          if (!boundingBox2)
+            boundingBox2 = boundingBox1.clone().applyMatrix4(_transformMatrix);
+          else
+            boundingBox2.union(boundingBox1.clone().applyMatrix4(_transformMatrix));
         }
-        if (boundingBox1) {
-          this.cachedBoundingBox.copy(boundingBox1);
+        if (boundingBox2) {
+          this.cachedBoundingBox.copy(boundingBox2);
           this.boundingBoxUpdateRequired = false;
         } else
           return undefined;
@@ -556,7 +580,9 @@ const Glyphset = function()  {
 		else
 			this.inbuildTime = time;
 		if (morphColours || morphVertices) {
-			updateMorphGlyphsets();
+      updateMorphGlyphsets();
+      if (morphVertices)
+        this.markerUpdateRequired = true;
 		}
 	}
 
@@ -582,7 +608,11 @@ const Glyphset = function()  {
 	this.dispose = () => {
 		for( let i = glyphList.length - 1; i >= 0; i--) {
 			glyphList[i].dispose();
-		}
+    }
+    if (this.geometry)
+      this.geometry.dispose();
+    if (this.morph)
+      this.morph.material.dispose();
 		axis1s = undefined;
 		axis2s = undefined;
 		axis3s = undefined;

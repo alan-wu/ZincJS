@@ -1,6 +1,6 @@
 var THREE = require('three');
 
-var Loader = THREE.Loader;
+var Loader = require('./three/Loader').Loader;
 var LoaderUtils = THREE.LoaderUtils;
 var AnimationClip = THREE.AnimationClip;
 var Vector3 = THREE.Vector3;

@@ -15,7 +15,7 @@ exports.Minimap = function (sceneIn) {
     -1.0, -1.0,  1.0
   ] );
   let positionAttributes = new THREE.BufferAttribute( vertices, 3 );
-  geometry.addAttribute( 'position', positionAttributes);
+  geometry.setAttribute( 'position', positionAttributes);
   var material = new THREE.MeshBasicMaterial( { color: 0x333333, 
     depthTest: false,
     depthWrite: false,

@@ -14,7 +14,7 @@ const Marker = function(zincObject) {
   this.morph = new THREE.Group();
   this.parent = zincObject;
   this.isMarker = true;
-  let enabled = true;
+  let enabled = false;
 
 	let initialise = () => {
     spriteMaterial = new THREE.SpriteMaterial({
@@ -25,7 +25,7 @@ const Marker = function(zincObject) {
       depthWrite: false,
       sizeAttenuation: false
     });
-    sprite = new (require("../three/Sprite").Sprite)(spriteMaterial);
+    sprite = new THREE.Sprite(spriteMaterial);
     sprite.center.set(0.5, 0);
     this.morph.add(sprite);
     this.morph.position.set(0, 0, 0);
