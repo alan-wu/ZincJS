@@ -486,7 +486,7 @@ const Glyphset = function()  {
  */
   this.getClosestVertexIndex = function() {
     let closestIndex = -1;
-    if (this.morph) {
+    if (this.morph &&  this.ready) {
       let center = new THREE.Vector3();
       this.getBoundingBox().getCenter(center);
       let current_positions = positions["0"];
@@ -500,9 +500,10 @@ const Glyphset = function()  {
           current_positions[current_index+1],
           current_positions[current_index+2]);
         currentDistance = center.distanceTo(position);
-        if (distance == -1)
+        if (distance == -1) {
           distance = currentDistance;
-        else if (distance > (currentDistance)) {
+          closestIndex = i;
+        } else if (distance > currentDistance) {
           distance = currentDistance;
           closestIndex = i;
         }
@@ -515,7 +516,7 @@ const Glyphset = function()  {
    * Get the  closest vertex to centroid.
    */
   this.getClosestVertex = function() {
-    let position = new THREE.Vector3();
+    
     if (this.markerVertexIndex == -1) {
       this.markerVertexIndex = this.getClosestVertexIndex();
     }
@@ -526,12 +527,14 @@ const Glyphset = function()  {
       }
       */
       if (this.morph) {
+        let position = new THREE.Vector3();
         this.morph.getMatrixAt(this.markerVertexIndex, _transformMatrix);
         position.setFromMatrixPosition(_transformMatrix);
+        return position;
       }
     }
 
-    return position;
+    return undefined;
   }
 	
 	/**
@@ -540,12 +543,21 @@ const Glyphset = function()  {
 	 * @return {Three.Box3};
 	 */
 	this.getBoundingBox = () => {
-    let boundingBox1 = undefined;
-    if (this.morph && this.morph.visible) {
+    if (this.morph && this.ready && this.morph.visible) {
       if (this.boundingBoxUpdateRequired) {
-        boundingBox1 = new THREE.Box3().setFromObject(this.morph);
-        if (boundingBox1) {
-          this.cachedBoundingBox.copy(boundingBox1);
+        let boundingBox1 = new THREE.Box3();
+        let boundingBox2 = undefined;
+        boundingBox1.setFromBufferAttribute(
+          this.morph.geometry.attributes.position);
+        for (let i = 0; i < numberOfVertices; i++) {
+          this.morph.getMatrixAt(i, _transformMatrix);
+          if (!boundingBox2)
+            boundingBox2 = boundingBox1.clone().applyMatrix4(_transformMatrix);
+          else
+            boundingBox2.union(boundingBox1.clone().applyMatrix4(_transformMatrix));
+        }
+        if (boundingBox2) {
+          this.cachedBoundingBox.copy(boundingBox2);
           this.boundingBoxUpdateRequired = false;
         } else
           return undefined;
@@ -568,7 +580,9 @@ const Glyphset = function()  {
 		else
 			this.inbuildTime = time;
 		if (morphColours || morphVertices) {
-			updateMorphGlyphsets();
+      updateMorphGlyphsets();
+      if (morphVertices)
+        this.markerUpdateRequired = true;
 		}
 	}
 

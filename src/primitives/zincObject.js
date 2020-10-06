@@ -398,9 +398,11 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
         this.markerUpdateRequired = true;
       }
       if (this.markerUpdateRequired) {
-        this.markerUpdateRequired = false;
         let position = this.getClosestVertex();
-        this.marker.setPosition(position.x, position.y, position.z);
+        if (position) {
+          this.marker.setPosition(position.x, position.y, position.z);
+          this.markerUpdateRequired = false;
+        }
       }
       //if (options && options.camera) {
       //  this.marker.updateDistanceBasedOpacity(options.camera.cameraObject);
