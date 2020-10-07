@@ -34,7 +34,14 @@ const Glyphset = function()  {
   let _transformMatrix = new THREE.Matrix4();
   const _bot_colour = new THREE.Color();
   const _top_colour = new THREE.Color();
-	
+  const _boundingBox1 = new THREE.Box3();
+  const _boundingBox2 = new THREE.Box3();
+  const _boundingBox3 = new THREE.Box3();
+  const _points = [];
+  for (let i = 0; i < 8; i++) {
+    _points[i] = new THREE.Vector3();
+  }
+
 	/**
 	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
 	 * @returns {Three.Group}
@@ -536,6 +543,19 @@ const Glyphset = function()  {
 
     return undefined;
   }
+
+	this.applyMatrix4ToBox = (box1, box2, matrix) => {
+    _points[0].set( box1.min.x, box1.min.y, box1.min.z ).applyMatrix4( matrix ); // 000
+    _points[1].set( box1.min.x, box1.min.y, box1.max.z ).applyMatrix4( matrix ); // 001
+    _points[2].set( box1.min.x, box1.max.y, box1.min.z ).applyMatrix4( matrix ); // 010
+    _points[3].set( box1.min.x, box1.max.y, box1.max.z ).applyMatrix4( matrix ); // 011
+    _points[4].set( box1.max.x, box1.min.y, box1.min.z ).applyMatrix4( matrix ); // 100
+    _points[5].set( box1.max.x, box1.min.y, box1.max.z ).applyMatrix4( matrix ); // 101
+    _points[6].set( box1.max.x, box1.max.y, box1.min.z ).applyMatrix4( matrix ); // 110
+    _points[7].set( box1.max.x, box1.max.y, box1.max.z ).applyMatrix4( matrix ); // 111
+    box2.setFromPoints(_points);
+  }
+
 	
 	/**
 	 * Get the bounding box for the whole set of glyphs.
@@ -545,19 +565,19 @@ const Glyphset = function()  {
 	this.getBoundingBox = () => {
     if (this.morph && this.ready && this.morph.visible) {
       if (this.boundingBoxUpdateRequired) {
-        let boundingBox1 = new THREE.Box3();
-        let boundingBox2 = undefined;
-        boundingBox1.setFromBufferAttribute(
+        _boundingBox1.setFromBufferAttribute(
           this.morph.geometry.attributes.position);
         for (let i = 0; i < numberOfVertices; i++) {
           this.morph.getMatrixAt(i, _transformMatrix);
-          if (!boundingBox2)
-            boundingBox2 = boundingBox1.clone().applyMatrix4(_transformMatrix);
-          else
-            boundingBox2.union(boundingBox1.clone().applyMatrix4(_transformMatrix));
+          this.applyMatrix4ToBox(_boundingBox1, _boundingBox2, _transformMatrix);
+          if (i == 0) {
+            _boundingBox3.copy(_boundingBox2);
+          } else {
+            _boundingBox3.union(_boundingBox2);
+          }
         }
-        if (boundingBox2) {
-          this.cachedBoundingBox.copy(boundingBox2);
+        if (_boundingBox3) {
+          this.cachedBoundingBox.copy(_boundingBox3);
           this.boundingBoxUpdateRequired = false;
         } else
           return undefined;
