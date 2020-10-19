@@ -130,7 +130,8 @@ exports.Renderer = function (containerIn) {
 	  if (canvas && canvas.style) {
 		  canvas.style.height = "100%";
 		  canvas.style.width = "100%";
-	  }
+    }
+    renderer.autoClear = false;
 	  const scene = this.createScene("default");
 	  this.setCurrentScene(scene);
 	}

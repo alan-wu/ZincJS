@@ -707,8 +707,7 @@ exports.Scene = function (containerIn, rendererIn) {
       renderer.clear();
     if (stereoEffectFlag && stereoEffect) {
       stereoEffect.render(scene, this.camera);
-    }
-    else {
+    } else {
       renderer.render(scene, this.camera);
       renderMinimap(renderer);
     }
