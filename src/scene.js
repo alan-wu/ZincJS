@@ -572,6 +572,9 @@ exports.Scene = function (containerIn, rendererIn) {
         return true;
       }
     }
+    if (videoHandler && videoHandler.video && !videoHandler.video.error) {
+    	return true;
+    }
     return false;
   }
 

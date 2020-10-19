@@ -49,7 +49,8 @@ exports.VideoHandler = function(srcIn)  {
 		  	_this.video.crossOrigin = "anonymous";
 		  	_this.video.src = src;
 		  	_this.video.load();
-		  	_this.video.loop = true;
+        _this.video.loop = true;
+        
 		}
 	}
 
@@ -68,7 +69,7 @@ exports.VideoHandler = function(srcIn)  {
 		_this.videoTexture.minFilter = THREE.LinearFilter;
 		_this.videoTexture.magFilter = THREE.LinearFilter;
 		_this.videoTexture.format = THREE.RGBFormat;
-
+    _this.video.currentTime = 0;
 		return _this.videoTexture;
 	}
 	
