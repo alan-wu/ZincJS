@@ -321,7 +321,8 @@ ZincObject.prototype.setMaterial = function(material) {
   this.morph.material = material;
   this.geometry.colorsNeedUpdate = true;
   if (this.secondaryMesh && this.secondaryMesh.material) {
-    this.secondaryMesh.material.copy(material);
+    this.secondaryMesh.material.dispose();
+    this.secondaryMesh.material = material.clone()
     this.secondaryMesh.material.side = THREE.FrontSide;
   }
 }
