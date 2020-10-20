@@ -572,6 +572,9 @@ exports.Scene = function (containerIn, rendererIn) {
         return true;
       }
     }
+    if (videoHandler && videoHandler.video && !videoHandler.video.error) {
+    	return true;
+    }
     return false;
   }
 
@@ -707,8 +710,7 @@ exports.Scene = function (containerIn, rendererIn) {
       renderer.clear();
     if (stereoEffectFlag && stereoEffect) {
       stereoEffect.render(scene, this.camera);
-    }
-    else {
+    } else {
       renderer.render(scene, this.camera);
       renderMinimap(renderer);
     }
