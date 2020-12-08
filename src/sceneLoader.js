@@ -52,12 +52,18 @@ exports.SceneLoader = function (sceneIn) {
    * Load the viewport from an external location provided by the url.
    * @param {String} URL - address to the file containing viewport information.
    */
-  this.loadViewURL = url => {
+  this.loadViewURL = (url, finishCallback) => {
+    this.toBeDownloaded += 1;
     const xmlhttp = new XMLHttpRequest();
     xmlhttp.onreadystatechange = () => {
-      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        const viewData = JSON.parse(xmlhttp.responseText);
-        scene.loadView(viewData);
+      if (xmlhttp.readyState == 4) {
+        if(xmlhttp.status == 200) {
+          const viewData = JSON.parse(xmlhttp.responseText);
+          scene.loadView(viewData);
+          if (finishCallback != undefined && (typeof finishCallback == 'function'))
+            finishCallback();
+        }
+        --this.toBeDownloaded;
       }
     }
     requestURL = resolveURL(url);
@@ -352,7 +358,7 @@ exports.SceneLoader = function (sceneIn) {
     let downloadedItem = 0;
     return zincGeometry => {
       downloadedItem = downloadedItem + 1;
-      if (finishCallback != undefined && (typeof finishCallback == 'function'))
+      if (zincGeometry && (finishCallback != undefined) && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
       if (downloadedItem == numberOfDownloaded)
         if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function'))
@@ -466,7 +472,7 @@ exports.SceneLoader = function (sceneIn) {
         if (isInline)
           scene.loadView(newURL);
         else
-          this.loadViewURL(newURL);
+          this.loadViewURL(newURL, finishCallback);
       }
     }
   };
@@ -492,10 +498,6 @@ exports.SceneLoader = function (sceneIn) {
         const metadata = JSON.parse(xmlhttp.responseText);
         let numberOfObjects = metadata.length;
         // view file does not receive callback
-        for (var i = 0; i < metadata.length; i++) {
-          if (metadata[i] && metadata[i].Type == "View")
-            numberOfObjects = numberOfObjects - 1;
-        }
         var callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
         for (var i = 0; i < metadata.length; i++)
           readMetadataItem(referenceURL, metadata[i], callback);
