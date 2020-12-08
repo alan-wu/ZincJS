@@ -19,4 +19,4 @@ exports.augmentMorphColor = function() {
             ].join( '\n' )
         );
     };
-} 
+}
