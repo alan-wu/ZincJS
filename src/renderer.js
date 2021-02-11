@@ -22,7 +22,7 @@ exports.Renderer = function (containerIn) {
 	let currentScene = undefined;
 
 	//myGezincGeometriestains a tuple of the threejs mesh, timeEnabled, morphColour flag, unique id and morph
-	const clock = new THREE.Clock();
+	const clock = new THREE.Clock(false);
 	this.playAnimation = true;
   /* default animation update rate, rate is 500 and duration 
     is default to 3000, 6s to finish a full animation */
@@ -37,7 +37,8 @@ exports.Renderer = function (containerIn) {
 	let additionalActiveScenes = [];
 	let scenesGroup = new THREE.Group();
 	let canvas = undefined;
-	let sensor = undefined;
+  let sensor = undefined;
+  let isRendering = false;
 	const _this = this;
 	const currentSize = [0, 0];
 	const currentOffset = [0, 0];
@@ -288,21 +289,36 @@ exports.Renderer = function (containerIn) {
 	this.updateDirectionalLight = () => {
 		currentScene.updateDirectionalLight();
 	}
-	
+  
+  let runAnimation = () => {
+    if (isRendering) {
+      animated_id = requestAnimationFrame( runAnimation );
+      this.render();
+    } else {
+      cancelAnimationFrame(animated_id);
+      animated_id = undefined;
+    }
+  }
+
 	/**
 	 * Stop the animation and renderer to get into the render loop.
 	 */
 	this.stopAnimate = () => {
-		cancelAnimationFrame(animated_id);
-   	animated_id = undefined;
+    if (isRendering) {
+      clock.stop();
+      isRendering = false;
+    }
 	}
 
 	/**
 	 * Start the animation and begin the rendering loop.
 	 */
 	this.animate = () => {
-		animated_id = requestAnimationFrame( this.animate );
-		this.render();
+    if (!isRendering) {
+      clock.start();
+      isRendering = true;
+      runAnimation();
+    }
 	}
 
 	const prevTime = Date.now();
