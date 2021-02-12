@@ -558,6 +558,8 @@ exports.Renderer = function (containerIn) {
 	 * Dispose all memory allocated, this will effetively destroy all scenes.
 	 */
 	this.dispose = () => {
+    if (isRendering)
+      cancelAnimationFrame(animated_id);
 	  for (const key in sceneMap) {
 	    if (sceneMap.hasOwnProperty(key)) {
 	      sceneMap[key].clearAll();
