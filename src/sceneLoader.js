@@ -199,12 +199,11 @@ exports.SceneLoader = function (sceneIn) {
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGlyphset);
     }
+    ++this.toBeDownloaded;
     if (isInline) {
-      ++this.toBeDownloaded;
       newGlyphset.load(glyphsetData, glyphurl, myCallback, isInline);
     }
     else{
-      ++this.toBeDownloaded;
       newGlyphset.load(glyphsetData, resolveURL(glyphurl), myCallback, isInline);
     }
     scene.addZincObject(newGlyphset);
