@@ -194,11 +194,18 @@ exports.SceneLoader = function (sceneIn) {
     const newGlyphset = new (require('./primitives/glyphset').Glyphset)();
     newGlyphset.setDuration(scene.getDuration());
     newGlyphset.groupName = groupName;
+    let myCallback = () => {
+      --this.toBeDownloaded;
+      if (finishCallback != undefined && (typeof finishCallback == 'function'))
+        finishCallback(newGlyphset);
+    }
     if (isInline) {
-      newGlyphset.load(glyphsetData, glyphurl, finishCallback, isInline);
+      ++this.toBeDownloaded;
+      newGlyphset.load(glyphsetData, glyphurl, myCallback, isInline);
     }
     else{
-      newGlyphset.load(glyphsetData, resolveURL(glyphurl), finishCallback, isInline);
+      ++this.toBeDownloaded;
+      newGlyphset.load(glyphsetData, resolveURL(glyphurl), myCallback, isInline);
     }
     scene.addZincObject(newGlyphset);
   };
@@ -319,7 +326,7 @@ exports.SceneLoader = function (sceneIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the geometry is succssfully loaded in.
    */
-  const loadMetaModel = (url, timeEnabled, morphColour, groupName, fileFormat, finishCallback, isInline) => {
+  const loadSurfaceURL = (url, timeEnabled, morphColour, groupName, fileFormat, finishCallback, isInline) => {
     this.toBeDownloaded += 1;
     const colour = require('./zinc').defaultMaterialColor;
     const opacity = require('./zinc').defaultOpacity;
@@ -454,7 +461,7 @@ exports.SceneLoader = function (sceneIn) {
         isInline = true;
       }
       if (item.Type == "Surfaces") {
-        loadMetaModel(newURL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback, isInline );
+        loadSurfaceURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback, isInline );
       } else if (item.Type == "Glyph") {
         let newGeometryURL = undefined;
         if (!isInline) {

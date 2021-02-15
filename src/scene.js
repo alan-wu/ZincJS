@@ -578,15 +578,6 @@ exports.Scene = function (containerIn, rendererIn) {
     return false;
   }
 
-  // Used to check if all glyphsets are ready.
-  const allGlyphsetsReady = () => {
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObjects[i].isGlyphset && (zincObjects[i].ready == false))
-        return false;
-    }
-    return true;
-  };
-
   /**
    * Update geometries and glyphsets based on the calculated time.
    * @private
@@ -605,7 +596,7 @@ exports.Scene = function (containerIn, rendererIn) {
 			  }
         var currentTime = videoHandler.video.currentTime /
           videoHandler.getVideoDuration() * duration;
-			  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
+			  if (0 == sceneLoader.toBeDownloaded) {
 				  zincCameraControls.setTime(currentTime);
 				  zincCameraControls.update(0);
 				  for (let i = 0; i < zincObjects.length; i++) {
@@ -620,7 +611,7 @@ exports.Scene = function (containerIn, rendererIn) {
 			  myPlayRate = 0;
 		  }
 	  } else {
-		  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
+		  if (0 == sceneLoader.toBeDownloaded) {
         zincCameraControls.update(delta);
 			  for (let i = 0; i < zincObjects.length; i++) {
 				  zincObjects[i].render(playRate * delta, playAnimation, options);
