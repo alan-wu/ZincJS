@@ -587,6 +587,7 @@ exports.Scene = function (containerIn, rendererIn) {
     let options = {};
     options.camera = zincCameraControls;
     options.displayMarkers =  this.displayMarkers;
+    options.markerDepths = [];
 	  if (videoHandler) {
 		  if (videoHandler.isReadyToPlay()) {
 			  if (playAnimation) {
@@ -619,7 +620,17 @@ exports.Scene = function (containerIn, rendererIn) {
 		  } else {
 			  zincCameraControls.update(0);
 		  }
-	  }
+    }
+    //process markers visibility and size
+    if (this.displayMarkers && (playAnimation === false)) {
+      if (options.markerDepths.length > 0) {
+        let min = Math.min(...options.markerDepths);
+        let max = Math.max(...options.markerDepths);
+			  for (let i = 0; i < zincObjects.length; i++) {
+				  zincObjects[i].processMarkerVisual(min, max, options);
+        }
+      }
+    }
   }
 
   /**

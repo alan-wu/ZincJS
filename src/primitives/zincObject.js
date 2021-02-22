@@ -446,7 +446,7 @@ ZincObject.prototype.dispose = function() {
 
 ZincObject.prototype.updateMarker = function(playAnimation, options) {
   if ((playAnimation == false) &&
-    ((options && options.displayMarkers)))
+    (options && options.displayMarkers))
   {
     if (this.groupName) {
       if (!this.marker) {
@@ -460,9 +460,10 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
           this.markerUpdateRequired = false;
         }
       }
-      //if (options && options.camera) {
-      //  this.marker.updateDistanceBasedOpacity(options.camera.cameraObject);
-      //}
+      if (options && options.camera && options.markerDepths) {
+        options.markerDepths.push(
+          this.marker.updateNDC(options.camera.cameraObject));
+      }
       if (!this.marker.isEnabled()) {
         this.marker.enable();
         this.morph.add(this.marker.morph);
@@ -474,6 +475,12 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
       this.morph.remove(this.marker.morph);
     }
     this.markerUpdateRequired = true;
+  }
+}
+
+ZincObject.prototype.processMarkerVisual = function(min, max) {
+  if (this.marker && this.marker.isEnabled()) {
+    this.marker.updateVisual(min, max);
   }
 }
 
