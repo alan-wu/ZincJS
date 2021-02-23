@@ -578,15 +578,6 @@ exports.Scene = function (containerIn, rendererIn) {
     return false;
   }
 
-  // Used to check if all glyphsets are ready.
-  const allGlyphsetsReady = () => {
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObjects[i].isGlyphset && (zincObjects[i].ready == false))
-        return false;
-    }
-    return true;
-  };
-
   /**
    * Update geometries and glyphsets based on the calculated time.
    * @private
@@ -596,6 +587,7 @@ exports.Scene = function (containerIn, rendererIn) {
     let options = {};
     options.camera = zincCameraControls;
     options.displayMarkers =  this.displayMarkers;
+    options.markerDepths = [];
 	  if (videoHandler) {
 		  if (videoHandler.isReadyToPlay()) {
 			  if (playAnimation) {
@@ -605,7 +597,7 @@ exports.Scene = function (containerIn, rendererIn) {
 			  }
         var currentTime = videoHandler.video.currentTime /
           videoHandler.getVideoDuration() * duration;
-			  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
+			  if (0 == sceneLoader.toBeDownloaded) {
 				  zincCameraControls.setTime(currentTime);
 				  zincCameraControls.update(0);
 				  for (let i = 0; i < zincObjects.length; i++) {
@@ -620,7 +612,7 @@ exports.Scene = function (containerIn, rendererIn) {
 			  myPlayRate = 0;
 		  }
 	  } else {
-		  if (0 == sceneLoader.toBeDownloaded && allGlyphsetsReady()) {
+		  if (0 == sceneLoader.toBeDownloaded) {
         zincCameraControls.update(delta);
 			  for (let i = 0; i < zincObjects.length; i++) {
 				  zincObjects[i].render(playRate * delta, playAnimation, options);
@@ -628,7 +620,17 @@ exports.Scene = function (containerIn, rendererIn) {
 		  } else {
 			  zincCameraControls.update(0);
 		  }
-	  }
+    }
+    //process markers visibility and size
+    if (this.displayMarkers && (playAnimation === false)) {
+      if (options.markerDepths.length > 0) {
+        let min = Math.min(...options.markerDepths);
+        let max = Math.max(...options.markerDepths);
+			  for (let i = 0; i < zincObjects.length; i++) {
+				  zincObjects[i].processMarkerVisual(min, max, options);
+        }
+      }
+    }
   }
 
   /**
