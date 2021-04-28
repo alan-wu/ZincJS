@@ -26,7 +26,7 @@ const ZincObject = function() {
 	 * {@link Zinc.Renderer#playRate} to produce the actual duration of the
 	 * animation. Actual time in second = duration / playRate.
 	 */
-  this.duration = 3000;
+  this.duration = 6000;
   this.clipAction = undefined;
   this.userData = [];
   this.videoHandler = undefined;

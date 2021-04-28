@@ -24,9 +24,9 @@ exports.Renderer = function (containerIn) {
 	//myGezincGeometriestains a tuple of the threejs mesh, timeEnabled, morphColour flag, unique id and morph
 	const clock = new THREE.Clock(false);
 	this.playAnimation = true;
-  /* default animation update rate, rate is 500 and duration 
-    is default to 3000, 6s to finish a full animation */
-	let playRate = 500;
+  /* default animation update rate, rate is 1000 and duration 
+    is default to 6000, 6s to finish a full animation */
+	let playRate = 1000;
 	let preRenderCallbackFunctions = [];
   let preRenderCallbackFunctions_id = 0;
   let postRenderCallbackFunctions = [];
