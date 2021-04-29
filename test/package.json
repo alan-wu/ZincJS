@@ -8,6 +8,7 @@
   "scripts": {
     "test": "mocha-webpack --watch ",
     "test-ci": "mocha-webpack --reporter mocha-junit-reporter",
+    "test-standard": "mocha-webpack",
     "cover": "cross-env NODE_ENV=coverage nyc --cwd=../ --reporter=lcov --reporter=text npm run test-ci"
   },
   "repository": {
@@ -50,7 +51,7 @@
     "fs": "0.0.1-security",
     "mem": ">=4.0.0",
     "nock": "^10.0.6",
-    "three": "^0.125.0",
+    "three": "^0.126.0",
     "xhr2": "^0.2.0"
   },
   "nyc": {
