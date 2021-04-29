@@ -1,5 +1,5 @@
 const THREE = require('three');
-
+const THREEGeometry = require('../three/Geometry').Geometry;
 function absNumericalSort( a, b ) {
 	return Math.abs( b[ 1 ] ) - Math.abs( a[ 1 ] );
 }
@@ -51,15 +51,14 @@ ZincObject.prototype.getDuration = function() {
 
 ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
   let geometry = undefined;
-  if (geometryIn instanceof THREE.Geometry) {
+  if (geometryIn instanceof THREEGeometry) {
     if (options.localTimeEnabled && (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
       geometryIn.computeMorphNormals();
-    geometry = new THREE.BufferGeometry().fromGeometry(geometryIn);
+    geometry = geometryIn.toBufferGeometry();
     if (options.localMorphColour)
       require("../utilities").copyMorphColorsToBufferGeometry(geometryIn, geometry);
   } else if (geometryIn instanceof THREE.BufferGeometry) {
-    geometry = new THREE.BufferGeometry();
-    geometry.copy(geometryIn);
+    geometry = geometryIn.clone();
   }
   geometry.colorsNeedUpdate = true;
   geometry.computeBoundingBox();

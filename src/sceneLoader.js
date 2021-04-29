@@ -300,7 +300,7 @@ exports.SceneLoader = function (sceneIn) {
     finishCallback
   ) => {
     return object => {
-      this.toBeDownloaded++;
+      this.toBeDownloaded--;
       object.traverse(child => {
         if (child instanceof THREE.Mesh) {
           const zincGeometry = addMeshToZincGeometry(child, localTimeEnabled, localMorphColour);
@@ -369,11 +369,12 @@ exports.SceneLoader = function (sceneIn) {
       downloadedItem = downloadedItem + 1;
       if (zincGeometry && (finishCallback != undefined) && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
-      if (downloadedItem == numberOfDownloaded)
+      if (downloadedItem == numberOfDownloaded) {
         if (viewLoaded === false)
           scene.viewAll();
         if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function'))
           allCompletedCallback();
+      }
     };
   };
 
@@ -539,12 +540,16 @@ exports.SceneLoader = function (sceneIn) {
             if (scene.loadView(newURL)) {
               viewLoaded = true;
             }
+            if (finishCallback != undefined && (typeof finishCallback == 'function'))
+              finishCallback();
           }
           else
             this.loadViewURL(newURL, finishCallback);
           break;
         case "Settings":
           this.loadSettings(item);
+          if (finishCallback != undefined && (typeof finishCallback == 'function'))
+            finishCallback();
           break;
         default:
           break;
