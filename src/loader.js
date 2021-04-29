@@ -7,8 +7,8 @@ var Vector3 = THREE.Vector3;
 var Vector4 = THREE.Vector4;
 var Color = THREE.Color;
 var Vector2 = THREE.Vector2;
-var Face3 = THREE.Face3;
-var Geometry = THREE.Geometry;
+var Face3 = require('./three/Geometry').Face3;
+var Geometry = require('./three/Geometry').Geometry;
 var FileLoader = THREE.FileLoader;
 var DefaultLoadingManager = THREE.DefaultLoadingManager;
 

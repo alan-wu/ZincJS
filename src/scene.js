@@ -1,6 +1,17 @@
 const THREE = require('three');
 const SceneLoader = require('./sceneLoader').SceneLoader;
 
+
+const defaultMetadata = function() {
+  return { 
+    Duration: "6 secs",
+    OriginalDuration: "-",
+    TimeStamps: {}
+  }
+};
+
+const defaultDuration = 6000;
+
 /**
  * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
  * {@link Zinc.CameraControls} which controls the viewport and additional features.
@@ -28,7 +39,7 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.ambient = undefined;
   this.camera = undefined;
-  let duration = 3000;
+  let duration = 6000;
   let zincCameraControls = undefined;
   this.sceneName = undefined;
   let stereoEffectFlag = false;
@@ -45,7 +56,7 @@ exports.Scene = function (containerIn, rendererIn) {
     updateRequired: true
   };
   let scissor = {x: 0,  y: 0};
-  let metadata = {};
+  let metadata = defaultMetadata();
   let _markerTarget = new THREE.Vector2();
 
   const getDrawingWidth = () => {
@@ -132,6 +143,7 @@ exports.Scene = function (containerIn, rendererIn) {
     viewPort.upVector = upVector;
     zincCameraControls.setDefaultCameraSettings(viewPort);
     zincCameraControls.resetView();
+    return true;
   }
 
   /**
@@ -607,7 +619,7 @@ exports.Scene = function (containerIn, rendererIn) {
 			  } else {
 				  zincCameraControls.update(0);
 			  }
-			  //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 3000);
+			  //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 6000);
 		  } else {
 			  myPlayRate = 0;
 		  }
@@ -943,12 +955,96 @@ exports.Scene = function (containerIn, rendererIn) {
     sceneLoader.toBeDwonloaded = 0;
   }
 
-  this.addMetadataTag = (key, value) => {
+  /**
+   * All time stamp to the metadata TimeStamps field.
+   */
+  this.addMetadataTimeStamp = (key, time) => {
+    metadata["TimeStamps"][key] = convertDurationObjectTomSec(time);
+  }
+  
+  /**
+   * Get a specific metadata field.
+   */
+  this.getMetadataTag = key => {
+    return metadata[key];
+  }
+
+  /**
+   * Get all metadata set for the scene.
+   */
+  this.getMetadata = () => {
+    return metadata;
+  }
+
+  /**
+   * Set a specific metadata field.
+   */
+  this.setMetadataTag = (key, value) => {
     metadata[key] = value;
   }
 
+  /**
+   * Remove a specific metadata field.
+   */
   this.removeMetadataTag = key => {
     delete metadata[key];
   }
 
+  /**
+   * Reset all metadata fields to original value.
+   */
+  this.resetMetadata = () => {
+    metadata = defaultMetadata();
+  }
+
+  /**
+   * Reset duration of scene to default value.
+   */
+  this.resetDuration = () => {
+    this.setDuration(defaultDuration);
+  }
+
+  // Turn the object into a readable string {years: years,months: months, 
+  // weeks: weeks, days: days, hours: hours, mins: mins, secs: secs } 
+  const convertDurationObjectToString = duration => {
+    return [
+      ...(duration.years ? [`${duration.years}years`] : []),
+      ...(duration.months ? [`${duration.months}months`] : []),
+      ...(duration.weeks ? [`${duration.weeks}weeks`] : []),
+      ...(duration.days ? [`${duration.days}days`] : []),
+      ...(duration.hours ? [`${duration.hours}hours`] : []),
+      ...(duration.mins ? [`${duration.mins}mins`] : []),
+      ...(duration.secs ? [`${duration.secs}secs`] : []),
+    ].join(' ');
+  }
+
+  // Turn the object into a number representing milliesecond {years: years,months: months, 
+  // weeks: weeks, days: days, hours: hours, mins: mins, secs: secs } 
+  const convertDurationObjectTomSec = duration => {
+    return duration.years ? duration.years * 31536000000 : 0 +
+      duration.months ? duration.months * 2592000000 : 0 +
+      duration.weeks ? duration.weeks * 604800000 : 0 +
+      duration.days ? duration.days * 86400000 : 0 +
+      duration.hours ? duration.hours * 3600000 : 0 +
+      duration.mins ? duration.mins * 60000 : 0 +
+      duration.secs ? duration.secs * 1000 : 0;
+  }
+
+  // Set the readable duration and timer using an object
+  // with the following format {years: years,months: months, weeks: weeks, days: days,
+  // hours: hours, mins: mins, secs: secs } 
+  this.setDurationFromObject = duration => {
+    const string = convertDurationObjectToString(duration);
+    const millisec = convertDurationObjectTomSec(duration);
+    this.setMetadataTag("Duration", string);
+    this.setDuration(millisec);
+  }
+
+  // Set the readable original duration using an object
+  // with the following format {years: years,months: months, weeks: weeks, days: days,
+  // hours: hours, mins: mins, secs: secs } 
+  this.setOriginalDurationFromObject = duration => {
+    const string = convertDurationObjectToString(duration);
+    this.setMetadataTag("OriginalDuration", string);
+  }
 }

@@ -8,6 +8,7 @@ exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
   this.toBeDownloaded = 0;
   this.progressMap = [];
+  let viewLoaded = false;
   let errorDownload = false;
 
   /**
@@ -59,7 +60,9 @@ exports.SceneLoader = function (sceneIn) {
       if (xmlhttp.readyState == 4) {
         if(xmlhttp.status == 200) {
           const viewData = JSON.parse(xmlhttp.responseText);
-          scene.loadView(viewData);
+          if (scene.loadView(viewData)) {
+            viewLoaded = true;
+          }
           if (finishCallback != undefined && (typeof finishCallback == 'function'))
             finishCallback();
         }
@@ -297,7 +300,7 @@ exports.SceneLoader = function (sceneIn) {
     finishCallback
   ) => {
     return object => {
-      this.toBeDownloaded++;
+      this.toBeDownloaded--;
       object.traverse(child => {
         if (child instanceof THREE.Mesh) {
           const zincGeometry = addMeshToZincGeometry(child, localTimeEnabled, localMorphColour);
@@ -358,7 +361,7 @@ exports.SceneLoader = function (sceneIn) {
     }
   };
 
-  //Object to keep track of number of items downloaded and when add items are downloaded
+  //Object to keep track of number of items downloaded and when all items are downloaded
   //allCompletedCallback is called
   const metaFinishCallback = function (numberOfDownloaded, finishCallback, allCompletedCallback) {
     let downloadedItem = 0;
@@ -366,9 +369,12 @@ exports.SceneLoader = function (sceneIn) {
       downloadedItem = downloadedItem + 1;
       if (zincGeometry && (finishCallback != undefined) && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
-      if (downloadedItem == numberOfDownloaded)
+      if (downloadedItem == numberOfDownloaded) {
+        if (viewLoaded === false)
+          scene.viewAll();
         if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function'))
           allCompletedCallback();
+      }
     };
   };
 
@@ -445,9 +451,39 @@ exports.SceneLoader = function (sceneIn) {
     };
   }
 
-  //Function to process each of the metadata item. There are two types of metadata item,
-  //one for Zinc.Geometry and one for Zinc.Glyphset.
-  const readMetadataItem = (referenceURL, item, finishCallback) => {
+  //Turn ISO 8601 duration string into an array.
+  const parseDuration = (durationString) => {
+    const regex = /P(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/;
+    const [, years, months, weeks, days, hours, mins, secs] = 
+      durationString.match(regex);
+    return {years: years,months: months, weeks: weeks, days: days,
+            hours: hours, mins: mins, secs: secs };
+  }
+
+  //Load settings from metadata item.
+  this.loadSettings = (item) => {
+    if (item) {
+      //duration uses the ISO 8601 standard - PnYnMnDTnHnMnS
+      if (item.Duration) {
+        const duration = parseDuration(item.Duration);
+        scene.setDurationFromObject(duration);
+      }
+      if (item.OriginalDuration) {
+        const duration = parseDuration(item.OriginalDuration);
+        scene.setOriginalDurationFromObject(duration);
+      }
+      if (item.TimeStamps) {
+        for (const key in item.TimeStamps) {
+          const time = parseDuration(item.TimeStamps[key]);
+          scene.addMetadataTimeStamp(key, time);
+        }
+      }
+    }
+  }
+
+  //Function to process each of the graphical metadata item except for view and
+  //settings.
+  const readPrimitivesItem = (referenceURL, item, finishCallback) => {
     if (item) {
       let newURL = undefined;
       let isInline = false;
@@ -459,31 +495,67 @@ exports.SceneLoader = function (sceneIn) {
         newURL = item.Inline.URL;
         isInline = true;
       }
-      if (item.Type == "Surfaces") {
-        loadSurfaceURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback, isInline );
-      } else if (item.Type == "Glyph") {
-        let newGeometryURL = undefined;
-        if (!isInline) {
-          newGeometryURL = item.GlyphGeometriesURL;
-          newGeometryURL = (new URL(item.GlyphGeometriesURL, referenceURL)).href;
-        } else {
-          newGeometryURL = item.Inline.GlyphGeometriesURL;
-        }
-        this.loadGlyphsetURL(newURL, newGeometryURL, item.GroupName, finishCallback, isInline);
-      } else if (item.Type == "Points") {
-        this.loadPointsetURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback, isInline);
-      } else if (item.Type == "Lines") {
-        this.loadLinesURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback, isInline);
-      } else if (item.Type == "View") {
-        if (isInline)
-          scene.loadView(newURL);
-        else
-          this.loadViewURL(newURL, finishCallback);
+      switch (item.Type) {
+        case "Surfaces":
+          loadSurfaceURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, item.FileFormat, finishCallback, isInline );
+          break;
+        case "Glyph":
+          let newGeometryURL = undefined;
+          if (!isInline) {
+            newGeometryURL = item.GlyphGeometriesURL;
+            newGeometryURL = (new URL(item.GlyphGeometriesURL, referenceURL)).href;
+          } else {
+            newGeometryURL = item.Inline.GlyphGeometriesURL;
+          }
+          this.loadGlyphsetURL(newURL, newGeometryURL, item.GroupName, finishCallback, isInline);
+          break;
+        case "Points":
+          this.loadPointsetURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback, isInline);
+          break;
+        case "Lines":
+          this.loadLinesURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback, isInline);
+          break;
+        default:
+          break;
       }
     }
   };
 
-
+  //Function to read the view item first
+  const readViewAndSettingsItem = (referenceURL, item, finishCallback) => {
+    if (item) {
+      let newURL = undefined;
+      let isInline = false;
+      if (item.URL) {
+        newURL = item.URL;
+        if (referenceURL)
+          newURL = (new URL(item.URL, referenceURL)).href;
+      } else if (item.Inline) {
+        newURL = item.Inline.URL;
+        isInline = true;
+      }
+      switch (item.Type) {
+        case "View":
+          if (isInline) {
+            if (scene.loadView(newURL)) {
+              viewLoaded = true;
+            }
+            if (finishCallback != undefined && (typeof finishCallback == 'function'))
+              finishCallback();
+          }
+          else
+            this.loadViewURL(newURL, finishCallback);
+          break;
+        case "Settings":
+          this.loadSettings(item);
+          if (finishCallback != undefined && (typeof finishCallback == 'function'))
+            finishCallback();
+          break;
+        default:
+          break;
+      }
+    }
+  };
 
   /**
     * Load a metadata file from the provided URL into this scene. Once
@@ -498,6 +570,9 @@ exports.SceneLoader = function (sceneIn) {
     var requestURL = resolveURL(url);
     xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+        scene.resetMetadata();
+        scene.resetDuration();
+        viewLoaded = false;
         let referenceURL = xmlhttp.responseURL;
         if (referenceURL === undefined)
           referenceURL = (new URL(requestURL)).href;
@@ -505,15 +580,15 @@ exports.SceneLoader = function (sceneIn) {
         let numberOfObjects = metadata.length;
         // view file does not receive callback
         var callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
+        // Prioritise the view file and settings before loading anything else
         for (var i = 0; i < metadata.length; i++)
-          readMetadataItem(referenceURL, metadata[i], callback);
+          readViewAndSettingsItem(referenceURL, metadata[i], callback);
+        for (var i = 0; i < metadata.length; i++)
+          readPrimitivesItem(referenceURL, metadata[i], callback);
       }
     }
 
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
-
-
-
 }

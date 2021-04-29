@@ -475,7 +475,7 @@ const Glyphset = function()  {
 	
 	var meshloader = finishCallback => {
     return (geometry, materials) => {
-      this.geometry.fromGeometry(geometry);
+      this.geometry.copy(geometry.toBufferGeometry());
       this.geometry.computeBoundingSphere();
       this.geometry.computeBoundingBox();
       if (materials && materials[0])
