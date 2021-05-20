@@ -377,8 +377,9 @@ exports.SceneLoader = function (sceneIn) {
     let downloadedItem = 0;
     return zincGeometry => {
       downloadedItem = downloadedItem + 1;
-      if (zincGeometry && (finishCallback != undefined) && (typeof finishCallback == 'function'))
+      if (zincGeometry && (finishCallback != undefined) && (typeof finishCallback == 'function')) {
         finishCallback(zincGeometry);
+      }
       if (downloadedItem == numberOfDownloaded) {
         if (viewLoaded === false)
           scene.viewAll();

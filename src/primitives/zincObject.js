@@ -1,8 +1,5 @@
 const THREE = require('three');
 const THREEGeometry = require('../three/Geometry').Geometry;
-function absNumericalSort( a, b ) {
-	return Math.abs( b[ 1 ] ) - Math.abs( a[ 1 ] );
-}
 
 const ZincObject = function() {
   this.isZincObject = true;
@@ -163,7 +160,6 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
         morphArray.push([i, influences[i]]);
       }
     }
-    morphArray.sort(absNumericalSort);
     if (morphArray.length == 2) {
       targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
       targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
@@ -482,6 +478,15 @@ ZincObject.prototype.processMarkerVisual = function(min, max) {
   if (this.marker && this.marker.isEnabled()) {
     this.marker.updateVisual(min, max);
   }
+}
+
+ZincObject.prototype.initiateMorphColor = function() {
+  if ((this.morphColour == 1) && (typeof this.geometry !== "undefined") &&
+      ((this.morph.material.vertexColors == THREE.VertexColors) ||
+      (this.morph.material.vertexColors == true))) {
+        console.log("here")
+       updateMorphColorAttribute(this.geometry, this.morph);
+      }
 }
 
 //Update the geometry and colours depending on the morph.
