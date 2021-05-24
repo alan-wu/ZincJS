@@ -61,7 +61,7 @@ const Glyphset = function()  {
 	 * @param {Function} finishCallback - User's function to be called once glyph's
 	 * geometry is loaded.
 	 */
-	this.load = (glyphsetData, glyphURL, finishCallback, isInline) => {
+	this.load = (glyphsetData, glyphURL, finishCallback, isInline, displayLabels) => {
 		axis1s = glyphsetData.axis1;
 		axis2s = glyphsetData.axis2;
 		axis3s = glyphsetData.axis3;
@@ -86,10 +86,10 @@ const Glyphset = function()  {
     this.morph = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
     if (isInline) {
       var object = loader.parse( glyphURL );
-      (meshloader(finishCallback))( object.geometry, object.materials );
+      (meshloader(finishCallback, displayLabels))( object.geometry, object.materials );
     } else {
       loader.crossOrigin = "Anonymous";
-      loader.load( glyphURL, meshloader(finishCallback));
+      loader.load( glyphURL, meshloader(finishCallback, displayLabels));
     }
 	}
 	
@@ -411,12 +411,13 @@ const Glyphset = function()  {
 	};
 	
 	this.showLabel = () => {
-		for ( let i = 0; i < glyphList.length; i ++ )
-			glyphList[i].showLabel();
+		for ( let i = 0; i < glyphList.length; i ++ ) {
+      glyphList[i].showLabel();
+    }
 	}
 	
-	const createGlyphs = () => {
-    if (labels != undefined) {
+	const createGlyphs = (displayLabels) => {
+    if ((labels != undefined) && displayLabels) {
       for (let i = 0; i < numberOfVertices; i ++) {
         const glyph = new (require('./glyph').Glyph)(undefined, undefined, i, this);
         if (labels != undefined && labels[i] != undefined) {
@@ -429,14 +430,18 @@ const Glyphset = function()  {
         this.morph.add(glyph.getGroup());
       }
     }
-
+    if ((labels != undefined) && displayLabels) {
+      this.showLabel();
+    }
 		//Update the transformation of the glyphs.
 		updateGlyphsetTransformation(positions["0"], axis1s["0"],
 				axis2s["0"], axis3s["0"], scales["0"]);
 		//Update the color of the glyphs.
 		if (colors != undefined) {
 			updateGlyphsetHexColors(colors["0"]);
-		}
+    }
+
+    console.log(this.morph)
     this.ready = true;
     this.boundingBoxUpdateRequired = true;
 	};
@@ -473,14 +478,14 @@ const Glyphset = function()  {
 		}
 	}
 	
-	var meshloader = finishCallback => {
+	var meshloader = (finishCallback, displayLabels) => {
     return (geometry, materials) => {
       this.geometry.copy(geometry.toBufferGeometry());
       this.geometry.computeBoundingSphere();
       this.geometry.computeBoundingBox();
       if (materials && materials[0])
         this.morph.material = materials[0];
-      createGlyphs();
+      createGlyphs(displayLabels);
       this.morph.name = this.groupName;
       this.morph.userData = this;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))

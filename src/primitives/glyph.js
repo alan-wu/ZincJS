@@ -62,7 +62,7 @@ const Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 		  label = undefined;
 	  }
 	  if (labelString && (typeof labelString === 'string' || labelString instanceof String)) {
-		let position = [0, 0, 0];
+		  let position = [0, 0, 0];
 	    label = new (require('./label').Label)(labelString);
 	    label.setPosition(position[0], position[1], position[2]);
 	    group.add(label.getSprite());
