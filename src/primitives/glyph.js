@@ -54,16 +54,16 @@ const Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 			this.showLabel();
 	}	
 	
-	this.showLabel = () => {
+	this.showLabel = (colour) => {
 	  if (label) {
 		  position = label.getPosition();
 		  group.remove(label.getSprite());
 		  label.dispose();
 		  label = undefined;
-	  }
+    }
 	  if (labelString && (typeof labelString === 'string' || labelString instanceof String)) {
-		let position = [0, 0, 0];
-	    label = new (require('./label').Label)(labelString);
+		  let position = [0, 0, 0];
+	    label = new (require('./label').Label)(labelString, colour);
 	    label.setPosition(position[0], position[1], position[2]);
 	    group.add(label.getSprite());
 	  }
@@ -139,7 +139,15 @@ const Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 		if (label)
 		  label.setPosition(position[0],  position[1], position[2]);
 	}
-	
+  
+  this.setColour = (color) => {
+    if (label)
+      label.setColour(color);
+    if (this.secondaryMesh && this.secondaryMesh.material)
+      this.secondaryMesh.material.color = colour;
+    this.geometry.colorsNeedUpdate = true;
+  }
+
 	/**
 	 * Clear and free its memory.
 	 */

@@ -198,7 +198,10 @@ exports.SceneLoader = function (sceneIn) {
     }
   }
 
-  const loadGlyphset = (glyphsetData, glyphurl, groupName, isInline, anatomicalId, finishCallback) => {
+  const loadGlyphset = (glyphsetData, glyphurl, groupName, finishCallback, options) => {
+    let isInline  = (options && options.isInline) ? options.isInline : undefined;
+    let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
+    let displayLabels = (options && options.displayLabels) ? options.displayLabels : undefined;
     const newGlyphset = new (require('./primitives/glyphset').Glyphset)();
     newGlyphset.setDuration(scene.getDuration());
     newGlyphset.groupName = groupName;
@@ -209,21 +212,21 @@ exports.SceneLoader = function (sceneIn) {
     }
     ++this.toBeDownloaded;
     if (isInline) {
-      newGlyphset.load(glyphsetData, glyphurl, myCallback, isInline);
+      newGlyphset.load(glyphsetData, glyphurl, myCallback, isInline, displayLabels);
     }
     else{
-      newGlyphset.load(glyphsetData, resolveURL(glyphurl), myCallback, isInline);
+      newGlyphset.load(glyphsetData, resolveURL(glyphurl), myCallback, isInline, displayLabels);
     }
     newGlyphset.anatomicalId = anatomicalId;
     scene.addZincObject(newGlyphset);
   };
 
   //Load a glyphset into this scene.
-  const onLoadGlyphsetReady = (xmlhttp, glyphurl, groupName, anatomicalId, finishCallback) => {
+  const onLoadGlyphsetReady = (xmlhttp, glyphurl, groupName, finishCallback, options) => {
     return () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
         const glyphsetData = JSON.parse(xmlhttp.responseText);
-        loadGlyphset(glyphsetData, glyphurl, groupName, false, anatomicalId, finishCallback);
+        loadGlyphset(glyphsetData, glyphurl, groupName, finishCallback, options);
       }
     };
   };
@@ -435,13 +438,12 @@ exports.SceneLoader = function (sceneIn) {
    */
   this.loadGlyphsetURL = (metaurl, glyphurl, groupName, finishCallback, options) => {
     let isInline = (options && options.isInline) ? options.isInline : false;
-    let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
     if (isInline) {
-      loadGlyphset(metaurl, glyphurl, groupName, isInline, anatomicalId, finishCallback);
+      loadGlyphset(metaurl, glyphurl, groupName, finishCallback, options);
     } else {
       const xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl,
-        groupName, anatomicalId, finishCallback);
+        groupName, finishCallback, options);
       xmlhttp.open("GET", resolveURL(metaurl), true);
       xmlhttp.send();
     }
@@ -507,7 +509,6 @@ exports.SceneLoader = function (sceneIn) {
     if (item) {
       let newURL = undefined;
       let isInline = false;
-      let options = {};
       if (item.URL) {
         newURL = item.URL;
         if (referenceURL)
@@ -516,9 +517,11 @@ exports.SceneLoader = function (sceneIn) {
         newURL = item.Inline.URL;
         isInline = true;
       }
-      options.isInline = isInline;
-      options.fileFormat = item.FileFormat;
-      options.anatomicalId = item.AnatomicalId;
+      let options = {
+        isInline: isInline,
+        fileFormat: item.FileFormat,
+        anatomicalId: item.AnatomicalId,
+      };
       switch (item.Type) {
         case "Surfaces":
           loadSurfaceURL(newURL, item.MorphVertices, item.MorphColours, item.GroupName, finishCallback, options);
@@ -530,6 +533,9 @@ exports.SceneLoader = function (sceneIn) {
             newGeometryURL = (new URL(item.GlyphGeometriesURL, referenceURL)).href;
           } else {
             newGeometryURL = item.Inline.GlyphGeometriesURL;
+          }
+          if (item.DisplayLabels) {
+            options.displayLabels = true;
           }
           this.loadGlyphsetURL(newURL, newGeometryURL, item.GroupName, finishCallback, options);
           break;
