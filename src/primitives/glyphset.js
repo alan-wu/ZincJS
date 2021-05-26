@@ -183,7 +183,7 @@ const Glyphset = function()  {
 			{
 				final_point[j] = point[j]
 					+ offset[0]*axis_scale[0]*axis1[j]
-					+ offset[1]*axis_scale[1]*axis2[j]
+          setColor					+ offset[1]*axis_scale[1]*axis2[j]
 					+ offset[2]*axis_scale[2]*axis3[j];
 			}
 			const number_of_glyphs = (glyph_repeat_mode == "AXES_2D") ? 2 : 3;
@@ -328,7 +328,7 @@ const Glyphset = function()  {
         this.morph.setColorAt( current_glyph_index, _bot_colour);
         const glyph = glyphList[current_glyph_index];
 				if (glyph) 
-					glyph.setColor(_bot_colour);
+					glyph.setColour(_bot_colour);
 				current_glyph_index++;
 			}
     }
@@ -412,7 +412,7 @@ const Glyphset = function()  {
 	
 	this.showLabel = () => {
 		for ( let i = 0; i < glyphList.length; i ++ ) {
-      glyphList[i].showLabel();
+      glyphList[i].showLabel(this.morph.material ? this.morph.material.color : undefined);
     }
 	}
 	
@@ -431,7 +431,7 @@ const Glyphset = function()  {
       }
     }
     if ((labels != undefined) && displayLabels) {
-      this.showLabel();
+      this.showLabel(this.morph.material);
     }
 		//Update the transformation of the glyphs.
 		updateGlyphsetTransformation(positions["0"], axis1s["0"],
@@ -440,8 +440,6 @@ const Glyphset = function()  {
 		if (colors != undefined) {
 			updateGlyphsetHexColors(colors["0"]);
     }
-
-    console.log(this.morph)
     this.ready = true;
     this.boundingBoxUpdateRequired = true;
 	};

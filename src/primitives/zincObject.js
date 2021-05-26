@@ -484,7 +484,6 @@ ZincObject.prototype.initiateMorphColor = function() {
   if ((this.morphColour == 1) && (typeof this.geometry !== "undefined") &&
       ((this.morph.material.vertexColors == THREE.VertexColors) ||
       (this.morph.material.vertexColors == true))) {
-        console.log("here")
        updateMorphColorAttribute(this.geometry, this.morph);
       }
 }
