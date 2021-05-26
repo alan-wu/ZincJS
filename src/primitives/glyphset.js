@@ -183,7 +183,7 @@ const Glyphset = function()  {
 			{
 				final_point[j] = point[j]
 					+ offset[0]*axis_scale[0]*axis1[j]
-          setColor					+ offset[1]*axis_scale[1]*axis2[j]
+          + offset[1]*axis_scale[1]*axis2[j]
 					+ offset[2]*axis_scale[2]*axis3[j];
 			}
 			const number_of_glyphs = (glyph_repeat_mode == "AXES_2D") ? 2 : 3;
@@ -410,13 +410,13 @@ const Glyphset = function()  {
 		current_colors = null;
 	};
 	
-	this.showLabel = () => {
-		for ( let i = 0; i < glyphList.length; i ++ ) {
+  this.showLabel = () => {
+    for ( let i = 0; i < glyphList.length; i ++ ) {
       glyphList[i].showLabel(this.morph.material ? this.morph.material.color : undefined);
     }
-	}
+  }
 	
-	const createGlyphs = (displayLabels) => {
+  const createGlyphs = (displayLabels) => {
     if ((labels != undefined) && displayLabels) {
       for (let i = 0; i < numberOfVertices; i ++) {
         const glyph = new (require('./glyph').Glyph)(undefined, undefined, i, this);
@@ -431,18 +431,18 @@ const Glyphset = function()  {
       }
     }
     if ((labels != undefined) && displayLabels) {
-      this.showLabel(this.morph.material);
+      this.showLabel(this.morph.material ? this.morph.material.color : undefined);
     }
-		//Update the transformation of the glyphs.
-		updateGlyphsetTransformation(positions["0"], axis1s["0"],
-				axis2s["0"], axis3s["0"], scales["0"]);
-		//Update the color of the glyphs.
-		if (colors != undefined) {
-			updateGlyphsetHexColors(colors["0"]);
+    //Update the transformation of the glyphs.
+    updateGlyphsetTransformation(positions["0"], axis1s["0"],
+        axis2s["0"], axis3s["0"], scales["0"]);
+    //Update the color of the glyphs.
+    if (colors != undefined) {
+      updateGlyphsetHexColors(colors["0"]);
     }
     this.ready = true;
     this.boundingBoxUpdateRequired = true;
-	};
+  };
 	
 	this.addCustomGlyph = glyph => {
 		if (glyph.isGlyph)
@@ -476,7 +476,7 @@ const Glyphset = function()  {
 		}
 	}
 	
-	var meshloader = (finishCallback, displayLabels) => {
+  var meshloader = (finishCallback, displayLabels) => {
     return (geometry, materials) => {
       this.geometry.copy(geometry.toBufferGeometry());
       this.geometry.computeBoundingSphere();
@@ -487,7 +487,7 @@ const Glyphset = function()  {
       this.morph.name = this.groupName;
       this.morph.userData = this;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
-       finishCallback(this);
+        finishCallback(this);
     };
   }
 
