@@ -1,8 +1,5 @@
 const THREE = require('three');
 const THREEGeometry = require('../three/Geometry').Geometry;
-function absNumericalSort( a, b ) {
-	return Math.abs( b[ 1 ] ) - Math.abs( a[ 1 ] );
-}
 
 const ZincObject = function() {
   this.isZincObject = true;
@@ -36,6 +33,7 @@ const ZincObject = function() {
   this.boundingBoxUpdateRequired = true;
   this.cachedBoundingBox = new THREE.Box3();
   this._vertex = new THREE.Vector3();
+  this.anatomicalId = undefined;
 }
 
 ZincObject.prototype.setDuration = function(durationIn) {
@@ -152,8 +150,8 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
     const morphColors = targetGeometry.morphAttributes[ "color" ];
     const influences = morph.morphTargetInfluences;
     const length = influences.length;
-    targetGeometry.removeAttribute( 'morphColor0' );
-    targetGeometry.removeAttribute( 'morphColor1' );
+    targetGeometry.deleteAttribute( 'morphColor0' );
+    targetGeometry.deleteAttribute( 'morphColor1' );
     let bound = 0;
     let morphArray = [];
     for (let i = 0; (1 > bound) || (i < length); i++) {
@@ -162,7 +160,6 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
         morphArray.push([i, influences[i]]);
       }
     }
-    morphArray.sort(absNumericalSort);
     if (morphArray.length == 2) {
       targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
       targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
@@ -483,6 +480,14 @@ ZincObject.prototype.processMarkerVisual = function(min, max) {
   }
 }
 
+ZincObject.prototype.initiateMorphColor = function() {
+  if ((this.morphColour == 1) && (typeof this.geometry !== "undefined") &&
+      ((this.morph.material.vertexColors == THREE.VertexColors) ||
+      (this.morph.material.vertexColors == true))) {
+       updateMorphColorAttribute(this.geometry, this.morph);
+      }
+}
+
 //Update the geometry and colours depending on the morph.
 ZincObject.prototype.render = function(delta, playAnimation, options) {
   if (playAnimation == true)
@@ -499,7 +504,8 @@ ZincObject.prototype.render = function(delta, playAnimation, options) {
     if (delta != 0) {
       this.boundingBoxUpdateRequired = true;
       if ((this.morphColour == 1) && (typeof this.geometry !== "undefined") &&
-          (this.morph.material.vertexColors == THREE.VertexColors))
+         ((this.morph.material.vertexColors == THREE.VertexColors) ||
+         (this.morph.material.vertexColors == true)))
         updateMorphColorAttribute(this.geometry, this.morph);
     }
   }

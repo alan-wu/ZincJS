@@ -322,6 +322,16 @@ exports.Scene = function (containerIn, rendererIn) {
     return objectsArray;
   }
 
+  this.findObjectsWithAnatomicalId = anatomicalId => {
+    const objectsArray = [];
+    for (let i = 0; i < zincObjects.length; i++) {
+      if (zincObjects[i].anatomicalId == anatomicalId) {
+    	  objectsArray.push(zincObjects[i]);
+      }
+    }
+    return objectsArray;
+  }
+
   this.getBoundingBoxOfZincObjects = objectsArray => {
     let boundingBox = undefined;
     for (let i = 0; i < objectsArray.length; i++) {

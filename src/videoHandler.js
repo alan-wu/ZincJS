@@ -29,7 +29,6 @@ exports.VideoHandler = function(srcIn)  {
 	    // and the _this.video isn't manually paused...
 	    if (!bufferingDetected && (currentPlayPos < (lastPlayPos + offset)) &&
 	    		!_this.video.paused) {
-	        console.log("buffering")
 	        bufferingDetected = true;
 	    }
 
@@ -37,7 +36,6 @@ exports.VideoHandler = function(srcIn)  {
 	    // then there is no buffering
 	    if (bufferingDetected && (currentPlayPos > (lastPlayPos + offset)) &&
 	    		!_this.video.paused) {
-	        console.log("not buffering anymore")
 	        bufferingDetected = false;
 	    }
 	    lastPlayPos = currentPlayPos;
