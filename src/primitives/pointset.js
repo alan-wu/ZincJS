@@ -1,5 +1,6 @@
 const THREE = require('three');
 const Points = require('../three/Points').Points;
+
 /**
  * Provides an object which stores points and provides method which controls its position.
  * This is created when a valid json file containing point is read into a {@link Zinc.Scene}
