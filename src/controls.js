@@ -2,11 +2,11 @@ const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
 
 const Viewport = function () {
-	this.nearPlane = 0.1;
-	this.farPlane = 2000.0;
-	this.eyePosition = [0.0, 0.0, 0.0];
-	this.targetPosition = [0.0, 0.0, 0.0];
-	this.upVector = [ 0.0, 1.0, 0.0];
+	this.nearPlane = 0.168248;
+	this.farPlane = 6.82906;
+	this.eyePosition = [0.5, -2.86496, 0.5];
+	this.targetPosition = [0.5, 0.5, 0.5];
+	this.upVector = [ 0.0, 0.0, 1.0];
 	const _this = this;
 };
 

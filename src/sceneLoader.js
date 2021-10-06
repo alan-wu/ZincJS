@@ -1,9 +1,9 @@
 const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
 const JSONLoader = require('./loader').JSONLoader;
-const STLLoader = require('./STLLoader').STLLoader;
-const OBJLoader = require('./OBJLoader').OBJLoader;
-
+const STLLoader = require('three/examples/jsm/loaders/STLLoader').STLLoader;
+const OBJLoader = require('three/examples/jsm/loaders/OBJLoader').OBJLoader;
+const GLTFLoader = require('three/examples/jsm/loaders/GLTFLoader').GLTFLoader;
 
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
@@ -521,6 +521,7 @@ exports.SceneLoader = function (sceneIn) {
         isInline: isInline,
         fileFormat: item.FileFormat,
         anatomicalId: item.AnatomicalId,
+        compression: item.compression
       };
       switch (item.Type) {
         case "Surfaces":
@@ -586,6 +587,38 @@ exports.SceneLoader = function (sceneIn) {
       }
     }
   };
+
+  /**
+   * Load GLTF into this scene object.
+   * 
+   * @param {String} url - URL to the GLTF file
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the glyphset is succssfully load in.
+   */
+  this.loadGLTF = (url, finishCallback, options) => {
+    const path = url.substring(0, url.lastIndexOf("/") + 1);
+    const filename = url.substring(url.lastIndexOf("/") + 1, url.length);
+    const loader = new GLTFLoader().setPath(path);
+    loader.load( filename, function ( gltf ) {
+      console.log(gltf)
+      gltf.scene.children.forEach(child => {
+        console.log(child)
+        let localTimeEnabled = false;
+        let localMorphColour = false;
+        if (child.geometry && child.geometry.morphAttributes) {
+          localTimeEnabled = child.geometry.morphAttributes.position ? true : false;
+          localMorphColour = child.geometry.morphAttributes.color ? true : false;
+        }
+        const zincGeometry = new (require('./primitives/geometry').Geometry)();
+        zincGeometry.setMesh(child.clone(), localTimeEnabled, localMorphColour);
+        scene.addZincObject(zincGeometry);
+        zincGeometry.groupName = zincGeometry.morph.name;
+        console.log(zincGeometry)
+        if (finishCallback != undefined && (typeof finishCallback == 'function'))
+          finishCallback(zincGeometry);
+      });
+    })
+  }
 
   /**
     * Load a metadata file from the provided URL into this scene. Once

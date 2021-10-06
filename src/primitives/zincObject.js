@@ -67,7 +67,7 @@ ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
 }
 
 ZincObject.prototype.checkAndCreateTransparentMesh = function(options) {
-  if (this.isGeometry && this.morph.material.transparent) {
+  if (this.isGeometry && this.morph.material && this.morph.material.transparent) {
     if (!this.secondaryMesh) {
       let secondaryMaterial = this.morph.material.clone();
       secondaryMaterial.side =  THREE.FrontSide;
@@ -97,7 +97,7 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.mixer = new THREE.AnimationMixer(this.animationGroup);
   this.geometry = mesh.geometry;
   this.clipAction = undefined;
-  if (this.geometry.morphAttributes.position) {
+  if (this.geometry && this.geometry.morphAttributes && this.geometry.morphAttributes.position) {
     let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
       this.geometry.morphAttributes.position, 10, true);
     if (animationClip && (animationClip[0] != undefined)) {
@@ -394,7 +394,9 @@ ZincObject.prototype.getBoundingBox = function() {
   if (this.morph && this.morph.visible) {
     if (this.boundingBoxUpdateRequired) {
       let influences = this.morph.morphTargetInfluences;
-      let attributes = this.morph.geometry.morphAttributes;
+      let attributes = undefined;
+      if (this.morph.geometry)
+        attributes = this.morph.geometry.morphAttributes;
       let found = false;
       if (influences && attributes && attributes.position) {
         let min = new THREE.Vector3();

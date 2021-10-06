@@ -1,7 +1,6 @@
 const THREE = require('three');
 const SceneLoader = require('./sceneLoader').SceneLoader;
 
-
 const defaultMetadata = function() {
   return { 
     Duration: "6 secs",
@@ -489,6 +488,13 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.loadFromViewURL = (jsonFilePrefix, finishCallback) => {
     sceneLoader.loadFromViewURL(jsonFilePrefix, finishCallback);
+  }
+
+  /**
+   * Load GLTF into this scene object.
+   */
+  this.loadGLTF = (url, finishCallback, options) => {
+    sceneLoader.loadGLTF(url, finishCallback, options);
   }
   
   /**
