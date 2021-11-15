@@ -1,5 +1,6 @@
 const THREE = require('three');
 const SceneLoader = require('./sceneLoader').SceneLoader;
+const SceneExporter = require('./sceneExporter').SceneExporter;
 
 const defaultMetadata = function() {
   return { 
@@ -1062,5 +1063,10 @@ exports.Scene = function (containerIn, rendererIn) {
   this.setOriginalDurationFromObject = duration => {
     const string = convertDurationObjectToString(duration);
     this.setMetadataTag("OriginalDuration", string);
+  }
+
+  this.exportGLTF = (binary) => {
+    const exporter = new SceneExporter(this);
+    return exporter.exportGLTF(binary);
   }
 }
