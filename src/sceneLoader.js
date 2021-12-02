@@ -159,6 +159,7 @@ exports.SceneLoader = function (sceneIn) {
         newLines.setDuration(scene.getDuration());
       }
       --this.toBeDownloaded;
+      geometry.dispose();
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newLines);
     };
@@ -255,6 +256,7 @@ exports.SceneLoader = function (sceneIn) {
         scene.addZincObject(newPointset);
         newPointset.setDuration(scene.getDuration());
       }
+      geometry.dispose();
       --this.toBeDownloaded;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newPointset);
@@ -468,6 +470,7 @@ exports.SceneLoader = function (sceneIn) {
         localTimeEnabled, localMorphColour, undefined, material, groupName);
       zincGeometry.anatomicalId = anatomicalId;
       --this.toBeDownloaded;
+      geometry.dispose();
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
     };

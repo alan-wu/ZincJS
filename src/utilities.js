@@ -107,7 +107,28 @@ exports.copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
     }
   }
 
-exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
+
+  exports.copyMorphColorsToIndexedBufferGeometry = (geometry, bufferGeometry) => {
+    if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
+      let array = [];
+      let morphColors = geometry.morphColors;
+      const getColorsRGB = require("./utilities").getColorsRGB;
+      for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
+        let morphColor = morphColors[ i ];
+        let colorArray = [];
+		    for ( var j = 0; j < morphColor.colors.length * 3; j ++ ) {
+          let color = getColorsRGB(morphColor.colors, j);
+          colorArray.push(color[0], color[1], color[2]);
+        }
+        var attribute = new THREE.Float32BufferAttribute( colorArray.length * 3, 3 );
+        attribute.name = morphColor.name;
+        array.push( attribute.copyArray( colorArray ) );
+      }
+      bufferGeometry.morphAttributes[ "color" ] = array; 
+    }
+  }
+
+  exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
 
     tolerance = Math.max( tolerance, Number.EPSILON );
 

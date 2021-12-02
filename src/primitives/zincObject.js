@@ -52,9 +52,9 @@ ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
   if (geometryIn instanceof THREEGeometry) {
     if (options.localTimeEnabled && (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
       geometryIn.computeMorphNormals();
-    geometry = geometryIn.toBufferGeometry();
+    geometry = geometryIn.toIndexedBufferGeometry();
     if (options.localMorphColour)
-      require("../utilities").copyMorphColorsToBufferGeometry(geometryIn, geometry);
+      require("../utilities").copyMorphColorsToIndexedBufferGeometry(geometryIn, geometry);
   } else if (geometryIn instanceof THREE.BufferGeometry) {
     geometry = geometryIn.clone();
   }
