@@ -1551,7 +1551,12 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
     if ( this.colors.length > 0) {
 
-      console.log(this.colors);
+      const colorArray = [];
+      for (let i = 0 ; i < this.colors.length; i++) {
+        colorArray.push(new Color( this.colors[ i ] ));
+      }
+      const colors = new Float32Array( colorArray.length * 3 );
+			buffergeometry.setAttribute( 'color', new BufferAttribute( colors, 3 ).copyColorsArray( colorArray ) );
 
     } else {
 
@@ -1593,24 +1598,6 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 			buffergeometry.morphAttributes.position = array;
       buffergeometry.morphAttributes.normal = normalsArray;
-
-		}
-
-    if (false && this.morphNormals.length > 0) {
-
-			const array = [];
-
-			for ( let i = 0, l = this.morphNormals.length; i < l; i ++ ) {
-				const morphNormal = this.morphNormals[ i ];
-
-				const attribute = new Float32BufferAttribute( morphNormal.faceNormals.length * 3, 3 );
-				attribute.name = morphNormal.name;
-
-				array.push( attribute.copyVector3sArray( morphNormal.faceNormals ) );
-
-			}
-
-			buffergeometry.morphAttributes.normal = array;
 
 		}
 

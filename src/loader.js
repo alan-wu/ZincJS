@@ -176,6 +176,16 @@ Object.assign( JSONLoader.prototype, {
         
       }
 
+      if (colors) {
+
+        for ( i = 0; i < colors.length; i ++ ) {
+
+          geometry.colors[i] = colors[i];
+
+        }
+        
+      }
+
 
 			while ( offset < zLength ) {
 
