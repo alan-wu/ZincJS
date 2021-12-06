@@ -31,7 +31,7 @@ const Marker = function(zincObject) {
     sprite.center.set(0.5, 0);
     this.morph.add(sprite);
     this.morph.position.set(0, 0, 0);
-    this.morph.renderOrder = 3;
+    this.morph.renderOrder = 10000;
     sprite.scale.set(size[0], size[1], size[2]);
     sprite.userData = this;
   }
