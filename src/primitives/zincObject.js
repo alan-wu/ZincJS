@@ -71,8 +71,8 @@ ZincObject.prototype.checkAndCreateTransparentMesh = function(options) {
     if (!this.secondaryMesh) {
       let secondaryMaterial = this.morph.material.clone();
       secondaryMaterial.side =  THREE.FrontSide;
-      this.secondaryMesh = new THREE.Mesh(this.morph.geometry, secondaryMaterial); 
-      this.secondaryMesh.renderOrder = 2;
+      this.secondaryMesh = new THREE.Mesh(this.morph.geometry, secondaryMaterial);
+      this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
       this.secondaryMesh.userData = this;
       this.secondaryMesh.name = this.groupName;
     }
@@ -486,8 +486,17 @@ ZincObject.prototype.initiateMorphColor = function() {
   if ((this.morphColour == 1) && (typeof this.geometry !== "undefined") &&
       ((this.morph.material.vertexColors == THREE.VertexColors) ||
       (this.morph.material.vertexColors == true))) {
-       updateMorphColorAttribute(this.geometry, this.morph);
+        updateMorphColorAttribute(this.geometry, this.morph);
       }
+}
+
+ZincObject.prototype.setRenderOrder = function(renderOrder) {
+  if (this.morph && (renderOrder !== undefined)) {
+    this.morph.renderOrder = renderOrder;
+    if (this.secondaryMesh)
+      this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
+
+  }
 }
 
 //Update the geometry and colours depending on the morph.
