@@ -22,13 +22,14 @@ exports.Minimap = function (sceneIn) {
     opacity: 0.5,
     transparent: true } );
   this.mask = new THREE.Mesh( geometry, material );
+  let _box = new THREE.Box3();
+  let _center = new THREE.Vector3();
 
   this.getDiffFromNormalised = (x, y) => {
-    let centre = new THREE.Box3().setFromBufferAttribute(
-      positionAttributes).getCenter();
-    let coord = centre.clone().project(this.camera);
+    _box.setFromBufferAttribute(positionAttributes).getCenter(_center);
+    let coord = _center.clone().project(this.camera);
     let new_coord = new THREE.Vector3(x, y, coord.z).unproject(this.camera);
-    return new_coord.sub(centre);
+    return new_coord.sub(_center);
   }
 
   let setCurrentCameraSettings = (diameter, newViewport)  => {

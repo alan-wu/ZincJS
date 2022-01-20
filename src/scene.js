@@ -376,6 +376,8 @@ exports.Scene = function (containerIn, rendererIn) {
     if (zincObject) {
       scene.add(zincObject.morph);
       zincObjects.push(zincObject);
+      if (zincCameraControls)
+        zincCameraControls.calculateMaxAllowedDistance(this);
     }
   }
 
@@ -900,6 +902,8 @@ exports.Scene = function (containerIn, rendererIn) {
         scene.remove(zincObject.morph);
         zincObjects.splice(i, 1);
         zincObject.dispose();
+        if (zincCameraControls)
+          zincCameraControls.calculateMaxAllowedDistance(this);
         return;
       }
     }
@@ -970,6 +974,8 @@ exports.Scene = function (containerIn, rendererIn) {
     }
     zincObjects = [];
     sceneLoader.toBeDwonloaded = 0;
+    if (zincCameraControls)
+      zincCameraControls.calculateMaxAllowedDistance(this);
   }
 
   /**

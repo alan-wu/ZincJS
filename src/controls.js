@@ -58,9 +58,31 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   const _axis = new THREE.Vector3();
   const _v = new THREE.Vector3();
   const _rel_eye = new THREE.Vector3();
+  const sceneSphere = new THREE.Sphere();
+  const _tempEye = new THREE.Vector3();
+  let maxDist = 0;
 
 	if (this.cameraObject.target === undefined)
 		this.cameraObject.target = new THREE.Vector3( 0, 0, 0  );
+
+  //Calculate the max distanc allowed, it is the longer
+  //of 6 times the radius of the current scene and
+  //the current distance between scene centroid and the postion
+  //of the camera.
+  this.calculateMaxAllowedDistance = (scene) => {
+    const box = scene.getBoundingBox();
+    if (box) {
+      box.getBoundingSphere(sceneSphere);
+      maxDist = sceneSphere.radius * 6;
+      let currentDist = 0;
+      if (this.cameraObject) {
+        currentDist = this.cameraObject.position.distanceTo(sceneSphere.center);
+      }
+      maxDist = currentDist > maxDist ? currentDist : maxDist;
+    } else {
+      maxDist = 0;
+    }
+  }
 	
 	this.onResize = () => {
 		if (rect)
@@ -70,11 +92,24 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.setMouseButtonAction = (buttonName, actionName) => {
 		CLICK_ACTION[buttonName] = STATE[actionName];
   }
+
+  //Make sure the camera does not travel beyond limit
+  const checkTravelDistance = () => {
+    if (maxDist > 0) {
+      const newDist = _tempEye.distanceTo(sceneSphere.center);
+      return (maxDist > newDist || 
+        this.cameraObject.position.distanceTo(sceneSphere.center) > newDist );
+    }
+    return true;
+  }
   
   const translateViewport = translation => {
-    this.cameraObject.target.add(translation);
-    this.cameraObject.position.add(translation);
-    this.updateDirectionalLight();
+    _tempEye.copy(this.cameraObject.position).add(translation);
+    if (checkTravelDistance()) {
+      this.cameraObject.target.add(translation);
+      this.cameraObject.position.add(translation);
+      this.updateDirectionalLight();
+    }
   }
 	
 	const onDocumentMouseDown = event => {
@@ -365,51 +400,52 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		{
 			const width = rect.width;
       const height = rect.height;
-           
+
 			const a = this.cameraObject.position.clone();
 			a.sub(this.cameraObject.target);
-			const dist = a.length();				
+			const dist = a.length();
 			const dy = 1.5 * delta_y/height;
 			if ((dist + dy*dist) > 0.01) {
 				a.normalize()
-				const eye_position = this.cameraObject.position.clone();
-				eye_position.x = eye_position.x + a.x*dy*dist
-				eye_position.y = eye_position.y + a.y*dy*dist
-				eye_position.z = eye_position.z + a.z*dy*dist
-				this.cameraObject.position.set(eye_position.x, eye_position.y, eye_position.z);
-				this.updateDirectionalLight();
-				const near_far_minimum_ratio = 0.00001;
-				if ((near_far_minimum_ratio * this.cameraObject.far) <
-					(this.cameraObject.near + dy*dist + this.near_plane_fly_debt)) {
-					if (this.near_plane_fly_debt != 0.0)	{
-						this.near_plane_fly_debt += dy*dist;
-						if (this.near_plane_fly_debt > 0.0) {
-							this.cameraObject.near += this.near_plane_fly_debt;
-							this.cameraObject.far += this.near_plane_fly_debt;
-							this.near_plane_fly_debt = 0.0;
-						}
-						else {
-							this.cameraObject.near += dy*dist;
-							this.cameraObject.far += dy*dist;
-						}
-					}			
-				}
-				else {
-					if (this.near_plane_fly_debt == 0.0) {
-						const diff = this.cameraObject.near - near_far_minimum_ratio * this.cameraObject.far;
-						this.cameraObject.near = near_far_minimum_ratio * this.cameraObject.far;
-						this.cameraObject.far -= diff;
-						this.near_plane_fly_debt -= near_far_minimum_ratio * this.cameraObject.far;
-					}
-					this.near_plane_fly_debt += dy*dist;
-				}
-				
+        _tempEye.copy(this.cameraObject.position);
+				_tempEye.x += a.x*dy*dist;
+				_tempEye.y += a.y*dy*dist;
+				_tempEye.z += a.z*dy*dist;
+        if (checkTravelDistance()) {
+          this.cameraObject.position.copy(_tempEye);
+          this.updateDirectionalLight();
+          const near_far_minimum_ratio = 0.00001;
+          if ((near_far_minimum_ratio * this.cameraObject.far) <
+            (this.cameraObject.near + dy*dist + this.near_plane_fly_debt)) {
+            if (this.near_plane_fly_debt != 0.0)	{
+              this.near_plane_fly_debt += dy*dist;
+              if (this.near_plane_fly_debt > 0.0) {
+                this.cameraObject.near += this.near_plane_fly_debt;
+                this.cameraObject.far += this.near_plane_fly_debt;
+                this.near_plane_fly_debt = 0.0;
+              }
+              else {
+                this.cameraObject.near += dy*dist;
+                this.cameraObject.far += dy*dist;
+              }
+            }			
+          }
+          else {
+            if (this.near_plane_fly_debt == 0.0) {
+              const diff = this.cameraObject.near - near_far_minimum_ratio * this.cameraObject.far;
+              this.cameraObject.near = near_far_minimum_ratio * this.cameraObject.far;
+              this.cameraObject.far -= diff;
+              this.near_plane_fly_debt -= near_far_minimum_ratio * this.cameraObject.far;
+            }
+            this.near_plane_fly_debt += dy*dist;
+          }
+        }
 			}
 		}
   }
 	
 	const flyZoom = () => {
-    const delta_y=calculateZoomDelta();
+    const delta_y = calculateZoomDelta();
     this.changeZoomByValue(delta_y);
  
 		if (this._state === STATE.ZOOM) {
