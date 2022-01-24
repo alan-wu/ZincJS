@@ -15,6 +15,8 @@ const Lines = function () {
 	this.createLineSegment = (geometryIn, materialIn, options) => {
 		if (geometryIn && materialIn) {
 			let geometry = this.toBufferGeometry(geometryIn, options);
+			if (options.localMorphColour && geometry.morphAttributes[ "color" ])
+				materialIn.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
       let line = new (require("../three/line/LineSegments").LineSegments)(geometry, materialIn);
 			this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
 		}		
