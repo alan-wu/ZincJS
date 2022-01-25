@@ -453,7 +453,7 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       const xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = onLoadGlyphsetReady(xmlhttp, glyphurl,
-        groupName, renderOrder, finishCallback, options);
+        groupName, finishCallback, options);
       xmlhttp.open("GET", resolveURL(metaurl), true);
       xmlhttp.send();
     }
