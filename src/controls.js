@@ -11,7 +11,7 @@ const Viewport = function () {
 };
 
 const CameraControls = function ( object, domElement, renderer, scene ) {
-	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5 };
+	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5, SYNC_CONTROL: 6 };
 	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
 	const CLICK_ACTION = {};
 	CLICK_ACTION.MAIN = STATE.ROTATE;
@@ -60,6 +60,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   const _rel_eye = new THREE.Vector3();
   const sceneSphere = new THREE.Sphere();
   const _tempEye = new THREE.Vector3();
+  let ndcControl = undefined;
   let maxDist = 0;
 
 	if (this.cameraObject.target === undefined)
@@ -87,6 +88,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.onResize = () => {
 		if (rect)
 			rect = undefined;
+    if (ndcControl)
+      ndcControl.setCurrentCameraSettings(this.cameraObject,
+        defaultViewport);
 	}
 	
 	this.setMouseButtonAction = (buttonName, actionName) => {
@@ -262,7 +266,6 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		event.preventDefault(); 
 		event.stopImmediatePropagation();  
 	}	
-
 
 	const translate = () => {
 		if (typeof this.cameraObject !== "undefined")
@@ -620,6 +623,19 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.calculatePathNow = () => {
 	  updatePath(0.0);
 	}
+
+  handleSyncControl = () => {
+    if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
+      translate();
+      ndcControl.triggerCallback();
+    } else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL)){
+      ndcControl.zoom(calculateZoomDelta());
+      this.previous_pointer_x = this.pointer_x;
+      this.previous_pointer_y = this.pointer_y;
+      mouseScroll = 0;
+      ndcControl.triggerCallback();
+    }
+  }
 	
 	this.update = timeChanged => {
 		const delta = timeChanged * playRate;
@@ -642,7 +658,10 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			controlEnabled = false;
 		} else if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject) {
 			cameraAutoTumbleObject.update(delta);
-		}
+		} else if (currentMode === MODE.SYNC_CONTROL && ndcControl) {
+      handleSyncControl();
+      controlEnabled = false;
+    }
 		if (controlEnabled) {
 			if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
 				tumble();
@@ -868,15 +887,30 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		return (currentMode === MODE.AUTO_TUMBLE);
 	}
 	
-	 this.enableRaycaster = (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) => {
-	    if (zincRayCaster == undefined)
-	      zincRayCaster = new RayCaster(sceneIn, this.scene, callbackFunctionIn, hoverCallbackFunctionIn, this.renderer);
-	  }
+  this.enableRaycaster = (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) => {
+    if (zincRayCaster == undefined)
+      zincRayCaster = new RayCaster(sceneIn, this.scene, callbackFunctionIn, hoverCallbackFunctionIn, this.renderer);
+  }
 	  
-	  this.disableRaycaster = () => {
-	    zincRayCaster.disable();
-	    zincRayCaster = undefined;
-	  }
+  this.disableRaycaster = () => {
+    zincRayCaster.disable();
+    zincRayCaster = undefined;
+  }
+
+  this.enableSyncControl = () => {
+    currentMode = MODE.SYNC_CONTROL;
+    if (!ndcControl)
+      ndcControl = new NDCCameraControl();
+    ndcControl.setCurrentCameraSettings(this.cameraObject,
+      defaultViewport);
+    return ndcControl;
+  }
+
+  this.disableSyncControl = () => {
+    currentMode = MODE.DEFAULT;
+    this.cameraObject.zoom = 1;
+    this.cameraObject.updateProjectionMatrix();
+  }
 	
 	this.enable();
 
@@ -959,8 +993,7 @@ const RotateCameraTransition = function(axisIn, angleIn, targetCameraIn, duratio
   this.setDuration = newDuration => {
     duration = newDuration;
   }
-	
-  
+
   const updateCameraSettings = delta => {
     const previousTime = inbuildTime;
     let targetTime = inbuildTime + delta;
@@ -1371,6 +1404,85 @@ ModifiedDeviceOrientationControls = function ( object ) {
 
 };
 
+const NDCCameraControl = function () {
+	let camera = undefined;
+  let targetCamera = undefined;
+  let defaultViewport = undefined;
+  const position = new THREE.Vector3();
+  const target = new THREE.Vector3();
+  const v1 = new THREE.Vector3();
+  const v2 = new THREE.Vector3();
+  let eventCallback = undefined;
+
+  this.setCurrentCameraSettings = (cameraIn, defaultViewportIn)  => {
+    camera = cameraIn.clone();
+    targetCamera = cameraIn;
+    defaultViewport = defaultViewportIn;
+    camera.near = defaultViewport.nearPlane;
+    if (defaultViewport.farPlane)
+      camera.far = defaultViewport.farPlane;
+    if (defaultViewport.eyePosition)
+      camera.position.set(defaultViewport.eyePosition[0],
+        defaultViewport.eyePosition[1], defaultViewport.eyePosition[2]);
+    if (defaultViewport.upVector)
+      camera.up.set(defaultViewport.upVector[0], defaultViewport.upVector[1],
+        defaultViewport.upVector[2]);
+    if (defaultViewport.targetPosition) {
+      camera.target = new THREE.Vector3(defaultViewport.targetPosition[0],
+        defaultViewport.targetPosition[1], defaultViewport.targetPosition[2]);
+      camera.lookAt(camera.target);
+    }
+    camera.updateProjectionMatrix();
+    position.copy(camera.position).project(camera);
+    target.copy(camera.target).project(camera);
+    //top left
+    //v1.set(-1, -1, original.z).unproject(camera);
+    //v2.set(1, -1, original.z).unproject(camera);
+    //v3.set(1, 1, original.z).unproject(camera);
+    //bottom right
+    //v4.set(-1, 1, original.z).unproject(camera);
+  }
+	
+  this.getCurrentPosition = () => {
+    target.copy(targetCamera.target).project(camera);
+    return [target.x, target.y];
+  }
+
+  this.zoom = delta => {
+    let scaledDelta = delta * 0.002;
+    let zoom = Math.max(targetCamera.zoom - scaledDelta, 1.0);
+    targetCamera.zoom = zoom;
+    targetCamera.updateProjectionMatrix();
+  }
+
+  //return top left and size
+  this.getPanZoom = () => {
+    return {target: this.getCurrentPosition(), zoom: targetCamera.zoom };
+  }
+
+  this.setCenterZoom = (center, zoom) => {
+    v1.set(center[0], center[1], target.z).unproject(camera);
+    v2.copy(v1).sub(targetCamera.target);
+    targetCamera.target.copy(v1);
+    targetCamera.lookAt(targetCamera.target);
+    targetCamera.position.add(v2);
+    //v1.set(center[0], center[1], position.z).unproject(camera);
+    //targetCamera.position.copy(v1);
+    targetCamera.zoom = zoom;
+    targetCamera.updateProjectionMatrix();
+  }
+
+  this.setEventCallback = (callback) => {
+    if (callback === undefined || (typeof callback == 'function'))
+      eventCallback = callback;
+  }
+
+  this.triggerCallback = () => {
+    if (eventCallback !== undefined && (typeof eventCallback == 'function'))
+      eventCallback();
+  }
+};
+
 exports.Viewport = Viewport
 exports.CameraControls = CameraControls
 exports.SmoothCameraTransition = SmoothCameraTransition
@@ -1378,3 +1490,4 @@ exports.RotateCameraTransition = RotateCameraTransition
 exports.RayCaster = RayCaster
 exports.CameraAutoTumble = CameraAutoTumble
 exports.StereoEffect = StereoEffect
+exports.NDCCameraControl = NDCCameraControl

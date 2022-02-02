@@ -89,10 +89,10 @@ exports.Scene = function (containerIn, rendererIn) {
 
   //called from Renderer when panel has been resized
   this.onWindowResize = () => {
-    zincCameraControls.onResize();
     this.camera.aspect = getDrawingWidth() / getDrawingHeight();
     this.camera.updateProjectionMatrix();
     this.minimapScissor.updateRequired = true;
+    zincCameraControls.onResize();
   }
 
   /**
