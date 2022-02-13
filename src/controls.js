@@ -891,10 +891,14 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     if (zincRayCaster == undefined)
       zincRayCaster = new RayCaster(sceneIn, this.scene, callbackFunctionIn, hoverCallbackFunctionIn, this.renderer);
   }
-	  
+
   this.disableRaycaster = () => {
     zincRayCaster.disable();
     zincRayCaster = undefined;
+  }
+
+  this.isSyncControl = () => {
+    return currentMpde === MODE.SYNC_CONTROL;
   }
 
   this.enableSyncControl = () => {
@@ -1435,12 +1439,6 @@ const NDCCameraControl = function () {
     camera.updateProjectionMatrix();
     position.copy(camera.position).project(camera);
     target.copy(camera.target).project(camera);
-    //top left
-    //v1.set(-1, -1, original.z).unproject(camera);
-    //v2.set(1, -1, original.z).unproject(camera);
-    //v3.set(1, 1, original.z).unproject(camera);
-    //bottom right
-    //v4.set(-1, 1, original.z).unproject(camera);
   }
 	
   this.getCurrentPosition = () => {
@@ -1455,6 +1453,12 @@ const NDCCameraControl = function () {
     targetCamera.updateProjectionMatrix();
   }
 
+  this.zoomToBox = (box, zoom) => {
+    box.getCenter(v1);
+    v1.project(camera);
+    this.setCenterZoom([v1.x, v1.y], zoom);
+  }
+	  
   //return top left and size
   this.getPanZoom = () => {
     return {target: this.getCurrentPosition(), zoom: targetCamera.zoom };
@@ -1466,8 +1470,6 @@ const NDCCameraControl = function () {
     targetCamera.target.copy(v1);
     targetCamera.lookAt(targetCamera.target);
     targetCamera.position.add(v2);
-    //v1.set(center[0], center[1], position.z).unproject(camera);
-    //targetCamera.position.copy(v1);
     targetCamera.zoom = zoom;
     targetCamera.updateProjectionMatrix();
   }
