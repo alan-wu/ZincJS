@@ -1,6 +1,7 @@
 const THREE = require('three');
 const SceneLoader = require('./sceneLoader').SceneLoader;
 const SceneExporter = require('./sceneExporter').SceneExporter;
+const Viewport = require('./controls').Viewport;
 
 const defaultMetadata = function() {
   return { 
@@ -25,11 +26,12 @@ const defaultDuration = 6000;
  */
 exports.Scene = function (containerIn, rendererIn) {
   const container = containerIn;
-  let zincObjects = [];
   let videoHandler = undefined;
   let sceneLoader = new SceneLoader(this);
   let minimap = undefined;
   const scene = new THREE.Scene();
+  const rootRegion = new (require('./region').Region)();
+  scene.add(rootRegion.getGroup());
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
    */
@@ -134,16 +136,25 @@ exports.Scene = function (containerIn, rendererIn) {
    * 
    * @param {Zinc.Viewport} viewData - Viewport data to be loaded. 
    */
-  this.loadView = ({ nearPlane, farPlane, eyePosition, targetPosition, upVector}) => {
-    const viewPort = new (require('./controls').Viewport)();
-    viewPort.nearPlane = nearPlane;
-    viewPort.farPlane = farPlane;
-    viewPort.eyePosition = eyePosition;
-    viewPort.targetPosition = targetPosition;
-    viewPort.upVector = upVector;
-    zincCameraControls.setDefaultCameraSettings(viewPort);
-    zincCameraControls.resetView();
+  this.loadView = settings => {
+    const viewPort = new Viewport();
+    viewPort.setFromObject(settings);
+    zincCameraControls.setCurrentCameraSettings(viewPort);
     return true;
+  }
+
+  /**
+   * Set up multiple views.
+   * 
+   * @param {Zinc.Viewport} viewData - Viewport data to be loaded. 
+   */
+  this.setupMultipleViews = (defaultView, entries) => {
+    for (const [name, settings] of Object.entries(entries)) {
+      const viewport = new Viewport();
+      viewport.setFromObject(settings);
+      zincCameraControls.addViewport(name, viewport);
+    }
+    zincCameraControls.setDefaultViewport(defaultView);
   }
 
   /**
@@ -152,17 +163,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * @returns {THREE.Box3} 
    */
   this.getBoundingBox = () => {
-    let boundingBox1 = undefined, boundingBox2 = undefined;
-    for (let i = 0; i < zincObjects.length; i++) {
-      boundingBox2 = zincObjects[i].getBoundingBox();
-      if (boundingBox1 == undefined) {
-        boundingBox1 = boundingBox2;
-      } else {
-        if (boundingBox2)
-          boundingBox1.union(boundingBox2);
-      }
-    }
-    return boundingBox1;
+    return rootRegion.getBoundingBox(true);
   }
 
   /**
@@ -200,10 +201,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * as an argument.
    */
   this.forEachGeometry = callbackFunction => {
-    for (let i = zincObjects.length - 1; i >= 0; i--) {
-      if (zincObjects[i].isGeometry)
-        callbackFunction(zincObjects[i]);
-    }
+    rootRegion.forEachGeometry(callbackFunction, true);
   }
 
   /**
@@ -213,10 +211,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * as an argument.
    */
   this.forEachGlyphset = callbackFunction => {
-    for (let i = zincObjects.length - 1; i >= 0; i--) {
-      if (zincObjects[i].isGlyphset)
-        callbackFunction(zincObjects[i]);
-    }
+    rootRegion.forEachGlyphset(callbackFunction, true);
   }
 
   /**
@@ -226,10 +221,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * as an argument.
    */
   this.forEachPointset = callbackFunction => {
-    for (let i = zincObjects.length - 1; i >= 0; i--) {
-      if (zincObjects[i].isPointset)
-        callbackFunction(zincObjects[i]);
-    }
+    rootRegion.forEachPointset(callbackFunction, true);
   }
 
   /**
@@ -239,10 +231,7 @@ exports.Scene = function (containerIn, rendererIn) {
   * as an argument.
   */
   this.forEachLine = callbackFunction => {
-    for (let i = zincObjects.length - 1; i >= 0; i--) {
-      if (zincObjects[i].isLines)
-        callbackFunction(zincObjects[i]);
-    }
+    rootRegion.forEachLine(callbackFunction, true);
   }
 
   /** 
@@ -252,14 +241,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * @returns {Array}
    */
   this.findGeometriesWithGroupName = GroupName => {
-    const geometriesArray = [];
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObjects[i].isGeometry &&
-        (zincObjects[i].groupName == GroupName)) {
-        geometriesArray.push(zincObjects[i]);
-      }
-    }
-    return geometriesArray;
+    return rootRegion.findGeometriesWithGroupName(GroupName, true);
   }
 
   /** 
@@ -269,14 +251,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * @returns {Array}
    */
   this.findPointsetsWithGroupName = GroupName => {
-    const pointsetsArray = [];
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObjects[i].isPointset &&
-        (zincObjects[i].groupName == GroupName)) {
-    	  pointsetsArray.push(zincObjects[i]);
-      }
-    }
-    return pointsetsArray;
+    return rootRegion.findPointsetsWithGroupName(GroupName, true);
   }
   /** 
    * Find and return all glyphsets in this scene with the matching GroupName.
@@ -285,14 +260,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * @returns {Array}
    */
   this.findGlyphsetsWithGroupName = GroupName => {
-    const glyphsetsArray = [];
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObjects[i].isGlyphset &&
-        (zincObjects[i].groupName == GroupName)) {
-        glyphsetsArray.push(zincObjects[i]);
-      }
-    }
-    return glyphsetsArray;
+    return rootRegion.findGlyphsetsWithGroupName(GroupName, true);
   }
 
   /** 
@@ -302,34 +270,15 @@ exports.Scene = function (containerIn, rendererIn) {
    * @returns {Array}
    */
   this.findLinesWithGroupName = GroupName => {
-    const linesArray = [];
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObjects[i].isLines &&
-        (zincObjects[i].groupName == GroupName)) {
-    	  linesArray.push(zincObjects[i]);
-      }
-    }
-    return linesArray;
+    return rootRegion.findLinesWithGroupName(GroupName, true);
   }
 
   this.findObjectsWithGroupName = GroupName => {
-    const objectsArray = [];
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObjects[i].groupName == GroupName) {
-    	  objectsArray.push(zincObjects[i]);
-      }
-    }
-    return objectsArray;
+    return rootRegion.findObjectsWithGroupName(GroupName, true);
   }
 
   this.findObjectsWithAnatomicalId = anatomicalId => {
-    const objectsArray = [];
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObjects[i].anatomicalId == anatomicalId) {
-    	  objectsArray.push(zincObjects[i]);
-      }
-    }
-    return objectsArray;
+    return rootRegion.findObjectsWithAnatomicalId(anatomicalId, true);
   }
 
   this.getBoundingBoxOfZincObjects = objectsArray => {
@@ -374,8 +323,7 @@ exports.Scene = function (containerIn, rendererIn) {
 
   this.addZincObject = zincObject => {
     if (zincObject) {
-      scene.add(zincObject.morph);
-      zincObjects.push(zincObject);
+      rootRegion.addZincObject(zincObject);
       if (zincCameraControls)
         zincCameraControls.calculateMaxAllowedDistance(this);
     }
@@ -392,7 +340,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * once the glyphset is succssfully load in.
    */
   this.loadGlyphsetURL = (metaurl, glyphurl, groupName, finishCallback) => {
-    sceneLoader.loadGlyphsetURL(metaurl, glyphurl, groupName, finishCallback);
+    sceneLoader.loadGlyphsetURL(rootRegion, metaurl, glyphurl, groupName, finishCallback);
   }
 
   /**
@@ -407,7 +355,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * once the glyphset is succssfully load in.
    */
   this.loadPointsetURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
-    sceneLoader.loadPointsetURL(url, timeEnabled, morphColour, groupName, finishCallback);
+    sceneLoader.loadPointsetURL(rootRegion, url, timeEnabled, morphColour, groupName, finishCallback);
   }
 
   /**
@@ -422,7 +370,7 @@ exports.Scene = function (containerIn, rendererIn) {
  * once the glyphset is succssfully load in.
  */
   this.loadLinesURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
-    sceneLoader.loadLinesURL(url, timeEnabled, morphColour, groupName, finishCallback);
+    sceneLoader.loadLinesURL(rootRegion, url, timeEnabled, morphColour, groupName, finishCallback);
   }
 
   /**
@@ -435,7 +383,7 @@ exports.Scene = function (containerIn, rendererIn) {
   * once the STL geometry is succssfully loaded.
   */
   this.loadSTL = (url, groupName, finishCallback) => {
-    sceneLoader.loadSTL(url, groupName, finishCallback);
+    sceneLoader.loadSTL(rootRegion, url, groupName, finishCallback);
   }
 
   /**
@@ -448,7 +396,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * once the OBJ geometry is succssfully loaded.
    */
   this.loadOBJ = (url, groupName, finishCallback) => {
-    sceneLoader.loadOBJ(url, groupName, finishCallback);
+    sceneLoader.loadOBJ(rootRegion, url, groupName, finishCallback);
   }
 
   /**
@@ -460,7 +408,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * for each glyphset and geometry that has been written in.
    */
   this.loadMetadataURL = (url, finishCallback, allCompletedCallback) => {
-    sceneLoader.loadMetadataURL(url, finishCallback, allCompletedCallback);
+    sceneLoader.loadMetadataURL(rootRegion, url, finishCallback, allCompletedCallback);
   }
 
   /**
@@ -470,7 +418,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * @deprecated
    */
   this.loadModelsURL = (urls, colours, opacities, timeEnabled, morphColour, finishCallback) => {
-    sceneLoader.loadModelsURL(urls, colours, opacities, timeEnabled, morphColour, finishCallback);
+    sceneLoader.loadModelsURL(rootRegion. urls, colours, opacities, timeEnabled, morphColour, finishCallback);
   }
 
   /**
@@ -497,52 +445,9 @@ exports.Scene = function (containerIn, rendererIn) {
    * Load GLTF into this scene object.
    */
   this.loadGLTF = (url, finishCallback, options) => {
-    sceneLoader.loadGLTF(url, finishCallback, options);
+    sceneLoader.loadGLTF(rootRegion, url, finishCallback, options);
   }
   
-  /**
-   * Add a user provided {THREE.Geometry} into  the scene as zinc geometry.
-   * 
-   * @param {Three.Geometry} geometry - The threejs geometry to be added as {@link Zinc.Geometry}.
-   * @param {THREE.Color} color - Colour to be assigned to this geometry, overrided if materialIn is provided.
-   * @param {Number} opacity - Opacity to be set for this geometry, overrided if materialIn is provided.
-   * @param {Boolean} localTimeEnabled - Set this to true if morph geometry is present, overrided if materialIn is provided.
-   * @param {Boolean} localMorphColour - Set this to true if morph colour is present, overrided if materialIn is provided.
-   * @param {Boolean} external - Set this to true if morph geometry is present, overrided if materialIn is provided.
-   * @param {Function} finishCallback - Callback once the geometry has been added succssfully.
-   * @param {THREE.Material} materialIn - Material to be set for this geometry if it is present.
-   * 
-   * @returns {Zinc.Geometry}
-   */
-  this.addZincGeometry = (
-    geometryIn,
-    colour,
-    opacity,
-    localTimeEnabled,
-    localMorphColour,
-    finishCallback,
-    materialIn,
-    groupName
-  ) => {
-    let options = {};
-    options.colour = colour;
-    options.opacity = opacity;
-    options.localTimeEnabled = localTimeEnabled;
-    options.localMorphColour = localMorphColour
-    const newGeometry = new (require('./primitives/geometry').Geometry)();
-    newGeometry.createMesh(geometryIn, materialIn, options);
-    if (newGeometry.morph) {
-      newGeometry.setName(groupName);
-      this.addZincObject(newGeometry);
-      newGeometry.setDuration(duration);
-      if (finishCallback != undefined && (typeof finishCallback == 'function'))
-        finishCallback(newGeometry);
-      if (!videoHandler && newGeometry.videoHandler)
-        videoHandler = newGeometry.videoHandler;
-      return newGeometry;
-    }
-    return undefined;
-  }
 
   //Update the directional light for this scene.
   this.updateDirectionalLight = () => {
@@ -573,9 +478,10 @@ exports.Scene = function (containerIn, rendererIn) {
     if (videoHandler != undefined) {
       return videoHandler.getCurrentTime(duration);
     }
-    if (zincObjects[0] != undefined) {
-      return zincObjects[0].getCurrentTime();
-    }
+    const time = rootRegion.getCurrentTime();
+    if (time !== -1) 
+      return time;
+    
     return 0;
   }
 
@@ -583,13 +489,11 @@ exports.Scene = function (containerIn, rendererIn) {
    * Set the current time of all the geometries and glyphsets of this scene.
    * @param {Number} time  - Value to set the time to.
    */
-  this.setMorphsTime = time => {
+  this.setMorphsTime = (time) => {
     if (videoHandler != undefined) {
       videoHandler.setMorphTime(time, duration);
     }
-    for (let i = 0; i < zincObjects.length; i++) {
-      zincObjects[i].setMorphTime(time);
-    }
+    rootRegion.setMorphTime(time, true);
   }
 
   /**
@@ -598,15 +502,10 @@ exports.Scene = function (containerIn, rendererIn) {
    * @return {Boolean}
    */
   this.isTimeVarying = () => {
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObjects[i].isTimeVarying()) {
-        return true;
-      }
-    }
     if (videoHandler && videoHandler.video && !videoHandler.video.error) {
     	return true;
     }
-    return false;
+    return rootRegion.isTimeVarying();
   }
 
   /**
@@ -626,15 +525,13 @@ exports.Scene = function (containerIn, rendererIn) {
 			  } else {
 				  videoHandler.video.pause();
 			  }
-        var currentTime = videoHandler.video.currentTime /
+        const currentTime = videoHandler.video.currentTime /
           videoHandler.getVideoDuration() * duration;
 			  if (0 == sceneLoader.toBeDownloaded) {
 				  zincCameraControls.setTime(currentTime);
 				  zincCameraControls.update(0);
-				  for (let i = 0; i < zincObjects.length; i++) {
-					  zincObjects[i].setMorphTime(currentTime);
-					  zincObjects[i].render(0, playAnimation);
-				  }
+          rootRegion.setMorphTime(currentTime, true);
+          rootRegion.renderGeometries(0, 0, playAnimation, undefined, true);
 			  } else {
 				  zincCameraControls.update(0);
 			  }
@@ -645,22 +542,10 @@ exports.Scene = function (containerIn, rendererIn) {
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded) {
         zincCameraControls.update(delta);
-			  for (let i = 0; i < zincObjects.length; i++) {
-				  zincObjects[i].render(playRate * delta, playAnimation, options);
-        }
+        rootRegion.renderGeometries(playRate, delta, playAnimation, options, true);
 		  } else {
 			  zincCameraControls.update(0);
 		  }
-    }
-    //process markers visibility and size
-    if (this.displayMarkers && (playAnimation === false)) {
-      if (options.markerDepths.length > 0) {
-        let min = Math.min(...options.markerDepths);
-        let max = Math.max(...options.markerDepths);
-			  for (let i = 0; i < zincObjects.length; i++) {
-				  zincObjects[i].processMarkerVisual(min, max, options);
-        }
-      }
     }
   }
 
@@ -670,6 +555,11 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.getThreeJSScene = () => {
     return scene;
+  }
+
+  this.setVideoHandler = (videoHandlerIn) => {
+    if (!videoHandler)
+      videoHandler = videoHandlerIn;
   }
 
   /**
@@ -784,11 +674,10 @@ exports.Scene = function (containerIn, rendererIn) {
    * @param {Number} durationIn - duration of the scene.
    */
   this.setDuration = durationIn => {
+    rootRegion.setDuration(durationIn);
     duration = durationIn;
-    for (let i = 0; i < zincObjects.length; i++) {
-      zincObjects[i].setDuration(duration);
-    }
     zincCameraControls.setPathDuration(durationIn);
+    sceneLoader.duration = durationIn;
   }
 
   /**
@@ -816,12 +705,7 @@ exports.Scene = function (containerIn, rendererIn) {
   }
 
   this.objectIsInScene = zincObject => {
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObject === zincObjects[i]) {
-        return true;
-      }
-    }
-    return false;
+    return rootRegion.objectIsInRegion(zincObject, true);
   }
 
   this.alignBoundingBoxToCameraView = (boundingBox, transitionTime) => {
@@ -897,36 +781,18 @@ exports.Scene = function (containerIn, rendererIn) {
    * @param {Zinc.Object} zincObject - object to be removed from this scene.
    */
   this.removeZincObject = zincObject => {
-    for (let i = 0; i < zincObjects.length; i++) {
-      if (zincObject === zincObjects[i]) {
-        scene.remove(zincObject.morph);
-        zincObjects.splice(i, 1);
-        zincObject.dispose();
-        if (zincCameraControls)
-          zincCameraControls.calculateMaxAllowedDistance(this);
-        return;
-      }
-    }
+    rootRegion.removeZincObject(zincObject);
+    if (zincCameraControls)
+      zincCameraControls.calculateMaxAllowedDistance(this);
   }
 
   /**
-   * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
-   * This does not remove obejcts that are added using the addObject APIs.
+   * Get all pickable objects.
    */
   this.getPickableThreeJSObjects = () => {
     let returnedObjects = [];
-    for (let i = zincObjects.length - 1; i >= 0; i--) {
-      if (zincObjects[i].morph && (zincObjects[i].morph.visible === true)) {
-        if (this.displayMarkers) {
-          let marker = zincObjects[i].marker;
-          if (marker && marker.isEnabled()) {
-            returnedObjects.push(marker.morph);
-          }
-        } else {
-          returnedObjects.push(zincObjects[i].morph);
-        }
-      }
-    }
+    rootRegion.getPickableThreeJSObjects(returnedObjects,
+      this.displayMarkers, true);
     return returnedObjects;
   }
 
@@ -968,11 +834,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * This does not remove obejcts that are added using the addObject APIs.
    */
   this.clearAll = () => {
-    for (let i = zincObjects.length - 1; i >= 0; i--) {
-        scene.remove(zincObjects[i].morph);
-      zincObjects[i].dispose();
-    }
-    zincObjects = [];
+    rootRegion.clear(true);
     sceneLoader.toBeDwonloaded = 0;
     if (zincCameraControls)
       zincCameraControls.calculateMaxAllowedDistance(this);
@@ -1074,5 +936,9 @@ exports.Scene = function (containerIn, rendererIn) {
   this.exportGLTF = (binary) => {
     const exporter = new SceneExporter(this);
     return exporter.exportGLTF(binary);
+  }
+
+  this.getRootRegion = () => {
+    return rootRegion;
   }
 }

@@ -8,6 +8,15 @@ const Viewport = function () {
 	this.targetPosition = [0.5, 0.5, 0.5];
 	this.upVector = [ 0.0, 0.0, 1.0];
 	const _this = this;
+
+  this.setFromObject = ({ nearPlane, farPlane, eyePosition, targetPosition, upVector }) => {
+    _this.nearPlane = nearPlane;
+    _this.farPlane = farPlane;
+    _this.eyePosition = eyePosition;
+    _this.targetPosition = targetPosition;
+    _this.upVector = upVector;
+  }
+
 };
 
 const CameraControls = function ( object, domElement, renderer, scene ) {
@@ -40,7 +49,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	let updateLightWithPathFlag = false;
 	let playRate = 500;
 	let deviceOrientationControl = undefined;
-	const defaultViewport = new Viewport();
+	let defaultViewport = "default";
 	let currentMode = MODE.DEFAULT;
 	let smoothCameraTransitionObject = undefined;
 	let rotateCameraTransitionObject = undefined;
@@ -62,9 +71,18 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   const _tempEye = new THREE.Vector3();
   let ndcControl = undefined;
   let maxDist = 0;
+  const viewports = {
+    "default" : new Viewport()
+  };
+  viewports.default.nearPlane = 0.1;
+	viewports.default.farPlane = 2000;
+	viewports.default.eyePosition = [0, 0, 0];
+	viewports.default.targetPosition = [0, 0, -1.0];
+	viewports.default.upVector = [ 0.0, 1.0, 0.0];
 
+  //Add the target property
 	if (this.cameraObject.target === undefined)
-		this.cameraObject.target = new THREE.Vector3( 0, 0, 0  );
+		this.cameraObject.target = new THREE.Vector3( ...viewports.default.targetPosition );
 
   //Calculate the max distanc allowed, it is the longer
   //of 6 times the radius of the current scene and
@@ -84,13 +102,40 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
       maxDist = 0;
     }
   }
+
+  this.addViewport = (viewportName, viewport) => {
+    if (viewportName && viewport)
+      viewports[viewportName] = viewport;
+  }
+
+  this.setDefaultViewport = defaultName => {
+		if (defaultName && (defaultName in viewports)) {
+      defaultViewport = defaultName;
+    }	
+	}
+
+  this.getDefaultViewport = () => {
+		return defaultViewport;
+	}
+	
+	this.getViewportOfName = name => {
+		return viewports[name];
+	}
+
+  this.setCurrentViewport = name => {
+    if (name in viewports) {
+      this.setCurrentCameraSettings(viewports[name])
+      return true;
+    }
+    return false;
+	}
 	
 	this.onResize = () => {
 		if (rect)
 			rect = undefined;
     if (ndcControl)
       ndcControl.setCurrentCameraSettings(this.cameraObject,
-        defaultViewport);
+        viewports[defaultViewport]);
 	}
 	
 	this.setMouseButtonAction = (buttonName, actionName) => {
@@ -723,30 +768,19 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 	this.resetView = () => {
-		this.cameraObject.near = defaultViewport.nearPlane;
-		this.cameraObject.far = defaultViewport.farPlane;
-		this.cameraObject.position.set( defaultViewport.eyePosition[0], defaultViewport.eyePosition[1],
-				defaultViewport.eyePosition[2]);
-		this.cameraObject.target.set( defaultViewport.targetPosition[0],
-				defaultViewport.targetPosition[1], defaultViewport.targetPosition[2]  );
-		this.cameraObject.up.set( defaultViewport.upVector[0],  defaultViewport.upVector[1],
-				defaultViewport.upVector[2]);
+    const viewport = viewports[defaultViewport];
+		this.cameraObject.near = viewport.nearPlane;
+		this.cameraObject.far = viewport.farPlane;
+		this.cameraObject.position.set( viewport.eyePosition[0], viewport.eyePosition[1],
+      viewport.eyePosition[2]);
+		this.cameraObject.target.set( viewport.targetPosition[0],
+      viewport.targetPosition[1], viewport.targetPosition[2]  );
+		this.cameraObject.up.set( viewport.upVector[0],  viewport.upVector[1],
+      viewport.upVector[2]);
 		this.cameraObject.updateProjectionMatrix();
 		this.updateDirectionalLight();
 	}
-	
-	this.setDefaultCameraSettings = newViewport => {
-		if (newViewport.nearPlane)
-			defaultViewport.nearPlane = newViewport.nearPlane;
-		if (newViewport.farPlane)
-			defaultViewport.farPlane = newViewport.farPlane;
-		if (newViewport.eyePosition)
-			defaultViewport.eyePosition = newViewport.eyePosition;
-		if (newViewport.targetPosition)
-			defaultViewport.targetPosition = newViewport.targetPosition;
-		if (newViewport.upVector)
-			defaultViewport.upVector = newViewport.upVector;	
-	}
+
 	
 	this.setCurrentCameraSettings = newViewport => {
 		if (newViewport.nearPlane)
@@ -801,11 +835,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		
 		return newViewport;
 	}
-	
-	this.getDefaultViewport = () => {
-		return defaultViewport;
-	}
-	
+
 	this.getCurrentViewport = () => {
 		const currentViewport = new Viewport();
 		currentViewport.nearPlane = this.cameraObject.near;
@@ -906,7 +936,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     if (!ndcControl)
       ndcControl = new NDCCameraControl();
     ndcControl.setCurrentCameraSettings(this.cameraObject,
-      defaultViewport);
+      viewports[defaultViewport]);
     return ndcControl;
   }
 

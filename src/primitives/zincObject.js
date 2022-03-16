@@ -25,7 +25,7 @@ const ZincObject = function() {
 	 */
   this.duration = 6000;
   this.clipAction = undefined;
-  this.userData = [];
+  this.userData = {};
   this.videoHandler = undefined;
   this.marker = undefined;
   this.markerUpdateRequired = true;
@@ -34,6 +34,7 @@ const ZincObject = function() {
   this.cachedBoundingBox = new THREE.Box3();
   this._vertex = new THREE.Vector3();
   this.anatomicalId = undefined;
+  this.region = undefined;
 }
 
 ZincObject.prototype.setDuration = function(durationIn) {
@@ -45,6 +46,14 @@ ZincObject.prototype.setDuration = function(durationIn) {
 
 ZincObject.prototype.getDuration = function() {
   return this.duration;
+}
+
+ZincObject.prototype.setRegion = function(region) {
+  this.region = region;
+}
+
+ZincObject.prototype.getRegion = function() {
+  return this.region;
 }
 
 ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
