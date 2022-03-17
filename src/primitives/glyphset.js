@@ -87,6 +87,7 @@ const Glyphset = function () {
     if (isInline) {
       var object = loader.parse(glyphURL);
       (meshloader(finishCallback, displayLabels))(object.geometry, object.materials);
+      object.geometry.dispose();
     } else {
       loader.crossOrigin = "Anonymous";
       loader.load(glyphURL, meshloader(finishCallback, displayLabels));
@@ -458,14 +459,17 @@ const Glyphset = function () {
 
   var meshloader = (finishCallback, displayLabels) => {
     return (geometry, materials) => {
-      this.geometry.copy(geometry.toBufferGeometry());
+      const tempGeometry = geometry.toBufferGeometry();
+      this.geometry.copy(tempGeometry);
       this.geometry.computeBoundingSphere();
       this.geometry.computeBoundingBox();
+      tempGeometry.dispose();
       if (materials && materials[0])
         this.morph.material = materials[0];
       createGlyphs(displayLabels);
       this.morph.name = this.groupName;
       this.morph.userData = this;
+      geometry.dispose();
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(this);
     };

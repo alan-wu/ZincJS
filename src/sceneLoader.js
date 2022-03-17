@@ -1,9 +1,9 @@
 const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
 const JSONLoader = require('./loader').JSONLoader;
-const STLLoader = require('./STLLoader').STLLoader;
-const OBJLoader = require('./OBJLoader').OBJLoader;
-
+const STLLoader = require('three/examples/jsm/loaders/STLLoader').STLLoader;
+const OBJLoader = require('three/examples/jsm/loaders/OBJLoader').OBJLoader;
+const GLTFLoader = require('three/examples/jsm/loaders/GLTFLoader').GLTFLoader;
 
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
@@ -101,7 +101,7 @@ exports.SceneLoader = function (sceneIn) {
         localMorphColour = morphColour[i] ? true : false;
       loader.crossOrigin = "Anonymous";
       loader.load(resolveURL(filename), meshloader(colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
-        finishCallback), this.onProgress(i), this.onError);
+        undefined, finishCallback), this.onProgress(i), this.onError);
     }
   }
 
@@ -134,7 +134,7 @@ exports.SceneLoader = function (sceneIn) {
   }
 
   //Internal loader for a regular zinc geometry.
-  const linesloader = (localTimeEnabled, localMorphColour, groupName, anatomicalId, finishCallback) => {
+  const linesloader = (localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, finishCallback) => {
     return (geometry, materials) => {
       const newLines = new (require('./primitives/lines').Lines)();
       let material = undefined;
@@ -155,10 +155,12 @@ exports.SceneLoader = function (sceneIn) {
         newLines.createLineSegment(geometry, material, options);
         newLines.setName(groupName);
         newLines.anatomicalId = anatomicalId;
+        newLines.setRenderOrder = renderOrder;
         scene.addZincObject(newLines);
         newLines.setDuration(scene.getDuration());
       }
       --this.toBeDownloaded;
+      geometry.dispose();
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newLines);
     };
@@ -181,6 +183,7 @@ exports.SceneLoader = function (sceneIn) {
     this.toBeDownloaded += 1;
     let isInline = (options && options.isInline) ? options.isInline : false;
     let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
+    let renderOrder = (options && options.renderOrder) ? options.renderOrder : undefined;
 	  if (timeEnabled != undefined)
 		  localTimeEnabled = timeEnabled ? true : false;
 	  let localMorphColour = 0;
@@ -189,12 +192,12 @@ exports.SceneLoader = function (sceneIn) {
     let loader = new JSONLoader();
     if (isInline) {
       var object = loader.parse( url );
-      (linesloader(localTimeEnabled, localMorphColour, groupName, anatomicalId, 
-        finishCallback))( object.geometry, object.materials );
+      (linesloader(localTimeEnabled, localMorphColour, groupName, anatomicalId,
+        renderOrder, finishCallback))( object.geometry, object.materials );
     } else {
       loader.crossOrigin = "Anonymous";
       loader.load(url, linesloader(localTimeEnabled, localMorphColour, groupName, 
-        anatomicalId, finishCallback), this.onProgress(i), this.onError);
+        anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError);
     }
   }
 
@@ -202,6 +205,7 @@ exports.SceneLoader = function (sceneIn) {
     let isInline  = (options && options.isInline) ? options.isInline : undefined;
     let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
     let displayLabels = (options && options.displayLabels) ? options.displayLabels : undefined;
+    let renderOrder = (options && options.renderOrder) ? options.renderOrder : undefined;
     const newGlyphset = new (require('./primitives/glyphset').Glyphset)();
     newGlyphset.setDuration(scene.getDuration());
     newGlyphset.groupName = groupName;
@@ -218,6 +222,7 @@ exports.SceneLoader = function (sceneIn) {
       newGlyphset.load(glyphsetData, resolveURL(glyphurl), myCallback, isInline, displayLabels);
     }
     newGlyphset.anatomicalId = anatomicalId;
+    newGlyphset.setRenderOrder(renderOrder);
     scene.addZincObject(newGlyphset);
   };
 
@@ -232,7 +237,7 @@ exports.SceneLoader = function (sceneIn) {
   };
 
   //Internal loader for a regular zinc geometry.
-  const pointsetloader = (localTimeEnabled, localMorphColour, groupName, anatomicalId, finishCallback) => {
+  const pointsetloader = (localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, finishCallback) => {
     return (geometry, materials) => {
       const newPointset = new (require('./primitives/pointset').Pointset)();
       let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 5, sizeAttenuation: false });
@@ -254,7 +259,9 @@ exports.SceneLoader = function (sceneIn) {
         newPointset.anatomicalId = anatomicalId;
         scene.addZincObject(newPointset);
         newPointset.setDuration(scene.getDuration());
+        newPointset.setRenderOrder(renderOrder);
       }
+      geometry.dispose();
       --this.toBeDownloaded;
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newPointset);
@@ -278,7 +285,7 @@ exports.SceneLoader = function (sceneIn) {
     const loader = new STLLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(colour, opacity, false,
-      false, groupName, undefined, finishCallback));
+      false, groupName, undefined, undefined, finishCallback));
   }
 
   /**
@@ -297,7 +304,7 @@ exports.SceneLoader = function (sceneIn) {
     const loader = new OBJLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(colour, opacity, false,
-      false, groupName, undefined, finishCallback));
+      false, groupName, undefined, undefined,finishCallback));
   }
 
   //Loader for the OBJ format, 
@@ -346,6 +353,7 @@ exports.SceneLoader = function (sceneIn) {
     let isInline = (options && options.isInline) ? options.isInline : false;
     let fileFormat = (options && options.fileFormat) ? options.fileFormat : undefined;
     let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
+    let renderOrder = (options && options.renderOrder) ? options.renderOrder : undefined;
     if (timeEnabled != undefined)
       localTimeEnabled = timeEnabled ? true : false;
     let localMorphColour = 0;
@@ -366,11 +374,11 @@ exports.SceneLoader = function (sceneIn) {
     if (isInline) {
       var object = loader.parse( url );
 			(meshloader(colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, finishCallback))( object.geometry, object.materials );
+        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback))( object.geometry, object.materials );
     } else {
       loader.crossOrigin = "Anonymous";
       loader.load(url, meshloader(colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(i), this.onError);
+        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError);
     }
   };
 
@@ -414,14 +422,15 @@ exports.SceneLoader = function (sceneIn) {
     let loader = new JSONLoader();
     let isInline = (options && options.isInline) ? options.isInline : false;
     let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
+    let renderOrder = (options && options.renderOrder) ? options.renderOrder : undefined;
     if (isInline) {
       var object = loader.parse( url );
       (pointsetloader(localTimeEnabled, localMorphColour, groupName,
-        anatomicalId, finishCallback))(object.geometry, object.materials );
+        anatomicalId, renderOrder, finishCallback))(object.geometry, object.materials );
     } else {
       loader.crossOrigin = "Anonymous";
       loader.load(url, pointsetloader(localTimeEnabled, localMorphColour,
-        groupName, anatomicalId, finishCallback),
+        groupName, anatomicalId, renderOrder, finishCallback),
         this.onProgress(i), this.onError);
     }
   }
@@ -438,6 +447,7 @@ exports.SceneLoader = function (sceneIn) {
    */
   this.loadGlyphsetURL = (metaurl, glyphurl, groupName, finishCallback, options) => {
     let isInline = (options && options.isInline) ? options.isInline : false;
+    let renderOrder = (options && options.renderOrder) ? options.renderOrder : false;
     if (isInline) {
       loadGlyphset(metaurl, glyphurl, groupName, finishCallback, options);
     } else {
@@ -457,6 +467,7 @@ exports.SceneLoader = function (sceneIn) {
     localMorphColour,
     groupName,
     anatomicalId,
+    renderOrder,
     finishCallback
   ) => {
     return (geometry, materials) => {
@@ -465,9 +476,11 @@ exports.SceneLoader = function (sceneIn) {
         material = materials[0];
       }
       const zincGeometry = scene.addZincGeometry(geometry, colour, opacity, 
-        localTimeEnabled, localMorphColour, undefined, material, groupName);
+        localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder);
       zincGeometry.anatomicalId = anatomicalId;
+      zincGeometry.setRenderOrder(renderOrder);
       --this.toBeDownloaded;
+      geometry.dispose();
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(zincGeometry);
     };
@@ -505,7 +518,7 @@ exports.SceneLoader = function (sceneIn) {
 
   //Function to process each of the graphical metadata item except for view and
   //settings.
-  const readPrimitivesItem = (referenceURL, item, finishCallback) => {
+  const readPrimitivesItem = (referenceURL, item, order, finishCallback) => {
     if (item) {
       let newURL = undefined;
       let isInline = false;
@@ -521,6 +534,8 @@ exports.SceneLoader = function (sceneIn) {
         isInline: isInline,
         fileFormat: item.FileFormat,
         anatomicalId: item.AnatomicalId,
+        compression: item.compression,
+        renderOrder: order
       };
       switch (item.Type) {
         case "Surfaces":
@@ -588,6 +603,38 @@ exports.SceneLoader = function (sceneIn) {
   };
 
   /**
+   * Load GLTF into this scene object.
+   * 
+   * @param {String} url - URL to the GLTF file
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the glyphset is succssfully load in.
+   */
+  this.loadGLTF = (url, finishCallback, options) => {
+    const path = url.substring(0, url.lastIndexOf("/") + 1);
+    const filename = url.substring(url.lastIndexOf("/") + 1, url.length);
+    const loader = new GLTFLoader().setPath(path);
+    loader.load( filename, function ( gltf ) {
+      console.log(gltf)
+      gltf.scene.children.forEach(child => {
+        console.log(child)
+        let localTimeEnabled = false;
+        let localMorphColour = false;
+        if (child.geometry && child.geometry.morphAttributes) {
+          localTimeEnabled = child.geometry.morphAttributes.position ? true : false;
+          localMorphColour = child.geometry.morphAttributes.color ? true : false;
+        }
+        const zincGeometry = new (require('./primitives/geometry').Geometry)();
+        zincGeometry.setMesh(child.clone(), localTimeEnabled, localMorphColour);
+        scene.addZincObject(zincGeometry);
+        zincGeometry.groupName = zincGeometry.morph.name;
+        console.log(zincGeometry)
+        if (finishCallback != undefined && (typeof finishCallback == 'function'))
+          finishCallback(zincGeometry);
+      });
+    })
+  }
+
+  /**
     * Load a metadata file from the provided URL into this scene. Once
     * succssful scene proceeds to read each items into scene for visualisations.
     * 
@@ -613,8 +660,10 @@ exports.SceneLoader = function (sceneIn) {
         // Prioritise the view file and settings before loading anything else
         for (var i = 0; i < metadata.length; i++)
           readViewAndSettingsItem(referenceURL, metadata[i], callback);
-        for (var i = 0; i < metadata.length; i++)
-          readPrimitivesItem(referenceURL, metadata[i], callback);
+        for (var i = 0; i < metadata.length; i++) {
+          //Render order is set to i * 2 to account for front and back rendering
+          readPrimitivesItem(referenceURL, metadata[i], i * 2, callback);
+        }
       }
     }
 

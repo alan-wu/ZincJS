@@ -29,6 +29,8 @@ function Geometry() {
 	this.colors = [];
 	this.faces = [];
 	this.faceVertexUvs = [[]];
+  this.normals = [];
+  this.uvs = [];
 
 	this.morphTargets = [];
 	this.morphNormals = [];
@@ -459,6 +461,8 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 		}
 
+    return vertices;
+
 	},
 
 	computeFlatVertexNormals: function () {
@@ -572,7 +576,17 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 			// compute morph normals
 
 			tmpGeo.computeFaceNormals();
-			tmpGeo.computeVertexNormals();
+			let vertexNormals = tmpGeo.computeVertexNormals();
+
+      if (vertexNormals && vertexNormals.length > 0) {
+        this.morphTargets[i].normals = new Array( this.vertices.length );
+
+        for ( let v = 0; v < vertexNormals.length; v ++ ) {
+    
+          this.morphTargets[i].normals[ v ] =  vertexNormals[v].clone();
+    
+        }
+      }
 
 			// store morph normals
 
@@ -1366,6 +1380,53 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 	},
 
+
+	computeGroups( ) {
+
+		const groups = [];
+
+		let group, i;
+		let materialIndex = undefined;
+
+		const faces = this.faces;
+
+		for ( i = 0; i < faces.length; i ++ ) {
+
+			const face = faces[ i ];
+
+			// materials
+
+			if ( face.materialIndex !== materialIndex ) {
+
+				materialIndex = face.materialIndex;
+
+				if ( group !== undefined ) {
+
+					group.count = ( i * 3 ) - group.start;
+					groups.push( group );
+
+				}
+
+				group = {
+					start: i * 3,
+					materialIndex: materialIndex
+				};
+
+			}
+
+		}
+
+		if ( group !== undefined ) {
+
+			group.count = ( i * 3 ) - group.start;
+			groups.push( group );
+
+		}
+
+		return groups;
+
+	},
+
 	toBufferGeometry: function () {
 
 		const geometry = new DirectGeometry().fromGeometry( this );
@@ -1458,6 +1519,156 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 			buffergeometry.boundingBox = geometry.boundingBox.clone();
 
 		}
+
+		return buffergeometry;
+
+	},
+
+  toIndexedBufferGeometry: function () {
+
+		//const geometry = new DirectGeometry().fromGeometry( this );
+
+		const buffergeometry = new BufferGeometry();
+
+		const positions = new Float32Array( this.vertices.length * 3 );
+		buffergeometry.setAttribute( 'position', new BufferAttribute( positions, 3 ).copyVector3sArray( this.vertices ) );
+
+		if ( this.normals.length > 0 ) {
+			const normals = new Float32Array( this.normals.length );
+      let buffer = new BufferAttribute( normals, 3 ).copyArray( this.normals );
+			buffergeometry.setAttribute( 'normal',  buffer);
+		}
+    if ( this.uvs.length > 0 && this.uvs[0].length > 0 ) {
+
+			const uvs = new Float32Array( this.uvs[0].length * 2 );
+			buffergeometry.setAttribute( 'uv', new BufferAttribute( uvs, 2 ).copyArray( this.uvs[0] ) );
+		}
+
+		if ( this.uvs.length > 1 && this.uvs[1].length > 0 ) {
+			const uvs2 = new Float32Array( this.uvs[1].length * 2 );
+			buffergeometry.setAttribute( 'uv2', new BufferAttribute( uvs2, 2 ).copyArray( this.uvs[1] ) );
+		}
+
+    if ( this.colors.length > 0) {
+
+      const colorArray = [];
+      for (let i = 0 ; i < this.colors.length; i++) {
+        colorArray.push(new Color( this.colors[ i ] ));
+      }
+      const colors = new Float32Array( colorArray.length * 3 );
+			buffergeometry.setAttribute( 'color', new BufferAttribute( colors, 3 ).copyColorsArray( colorArray ) );
+
+    } else {
+
+      const colorsArray = new Float32Array( this.vertices.length * 3  );
+      for (let i = 0; i < this.vertices.length * 3; i++) {
+        colorsArray[i] = 1.0;
+      }
+      buffergeometry.setAttribute( 'color', new BufferAttribute( colorsArray, 3 ) );
+  
+    }
+
+		// morphs
+
+    if (this.morphTargets.length > 0) {
+
+			const array = [];
+      const normalsArray = [];
+
+			for ( let i = 0, l = this.morphTargets.length; i < l; i ++ ) {
+
+				const morphTarget = this.morphTargets[ i ];
+
+				const attribute = new Float32BufferAttribute( morphTarget.vertices.length * 3, 3 );
+				attribute.name = morphTarget.name;
+
+				array.push( attribute.copyVector3sArray( morphTarget.vertices ) );
+
+        if (morphTarget.normals) {
+          const morphNormal = this.morphNormals[ i ];
+
+          const attribute = new Float32BufferAttribute( morphTarget.normals.length * 3, 3 );
+          attribute.name = morphNormal.name;
+
+          normalsArray.push( attribute.copyVector3sArray( morphTarget.normals ) );
+  
+        }
+
+			}
+
+			buffergeometry.morphAttributes.position = array;
+      buffergeometry.morphAttributes.normal = normalsArray;
+
+		}
+
+		// skinning
+
+		if ( this.skinIndices.length > 0 ) {
+
+			const skinIndices = new Float32BufferAttribute( this.skinIndices.length * 4, 4 );
+			buffergeometry.setAttribute( 'skinIndex', skinIndices.copyVector4sArray( this.skinIndices ) );
+
+		}
+
+		if ( this.skinWeights.length > 0 ) {
+
+			const skinWeights = new Float32BufferAttribute( this.skinWeights.length * 4, 4 );
+			buffergeometry.setAttribute( 'skinWeight', skinWeights.copyVector4sArray( this.skinWeights ) );
+
+		}
+
+		//
+
+		if ( this.boundingSphere !== null ) {
+
+			buffergeometry.boundingSphere = this.boundingSphere.clone();
+
+		}
+
+		if ( this.boundingBox !== null ) {
+
+			buffergeometry.boundingBox = this.boundingBox.clone();
+
+		}
+
+    if (this.faces.length > 0) {
+
+      let colors = [];
+
+      let indices = [];
+
+      for (let i = 0 ; i < this.faces.length; i++) {
+
+        indices.push(this.faces[i].a, this.faces[i].b, this.faces[i].c);
+
+        const vertexColors = this.faces[i].vertexColors;
+    
+          if ( vertexColors.length === 3 ) {
+    
+            colors.push( vertexColors[ 0 ], vertexColors[ 1 ], vertexColors[ 2 ] );
+    
+          } else {
+    
+            const color = this.faces[i].color;
+    
+            colors.push( color, color, color );
+    
+        }
+
+      }
+
+     // if ( colors.length > 0 ) {
+
+//        const colorsArray = new Float32Array( colors.length * 3 );
+//        buffergeometry.setAttribute( 'color', new BufferAttribute( colorsArray, 3 ).copyColorsArray( colors ) );
+  
+//      }
+
+      buffergeometry.setIndex( indices );
+
+      buffergeometry.groups = this.computeGroups();
+
+    }
 
 		return buffergeometry;
 

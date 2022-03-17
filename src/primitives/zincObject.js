@@ -52,9 +52,9 @@ ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
   if (geometryIn instanceof THREEGeometry) {
     if (options.localTimeEnabled && (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
       geometryIn.computeMorphNormals();
-    geometry = geometryIn.toBufferGeometry();
+    geometry = geometryIn.toIndexedBufferGeometry();
     if (options.localMorphColour)
-      require("../utilities").copyMorphColorsToBufferGeometry(geometryIn, geometry);
+      require("../utilities").copyMorphColorsToIndexedBufferGeometry(geometryIn, geometry);
   } else if (geometryIn instanceof THREE.BufferGeometry) {
     geometry = geometryIn.clone();
   }
@@ -67,12 +67,12 @@ ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
 }
 
 ZincObject.prototype.checkAndCreateTransparentMesh = function(options) {
-  if (this.isGeometry && this.morph.material.transparent) {
+  if (this.isGeometry && this.morph.material && this.morph.material.transparent) {
     if (!this.secondaryMesh) {
       let secondaryMaterial = this.morph.material.clone();
       secondaryMaterial.side =  THREE.FrontSide;
-      this.secondaryMesh = new THREE.Mesh(this.morph.geometry, secondaryMaterial); 
-      this.secondaryMesh.renderOrder = 2;
+      this.secondaryMesh = new THREE.Mesh(this.morph.geometry, secondaryMaterial);
+      this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
       this.secondaryMesh.userData = this;
       this.secondaryMesh.name = this.groupName;
     }
@@ -97,7 +97,7 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.mixer = new THREE.AnimationMixer(this.animationGroup);
   this.geometry = mesh.geometry;
   this.clipAction = undefined;
-  if (this.geometry.morphAttributes.position) {
+  if (this.geometry && this.geometry.morphAttributes && this.geometry.morphAttributes.position) {
     let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
       this.geometry.morphAttributes.position, 10, true);
     if (animationClip && (animationClip[0] != undefined)) {
@@ -394,7 +394,9 @@ ZincObject.prototype.getBoundingBox = function() {
   if (this.morph && this.morph.visible) {
     if (this.boundingBoxUpdateRequired) {
       let influences = this.morph.morphTargetInfluences;
-      let attributes = this.morph.geometry.morphAttributes;
+      let attributes = undefined;
+      if (this.morph.geometry)
+        attributes = this.morph.geometry.morphAttributes;
       let found = false;
       if (influences && attributes && attributes.position) {
         let min = new THREE.Vector3();
@@ -484,8 +486,17 @@ ZincObject.prototype.initiateMorphColor = function() {
   if ((this.morphColour == 1) && (typeof this.geometry !== "undefined") &&
       ((this.morph.material.vertexColors == THREE.VertexColors) ||
       (this.morph.material.vertexColors == true))) {
-       updateMorphColorAttribute(this.geometry, this.morph);
+        updateMorphColorAttribute(this.geometry, this.morph);
       }
+}
+
+ZincObject.prototype.setRenderOrder = function(renderOrder) {
+  if (this.morph && (renderOrder !== undefined)) {
+    this.morph.renderOrder = renderOrder;
+    if (this.secondaryMesh)
+      this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
+
+  }
 }
 
 //Update the geometry and colours depending on the morph.

@@ -2,16 +2,16 @@ const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
 
 const Viewport = function () {
-	this.nearPlane = 0.1;
-	this.farPlane = 2000.0;
-	this.eyePosition = [0.0, 0.0, 0.0];
-	this.targetPosition = [0.0, 0.0, 0.0];
-	this.upVector = [ 0.0, 1.0, 0.0];
+	this.nearPlane = 0.168248;
+	this.farPlane = 6.82906;
+	this.eyePosition = [0.5, -2.86496, 0.5];
+	this.targetPosition = [0.5, 0.5, 0.5];
+	this.upVector = [ 0.0, 0.0, 1.0];
 	const _this = this;
 };
 
 const CameraControls = function ( object, domElement, renderer, scene ) {
-	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5 };
+	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5, SYNC_CONTROL: 6 };
 	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
 	const CLICK_ACTION = {};
 	CLICK_ACTION.MAIN = STATE.ROTATE;
@@ -58,23 +58,62 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   const _axis = new THREE.Vector3();
   const _v = new THREE.Vector3();
   const _rel_eye = new THREE.Vector3();
+  const sceneSphere = new THREE.Sphere();
+  const _tempEye = new THREE.Vector3();
+  let ndcControl = undefined;
+  let maxDist = 0;
 
 	if (this.cameraObject.target === undefined)
 		this.cameraObject.target = new THREE.Vector3( 0, 0, 0  );
+
+  //Calculate the max distanc allowed, it is the longer
+  //of 6 times the radius of the current scene and
+  //the current distance between scene centroid and the postion
+  //of the camera.
+  this.calculateMaxAllowedDistance = (scene) => {
+    const box = scene.getBoundingBox();
+    if (box) {
+      box.getBoundingSphere(sceneSphere);
+      maxDist = sceneSphere.radius * 6;
+      let currentDist = 0;
+      if (this.cameraObject) {
+        currentDist = this.cameraObject.position.distanceTo(sceneSphere.center);
+      }
+      maxDist = currentDist > maxDist ? currentDist : maxDist;
+    } else {
+      maxDist = 0;
+    }
+  }
 	
 	this.onResize = () => {
 		if (rect)
 			rect = undefined;
+    if (ndcControl)
+      ndcControl.setCurrentCameraSettings(this.cameraObject,
+        defaultViewport);
 	}
 	
 	this.setMouseButtonAction = (buttonName, actionName) => {
 		CLICK_ACTION[buttonName] = STATE[actionName];
   }
+
+  //Make sure the camera does not travel beyond limit
+  const checkTravelDistance = () => {
+    if (maxDist > 0) {
+      const newDist = _tempEye.distanceTo(sceneSphere.center);
+      return (maxDist > newDist || 
+        this.cameraObject.position.distanceTo(sceneSphere.center) > newDist );
+    }
+    return true;
+  }
   
   const translateViewport = translation => {
-    this.cameraObject.target.add(translation);
-    this.cameraObject.position.add(translation);
-    this.updateDirectionalLight();
+    _tempEye.copy(this.cameraObject.position).add(translation);
+    if (checkTravelDistance()) {
+      this.cameraObject.target.add(translation);
+      this.cameraObject.position.add(translation);
+      this.updateDirectionalLight();
+    }
   }
 	
 	const onDocumentMouseDown = event => {
@@ -228,7 +267,6 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		event.stopImmediatePropagation();  
 	}	
 
-
 	const translate = () => {
 		if (typeof this.cameraObject !== "undefined")
 		{
@@ -365,51 +403,52 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		{
 			const width = rect.width;
       const height = rect.height;
-           
+
 			const a = this.cameraObject.position.clone();
 			a.sub(this.cameraObject.target);
-			const dist = a.length();				
+			const dist = a.length();
 			const dy = 1.5 * delta_y/height;
 			if ((dist + dy*dist) > 0.01) {
 				a.normalize()
-				const eye_position = this.cameraObject.position.clone();
-				eye_position.x = eye_position.x + a.x*dy*dist
-				eye_position.y = eye_position.y + a.y*dy*dist
-				eye_position.z = eye_position.z + a.z*dy*dist
-				this.cameraObject.position.set(eye_position.x, eye_position.y, eye_position.z);
-				this.updateDirectionalLight();
-				const near_far_minimum_ratio = 0.00001;
-				if ((near_far_minimum_ratio * this.cameraObject.far) <
-					(this.cameraObject.near + dy*dist + this.near_plane_fly_debt)) {
-					if (this.near_plane_fly_debt != 0.0)	{
-						this.near_plane_fly_debt += dy*dist;
-						if (this.near_plane_fly_debt > 0.0) {
-							this.cameraObject.near += this.near_plane_fly_debt;
-							this.cameraObject.far += this.near_plane_fly_debt;
-							this.near_plane_fly_debt = 0.0;
-						}
-						else {
-							this.cameraObject.near += dy*dist;
-							this.cameraObject.far += dy*dist;
-						}
-					}			
-				}
-				else {
-					if (this.near_plane_fly_debt == 0.0) {
-						const diff = this.cameraObject.near - near_far_minimum_ratio * this.cameraObject.far;
-						this.cameraObject.near = near_far_minimum_ratio * this.cameraObject.far;
-						this.cameraObject.far -= diff;
-						this.near_plane_fly_debt -= near_far_minimum_ratio * this.cameraObject.far;
-					}
-					this.near_plane_fly_debt += dy*dist;
-				}
-				
+        _tempEye.copy(this.cameraObject.position);
+				_tempEye.x += a.x*dy*dist;
+				_tempEye.y += a.y*dy*dist;
+				_tempEye.z += a.z*dy*dist;
+        if (checkTravelDistance()) {
+          this.cameraObject.position.copy(_tempEye);
+          this.updateDirectionalLight();
+          const near_far_minimum_ratio = 0.00001;
+          if ((near_far_minimum_ratio * this.cameraObject.far) <
+            (this.cameraObject.near + dy*dist + this.near_plane_fly_debt)) {
+            if (this.near_plane_fly_debt != 0.0)	{
+              this.near_plane_fly_debt += dy*dist;
+              if (this.near_plane_fly_debt > 0.0) {
+                this.cameraObject.near += this.near_plane_fly_debt;
+                this.cameraObject.far += this.near_plane_fly_debt;
+                this.near_plane_fly_debt = 0.0;
+              }
+              else {
+                this.cameraObject.near += dy*dist;
+                this.cameraObject.far += dy*dist;
+              }
+            }			
+          }
+          else {
+            if (this.near_plane_fly_debt == 0.0) {
+              const diff = this.cameraObject.near - near_far_minimum_ratio * this.cameraObject.far;
+              this.cameraObject.near = near_far_minimum_ratio * this.cameraObject.far;
+              this.cameraObject.far -= diff;
+              this.near_plane_fly_debt -= near_far_minimum_ratio * this.cameraObject.far;
+            }
+            this.near_plane_fly_debt += dy*dist;
+          }
+        }
 			}
 		}
   }
 	
 	const flyZoom = () => {
-    const delta_y=calculateZoomDelta();
+    const delta_y = calculateZoomDelta();
     this.changeZoomByValue(delta_y);
  
 		if (this._state === STATE.ZOOM) {
@@ -584,6 +623,19 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.calculatePathNow = () => {
 	  updatePath(0.0);
 	}
+
+  handleSyncControl = () => {
+    if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
+      translate();
+      ndcControl.triggerCallback();
+    } else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL)){
+      ndcControl.zoom(calculateZoomDelta());
+      this.previous_pointer_x = this.pointer_x;
+      this.previous_pointer_y = this.pointer_y;
+      mouseScroll = 0;
+      ndcControl.triggerCallback();
+    }
+  }
 	
 	this.update = timeChanged => {
 		const delta = timeChanged * playRate;
@@ -606,7 +658,10 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			controlEnabled = false;
 		} else if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject) {
 			cameraAutoTumbleObject.update(delta);
-		}
+		} else if (currentMode === MODE.SYNC_CONTROL && ndcControl) {
+      handleSyncControl();
+      controlEnabled = false;
+    }
 		if (controlEnabled) {
 			if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
 				tumble();
@@ -832,15 +887,34 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		return (currentMode === MODE.AUTO_TUMBLE);
 	}
 	
-	 this.enableRaycaster = (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) => {
-	    if (zincRayCaster == undefined)
-	      zincRayCaster = new RayCaster(sceneIn, this.scene, callbackFunctionIn, hoverCallbackFunctionIn, this.renderer);
-	  }
-	  
-	  this.disableRaycaster = () => {
-	    zincRayCaster.disable();
-	    zincRayCaster = undefined;
-	  }
+  this.enableRaycaster = (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) => {
+    if (zincRayCaster == undefined)
+      zincRayCaster = new RayCaster(sceneIn, this.scene, callbackFunctionIn, hoverCallbackFunctionIn, this.renderer);
+  }
+
+  this.disableRaycaster = () => {
+    zincRayCaster.disable();
+    zincRayCaster = undefined;
+  }
+
+  this.isSyncControl = () => {
+    return currentMpde === MODE.SYNC_CONTROL;
+  }
+
+  this.enableSyncControl = () => {
+    currentMode = MODE.SYNC_CONTROL;
+    if (!ndcControl)
+      ndcControl = new NDCCameraControl();
+    ndcControl.setCurrentCameraSettings(this.cameraObject,
+      defaultViewport);
+    return ndcControl;
+  }
+
+  this.disableSyncControl = () => {
+    currentMode = MODE.DEFAULT;
+    this.cameraObject.zoom = 1;
+    this.cameraObject.updateProjectionMatrix();
+  }
 	
 	this.enable();
 
@@ -923,8 +997,7 @@ const RotateCameraTransition = function(axisIn, angleIn, targetCameraIn, duratio
   this.setDuration = newDuration => {
     duration = newDuration;
   }
-	
-  
+
   const updateCameraSettings = delta => {
     const previousTime = inbuildTime;
     let targetTime = inbuildTime + delta;
@@ -1335,6 +1408,83 @@ ModifiedDeviceOrientationControls = function ( object ) {
 
 };
 
+const NDCCameraControl = function () {
+	let camera = undefined;
+  let targetCamera = undefined;
+  let defaultViewport = undefined;
+  const position = new THREE.Vector3();
+  const target = new THREE.Vector3();
+  const v1 = new THREE.Vector3();
+  const v2 = new THREE.Vector3();
+  let eventCallback = undefined;
+
+  this.setCurrentCameraSettings = (cameraIn, defaultViewportIn)  => {
+    camera = cameraIn.clone();
+    targetCamera = cameraIn;
+    defaultViewport = defaultViewportIn;
+    camera.near = defaultViewport.nearPlane;
+    if (defaultViewport.farPlane)
+      camera.far = defaultViewport.farPlane;
+    if (defaultViewport.eyePosition)
+      camera.position.set(defaultViewport.eyePosition[0],
+        defaultViewport.eyePosition[1], defaultViewport.eyePosition[2]);
+    if (defaultViewport.upVector)
+      camera.up.set(defaultViewport.upVector[0], defaultViewport.upVector[1],
+        defaultViewport.upVector[2]);
+    if (defaultViewport.targetPosition) {
+      camera.target = new THREE.Vector3(defaultViewport.targetPosition[0],
+        defaultViewport.targetPosition[1], defaultViewport.targetPosition[2]);
+      camera.lookAt(camera.target);
+    }
+    camera.updateProjectionMatrix();
+    position.copy(camera.position).project(camera);
+    target.copy(camera.target).project(camera);
+  }
+	
+  this.getCurrentPosition = () => {
+    target.copy(targetCamera.target).project(camera);
+    return [target.x, target.y];
+  }
+
+  this.zoom = delta => {
+    let scaledDelta = delta * 0.002;
+    let zoom = Math.max(targetCamera.zoom - scaledDelta, 1.0);
+    targetCamera.zoom = zoom;
+    targetCamera.updateProjectionMatrix();
+  }
+
+  this.zoomToBox = (box, zoom) => {
+    box.getCenter(v1);
+    v1.project(camera);
+    this.setCenterZoom([v1.x, v1.y], zoom);
+  }
+	  
+  //return top left and size
+  this.getPanZoom = () => {
+    return {target: this.getCurrentPosition(), zoom: targetCamera.zoom };
+  }
+
+  this.setCenterZoom = (center, zoom) => {
+    v1.set(center[0], center[1], target.z).unproject(camera);
+    v2.copy(v1).sub(targetCamera.target);
+    targetCamera.target.copy(v1);
+    targetCamera.lookAt(targetCamera.target);
+    targetCamera.position.add(v2);
+    targetCamera.zoom = zoom;
+    targetCamera.updateProjectionMatrix();
+  }
+
+  this.setEventCallback = (callback) => {
+    if (callback === undefined || (typeof callback == 'function'))
+      eventCallback = callback;
+  }
+
+  this.triggerCallback = () => {
+    if (eventCallback !== undefined && (typeof eventCallback == 'function'))
+      eventCallback();
+  }
+};
+
 exports.Viewport = Viewport
 exports.CameraControls = CameraControls
 exports.SmoothCameraTransition = SmoothCameraTransition
@@ -1342,3 +1492,4 @@ exports.RotateCameraTransition = RotateCameraTransition
 exports.RayCaster = RayCaster
 exports.CameraAutoTumble = CameraAutoTumble
 exports.StereoEffect = StereoEffect
+exports.NDCCameraControl = NDCCameraControl

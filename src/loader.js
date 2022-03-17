@@ -150,6 +150,43 @@ Object.assign( JSONLoader.prototype, {
 			offset = 0;
 			zLength = faces.length;
 
+      if (json.uvs) {
+
+        for ( i = 0; i < json.uvs.length; i ++ ) {
+
+          geometry.uvs[i] = [];
+
+          for ( let k = 0; k < json.uvs[i].length ; k++ ) {
+
+            geometry.uvs[i][k] = json.uvs[i][k];
+
+          }
+          
+        }
+        
+      }
+
+      if (normals) {
+
+        for ( i = 0; i < normals.length; i ++ ) {
+
+          geometry.normals[i] = normals[i];
+
+        }
+        
+      }
+
+      if (colors) {
+
+        for ( i = 0; i < colors.length; i ++ ) {
+
+          geometry.colors[i] = colors[i];
+
+        }
+        
+      }
+
+
 			while ( offset < zLength ) {
 
 				type = faces[ offset ++ ];

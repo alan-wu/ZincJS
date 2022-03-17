@@ -1,6 +1,6 @@
 const THREE = require('three');
 const SceneLoader = require('./sceneLoader').SceneLoader;
-
+const SceneExporter = require('./sceneExporter').SceneExporter;
 
 const defaultMetadata = function() {
   return { 
@@ -89,10 +89,10 @@ exports.Scene = function (containerIn, rendererIn) {
 
   //called from Renderer when panel has been resized
   this.onWindowResize = () => {
-    zincCameraControls.onResize();
     this.camera.aspect = getDrawingWidth() / getDrawingHeight();
     this.camera.updateProjectionMatrix();
     this.minimapScissor.updateRequired = true;
+    zincCameraControls.onResize();
   }
 
   /**
@@ -376,6 +376,8 @@ exports.Scene = function (containerIn, rendererIn) {
     if (zincObject) {
       scene.add(zincObject.morph);
       zincObjects.push(zincObject);
+      if (zincCameraControls)
+        zincCameraControls.calculateMaxAllowedDistance(this);
     }
   }
 
@@ -489,6 +491,13 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.loadFromViewURL = (jsonFilePrefix, finishCallback) => {
     sceneLoader.loadFromViewURL(jsonFilePrefix, finishCallback);
+  }
+
+  /**
+   * Load GLTF into this scene object.
+   */
+  this.loadGLTF = (url, finishCallback, options) => {
+    sceneLoader.loadGLTF(url, finishCallback, options);
   }
   
   /**
@@ -893,6 +902,8 @@ exports.Scene = function (containerIn, rendererIn) {
         scene.remove(zincObject.morph);
         zincObjects.splice(i, 1);
         zincObject.dispose();
+        if (zincCameraControls)
+          zincCameraControls.calculateMaxAllowedDistance(this);
         return;
       }
     }
@@ -963,6 +974,8 @@ exports.Scene = function (containerIn, rendererIn) {
     }
     zincObjects = [];
     sceneLoader.toBeDwonloaded = 0;
+    if (zincCameraControls)
+      zincCameraControls.calculateMaxAllowedDistance(this);
   }
 
   /**
@@ -1056,5 +1069,10 @@ exports.Scene = function (containerIn, rendererIn) {
   this.setOriginalDurationFromObject = duration => {
     const string = convertDurationObjectToString(duration);
     this.setMetadataTag("OriginalDuration", string);
+  }
+
+  this.exportGLTF = (binary) => {
+    const exporter = new SceneExporter(this);
+    return exporter.exportGLTF(binary);
   }
 }
