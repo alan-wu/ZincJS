@@ -2013,7 +2013,7 @@ class GLTFWriter {
 
 		for ( let i = 0; i < options.animations.length; ++ i ) {
 
-			this.processAnimation( options.animations[ i ], input[ 0 ] );
+			this.processAnimation( options.animations[ i ].clip,  options.animations[i].mesh);
 
 		}
 

@@ -69,6 +69,7 @@ const Geometry = function () {
 			});
 			this.videoHandler = geometry._video;
 		}
+    console.log(material)
 		let mesh = new THREE.Mesh(geometry, material); 
 		this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
 	}

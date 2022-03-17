@@ -35,6 +35,7 @@ const ZincObject = function() {
   this._vertex = new THREE.Vector3();
   this.anatomicalId = undefined;
   this.region = undefined;
+  this.animationClip = undefined;
 }
 
 ZincObject.prototype.setDuration = function(durationIn) {
@@ -107,10 +108,11 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.geometry = mesh.geometry;
   this.clipAction = undefined;
   if (this.geometry && this.geometry.morphAttributes && this.geometry.morphAttributes.position) {
-    let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
+    this.animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
       this.geometry.morphAttributes.position, 10, true);
-    if (animationClip && (animationClip[0] != undefined)) {
-      this.clipAction = this.mixer.clipAction(animationClip[0]).setDuration(
+    if (this.animationClip && (this.animationClip[0] != undefined)) {
+      console.log(this.animationClip);
+      this.clipAction = this.mixer.clipAction(this.animationClip[0]).setDuration(
         this.duration);
       this.clipAction.loop = THREE.loopOnce;
       this.clipAction.clampWhenFinished = true;
