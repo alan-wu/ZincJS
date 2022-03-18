@@ -1494,16 +1494,33 @@ class GLTFWriter {
 
 					if ( ! geometry.morphTargetsRelative ) {
 
-						for ( let j = 0, jl = attribute.count; j < jl; j ++ ) {
+            if (baseAttribute) {
+            
+              for ( let j = 0, jl = attribute.count; j < jl; j ++ ) {
 
-							relativeAttribute.setXYZ(
-								j,
-								attribute.getX( j ) - baseAttribute.getX( j ),
-								attribute.getY( j ) - baseAttribute.getY( j ),
-								attribute.getZ( j ) - baseAttribute.getZ( j )
-							);
+                relativeAttribute.setXYZ(
+                  j,
+                  attribute.getX( j ) - baseAttribute.getX( j ),
+                  attribute.getY( j ) - baseAttribute.getY( j ),
+                  attribute.getZ( j ) - baseAttribute.getZ( j )
+                );
 
-						}
+              }
+
+            } else {
+
+              for ( let j = 0, jl = attribute.count; j < jl; j ++ ) {
+
+                relativeAttribute.setXYZ(
+                  j,
+                  0,
+                  0,
+                  0
+                );
+
+              }
+
+            }
 
 					}
 
