@@ -1455,11 +1455,12 @@ class GLTFWriter {
 				let warned = false;
 
 				for ( const attributeName in geometry.morphAttributes ) {
+          
 
 					// glTF 2.0 morph supports only POSITION/NORMAL/TANGENT.
 					// Three.js doesn't support TANGENT yet.
 
-					if ( attributeName !== 'position' && attributeName !== 'normal' ) {
+					if ( attributeName !== 'position' && attributeName !== 'normal' && attributeName !== 'color' ) {
 
 						if ( ! warned ) {
 
@@ -1473,7 +1474,13 @@ class GLTFWriter {
 					}
 
 					const attribute = geometry.morphAttributes[ attributeName ][ i ];
-					const gltfAttributeName = attributeName.toUpperCase();
+					let gltfAttributeName = attributeName.toUpperCase();
+
+          if ( nameConversion[ attributeName ] ) {
+
+            gltfAttributeName = nameConversion[ attributeName ];
+
+          }
 
 					// Three.js morph attribute has absolute values while the one of glTF has relative values.
 					//
@@ -1490,7 +1497,7 @@ class GLTFWriter {
 					}
 
 					// Clones attribute not to override
-					const relativeAttribute = attribute.clone();
+					const relativeAttribute = baseAttribute.clone();
 
 					if ( ! geometry.morphTargetsRelative ) {
 
@@ -1498,12 +1505,16 @@ class GLTFWriter {
             
               for ( let j = 0, jl = attribute.count; j < jl; j ++ ) {
 
-                relativeAttribute.setXYZ(
-                  j,
-                  attribute.getX( j ) - baseAttribute.getX( j ),
-                  attribute.getY( j ) - baseAttribute.getY( j ),
-                  attribute.getZ( j ) - baseAttribute.getZ( j )
-                );
+                if (baseAttribute.count  > j) {
+
+                  relativeAttribute.setXYZ(
+                    j,
+                    attribute.getX( j ) - baseAttribute.getX( j ),
+                    attribute.getY( j ) - baseAttribute.getY( j ),
+                    attribute.getZ( j ) - baseAttribute.getZ( j )
+                  );
+
+                }
 
               }
 
@@ -2030,7 +2041,7 @@ class GLTFWriter {
 
 		for ( let i = 0; i < options.animations.length; ++ i ) {
 
-			this.processAnimation( options.animations[ i ].clip,  options.animations[i].mesh);
+			this.processAnimation( options.animations[ i ].clip, options.animations[i].mesh);
 
 		}
 
