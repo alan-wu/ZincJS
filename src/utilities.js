@@ -113,16 +113,16 @@ exports.copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
       let array = [];
       let morphColors = geometry.morphColors;
       const getColorsRGB = require("./utilities").getColorsRGB;
-      for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
-        let morphColor = morphColors[ i ];
-        let colorArray = [];
-		    for ( var j = 0; j < morphColor.colors.length * 3; j ++ ) {
+      for ( let i = 0, l = morphColors.length; i < l; i ++ ) {
+        const morphColor = morphColors[ i ];
+        const colorArray = [];
+		    for ( let j = 0; j < morphColor.colors.length * 3; j ++ ) {
           let color = getColorsRGB(morphColor.colors, j);
           colorArray.push(color[0], color[1], color[2]);
         }
-        var attribute = new THREE.Float32BufferAttribute( colorArray.length * 3, 3 );
+        const attribute = new THREE.Float32BufferAttribute( colorArray, 3 );
         attribute.name = morphColor.name;
-        array.push( attribute.copyArray( colorArray ) );
+        array.push( attribute );
       }
       bufferGeometry.morphAttributes[ "color" ] = array; 
     }
