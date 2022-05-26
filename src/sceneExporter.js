@@ -19,7 +19,6 @@ const SceneExporter = function (sceneIn) {
         animations.push({clip: zincObject.animationClip[0], mesh: zincObject.morph});
       }
     });
-    console.log(animations)
     const exporter = new GLTFExporter();
     const options = { binary, animations };
     return new Promise((resolve, reject) => {

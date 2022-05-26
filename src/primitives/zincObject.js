@@ -111,7 +111,6 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
     this.animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
       this.geometry.morphAttributes.position, 10, true);
     if (this.animationClip && (this.animationClip[0] != undefined)) {
-      console.log(this.animationClip);
       this.clipAction = this.mixer.clipAction(this.animationClip[0]).setDuration(
         this.duration);
       this.clipAction.loop = THREE.loopOnce;

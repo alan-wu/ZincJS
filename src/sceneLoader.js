@@ -701,9 +701,7 @@ exports.SceneLoader = function (sceneIn) {
     const filename = url.substring(url.lastIndexOf("/") + 1, url.length);
     const loader = new GLTFLoader().setPath(path);
     loader.load( filename, function ( gltf ) {
-      console.log(gltf)
       gltf.scene.children.forEach(child => {
-        console.log(child)
         let localTimeEnabled = false;
         let localMorphColour = false;
         if (child.geometry && child.geometry.morphAttributes) {
@@ -714,7 +712,6 @@ exports.SceneLoader = function (sceneIn) {
         zincGeometry.setMesh(child.clone(), localTimeEnabled, localMorphColour);
         region.addZincObject(zincGeometry);
         zincGeometry.groupName = zincGeometry.morph.name;
-        console.log(zincGeometry)
         if (finishCallback != undefined && (typeof finishCallback == 'function'))
           finishCallback(zincGeometry);
       });
