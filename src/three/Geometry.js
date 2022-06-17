@@ -1585,6 +1585,8 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 				array.push( attribute.copyVector3sArray( morphTarget.vertices ) );
 
         if (morphTarget.normals) {
+          
+          console.log(morphTarget.normals)
           const morphNormal = this.morphNormals[ i ];
 
           const attribute = new Float32BufferAttribute( morphTarget.normals.length * 3, 3 );

@@ -25,7 +25,7 @@ const ZincObject = function() {
 	 */
   this.duration = 6000;
   this.clipAction = undefined;
-  this.userData = [];
+  this.userData = {};
   this.videoHandler = undefined;
   this.marker = undefined;
   this.markerUpdateRequired = true;
@@ -34,6 +34,8 @@ const ZincObject = function() {
   this.cachedBoundingBox = new THREE.Box3();
   this._vertex = new THREE.Vector3();
   this.anatomicalId = undefined;
+  this.region = undefined;
+  this.animationClip = undefined;
 }
 
 ZincObject.prototype.setDuration = function(durationIn) {
@@ -45,6 +47,14 @@ ZincObject.prototype.setDuration = function(durationIn) {
 
 ZincObject.prototype.getDuration = function() {
   return this.duration;
+}
+
+ZincObject.prototype.setRegion = function(region) {
+  this.region = region;
+}
+
+ZincObject.prototype.getRegion = function() {
+  return this.region;
 }
 
 ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
@@ -98,10 +108,10 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.geometry = mesh.geometry;
   this.clipAction = undefined;
   if (this.geometry && this.geometry.morphAttributes && this.geometry.morphAttributes.position) {
-    let animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
+    this.animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
       this.geometry.morphAttributes.position, 10, true);
-    if (animationClip && (animationClip[0] != undefined)) {
-      this.clipAction = this.mixer.clipAction(animationClip[0]).setDuration(
+    if (this.animationClip && (this.animationClip[0] != undefined)) {
+      this.clipAction = this.mixer.clipAction(this.animationClip[0]).setDuration(
         this.duration);
       this.clipAction.loop = THREE.loopOnce;
       this.clipAction.clampWhenFinished = true;

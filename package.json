@@ -1,6 +1,6 @@
 {
   "name": "zincjs",
-  "version": "0.51.0",
+  "version": "1.0.0",
   "description": "ZincJS (Web-based-Zinc-Visualisation)",
   "main": "build/zinc.js",
   "directories": {
@@ -16,7 +16,7 @@
     "webpack.config.js"
   ],
   "scripts": {
-    "build": "webpack --config webpack.frontend.js; webpack --config webpack.backend.js",
+    "build-bundle": "webpack --config webpack.frontend.js; webpack --config webpack.backend.js",
     "build-backend": "webpack --config webpack.backend.js",
     "test": "npm --prefix ./test install && npm --prefix ./test run test-ci"
   },
