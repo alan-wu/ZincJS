@@ -93,18 +93,6 @@ const Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
 		return this.morph;
   }
 
-  /**
-   * Get the bounding box of this geometry.
-   * 
-   * @return {THREE.Box3}.
-   */
-  this.getBoundingBox = function() {
-    if (this.morph)
-      return new THREE.Box3().setFromObject(
-        this.morph);
-    return undefined;
-  }
-
 	/**
 	 * Set the transformation of this glyph.
 	 * @param {Array} position - Three components vectors containing position of the

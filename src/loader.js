@@ -493,6 +493,36 @@ Object.assign( JSONLoader.prototype, {
 
 			}
 
+			if ( json.morphNormals !== undefined ) {
+
+				for ( var i = 0, l = json.morphNormals.length; i < l; i ++ ) {
+
+          if (geometry.morphTargets[ i ]) {
+
+            geometry.morphTargets[ i ].normals = [];
+
+            var dstNormals = geometry.morphTargets[ i ].normals;
+            var srcNormals = json.morphNormals[ i ].normals;
+
+            for ( var v = 0, vl = srcNormals.length; v < vl; v += 3 ) {
+
+              var normals = new Vector3();
+              normals.x = srcNormals[ v ];
+              normals.y = srcNormals[ v + 1 ] ;
+              normals.z = srcNormals[ v + 2 ] ;
+
+              dstNormals.push( normals );
+
+            }
+
+            geometry.morphNormalsReady = true;
+
+          }
+
+				}
+
+			}
+
 			if ( json.morphColors !== undefined ) {
 
 				var i, l, c, cl, dstColors, srcColors, color;
