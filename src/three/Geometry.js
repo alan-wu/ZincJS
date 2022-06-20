@@ -52,6 +52,7 @@ function Geometry() {
 	this.colorsNeedUpdate = false;
 	this.lineDistancesNeedUpdate = false;
 	this.groupsNeedUpdate = false;
+	this.morphNormalsReady = false;
 
 }
 
@@ -448,6 +449,7 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 			} else {
 
 				vertexNormals[ 0 ] = vertices[ face.a ].clone();
+
 				vertexNormals[ 1 ] = vertices[ face.b ].clone();
 				vertexNormals[ 2 ] = vertices[ face.c ].clone();
 
@@ -617,6 +619,8 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 			face.vertexNormals = face.__originalVertexNormals;
 
 		}
+
+    this.morphNormalsReady = true;
 
 	},
 
@@ -1568,6 +1572,45 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
   
     }
 
+    if (this.faces.length > 0) {
+
+      let colors = [];
+
+      let indices = [];
+
+      for (let i = 0 ; i < this.faces.length; i++) {
+
+        indices.push(this.faces[i].a, this.faces[i].b, this.faces[i].c);
+
+        const vertexColors = this.faces[i].vertexColors;
+    
+          if ( vertexColors.length === 3 ) {
+    
+            colors.push( vertexColors[ 0 ], vertexColors[ 1 ], vertexColors[ 2 ] );
+    
+          } else {
+    
+            const color = this.faces[i].color;
+    
+            colors.push( color, color, color );
+    
+        }
+
+      }
+
+     // if ( colors.length > 0 ) {
+
+//        const colorsArray = new Float32Array( colors.length * 3 );
+//        buffergeometry.setAttribute( 'color', new BufferAttribute( colorsArray, 3 ).copyColorsArray( colors ) );
+  
+//      }
+
+      buffergeometry.setIndex( indices );
+
+      buffergeometry.groups = this.computeGroups();
+
+    }
+
 		// morphs
 
     if (this.morphTargets.length > 0) {
@@ -1585,12 +1628,10 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 				array.push( attribute.copyVector3sArray( morphTarget.vertices ) );
 
         if (morphTarget.normals) {
-          
-          console.log(morphTarget.normals)
-          const morphNormal = this.morphNormals[ i ];
+
 
           const attribute = new Float32BufferAttribute( morphTarget.normals.length * 3, 3 );
-          attribute.name = morphNormal.name;
+          attribute.name = morphTarget.name;
 
           normalsArray.push( attribute.copyVector3sArray( morphTarget.normals ) );
   
@@ -1632,45 +1673,6 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 			buffergeometry.boundingBox = this.boundingBox.clone();
 
 		}
-
-    if (this.faces.length > 0) {
-
-      let colors = [];
-
-      let indices = [];
-
-      for (let i = 0 ; i < this.faces.length; i++) {
-
-        indices.push(this.faces[i].a, this.faces[i].b, this.faces[i].c);
-
-        const vertexColors = this.faces[i].vertexColors;
-    
-          if ( vertexColors.length === 3 ) {
-    
-            colors.push( vertexColors[ 0 ], vertexColors[ 1 ], vertexColors[ 2 ] );
-    
-          } else {
-    
-            const color = this.faces[i].color;
-    
-            colors.push( color, color, color );
-    
-        }
-
-      }
-
-     // if ( colors.length > 0 ) {
-
-//        const colorsArray = new Float32Array( colors.length * 3 );
-//        buffergeometry.setAttribute( 'color', new BufferAttribute( colorsArray, 3 ).copyColorsArray( colors ) );
-  
-//      }
-
-      buffergeometry.setIndex( indices );
-
-      buffergeometry.groups = this.computeGroups();
-
-    }
 
 		return buffergeometry;
 

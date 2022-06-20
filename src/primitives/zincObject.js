@@ -60,7 +60,8 @@ ZincObject.prototype.getRegion = function() {
 ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
   let geometry = undefined;
   if (geometryIn instanceof THREEGeometry) {
-    if (options.localTimeEnabled && (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
+    if (options.localTimeEnabled && !geometryIn.morphNormalsReady && 
+      (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
       geometryIn.computeMorphNormals();
     geometry = geometryIn.toIndexedBufferGeometry();
     if (options.localMorphColour)
