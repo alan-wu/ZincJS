@@ -12,7 +12,16 @@ let Region = function (parentIn) {
   let duration = 3000;
   tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0 ,0, 1);
 
-  this.setVisibility = flag => {
+  this.hideAllChildren = () => {
+    children.forEach(child => child.hideAllChildren());
+    zincObjects.forEach(zincObject => zincObject.setVisibility(false));
+  }
+
+  /***
+   * Set the visibility and propagate it up and down the hierarchies
+   * depending on the flag
+  */
+  this.setVisibility = (flag) => {
     group.visible = flag;
   }
 
@@ -92,12 +101,12 @@ let Region = function (parentIn) {
   }
 
   this.findChildFromSeparatedPath = pathArray => {
-    if (pathArray.length > 0) {
+    if (pathArray && pathArray.length > 0) {
       if (pathArray[0] === "") {
         pathArray.shift();
       }
     }
-    if (pathArray.length > 0) {
+    if (pathArray && pathArray.length > 0) {
       const childRegion = this.getChildWithName(pathArray[0]);
       if (childRegion) {
         pathArray.shift();
