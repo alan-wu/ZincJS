@@ -316,7 +316,7 @@ ZincObject.prototype.getColourHex = function() {
 ZincObject.prototype.setColourHex = function(hex) {
   this.morph.material.color.setHex(hex);
   if (this.secondaryMesh && this.secondaryMesh.material)
-    this.secondaryMesh.material.setHex(hex);
+    this.secondaryMesh.material.color.setHex(hex);
 }
 
 /**
