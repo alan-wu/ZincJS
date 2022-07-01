@@ -502,6 +502,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		}
 		if (this._state === STATE.SCROLL) {
 			mouseScroll = 0;
+      this._state = STATE.NONE;
 		}
 	}
 	
@@ -677,6 +678,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
       ndcControl.zoom(calculateZoomDelta());
       this.previous_pointer_x = this.pointer_x;
       this.previous_pointer_y = this.pointer_y;
+      if (this._state === STATE.SCROLL) {
+        this._state = STATE.NONE;
+      }
       mouseScroll = 0;
       ndcControl.triggerCallback();
     }
