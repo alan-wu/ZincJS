@@ -27,15 +27,16 @@ const Geometry = function () {
 
 		let material = undefined;
 		if (geometry._video === undefined) {
+      const morphTargets = options.localTimeEnabled || options.localMorphColour;
 			if (materialIn) {
 				material = materialIn;
-				material.morphTargets = options.localTimeEnabled;
+				material.morphTargets = morphTargets;
 				material.morphNormals = options.localTimeEnabled;
 			} else {
 				if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined) {
 					material = new THREE.MeshPhongMaterial({
 						color : options.colour,
-						morphTargets : options.localTimeEnabled,
+						morphTargets : morphTargets,
 						morphNormals : options.localTimeEnabled,
 						transparent : isTransparent,
 						opacity : options.opacity,
@@ -44,7 +45,7 @@ const Geometry = function () {
 				} else {
 					material = new THREE.MeshPhongMaterial({
 						color : options.colour,
-						morphTargets : options.localTimeEnabled,
+						morphTargets : morphTargets,
 						morphNormals : options.localTimeEnabled,
 						vertexColors : THREE.VertexColors,
 						transparent : isTransparent,
