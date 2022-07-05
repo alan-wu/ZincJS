@@ -64,8 +64,9 @@ ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
       (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
       geometryIn.computeMorphNormals();
     geometry = geometryIn.toIndexedBufferGeometry();
-    if (options.localMorphColour)
+    if (options.localMorphColour) {
       require("../utilities").copyMorphColorsToIndexedBufferGeometry(geometryIn, geometry);
+    }
   } else if (geometryIn instanceof THREE.BufferGeometry) {
     geometry = geometryIn.clone();
   }
@@ -108,15 +109,23 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.mixer = new THREE.AnimationMixer(this.animationGroup);
   this.geometry = mesh.geometry;
   this.clipAction = undefined;
-  if (this.geometry && this.geometry.morphAttributes && this.geometry.morphAttributes.position) {
-    this.animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
-      this.geometry.morphAttributes.position, 10, true);
-    if (this.animationClip && (this.animationClip[0] != undefined)) {
-      this.clipAction = this.mixer.clipAction(this.animationClip[0]).setDuration(
-        this.duration);
-      this.clipAction.loop = THREE.loopOnce;
-      this.clipAction.clampWhenFinished = true;
-      this.clipAction.play();
+  if (this.geometry && this.geometry.morphAttributes) {
+    let morphAttribute = this.geometry.morphAttributes.position;
+    if (!morphAttribute) {
+      morphAttribute = this.geometry.morphAttributes.color ?
+        this.geometry.morphAttributes.color :
+        this.geometry.morphAttributes.normal;
+    }
+    if (morphAttribute) {
+      this.animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
+        morphAttribute, 10, true);
+      if (this.animationClip && (this.animationClip[0] != undefined)) {
+        this.clipAction = this.mixer.clipAction(this.animationClip[0]).setDuration(
+          this.duration);
+        this.clipAction.loop = THREE.loopOnce;
+        this.clipAction.clampWhenFinished = true;
+        this.clipAction.play();
+      }
     }
   }
   this.timeEnabled = localTimeEnabled;
@@ -127,6 +136,11 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.checkAndCreateTransparentMesh();
   if (this.timeEnabled) {
     this.setFrustumCulled(false);
+  } else {
+    if (this.morphColour) {
+      this.geometry.setAttribute('morphTarget0', this.geometry.getAttribute( 'position' ) );
+      this.geometry.setAttribute('morphTarget1', this.geometry.getAttribute( 'position' ) );
+    }
   }
   this.boundingBoxUpdateRequired = true;
 }
@@ -196,8 +210,9 @@ ZincObject.prototype.setMorphTime = function(time) {
       this.clipAction.time = newTime;
       timeChanged = true;
     }
-    if (timeChanged && this.timeEnabled == 1)
+    if (timeChanged && this.isTimeVarying()) {
       this.mixer.update( 0.0 );
+    }
   } else {
     let newTime = time; 
     if (time > this.duration)
@@ -514,7 +529,7 @@ ZincObject.prototype.setRenderOrder = function(renderOrder) {
 ZincObject.prototype.render = function(delta, playAnimation, options) {
   if (playAnimation == true)
   {
-    if ((this.clipAction) && (this.timeEnabled == 1)) {
+    if ((this.clipAction) && this.isTimeVarying()) {
       this.mixer.update( delta );
     }
     else {

@@ -22,6 +22,7 @@ const Viewport = function () {
 const CameraControls = function ( object, domElement, renderer, scene ) {
 	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5, SYNC_CONTROL: 6 };
 	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
+  const ROTATE_DIRECTION = { NONE: -1, FREE: 1, HORIZONTAL: 2, VERTICAL: 3 };
 	const CLICK_ACTION = {};
 	CLICK_ACTION.MAIN = STATE.ROTATE;
 	CLICK_ACTION.AUXILIARY = STATE.ZOOM;
@@ -55,6 +56,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	let rotateCameraTransitionObject = undefined;
 	let cameraAutoTumbleObject = undefined;
 	let mouseScroll = 0;
+  let rotateMode = ROTATE_DIRECTION.FREE;
 	this._state = STATE.NONE;
 	let zincRayCaster = undefined;
 	this.targetTouchId = -1;
@@ -129,6 +131,23 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     }
     return false;
 	}
+
+  this.setRotationMode = mode => {
+    switch (mode) {
+      case "none":
+        rotateMode = ROTATE_DIRECTION.NONE;
+        break;
+      case "horizontal":
+        rotateMode = ROTATE_DIRECTION.HORIZONTAL;
+        break;
+      case "vertical":
+        rotateMode = ROTATE_DIRECTION.VERTICAL;
+        break;
+      case "free":
+      default:
+        rotateMode = ROTATE_DIRECTION.FREE;
+    }
+  }
 	
 	this.onResize = () => {
 		if (rect)
@@ -391,22 +410,32 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			if ((0<width)&&(0<height))
 			{
 				const radius=0.25*(width+height);
-				delta_x=this.pointer_x-this.previous_pointer_x;
-				delta_y=this.previous_pointer_y-this.pointer_y;
+				let delta_x = 0;
+				let delta_y = 0;
+        if (rotateMode === ROTATE_DIRECTION.FREE ||
+          rotateMode === ROTATE_DIRECTION.HORIZONTAL)
+				  delta_x=this.pointer_x-this.previous_pointer_x;
+        if (rotateMode === ROTATE_DIRECTION.FREE ||
+            rotateMode === ROTATE_DIRECTION.VERTICAL)
+				  delta_y=this.previous_pointer_y-this.pointer_y;
 				const tangent_dist = Math.sqrt(delta_x*delta_x + delta_y*delta_y);
 				if (tangent_dist > 0)
 				{
 					const dx=-delta_y*1.0/tangent_dist;
 					const dy=delta_x*1.0/tangent_dist;
-					let d=dx*(this.pointer_x-0.5*(width-1))+dy*(0.5*(height-1)-this.pointer_y);
-					if (d > radius)	{
-						d = radius;
-					}
-					else {
-						if (d < -radius) {
-							d = -radius;
-						}
-					}
+          let d = 0;
+          // Do not allow rotation on other direction around the origin if rotateMode is not free
+          if (rotateMode === ROTATE_DIRECTION.FREE) {
+            let d=dx*(this.pointer_x-0.5*(width-1))+dy*(0.5*(height-1)-this.pointer_y);
+            if (d > radius)	{
+              d = radius;
+            }
+            else {
+              if (d < -radius) {
+                d = -radius;
+              }
+            }
+          }
 					const phi=Math.acos(d/radius)-0.5*Math.PI;
 					const angle=this.tumble_rate*tangent_dist/radius;
 					_a.copy(this.cameraObject.position).sub(this.cameraObject.target).normalize();
@@ -502,6 +531,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		}
 		if (this._state === STATE.SCROLL) {
 			mouseScroll = 0;
+      this._state = STATE.NONE;
 		}
 	}
 	
@@ -670,13 +700,19 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 
   handleSyncControl = () => {
-    if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
+    if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
+      //rotateion does not trigger callback
+      tumble();
+    } else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
       translate();
       ndcControl.triggerCallback();
     } else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL)){
       ndcControl.zoom(calculateZoomDelta());
       this.previous_pointer_x = this.pointer_x;
       this.previous_pointer_y = this.pointer_y;
+      if (this._state === STATE.SCROLL) {
+        this._state = STATE.NONE;
+      }
       mouseScroll = 0;
       ndcControl.triggerCallback();
     }
