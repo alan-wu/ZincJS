@@ -171,7 +171,8 @@ ZincObject.prototype.getCurrentTime = function() {
 }
 
 const updateMorphColorAttribute = function(targetGeometry, morph) {
-  if (morph && targetGeometry.morphAttributes[ "color" ]) {
+  if (morph && targetGeometry && targetGeometry.morphAttributes &&
+    targetGeometry.morphAttributes[ "color" ]) {
     const morphColors = targetGeometry.morphAttributes[ "color" ];
     const influences = morph.morphTargetInfluences;
     const length = influences.length;

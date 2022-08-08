@@ -10,7 +10,7 @@ let Region = function (parentIn) {
   let zincObjects = [];
   const tMatrix = new Matrix4();
   let duration = 3000;
-  tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0 ,0, 1);
+  tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 
   this.hideAllChildren = () => {
     children.forEach(child => child.hideAllChildren());
@@ -166,7 +166,7 @@ let Region = function (parentIn) {
    * destroy the object and free up the memory.
    * @param {Zinc.Object} zincObject - object to be removed from this region.
    */
-   this.removeZincObject = zincObject => {
+  this.removeZincObject = zincObject => {
     for (let i = 0; i < zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
         group.remove(zincObject.morph);
@@ -180,7 +180,7 @@ let Region = function (parentIn) {
   /**
    * Get all pickable objects.
    */
-   this.getPickableThreeJSObjects = (objectsList, pickMarkers, transverse) => {
+  this.getPickableThreeJSObjects = (objectsList, pickMarkers, transverse) => {
     zincObjects.forEach(zincObject => {
       if (zincObject.morph && (zincObject.morph.visible === true)) {
         if (pickMarkers) {
@@ -289,7 +289,7 @@ let Region = function (parentIn) {
    * @param {Function} callbackFunction - Callback function with the geometry
    * as an argument.
    */
-   this.forEachGeometry = (callbackFunction, transverse) => {
+  this.forEachGeometry = (callbackFunction, transverse) => {
     zincObjects.forEach(zincObject => {
       if (zincObject.isGeometry)
         callbackFunction(zincObject);
@@ -350,7 +350,7 @@ let Region = function (parentIn) {
   this.findObjectsWithAnatomicalId = (anatomicalId, transverse) => {
     zincObjects.forEach(zincObject => {
       if (zincObject.anatomicalId === anatomicalId)
-    	  objectsArray.push(zincObject);
+        objectsArray.push(zincObject);
     });
     if (transverse) {
       children.forEach(childRegion => {
@@ -373,7 +373,7 @@ let Region = function (parentIn) {
     const objectsArray = [];
     zincObjects.forEach(zincObject => {
       if (zincObject.groupName === groupName)
-    	  objectsArray.push(zincObject);
+        objectsArray.push(zincObject);
     });
     if (transverse) {
       children.forEach(childRegion => {
@@ -490,7 +490,7 @@ let Region = function (parentIn) {
    * 
    * @return {Boolean}
    */
-   this.isTimeVarying = () => {
+  this.isTimeVarying = () => {
     for (let i = 0; i < zincObjects.length; i++) {
       if (zincObjects[i].isTimeVarying()) {
         return true;
@@ -509,7 +509,7 @@ let Region = function (parentIn) {
    * Update geometries and glyphsets based on the calculated time.
    * @private
    */
-   this.renderGeometries = (playRate, delta, playAnimation, options, transverse) => {
+  this.renderGeometries = (playRate, delta, playAnimation, options, transverse) => {
     // Let video dictates the progress if one is present
     const allObjects = this.getAllObjects(transverse);
     allObjects.forEach(zincObject => {
