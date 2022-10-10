@@ -13,6 +13,13 @@ const GLTFToZincJSLoader = function () {
         if (object.name !== "") {
           if (region)
             childRegion = region.findOrCreateChildFromPath(object.name);
+            if (childRegion) {
+              const group = childRegion.getGroup();
+              group.position.copy(object.position);
+              group.rotation.copy(object.rotation);
+              group.quaternion.copy(object.quaternion);
+              group.matrixAutoUpdate = true;
+            }
         }
       } else {
         let zincGeometry = undefined;
@@ -33,6 +40,7 @@ const GLTFToZincJSLoader = function () {
           zincGeometry.setMesh(object.clone(), localTimeEnabled, localMorphColour);
           region.addZincObject(zincGeometry);
           zincGeometry.groupName = zincGeometry.morph.name;
+          zincGeometry.morph.matrixAutoUpdate = true;
           if (finishCallback != undefined && (typeof finishCallback == 'function'))
             finishCallback(zincGeometry);
         }
@@ -65,6 +73,7 @@ const GLTFToZincJSLoader = function () {
     const loader = new GLTFLoader().setPath(path);
     
     loader.load( filename, function ( gltf ) {
+      console.log(gltf)
       _this.parseGLTFObjects(gltf.scene, region, 0, finishCallback);
       _this.setCamera(scene);
       if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function'))
