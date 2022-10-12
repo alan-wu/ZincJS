@@ -260,7 +260,10 @@ ZincObject.prototype.getVisibility = function() {
  * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
  */
 ZincObject.prototype.setVisibility = function(visible) {
-  this.morph.visible = visible;
+  if (this.morph.visible !== visible) {
+    this.morph.visible = visible;
+    if (this.region) this.region.pickableUpdateRequired = true;
+  }
 }
 
 /**
