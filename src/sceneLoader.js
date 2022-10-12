@@ -3,7 +3,6 @@ const resolveURL = require('./utilities').resolveURL;
 const JSONLoader = require('./loader').JSONLoader;
 const STLLoader = require('three/examples/jsm/loaders/STLLoader').STLLoader;
 const OBJLoader = require('three/examples/jsm/loaders/OBJLoader').OBJLoader;
-const GLTFLoader = require('three/examples/jsm/loaders/GLTFLoader').GLTFLoader;
 
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
@@ -53,7 +52,7 @@ exports.SceneLoader = function (sceneIn) {
   let loadMultipleViews = (referenceURL, views) => {
     const defaultView = views.Default;
     if (views.Inline) {
-       scene.addMultipleViews(defaultView, views.Entries);
+       scene.setupMultipleViews(defaultView, views.Entries);
     } else {
       const promises = [];
       for (const [key, value] of Object.entries(views.Entries)) {
@@ -289,7 +288,6 @@ exports.SceneLoader = function (sceneIn) {
       if (newPointset) {
         newPointset.createMesh(geometry, material, options);
         newPointset.setName(groupName);
-        newPointset.anatomicalId = anatomicalId;
         region.addZincObject(newPointset);
         newPointset.setDuration(scene.getDuration());
         newPointset.setRenderOrder(renderOrder);
@@ -697,25 +695,8 @@ exports.SceneLoader = function (sceneIn) {
    * once the glyphset is succssfully load in.
    */
   this.loadGLTF = (region, url, finishCallback, options) => {
-    const path = url.substring(0, url.lastIndexOf("/") + 1);
-    const filename = url.substring(url.lastIndexOf("/") + 1, url.length);
-    const loader = new GLTFLoader().setPath(path);
-    loader.load( filename, function ( gltf ) {
-      gltf.scene.children.forEach(child => {
-        let localTimeEnabled = false;
-        let localMorphColour = false;
-        if (child.geometry && child.geometry.morphAttributes) {
-          localTimeEnabled = child.geometry.morphAttributes.position ? true : false;
-          localMorphColour = child.geometry.morphAttributes.color ? true : false;
-        }
-        const zincGeometry = new (require('./primitives/geometry').Geometry)();
-        zincGeometry.setMesh(child.clone(), localTimeEnabled, localMorphColour);
-        region.addZincObject(zincGeometry);
-        zincGeometry.groupName = zincGeometry.morph.name;
-        if (finishCallback != undefined && (typeof finishCallback == 'function'))
-          finishCallback(zincGeometry);
-      });
-    })
+    const GLTFToZincJSLoader = new (require('./GLTFToZincJSLoader').GLTFToZincJSLoader)();
+    GLTFToZincJSLoader.load(scene, region, url, finishCallback, options);
   }
 
   let loadRegions = (currentRegion, referenceURL, regions, callback) => {
@@ -760,6 +741,15 @@ exports.SceneLoader = function (sceneIn) {
     }
   }
 
+  let readVersionOneRegionPath = (region, referenceURL, item, order, callback) => {
+    let targetRegion = region;
+    if (item.RegionPath && item.RegionPath !== "") {
+      targetRegion = region.findOrCreateChildFromPath(item.RegionPath);
+    }
+    //Render order is set to i * 2 to account for front and back rendering
+    readPrimitivesItem(targetRegion, referenceURL, item, order * 2, callback);
+  }
+
   let loadVersionOne = (targetRegion, metadata, referenceURL, finishCallback, allCompletedCallback) => {
     let numberOfObjects = getNumberOfObjects(metadata);
     // view file does not receive callback
@@ -768,8 +758,7 @@ exports.SceneLoader = function (sceneIn) {
     for (let i = 0; i < metadata.length; i++)
       readViewAndSettingsItem(referenceURL, metadata[i], callback);
     for (let i = 0; i < metadata.length; i++) {
-      //Render order is set to i * 2 to account for front and back rendering
-      readPrimitivesItem(targetRegion, referenceURL, metadata[i], i * 2, callback);
+      readVersionOneRegionPath(targetRegion, referenceURL, metadata[i], i, callback);
     }
   }
 

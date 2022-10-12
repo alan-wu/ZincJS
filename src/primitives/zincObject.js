@@ -171,7 +171,8 @@ ZincObject.prototype.getCurrentTime = function() {
 }
 
 const updateMorphColorAttribute = function(targetGeometry, morph) {
-  if (morph && targetGeometry.morphAttributes[ "color" ]) {
+  if (morph && targetGeometry && targetGeometry.morphAttributes &&
+    targetGeometry.morphAttributes[ "color" ]) {
     const morphColors = targetGeometry.morphAttributes[ "color" ];
     const influences = morph.morphTargetInfluences;
     const length = influences.length;
@@ -259,7 +260,10 @@ ZincObject.prototype.getVisibility = function() {
  * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
  */
 ZincObject.prototype.setVisibility = function(visible) {
-  this.morph.visible = visible;
+  if (this.morph.visible !== visible) {
+    this.morph.visible = visible;
+    if (this.region) this.region.pickableUpdateRequired = true;
+  }
 }
 
 /**

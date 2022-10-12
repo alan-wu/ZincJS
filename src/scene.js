@@ -60,6 +60,8 @@ exports.Scene = function (containerIn, rendererIn) {
   let scissor = {x: 0,  y: 0};
   let metadata = defaultMetadata();
   let _markerTarget = new THREE.Vector2();
+  let pickableObjectsList = [];
+  let forcePickableObjectsUpdate = false;
 
   const getDrawingWidth = () => {
     if (container)
@@ -447,7 +449,6 @@ exports.Scene = function (containerIn, rendererIn) {
   this.loadGLTF = (url, finishCallback, options) => {
     sceneLoader.loadGLTF(rootRegion, url, finishCallback, options);
   }
-  
 
   //Update the directional light for this scene.
   this.updateDirectionalLight = () => {
@@ -787,13 +788,26 @@ exports.Scene = function (containerIn, rendererIn) {
   }
 
   /**
+   * Update pickable objects list
+   */
+  this.updatePickableThreeJSObjects = () => {
+    pickableObjectsList.splice(0, pickableObjectsList.length);
+    rootRegion.getPickableThreeJSObjects(pickableObjectsList,
+      this.displayMarkers, true);
+    this.forcePickableObjectsUpdate = false;
+  }
+
+  /**
    * Get all pickable objects.
    */
   this.getPickableThreeJSObjects = () => {
-    let returnedObjects = [];
-    rootRegion.getPickableThreeJSObjects(returnedObjects,
-      this.displayMarkers, true);
-    return returnedObjects;
+    //The list will only be updated if changes have been made
+    //in region or a flag has been raise
+    if (this.forcePickableObjectsUpdate || 
+      rootRegion.checkPickableUpdateRequred(true)) {
+      this.updatePickableThreeJSObjects();
+    }
+    return pickableObjectsList;
   }
 
   /**
