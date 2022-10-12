@@ -11,10 +11,16 @@ let Region = function (parentIn) {
   const tMatrix = new Matrix4();
   let duration = 3000;
   tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
+  this.pickableUpdateRequired = true;
 
-  this.hideAllChildren = () => {
-    children.forEach(child => child.hideAllChildren());
+  this.hideAllPrimitives = () => {
+    children.forEach(child => child.hideAllPrimitives());
     zincObjects.forEach(zincObject => zincObject.setVisibility(false));
+  }
+
+  this.showAllPrimitives = () => {
+    children.forEach(child => child.showAllPrimitives());
+    zincObjects.forEach(zincObject => zincObject.setVisibility(true));
   }
 
   /***
@@ -158,6 +164,7 @@ let Region = function (parentIn) {
       zincObject.setRegion(this);
       group.add(zincObject.morph);
       zincObjects.push(zincObject);
+      this.pickableUpdateRequired = true;
     }
   }
 
@@ -177,12 +184,24 @@ let Region = function (parentIn) {
     }
   }
 
+  this.checkPickableUpdateRequred = (transverse) => {
+    if (this.pickableUpdateRequired) return true;
+    if (transverse) {
+      let flag = false;
+      for (let i = 0; i < children.length; i++) {
+         flag = children[i].checkPickableUpdateRequred(transverse);
+         if (flag) return true;
+      }
+    }
+    return false;
+  }
+
   /**
    * Get all pickable objects.
    */
   this.getPickableThreeJSObjects = (objectsList, pickMarkers, transverse) => {
     zincObjects.forEach(zincObject => {
-      if (zincObject.morph && (zincObject.morph.visible === true)) {
+      if (zincObject.morph && zincObject.morph.visible) {
         if (pickMarkers) {
           let marker = zincObject.marker;
           if (marker && marker.isEnabled()) {
@@ -199,6 +218,7 @@ let Region = function (parentIn) {
           transverse);
       });
     }
+    this.pickableUpdateRequired = false;
     return objectsList;
   }
 

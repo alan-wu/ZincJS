@@ -1104,9 +1104,13 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	raycaster.params.Line.threshold = 0.1;
 	raycaster.params.Points.threshold = 0.1;
   const mouse = new THREE.Vector2();
-  let lastHovered = undefined;
-  let cooldown = false;
-	
+  let awaiting = false;
+  let lastHoveredDate = new Date();
+  let lastHoveredEmpty = false;
+  let timeDiff = 0;
+  let pickedObjects = new Array();
+  let lastPosition = { zincCamera: undefined, x: -1 ,y: -1};
+
 	this.enable = () => {
 		enable = true;
 	}
@@ -1125,21 +1129,31 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
     }
     raycaster.setFromCamera( mouse, zincCamera.cameraObject);
     let objects = scene.getPickableThreeJSObjects();
-		return raycaster.intersectObjects( objects, true );
+    //Reset pickedObjects array 
+    pickedObjects.length = 0;
+		return raycaster.intersectObjects( objects, true, pickedObjects );
 	};
 	
 	this.pick = (zincCamera, x, y) => { 
 		if (enabled && renderer && scene && zincCamera && callbackFunction) {
-			const intersects = getIntersectsObject(zincCamera, x, y);
-			callbackFunction(intersects, x, y);
+			getIntersectsObject(zincCamera, x, y);
+			callbackFunction(intersects, x, y, pickedObjects);
 		}
   }
   
   let hovered = (zincCamera, x, y) => {
     if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
-      const intersects = getIntersectsObject(zincCamera, x, y);
-      lastHovered = new Date();
-      hoverCallbackFunction(intersects, x, y);
+      getIntersectsObject(zincCamera, x, y);
+      lastHoveredDate.setTime(Date.now());
+      if (pickedObjects.length === 0) {
+        //skip hovered callback if the previous one is empty
+        if (lastHoveredEmpty)
+          return
+        lastHoveredEmpty = true;
+      } else {
+        lastHoveredEmpty = false;
+      }
+      hoverCallbackFunction(pickedObjects, x, y);
     }
   }
 	
@@ -1148,23 +1162,26 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
       if (scene.displayMarkers) {
         hovered(zincCamera, x, y);
       } else {
-        if (!cooldown) {
-          let now = new Date();
-          if (!lastHovered || ( (now.getTime() - lastHovered.getTime()) > 250)) {
+        lastPosition.zincCamera = zincCamera;
+        lastPosition.x = x;
+        lastPosition.y = y;
+        if (!awaiting) {
+          timeDiff = lastHoveredDate ? Date.now() - lastHoveredDate.getTime() : 250;
+          if (timeDiff >= 250) {
             hovered(zincCamera, x, y);
           } else {
-            cooldown = true;
-            setTimeout(awaitMove(zincCamera, x, y), 250);
+            awaiting = true;
+            setTimeout(awaitMove(lastPosition), timeDiff);
           }
         }
       }
     }
   }
   
-  let awaitMove = (zincCamera,x,y) => {
+  let awaitMove = (lastPosition) => {
     return function() {
-      cooldown = false;
-      hovered(zincCamera, x, y);
+      awaiting = false;
+      hovered(lastPosition.zincCamera, lastPosition.x, lastPosition.y);
     }
   }
 };
