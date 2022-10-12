@@ -288,7 +288,6 @@ exports.SceneLoader = function (sceneIn) {
       if (newPointset) {
         newPointset.createMesh(geometry, material, options);
         newPointset.setName(groupName);
-        newPointset.anatomicalId = anatomicalId;
         region.addZincObject(newPointset);
         newPointset.setDuration(scene.getDuration());
         newPointset.setRenderOrder(renderOrder);
@@ -742,6 +741,15 @@ exports.SceneLoader = function (sceneIn) {
     }
   }
 
+  let readVersionOneRegionPath = (region, referenceURL, item, order, callback) => {
+    let targetRegion = region;
+    if (item.RegionPath && item.RegionPath !== "") {
+      targetRegion = region.findOrCreateChildFromPath(item.RegionPath);
+    }
+    //Render order is set to i * 2 to account for front and back rendering
+    readPrimitivesItem(targetRegion, referenceURL, item, order * 2, callback);
+  }
+
   let loadVersionOne = (targetRegion, metadata, referenceURL, finishCallback, allCompletedCallback) => {
     let numberOfObjects = getNumberOfObjects(metadata);
     // view file does not receive callback
@@ -750,8 +758,7 @@ exports.SceneLoader = function (sceneIn) {
     for (let i = 0; i < metadata.length; i++)
       readViewAndSettingsItem(referenceURL, metadata[i], callback);
     for (let i = 0; i < metadata.length; i++) {
-      //Render order is set to i * 2 to account for front and back rendering
-      readPrimitivesItem(targetRegion, referenceURL, metadata[i], i * 2, callback);
+      readVersionOneRegionPath(targetRegion, referenceURL, metadata[i], i, callback);
     }
   }
 
