@@ -1137,7 +1137,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	this.pick = (zincCamera, x, y) => { 
 		if (enabled && renderer && scene && zincCamera && callbackFunction) {
 			getIntersectsObject(zincCamera, x, y);
-			callbackFunction(intersects, x, y, pickedObjects);
+			callbackFunction(pickedObjects, x, y);
 		}
   }
   
