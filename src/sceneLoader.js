@@ -96,10 +96,12 @@ exports.SceneLoader = function (sceneIn) {
           scene.setupMultipleViews("default", { "default" : viewData });
           scene.resetView();
           viewLoaded = true;
+          --this.toBeDownloaded;
           if (finishCallback != undefined && (typeof finishCallback == 'function'))
             finishCallback();
+        } else {
+          this.onError();
         }
-        --this.toBeDownloaded;
       }
     }
     requestURL = resolveURL(url);
@@ -426,6 +428,7 @@ exports.SceneLoader = function (sceneIn) {
         if (zincCameraControls)
           zincCameraControls.calculateMaxAllowedDistance(scene);
       }
+      console.log(downloadedItem, numberOfDownloaded);
       if (downloadedItem == numberOfDownloaded) {
         if (viewLoaded === false)
           scene.viewAll();
@@ -721,8 +724,28 @@ exports.SceneLoader = function (sceneIn) {
     }
   }
 
+  let getNumberOfDownloadsInArray = (array, includeViews) => {
+    if (Array.isArray(array)) {
+      let count = 0;
+      for (let i = 0; i < array.length; i++) {
+        if (array[i].Type && (
+          (includeViews && array[i].Type === "View") ||
+          array[i].Type === "Surfaces" ||
+          array[i].Type === "Glyph" ||
+          array[i].Type === "Points" ||
+          array[i].Type === "Lines"))
+        {
+          count++;
+        }
+      }
+      return count;
+    }
+    return 0;
+  }
+
   let getNumberOfObjectsInRegions = (regionJson) => {
-    let counts = regionJson.Primitives ? regionJson.Primitives.length : 0;
+    let counts = regionJson.Primitives ? 
+      getNumberOfDownloadsInArray(regionJson.Primitives, false) : 0;
     if (regionJson.Children) {
       regionJson.Children.forEach(childRegion => {
         counts += getNumberOfObjectsInRegions(childRegion);
@@ -733,7 +756,7 @@ exports.SceneLoader = function (sceneIn) {
 
   let getNumberOfObjects = (metadata) => {
     if (Array.isArray(metadata)) {
-      return numberOfObjects = metadata.length;
+      return getNumberOfDownloadsInArray(metadata, true);
     } else if (typeof metadata === "object" && metadata !== null) {
       if (metadata.version == "2.0") {
         return getNumberOfObjectsInRegions(metadata.Regions);
