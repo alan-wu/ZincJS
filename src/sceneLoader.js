@@ -428,7 +428,6 @@ exports.SceneLoader = function (sceneIn) {
         if (zincCameraControls)
           zincCameraControls.calculateMaxAllowedDistance(scene);
       }
-      console.log(downloadedItem, numberOfDownloaded);
       if (downloadedItem == numberOfDownloaded) {
         if (viewLoaded === false)
           scene.viewAll();
@@ -747,7 +746,7 @@ exports.SceneLoader = function (sceneIn) {
     let counts = regionJson.Primitives ? 
       getNumberOfDownloadsInArray(regionJson.Primitives, false) : 0;
     if (regionJson.Children) {
-      regionJson.Children.forEach(childRegion => {
+      Object.values(regionJson.Children).forEach(childRegion => {
         counts += getNumberOfObjectsInRegions(childRegion);
       });
     }
@@ -757,8 +756,8 @@ exports.SceneLoader = function (sceneIn) {
   let getNumberOfObjects = (metadata) => {
     if (Array.isArray(metadata)) {
       return getNumberOfDownloadsInArray(metadata, true);
-    } else if (typeof metadata === "object" && metadata !== null) {
-      if (metadata.version == "2.0") {
+    } else if ((typeof metadata) === "object" && metadata !== null) {
+      if (metadata.Version === "2.0") {
         return getNumberOfObjectsInRegions(metadata.Regions);
       }
     }
