@@ -98,8 +98,9 @@ let Region = function (parentIn) {
 
   this.getChildWithName = childName => {
     if (childName) {
+      const lowerChildName = childName.toLowerCase();
       for (let i = 0; i < children.length; i++) {
-        if (children[i].getName() === childName)
+        if (children[i].getName().toLowerCase() === lowerChildName)
           return children[i];
       }
     }
@@ -392,7 +393,9 @@ let Region = function (parentIn) {
   this.findObjectsWithGroupName = (groupName, transverse) => {
     const objectsArray = [];
     zincObjects.forEach(zincObject => {
-      if (zincObject.groupName === groupName)
+      const lowerObjectName = zincObject.groupName ? zincObject.groupName.toLowerCase() : zincObject.groupName;
+      const lowerGroupName = groupName ? groupName.toLowerCase() : groupName;
+      if (lowerObjectName === lowerGroupName)
         objectsArray.push(zincObject);
     });
     if (transverse) {
