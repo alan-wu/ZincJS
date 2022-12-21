@@ -511,18 +511,18 @@ const Glyphset = function () {
    */
   this.getClosestVertex = function () {
 
-    if (this.markerVertexIndex == -1) {
-      this.markerVertexIndex = this.getClosestVertexIndex();
+    if (this.closestVertexIndex == -1) {
+      this.closestVertexIndex = this.getClosestVertexIndex();
     }
-    if (this.markerVertexIndex >= 0) {
+    if (this.closestVertexIndex >= 0) {
       /*
-      if (glyphList && glyphList[this.markerVertexIndex]) {
-        glyphList[this.markerVertexIndex].getBoundingBox().getCenter(position);
+      if (glyphList && glyphList[this.closestVertexIndex]) {
+        glyphList[this.closestVertexIndex].getBoundingBox().getCenter(position);
       }
       */
       if (this.morph) {
         let position = new THREE.Vector3();
-        this.morph.getMatrixAt(this.markerVertexIndex, _transformMatrix);
+        this.morph.getMatrixAt(this.closestVertexIndex, _transformMatrix);
         position.setFromMatrixPosition(_transformMatrix);
         return position;
       }

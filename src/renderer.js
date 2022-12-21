@@ -123,10 +123,10 @@ exports.Renderer = function (containerIn) {
 		  container = undefined;
 		  canvas = parameters["canvas"];
 	  }
-      renderer = new THREE.WebGLRenderer(parameters);
-      if (container !== undefined) {
+    renderer = new THREE.WebGLRenderer(parameters);
+    if (container !== undefined) {
 		  container.appendChild( renderer.domElement );
-      }
+    }
 	  renderer.setClearColor( 0xffffff, 1);
 	  if (canvas && canvas.style) {
 		  canvas.style.height = "100%";
@@ -603,4 +603,10 @@ exports.Renderer = function (containerIn) {
 			}
 		}
 	}
+
+  this.isWebGL2 = () => {
+    if (renderer)
+      return renderer.capabilities.isWebGL2;
+    return false;
+  }
 };
