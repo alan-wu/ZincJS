@@ -71,6 +71,7 @@ exports.Scene = function (containerIn, rendererIn) {
         return container.width;
     return 0;
   }
+  
 
   const getDrawingHeight = () => {
     if (container)
@@ -841,6 +842,10 @@ exports.Scene = function (containerIn, rendererIn) {
     if (minimap)
       return minimap.getDiffFromNormalised(x, y);
     return undefined;
+  }
+
+  this.isWebGL2 = () => {
+    return rendererIn.isWebGL2();
   }
 
   /**

@@ -156,7 +156,25 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
       ndcControl.setCurrentCameraSettings(this.cameraObject,
         viewports[defaultViewport]);
 	}
-	
+
+  //Get the NDC coordinates from the given dom coordiantes
+  this.getNDCFromDocumentCoords = (x, y, positionIn) => {
+
+    const position = positionIn ? positionIn : new THREE.Vector2();
+    position.x = ((x - rect.left) / rect.width) * 2 - 1;
+    position.y = -((y - rect.top) / rect.height) * 2 + 1;
+    return position;
+  }
+
+  this.getRelativeCoordsFromNDC = (x, y, positionIn) => {
+    if (rect === undefined)
+      rect = this.domElement.getBoundingClientRect();
+    const position = positionIn ? positionIn : new THREE.Vector2();
+    position.x = (x + 1) * rect.width / 2.0;
+    position.y = (1 - y) * rect.height / 2.0;
+    return position;
+  }
+
 	this.setMouseButtonAction = (buttonName, actionName) => {
 		CLICK_ACTION[buttonName] = STATE[actionName];
   }
@@ -1118,11 +1136,9 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	this.disable = () => {
 		enable = false;
 	}
-	
+
 	const getIntersectsObject = (zincCamera, x, y) => {
-		const rect = zincCamera.domElement.getBoundingClientRect();
-		mouse.x = ((x - rect.left) / rect.width) * 2 - 1;
-    mouse.y = -((y - rect.top) / rect.height) * 2 + 1;
+    zincCamera.getNDCFromDocumentCoords(x, y, mouse);
     if (hostScene !== scene) {
       const threejsScene = scene.getThreeJSScene();
       renderer.render(threejsScene, zincCamera.cameraObject);

@@ -29,7 +29,7 @@ const ZincObject = function() {
   this.videoHandler = undefined;
   this.marker = undefined;
   this.markerUpdateRequired = true;
-  this.markerVertexIndex = -1;
+  this.closestVertexIndex = -1;
   this.boundingBoxUpdateRequired = true;
   this.cachedBoundingBox = new THREE.Box3();
   this._vertex = new THREE.Vector3();
@@ -387,10 +387,10 @@ ZincObject.prototype.getClosestVertexIndex = function() {
  */
 ZincObject.prototype.getClosestVertex = function() {
   let position = new THREE.Vector3();
-  if (this.markerVertexIndex == -1) {
-    this.markerVertexIndex = this.getClosestVertexIndex();
+  if (this.closestVertexIndex == -1) {
+    this.closestVertexIndex = this.getClosestVertexIndex();
   }
-  if (this.markerVertexIndex >= 0) {
+  if (this.closestVertexIndex >= 0) {
     let influences = this.morph.morphTargetInfluences;
     let attributes = this.morph.geometry.morphAttributes;
     if (influences && attributes && attributes.position) {
@@ -399,7 +399,7 @@ ZincObject.prototype.getClosestVertex = function() {
         if (influences[i] > 0) {
           found = true;
           this._vertex.fromArray(
-            attributes.position[i].array, this.markerVertexIndex * 3);
+            attributes.position[i].array, this.closestVertexIndex * 3);
           position.add(this._vertex.multiplyScalar(influences[i]));
         }
       }
@@ -407,7 +407,7 @@ ZincObject.prototype.getClosestVertex = function() {
         return position;
     } else {
       position.fromArray(this.morph.geometry.attributes.position.array,
-        this.markerVertexIndex * 3);
+        this.closestVertexIndex * 3);
       return position;
     }
   }
@@ -526,6 +526,18 @@ ZincObject.prototype.setRenderOrder = function(renderOrder) {
     if (this.secondaryMesh)
       this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
 
+  }
+}
+
+ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
+  if (scene && scene.camera) {
+    const position = this.getClosestVertex();
+    position.project(scene.camera);
+    position.z = Math.min(Math.max(position.z, 0), 1);
+    scene.getZincCameraControls().getRelativeCoordsFromNDC(position.x, position.y, position);
+    return position;
+  } else {
+    return undefined;
   }
 }
 
