@@ -274,7 +274,7 @@ exports.SceneLoader = function (sceneIn) {
   const pointsetloader = (region, localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, finishCallback) => {
     return (geometry, materials) => {
       const newPointset = new (require('./primitives/pointset').Pointset)();
-      let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 5, sizeAttenuation: false });
+      let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 10, sizeAttenuation: false });
       if (materials && materials[0]) {
         if (1.0 > materials[0].opacity) {
           material.transparent = true;

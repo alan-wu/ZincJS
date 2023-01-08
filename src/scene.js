@@ -61,7 +61,7 @@ exports.Scene = function (containerIn, rendererIn) {
   let metadata = defaultMetadata();
   let _markerTarget = new THREE.Vector2();
   let pickableObjectsList = [];
-  let forcePickableObjectsUpdate = false;
+  this.forcePickableObjectsUpdate = false;
 
   const getDrawingWidth = () => {
     if (container)
