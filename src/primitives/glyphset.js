@@ -38,6 +38,13 @@ const Glyphset = function () {
   const _boundingBox2 = new THREE.Box3();
   const _boundingBox3 = new THREE.Box3();
   const _points = [];
+  const _current_positions = [];
+  const _current_axis1s = [];
+  const _current_axis2s = [];
+  const _current_axis3s = [];
+  const _current_scales = [];
+  const _current_colors = [];
+  const _glyph_axis_array = [];
   for (let i = 0; i < 8; i++) {
     _points[i] = new THREE.Vector3();
   }
@@ -99,8 +106,7 @@ const Glyphset = function () {
 	 * to the transformation matrix.
 	 * @returns {Array}
 	 */
-  const resolve_glyph_axes = (point, axis1, axis2, axis3, scale) => {
-    const return_arrays = [];
+  const resolve_glyph_axes = (point, axis1, axis2, axis3, scale, return_arrays) => {
     if (repeat_mode == "NONE" || repeat_mode == "MIRROR") {
       let axis_scale = [0.0, 0.0, 0.0];
       let final_axis1 = [0.0, 0.0, 0.0];
@@ -147,7 +153,7 @@ const Glyphset = function () {
         final_axis3[1] = -final_axis3[1];
         final_axis3[2] = -final_axis3[2];
       }
-      return_arrays.push([final_point, final_axis1, final_axis2, final_axis3]);
+      return_arrays[0] = [final_point, final_axis1, final_axis2, final_axis3];
       if (repeat_mode == "MIRROR") {
         if (0.0 > (
           mirrored_axis3[0] * (mirrored_axis1[1] * mirrored_axis2[2] -
@@ -160,7 +166,7 @@ const Glyphset = function () {
           mirrored_axis3[1] = -mirrored_axis3[1];
           mirrored_axis3[2] = -mirrored_axis3[2];
         }
-        return_arrays.push([mirrored_point, mirrored_axis1, mirrored_axis2, mirrored_axis3]);
+        return_arrays[1] =[mirrored_point, mirrored_axis1, mirrored_axis2, mirrored_axis3];
       }
     }
     else if (repeat_mode == "AXES_2D" || repeat_mode == "AXES_3D") {
@@ -224,7 +230,7 @@ const Glyphset = function () {
           final_axis2[1] *= scaling;
           final_axis2[2] *= scaling;
         }
-        return_arrays.push([final_point, final_axis1, final_axis2, final_axis3])
+        return_arrays[k] = [final_point, final_axis1, final_axis2, final_axis3];
       }
     }
     return return_arrays;
@@ -247,6 +253,7 @@ const Glyphset = function () {
       numberOfGlyphs = 3;
     const numberOfPositions = current_positions.length / 3;
     let current_glyph_index = 0;
+    _glyph_axis_array.length = numberOfGlyphs;
     for (let i = 0; i < numberOfPositions; i++) {
       const current_index = i * 3;
       const current_position = [current_positions[current_index], current_positions[current_index + 1],
@@ -260,7 +267,7 @@ const Glyphset = function () {
       const current_scale = [current_scales[current_index], current_scales[current_index + 1],
       current_scales[current_index + 2]];
       const arrays = resolve_glyph_axes(current_position, current_axis1, current_axis2,
-        current_axis3, current_scale);
+        current_axis3, current_scale, _glyph_axis_array);
       if (arrays.length == numberOfGlyphs) {
         for (let j = 0; j < numberOfGlyphs; j++) {
           _transformMatrix.elements[0] = arrays[j][1][0];
@@ -322,12 +329,13 @@ const Glyphset = function () {
 	 * the internal time has been updated.
 	 */
   const updateMorphGlyphsets = () => {
-    let current_positions = [];
-    let current_axis1s = [];
-    let current_axis2s = [];
-    let current_axis3s = [];
-    let current_scales = [];
-    let current_colors = [];
+    const current_positions = _current_positions;
+    const current_axis1s = _current_axis1s;
+    const current_axis2s = _current_axis2s;
+    const current_axis3s = _current_axis3s;
+    const current_scales = _current_scales;
+    const current_colors = _current_colors;
+
     const current_time = this.inbuildTime / this.duration * (numberOfTimeSteps - 1);
     const bottom_frame = Math.floor(current_time);
     const proportion = 1 - (current_time - bottom_frame);
@@ -343,13 +351,18 @@ const Glyphset = function () {
       const top_axis3 = axis3s[top_frame.toString()];
       const bottom_scale = scales[bottom_frame.toString()];
       const top_scale = scales[top_frame.toString()];
+      _current_positions.length = bottom_positions.length;
+      _current_axis1s.length = bottom_positions.length;
+      _current_axis2s.length = bottom_positions.length;
+      _current_axis3s.length = bottom_positions.length;
+      _current_scales.length = bottom_positions.length;
 
       for (let i = 0; i < bottom_positions.length; i++) {
-        current_positions.push(proportion * bottom_positions[i] + (1.0 - proportion) * top_positions[i]);
-        current_axis1s.push(proportion * bottom_axis1[i] + (1.0 - proportion) * top_axis1[i]);
-        current_axis2s.push(proportion * bottom_axis2[i] + (1.0 - proportion) * top_axis2[i]);
-        current_axis3s.push(proportion * bottom_axis3[i] + (1.0 - proportion) * top_axis3[i]);
-        current_scales.push(proportion * bottom_scale[i] + (1.0 - proportion) * top_scale[i]);
+        current_positions[i] = proportion * bottom_positions[i] + (1.0 - proportion) * top_positions[i];
+        current_axis1s[i] = proportion * bottom_axis1[i] + (1.0 - proportion) * top_axis1[i];
+        current_axis2s[i] = proportion * bottom_axis2[i] + (1.0 - proportion) * top_axis2[i];
+        current_axis3s[i] = proportion * bottom_axis3[i] + (1.0 - proportion) * top_axis3[i];
+        current_scales[i] = proportion * bottom_scale[i] + (1.0 - proportion) * top_scale[i];
       }
     } else {
       current_positions = positions["0"];
@@ -365,13 +378,14 @@ const Glyphset = function () {
       if (morphColours) {
         const bottom_colors = colors[bottom_frame.toString()];
         const top_colors = colors[top_frame.toString()];
+        current_colors.length = bottom_colors.length;
         for (let i = 0; i < bottom_colors.length; i++) {
           _bot_colour.setHex(bottom_colors[i]);
           _top_colour.setHex(top_colors[i]);
           _bot_colour.setRGB(_bot_colour.r * proportion + _top_colour.r * (1 - proportion),
             _bot_colour.g * proportion + _top_colour.g * (1 - proportion),
             _bot_colour.b * proportion + _top_colour.b * (1 - proportion));
-          current_colors.push(_bot_colour.getHex());
+          current_colors[i] = _bot_colour.getHex();
         }
 				/*
 				for (var i = 0; i < bottom_colors.length; i++) {
@@ -383,12 +397,6 @@ const Glyphset = function () {
       }
       updateGlyphsetHexColors(current_colors);
     }
-    current_positions = null;
-    current_axis1s = null;
-    current_axis2s = null;
-    current_axis3s = null;
-    current_scales = null;
-    current_colors = null;
   };
 
   this.showLabel = () => {
