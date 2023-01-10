@@ -531,11 +531,15 @@ ZincObject.prototype.setRenderOrder = function(renderOrder) {
 
 ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
   if (scene && scene.camera) {
+    let inView = true;
     const position = this.getClosestVertex();
     position.project(scene.camera);
     position.z = Math.min(Math.max(position.z, 0), 1);
+    if (position.x > 1 || position.x < -1 || position.y > 1 || position.y < -1) {
+      inView = false;
+    }
     scene.getZincCameraControls().getRelativeCoordsFromNDC(position.x, position.y, position);
-    return position;
+    return {position, inView};
   } else {
     return undefined;
   }
