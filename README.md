@@ -1,7 +1,7 @@
 ZincJS (Web-based-Zinc-Visualisation)
 =====================================
 
-This is currently out-of-date.
+Some of the following documentations are currerntly out-of-date .
 
 Webapp developed using ZincJS:
 ------------------------------
