@@ -25,9 +25,24 @@ module.exports = {
         }
       }: [],
       {
-        test: /.js$/,
-        exclude: /(node_modules|bower_components)/,
+        test: /\.js$/,
         loader: 'babel-loader',
+        query: {
+            presets: [
+              [
+                "@babel/preset-env",
+                {
+                  "targets": {
+                    "esmodules": true
+                  }
+                }
+              ],
+              ['minify',  {
+                builtIns: false,
+                evaluate: false,
+                mangle: false,
+               }]]
+        }
       },
       {
         test: /\.(gif|png|jpe?g|svg)$/i,
