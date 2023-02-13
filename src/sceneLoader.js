@@ -1,8 +1,8 @@
 const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
 const JSONLoader = require('./loader').JSONLoader;
-const STLLoader = require('three/examples/jsm/loaders/STLLoader').STLLoader;
-const OBJLoader = require('three/examples/jsm/loaders/OBJLoader').OBJLoader;
+const STLLoader = require('./STLLoader').STLLoader;
+const OBJLoader = require('./OBJLoader').OBJLoader;
 
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
@@ -142,7 +142,7 @@ exports.SceneLoader = function (sceneIn) {
    /**
    * Load a legacy file format containing the viewport and its meta file from an external 
    * location provided by the url. Use the new metadata format with
-   * {@link Zinc.Scene#loadMetadataURL} instead.
+   * {@link Zinc.SceneLoader.#loadMetadataURL} instead.
    * 
    * @param {String} URL - address to the file containing viewport and model information.
    * @deprecated

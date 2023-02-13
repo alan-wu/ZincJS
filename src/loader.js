@@ -64,8 +64,10 @@ Object.assign( JSONLoader.prototype, {
 
 			}
 
-			var object = scope.parse( json, texturePath );
-			onLoad( object.geometry, object.materials );
+      if (scope && scope.parse) {
+        var object = scope.parse( json, texturePath );
+        onLoad( object.geometry, object.materials );
+      }
 
 		}, onProgress, onError );
 
