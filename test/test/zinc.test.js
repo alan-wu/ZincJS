@@ -1,4 +1,4 @@
-var Zinc = require("../../src/zinc");
+const Zinc = require("../../src/zinc");
 const path = require("path");
 var assert = require('chai').assert;
 var expect = require('chai').expect;
@@ -58,6 +58,7 @@ function checkControls(scene) {
         var scope = nock('https://www.mytestserver.com')
           .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
           .get(function(uri) {
+            console.log(uri)
             return uri;
           })
           .reply(200, (uri, requestBody, cb) => {console.log(uri);fs.readFile("." + uri, cb)});
@@ -127,17 +128,17 @@ function checkControls(scene) {
       });
       it('getDefaultViewport', function(){
         var viewport = controls.getDefaultViewport();
-        assert.isObject(viewport, 'getDefaultViewport successfully returns an object');
+        assert.equal(viewport, 'default', 'getDefaultViewport successfully returns default');
       });
       it('getCurrentViewport', function() {
         var viewport = controls.getCurrentViewport();
         assert.isObject(viewport, 'getCurrentViewport successfully returns an object');
       });
-      it('setDefaultCameraSettings', function(){
+      it('addViewport', function(){
         var viewport = controls.getViewportFromCentreAndRadius(10,20,30, 30, 40, 100);
         assert.isObject(viewport, 'getViewportFromCentreAndRadius successfully returns an object');
-        assert.isUndefined(controls.setDefaultCameraSettings(viewport), 'setDefaultCameraSettings  successfully called');
-        assert.equal(viewport.eyePosition[0], controls.getDefaultViewport().eyePosition[0], 'Default camera settings are set correctly');
+        assert.isUndefined(controls.addViewport('newViewport', viewport), 'addViewport  successfully called');
+        assert.isObject(controls.getViewportOfName('newViewport'), 'getViewportOfName  successfully called');
       });
       it('setCurrentCameraSettings', function(){
         var viewport = controls.getViewportFromCentreAndRadius(10,20,30, 30, 40, 100);
@@ -192,10 +193,17 @@ function checkControls(scene) {
 
 function checkGeometry(scene) {
   describe('Geometry()', function(){
-    var geometry = undefined;
+    let geometry = undefined;
     before('New Zinc Geometry', function() {
-      geometry = scene.addZincGeometry(testBoxGeometry, 0x00ff00, 1.0, false, false);
-      geometry.groupName = "TestGeometry";
+      geometry = new Zinc.Geometry();
+      let options = {};
+      options.colour = 0x00ff00;
+      options.opacity = 1.0;
+      options.localTimeEnabled = false;
+      options.localMorphColour = false
+      geometry.createMesh(testBoxGeometry, undefined, options);
+      geometry.setName('TestGeometry');
+      scene.addZincObject(geometry);
       assert.isObject(geometry, 'ZincGeometry has been created');
       assert.equal(geometry.groupName, "TestGeometry", 'ZincGeometry group name has been set');
     });
@@ -424,8 +432,15 @@ function checkScene(renderer) {
     describe('Methods()', function(){
       var testGeometry = undefined;
       before('addZincGeometry', function() {
-        testGeometry = scene.addZincGeometry(testBoxGeometry, 0x00ff00, 1.0, false, false,
-          undefined, undefined, "TestGeometry");
+        let options = {};
+        options.colour = 0x00ff00;
+        options.opacity = 1.0;
+        options.localTimeEnabled = undefined;
+        options.localMorphColour = undefined
+        testGeometry = new Zinc.Geometry();
+        testGeometry.createMesh(testBoxGeometry, undefined, options);
+        testGeometry.setName("TestGeometry");
+        scene.addZincObject(testGeometry);
         assert.isObject(testGeometry, 'ZincGeometry has been created');
         assert.equal(testGeometry.groupName, "TestGeometry", 'ZincGeometry group name has been set');
       });
