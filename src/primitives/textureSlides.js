@@ -17,7 +17,6 @@ const TextureSlides = function (textureIn) {
   this.createSlides = slideSettings => {
     if (!this.morph) this.morph = new THREE.Group();
     if (this.texture && this.texture.isReady()) {
-      console.log("ready");
       slideSettings.forEach(slide => {
         if (slide.direction && slide.value) {
           const geometry = new THREE.PlaneGeometry( 1, 1 );
@@ -50,7 +49,6 @@ const TextureSlides = function (textureIn) {
           material.needsUpdate = true;
           const mesh = new THREE.Mesh( geometry, material );
           this.morph.add(mesh);
-          console.log("great");
         }
       });
     }
