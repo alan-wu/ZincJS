@@ -296,7 +296,7 @@ let Region = function (parentIn) {
     }
     if (transverse) {
       for (let i = 0; i < children.length; i++) {
-        if (children[i].objectIsInRegion())
+        if (children[i].objectIsInRegion(zincObject, transverse))
           return true;
       }
     }
