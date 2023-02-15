@@ -5,6 +5,7 @@ global.window = dom.window;
 global.document = dom.window.document;
 global.Image = window.Image;
 window.console = global.console;
+global.fetch = require("node-fetch");
 
 Object.keys(document.defaultView).forEach((property) => {
   if (typeof global[property] === 'undefined') {

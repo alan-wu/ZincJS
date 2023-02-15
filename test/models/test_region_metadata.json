@@ -1,0 +1,94 @@
+{
+  "Regions" : {
+     "Children" : {
+        "cube" : {
+           "Children" : {
+              "grandChild_1" : {
+                 "Primitives" : [
+                    {
+                      "GroupName" : "grandChild_1_glyph",
+                      "GlyphGeometriesURL" : "test_glyph_geometry.json",
+                      "MorphColours" : false,
+                      "MorphNormals" : false,
+                      "MorphVertices" : false,
+                      "Order" : 3,
+                      "Type" : "Glyph",
+                      "URL" : "test_glyph.json"
+                    }
+                 ],
+                 "Transformation" : [ 3, 0, 0, 0, 0, 1, 0, 2, 0, 0, 1, 0, 0, 0, 0, 1 ]
+              },
+              "grandChild_2" : {
+                 "Children" : {
+                    "greatGrand" : {
+                       "Primitives" : [
+                          {
+                            "GroupName" : "greatGrand_surface",
+                            "MorphColours" : false,
+                            "MorphNormals" : false,
+                            "MorphVertices" : false,
+                            "Order" : 1,
+                            "Type" : "Surfaces",
+                            "URL" : "test_geometry.json"
+                          }
+                       ],
+                       "Transformation" : [ 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1, 3, 0, 0, 0, 1 ]
+                    }
+                 },
+                 "Primitives" : [
+                    {
+                      "GroupName" : "grandChild_2_lines",
+                      "MorphColours" : false,
+                      "MorphNormals" : false,
+                      "MorphVertices" : false,
+                      "Order" : 2,
+                      "Type" : "Lines",
+                      "URL" : "test_lines.json"
+                    }
+                 ],
+                 "Transformation" : [ 1, 0, 0, 1, 0, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1 ]
+              }
+           },
+           "Primitives" : [
+              {
+                "GroupName" : "cube lines",
+                "MorphColours" : false,
+                "MorphNormals" : false,
+                "MorphVertices" : false,
+                "Order" : 4,
+                "Type" : "Lines",
+                "URL" : "test_lines.json"
+              },
+              {
+                "GroupName" : "cube texture",
+                "MorphColours" : false,
+                "MorphNormals" : false,
+                "MorphVertices" : false,
+                "Order" : 5,
+                "Type" : "Surfaces",
+                "URL" : "test_texture.json"
+              }
+           ],
+           "Transformation" : [ 2, 0, 0, 5, 0, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 1 ]
+        }
+     },
+     "Primitives" : [
+        {
+          "GroupName" : "points",
+          "MorphColours" : false,
+          "MorphNormals" : false,
+          "MorphVertices" : false,
+          "Order" : 7,
+          "Type" : "Points",
+          "URL" : "test_point.json"
+        }
+     ]
+  },
+  "Views": {
+    "Default": "default",
+    "Entries": {
+      "default": "test_view.json"
+    }
+  },
+  "Version" : "2.0"
+}
