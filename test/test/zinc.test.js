@@ -663,6 +663,195 @@ function checkScene(renderer) {
   return testScene;
 }
 
+function checkRegion(scene) {
+  describe('Region()', function(){
+    const rootRegion = scene.getRootRegion();
+    before('Setup Mock response', function(done) {
+      var scope = nock('https://www.mytestserver.com')
+        .persist()
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(function(uri) {
+          return uri;
+        })
+        .reply(200, (uri, requestBody, cb) => {fs.readFile("." + uri, cb)}, {'Content-Type': 'application/json'});
+        scene.loadMetadataURL("https://www.mytestserver.com/models/test_region_metadata.json", undefined, 
+          done);
+    });
+
+    describe('Methods()', function(){
+      it('getRegion', function(){
+        const cubeRegion = rootRegion.getChildWithName("cube");
+        assert.isObject(cubeRegion, 'cube region is not found');
+      });
+      it('getGroup', function(){
+        assert.isTrue(rootRegion.getGroup().isGroup, 'Visibility should be an object')
+      });
+      it('findChildFromPath', function(){
+        const child = rootRegion.findChildFromPath("cube/grandChild_2/greatGrand");
+        assert.isObject(child, 'child region is not found');
+        assert.equal(child.getFullPath(), 'cube/grandChild_2/greatGrand',
+          'child region path is not matching');
+      });
+      it('findOrCreateChildFromPath', function(){
+        const child = rootRegion.findOrCreateChildFromPath("cube/grandChild_2/greatGrand/greatGreateGrand");
+        assert.isObject(child, 'region cannot be created');
+        assert.equal(child.getFullPath(), 'cube/grandChild_2/greatGrand/greatGreateGrand',
+          'child region path is not matching');
+      });
+      it('checkPickableUpdateRequred', function(){
+        const flag = rootRegion.checkPickableUpdateRequred(true);
+        assert.isTrue(flag, 'Pickable flag is not correct');
+      });
+      it('getPickableThreeJSObjects', function(){
+        const objectsList = [];
+        rootRegion.getPickableThreeJSObjects(objectsList, false, true);
+        assert.equal(objectsList.length, 6, 'Pickable flag is not correct');
+      });
+      
+      it('duration', function() {
+        rootRegion.setDuration(500);
+        assert.equal(rootRegion.getDuration(), 500, 'Duration is not set correctly');
+      });
+      it('getBoundingBox', function(){
+        const boundingBox = rootRegion.getBoundingBox(true);
+        assert.isObject(boundingBox, 'Cannot get bounding box for the root region');
+      });
+      it('objectIsInRegion', function() {
+        objects = rootRegion.findGeometriesWithGroupName('cube texture', true);
+        assert.equal(objects.length, 1, 'cannot find surface in region');
+        assert.isTrue(objects[0].isGeometry, "Object is not geometry");
+        assert.isFalse(rootRegion.objectIsInRegion(objects[0], false),
+          "object should not be in the rootRegion");
+        assert.isTrue(rootRegion.objectIsInRegion(objects[0], true),
+          "object should be in the one of the child regions");
+        const cubeRegion = rootRegion.getChildWithName("cube");
+        assert.isTrue(cubeRegion.objectIsInRegion(objects[0], false),
+          "object should be in the cube region");
+      });
+      it('findObjectsWithGroupName', function() {
+        let objects = rootRegion.findObjectsWithGroupName('greatGrand_surface', false);
+        assert.equal(objects.length, 0, 'Should not be found in root region');
+        objects = rootRegion.findObjectsWithGroupName('greatGrand_surface', true);
+        assert.equal(objects.length, 1, 'cannot find objects in region');
+        assert.isTrue(objects[0].isGeometry, "Object is geometry");
+        objects = [];
+        objects = rootRegion.findObjectsWithGroupName('not me', true);
+        assert.equal(objects.length, 0, 'should find objects in region');
+      });
+      it('findGeometriesWithGroupName', function() {
+        let objects = rootRegion.findGeometriesWithGroupName('cube texture', false);
+        assert.equal(objects.length, 0, 'Should not be found in root region');
+        objects = rootRegion.findGeometriesWithGroupName('cube texture', true);
+        assert.equal(objects.length, 1, 'cannot find surface in region');
+        assert.isTrue(objects[0].isGeometry, "Object is not geometry");
+        objects = [];
+        objects = rootRegion.findGeometriesWithGroupName('not me', true);
+        assert.equal(objects.length, 0, 'should find objects in region');
+      });
+      it('findPointsetsWithGroupName', function() {
+        let objects = rootRegion.findPointsetsWithGroupName('points', true);
+        assert.equal(objects.length, 1, 'Should not be found in root region');
+        objects = rootRegion.findPointsetsWithGroupName('points', true);
+        assert.equal(objects.length, 1, 'cannot find points in regions');
+        assert.isTrue(objects[0].isPointset, "Object is not pointsets");
+        objects = [];
+        objects = rootRegion.findPointsetsWithGroupName('not me', true);
+        assert.equal(objects.length, 0, 'should find objects in region');
+      });
+      it('findGlyphsetsWithGroupName', function() {
+        let objects = rootRegion.findGlyphsetsWithGroupName('grandChild_1_glyph', false);
+        assert.equal(objects.length, 0, 'Should not be found in root region');
+        objects = rootRegion.findGlyphsetsWithGroupName('grandChild_1_glyph', true);
+        assert.equal(objects.length, 1, 'cannot find glyphset in group');
+        assert.isTrue(objects[0].isGlyphset, "Object is not glyphset");
+        objects = [];
+        objects = rootRegion.findGlyphsetsWithGroupName('not me', true);
+        assert.equal(objects.length, 0, 'should find objects in region');
+      });
+      it('findLinesWithGroupName', function() {
+        let objects = rootRegion.findLinesWithGroupName('grandChild_2_lines', false);
+        assert.equal(objects.length, 0, 'Should not be found in root region');
+        objects = rootRegion.findLinesWithGroupName('grandChild_2_lines', true);
+        assert.equal(objects.length, 1, 'cannot find lines in group');
+        assert.isTrue(objects[0].isLines, "Object is not line");
+        objects = [];
+        objects = rootRegion.findLinesWithGroupName('not me', true);
+        assert.equal(objects.length, 0, 'should find objects in region');
+      });
+      it('getAllObjects', function(){
+        const list = rootRegion.getAllObjects(true);
+        assert.equal(list.length, 6, 'Number of primitives is not matching');
+      });
+      it('setMorphTime', function(){
+        rootRegion.setMorphTime(200, false);
+        assert.equal(rootRegion.getCurrentTime(), 200, 'morph time is not correct');
+        const childRegion = rootRegion.findChildFromPath("cube/grandChild_2/greatGrand");
+        assert.equal(childRegion.getCurrentTime(), 0, 'morph time is not correct');
+      });
+      it('isTimeVarying', function(){
+        assert.isFalse(rootRegion.isTimeVarying(), 'It should not be time varying');
+      });
+      it ('forEachGeometry', function() {
+        geometryCount = 0;
+        rootRegion.forEachGeometry(geometryCallback(), false);
+        assert.equal(0, geometryCount, 'geometry count is incorrect.')
+        geometryCount = 0;
+        rootRegion.forEachGeometry(geometryCallback(), true);
+        assert.equal(2, geometryCount, 'geometry count is incorrect.')
+      });
+      it ('forEachGlyphset', function() {
+        geometryCount = 0;
+        rootRegion.forEachGlyphset(geometryCallback(), false);
+        assert.equal(0, geometryCount, 'glyphset count is incorrect.')
+        geometryCount = 0;
+        rootRegion.forEachGlyphset(geometryCallback(), true);
+        assert.equal(1, geometryCount, 'glyphset count is incorrect.')
+      });
+      it ('forEachPointset', function() {
+        geometryCount = 0;
+        rootRegion.forEachPointset(geometryCallback(), false);
+        assert.equal(1, geometryCount, 'pointset count is incorrect.')
+        geometryCount = 0;
+        rootRegion.getChildWithName("cube").forEachPointset(geometryCallback(), false);
+        assert.equal(0, geometryCount, 'line count is incorrect.')
+        geometryCount = 0;
+        rootRegion.forEachPointset(geometryCallback(), true);
+        assert.equal(1, geometryCount, 'pointset count is incorrect.')
+      });
+      it ('forEachLine', function() {
+        geometryCount = 0;
+        rootRegion.forEachLine(geometryCallback(), false);
+        assert.equal(0, geometryCount, 'line count is incorrect.')
+        geometryCount = 0;
+        rootRegion.getChildWithName("cube").forEachLine(geometryCallback(), false);
+        assert.equal(1, geometryCount, 'line count is incorrect.')
+        geometryCount = 0;
+        rootRegion.forEachLine(geometryCallback(), true);
+        assert.equal(2, geometryCount, 'line count is incorrect.')
+      });
+      it ('renderGeometries', function() {
+        rootRegion.renderGeometries(
+          1, 0.1, false, 
+          { 
+            markerDepths: [ 1, 2, 3, 4, 5, 6],
+            displayMarkers: true 
+          }, true);
+      });
+      it('setVisibility', function(){
+        assert.isTrue(rootRegion.getVisibility(), 'Visibility should be true')
+        rootRegion.setVisibility(false);
+        assert.isFalse(rootRegion.getVisibility(), 'Visibility should be false');
+      });
+      it('clear', function(){
+        rootRegion.clear(true);
+        const objects = rootRegion.getAllObjects(true);
+        assert.equal(0, objects.length, 'All graphics should be removed');
+        assert.isUndefined(rootRegion.getChildWithName("cube"), 'All regions should be removed');
+      });
+    });
+  });
+}
+
 function checkRenderer() {
   var testRenderer;
   describe('Renderer()', function(){
@@ -778,6 +967,8 @@ function checkRenderer() {
   checkGeometry(testScene);
   checkControls(testScene);
   //checkTextureSlides(testScene);
+  var regionScene = testRenderer.createScene("regionScene");
+  checkRegion(regionScene);
   //checkCleanup(testScene);
 }
 
