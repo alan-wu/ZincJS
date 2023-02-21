@@ -16,7 +16,7 @@ const TextureSlides = function (textureIn) {
    */
   this.createSlides = slideSettings => {
     if (!this.morph) this.morph = new THREE.Group();
-    if (this.texture && this.texture.isReady()) {
+    if (this.texture && this.texture.isTextureArray && this.texture.isReady()) {
       slideSettings.forEach(slide => {
         if (slide.direction && slide.value) {
           const geometry = new THREE.PlaneGeometry( 1, 1 );
@@ -52,6 +52,40 @@ const TextureSlides = function (textureIn) {
         }
       });
     }
+  }
+
+  /*
+   * Get all slides, return them in an array
+   */
+  this.getSlides = () => {
+    if (this.morph) return [...this.morph.children];
+    return [];
+  }
+
+  /*
+   * Remove a slide, this will dispose the slide and its material.
+   */
+  this.removeSlide = slide => {
+    if (slide && this.morph) {
+      if (this.morph.getObjectById(slide.id)) {
+        this.morph.remove(slide);
+        slide.disppose();
+        if (slide.geometry)
+          slide.geometry.dispose();
+        if (slide.material)
+          slide.material.dispose();
+      }
+    }
+  }
+
+  this.dispose = () => {
+    this.morph.children.forEach(slide=> {
+      if (slide.geometry)
+        slide.geometry.dispose();
+      if (slide.material)
+        slide.material.dispose();
+    });
+    (require('./texturePrimitive').TexturePrimitive).prototype.dispose.call(this);
   }
 
   /**
