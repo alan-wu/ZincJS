@@ -8,7 +8,7 @@ require("url-polyfill");
  */
 
 const Zinc = function() {
-  this.Revision = "1.0.11";
+  this.Revision = "1.0.12";
   this.defaultMaterialColor = 0xFFFFFF;
   this.defaultOpacity = 1.0;
   this.modelPrefix = undefined;
