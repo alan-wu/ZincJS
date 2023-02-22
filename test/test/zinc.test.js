@@ -390,6 +390,86 @@ function checkPoints(points) {
 }
 
 
+function checkTextureSlides(scene) {
+  describe('TextureSlides()', function(){
+    let textureSlides = undefined;
+    before('Setup Mock response', function() {
+      var scope = nock('https://www.mytestserver.com')
+        .persist()
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(function(uri) {
+          return uri;
+        })
+        .reply(200, (uri, requestBody, cb) => {fs.readFile("." + uri, cb)});
+    });
+    before('New Zinc Texture Array', async function(done) {
+      const texture = new Zinc.Texture();
+      const imgArray = ['https://www.mytestserver.com/models/test.jpg'];
+      await texture.loadFromImages(imgArray);
+      assert.isTrue(texture.isReady(), 'Texture is ready');
+      
+      textureSlides = new Zinc.TextureSlides(texture);
+      textureSlides.createSlides([
+        {
+          direction: "y",
+          value: 0.1
+        },
+        {
+          direction: "y",
+          value: 0.3
+        },
+        {
+          direction: "y",
+          value: 0.5
+        },
+        {
+          direction: "y",
+          value: 0.7
+        },
+        {
+          direction: "y",
+          value: 0.9
+        },
+        {
+          direction: "x",
+          value: 0.5
+        },
+        {
+          direction: "z",
+          value: 0.5
+        },
+      ]);
+      textureSlides.setName("texture slides");
+      scene.addZincObject(textureSlides);
+      done();
+    });
+    describe('Local Variables()', function(done){
+      it('texture array', function(){
+        assert.isObject(textureSlides.morph, 'textureSlides is an object');
+      });
+      it('groupName', function(){
+        assert.equal(textureSlides.groupName, "texture slides", 'groupName is correct');
+      });
+    });
+    describe('Methods()', function(done){
+      it('getBoundingBox', function() {
+        var boundingBox = textureSlides.getBoundingBox();
+        assert.isObject(boundingBox, 'boundingBox is successfully called');
+        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
+        assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
+      });
+      it('setName', function() {
+        assert.isUndefined(textureSlides.setName("texture slides2"), 'setName is successfully called');
+        assert.equal(textureSlides.groupName, 'texture slides2', 'name is correctly set');
+      });
+      it('setVisibility', function() {
+        assert.isUndefined(textureSlides.setVisibility(false), 'setVisibility is successfully called');
+      });
+    });
+  });
+}
+
+
 function checkCleanup(scene) {
   describe('Cleanup()', function(){
     describe('Local Variables()', function(){
@@ -452,7 +532,6 @@ function checkScene(renderer) {
             return uri;
           })
           .reply(200, (uri, requestBody, cb) => {fs.readFile("." + uri, cb)}, {'Content-Type': 'application/json'});
-
       });
       it('loadView', function() {
         scene.loadViewURL("https://www.mytestserver.com/models/test_view.json");
@@ -887,6 +966,7 @@ function checkRenderer() {
   var testScene = checkScene(testRenderer);
   checkGeometry(testScene);
   checkControls(testScene);
+  //checkTextureSlides(testScene);
   var regionScene = testRenderer.createScene("regionScene");
   checkRegion(regionScene);
   //checkCleanup(testScene);

@@ -327,8 +327,10 @@ ZincObject.prototype.setColour = function(colour) {
 }
 
 ZincObject.prototype.getColourHex = function() {
-  if (!this.morphColour)
-    return this.morph.material.color.getHexString();
+  if (!this.morphColour) {
+    if (this.morph && this.morph.material && this.morph.material.color)
+      return this.morph.material.color.getHexString();
+  }
   return undefined;
 }
 
@@ -525,7 +527,6 @@ ZincObject.prototype.setRenderOrder = function(renderOrder) {
     this.morph.renderOrder = renderOrder;
     if (this.secondaryMesh)
       this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
-
   }
 }
 

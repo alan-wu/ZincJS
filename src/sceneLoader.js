@@ -529,7 +529,7 @@ exports.SceneLoader = function (sceneIn) {
     newGeometry.createMesh(geometryIn, materialIn, options);
     if (newGeometry.morph) {
       newGeometry.setName(groupName);
-      region.addZincObject(newGeometry);
+      if (region) region.addZincObject(newGeometry);
       newGeometry.setDuration(scene.getDuration());
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGeometry);
