@@ -1,8 +1,8 @@
 const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
-const JSONLoader = require('./loader').JSONLoader;
-const STLLoader = require('./STLLoader').STLLoader;
-const OBJLoader = require('./OBJLoader').OBJLoader;
+const STLLoader = require('./loaders/STLLoader').STLLoader;
+const OBJLoader = require('./loaders/OBJLoader').OBJLoader;
+const PrimitivesLoader = require('./loaders/primitivesLoader').PrimitivesLoader;
 
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
@@ -10,7 +10,7 @@ exports.SceneLoader = function (sceneIn) {
   this.progressMap = [];
   let viewLoaded = false;
   let errorDownload = false;
-
+  const primitivesLoader = new PrimitivesLoader();
   /**
    * This function returns a three component array, which contains
    * [totalsize, totalLoaded and errorDownload] of all the downloads happening
@@ -44,9 +44,14 @@ exports.SceneLoader = function (sceneIn) {
     };
   }
 
-  this.onError = xhr => {
-    this.toBeDownloaded = this.toBeDownloaded - 1;
-    errorDownload = true;
+  this.onError = finishCallback => {
+    return xhr => {
+      this.toBeDownloaded = this.toBeDownloaded - 1;
+      errorDownload = true;
+      if (finishCallback) {
+        finishCallback();
+      }
+    }
   };
 
   let loadMultipleViews = (referenceURL, views) => {
@@ -120,7 +125,6 @@ exports.SceneLoader = function (sceneIn) {
     this.toBeDownloaded += number;
     for (let i = 0; i < number; i++) {
       const filename = urls[i];
-      const loader = new JSONLoader();
       let colour = require('./zinc').defaultMaterialColor;
       let opacity = require('./zinc').defaultOpacity;
       if (colours != undefined && colours[i] != undefined)
@@ -133,9 +137,8 @@ exports.SceneLoader = function (sceneIn) {
       let localMorphColour = 0;
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
-      loader.crossOrigin = "Anonymous";
-      loader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
-        undefined, finishCallback), this.onProgress(i), this.onError);
+      primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
+        undefined, finishCallback), this.onProgress(i), this.onError(finishCallback));
     }
   }
 
@@ -200,8 +203,7 @@ exports.SceneLoader = function (sceneIn) {
     };
   } 
 
-
-    /**
+  /**
    * Load lines into this scene object.
    * 
    * @param {String} metaurl - Provide informations such as transformations, colours 
@@ -223,15 +225,13 @@ exports.SceneLoader = function (sceneIn) {
 	  let localMorphColour = 0;
 	  if (morphColour != undefined)
 		  localMorphColour = morphColour ? true : false;
-    let loader = new JSONLoader();
     if (isInline) {
-      var object = loader.parse( url );
+      var object = primitivesLoader.parse( url );
       (linesloader(region, localTimeEnabled, localMorphColour, groupName, anatomicalId,
         renderOrder, finishCallback))( object.geometry, object.materials );
     } else {
-      loader.crossOrigin = "Anonymous";
-      loader.load(url, linesloader(region, localTimeEnabled, localMorphColour, groupName, 
-        anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError);
+      primitivesLoader.load(url, linesloader(region, localTimeEnabled, localMorphColour, groupName, 
+        anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError(finishCallback));
     }
   }
 
@@ -393,7 +393,7 @@ exports.SceneLoader = function (sceneIn) {
     let localMorphColour = 0;
     if (morphColour != undefined)
       localMorphColour = morphColour ? true : false;
-    let loader = new JSONLoader();
+    let loader = primitivesLoader;
     if (fileFormat !== undefined) {
       if (fileFormat == "STL") {
         loader = new STLLoader();
@@ -406,13 +406,13 @@ exports.SceneLoader = function (sceneIn) {
       }
     }
     if (isInline) {
-      const object = loader.parse( url );
+      const object = primitivesLoader.parse( url );
 			(meshloader(region, colour, opacity, localTimeEnabled,
         localMorphColour, groupName, anatomicalId, renderOrder, finishCallback))( object.geometry, object.materials );
     } else {
       loader.crossOrigin = "Anonymous";
-      loader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError);
+      primitivesLoader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
+        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError(finishCallback));
     }
   };
 
@@ -456,19 +456,17 @@ exports.SceneLoader = function (sceneIn) {
     let localMorphColour = 0;
     if (morphColour != undefined)
       localMorphColour = morphColour ? true : false;
-    let loader = new JSONLoader();
     let isInline = (options && options.isInline) ? options.isInline : false;
     let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
     let renderOrder = (options && options.renderOrder) ? options.renderOrder : undefined;
     if (isInline) {
-      const object = loader.parse( url );
+      const object = primitivesLoader.parse( url );
       (pointsetloader(region, localTimeEnabled, localMorphColour, groupName,
         anatomicalId, renderOrder, finishCallback))(object.geometry, object.materials );
     } else {
-      loader.crossOrigin = "Anonymous";
-      loader.load(url, pointsetloader(region, localTimeEnabled, localMorphColour,
+      primitivesLoader.load(url, pointsetloader(region, localTimeEnabled, localMorphColour,
         groupName, anatomicalId, renderOrder, finishCallback),
-        this.onProgress(i), this.onError);
+        this.onProgress(i), this.onError(finishCallback));
     }
   }
 
@@ -697,7 +695,7 @@ exports.SceneLoader = function (sceneIn) {
    * once the glyphset is succssfully load in.
    */
   this.loadGLTF = (region, url, finishCallback, options) => {
-    const GLTFToZincJSLoader = new (require('./GLTFToZincJSLoader').GLTFToZincJSLoader)();
+    const GLTFToZincJSLoader = new (require('./loaders/GLTFToZincJSLoader').GLTFToZincJSLoader)();
     GLTFToZincJSLoader.load(scene, region, url, finishCallback, options);
   }
 
