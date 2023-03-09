@@ -1,16 +1,17 @@
 var THREE = require('three');
 
-var Loader = require('./three/Loader').Loader;
+var Loader = require('../three/Loader').Loader;
 var LoaderUtils = THREE.LoaderUtils;
 var AnimationClip = THREE.AnimationClip;
 var Vector3 = THREE.Vector3;
 var Vector4 = THREE.Vector4;
 var Color = THREE.Color;
 var Vector2 = THREE.Vector2;
-var Face3 = require('./three/Geometry').Face3;
-var Geometry = require('./three/Geometry').Geometry;
+var Face3 = require('../three/Geometry').Face3;
+var Geometry = require('../three/Geometry').Geometry;
 var FileLoader = THREE.FileLoader;
 var DefaultLoadingManager = THREE.DefaultLoadingManager;
+var VideoHandler = require('../videoHandler').VideoHandler;
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -641,7 +642,7 @@ Object.assign( JSONLoader.prototype, {
 					
 					var fullPath = texturePath + json.materials[0].video;
 					
-					const videoHandler = new (require('./videoHandler').VideoHandler)(fullPath);
+					const videoHandler = new VideoHandler(fullPath);
 					
 					geometry._video = videoHandler;
 				

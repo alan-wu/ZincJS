@@ -1,5 +1,5 @@
 const THREE = require('three');
-const JSONLoader = require('../loader').JSONLoader;
+const JSONLoader = require('../loaders/JSONLoader').JSONLoader;
 
 /**
  * This is a container of {@link Zinc.Glyph} and their graphical properties 

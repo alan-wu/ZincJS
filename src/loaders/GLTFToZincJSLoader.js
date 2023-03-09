@@ -24,11 +24,11 @@ const GLTFToZincJSLoader = function () {
       } else {
         let zincGeometry = undefined;
         if (object.type === "Mesh") {
-          zincGeometry = new (require('./primitives/geometry').Geometry)();
+          zincGeometry = new (require('../primitives/geometry').Geometry)();
         } else if (object.type === "LineSegments") {
-          zincGeometry = new (require('./primitives/lines').Lines)();
+          zincGeometry = new (require('../primitives/lines').Lines)();
         } else if (object.type === "Points") {
-          zincGeometry = new (require('./primitives/pointset').Pointset)();
+          zincGeometry = new (require('../primitives/pointset').Pointset)();
         }
         if (zincGeometry) {
           let localTimeEnabled = false;
