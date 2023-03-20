@@ -1,6 +1,6 @@
 {
   "name": "zincjs",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "ZincJS (Web-based-Zinc-Visualisation)",
   "main": "build/zinc.js",
   "directories": {
@@ -10,6 +10,7 @@
     "package.json",
     "LICENSE",
     "README.md",
+    "src/*",
     "build/zinc.js",
     "build/zinc.frontend.js",
     "build/zinc.js.map",

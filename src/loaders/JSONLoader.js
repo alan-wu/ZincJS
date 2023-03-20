@@ -31,6 +31,8 @@ function JSONLoader( manager ) {
 
 	this.withCredentials = false;
 
+  this.paramsString = "";
+
 }
 
 Object.assign( JSONLoader.prototype, {
@@ -42,6 +44,20 @@ Object.assign( JSONLoader.prototype, {
 		var texturePath = this.texturePath && ( typeof this.texturePath === 'string' ) ? this.texturePath : LoaderUtils.extractUrlBase( url );
 
 		var loader = new FileLoader( this.manager );
+
+    const params = url.split("?");
+
+    //There are parameters, add them to the target
+    if (url.length === 2) {
+
+      this.paramsString =  paramsStrings[1];
+
+    } else {
+
+      this.paramsString = "";
+
+    }
+
 		loader.setWithCredentials( this.withCredentials );
 		loader.load( url, function ( text ) {
 
@@ -641,7 +657,13 @@ Object.assign( JSONLoader.prototype, {
 				if (json.materials[0].video) {
 					
 					var fullPath = texturePath + json.materials[0].video;
-					
+
+          if (this.paramsString) {
+
+            fullPath = fullPath + `?${this.paramsString}`;
+            
+          }
+
 					const videoHandler = new VideoHandler(fullPath);
 					
 					geometry._video = videoHandler;

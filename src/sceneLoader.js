@@ -4,6 +4,20 @@ const STLLoader = require('./loaders/STLLoader').STLLoader;
 const OBJLoader = require('./loaders/OBJLoader').OBJLoader;
 const PrimitivesLoader = require('./loaders/primitivesLoader').PrimitivesLoader;
 
+const createNewURL = (target, reference) => {
+  let newURL = (new URL(target, reference)).href;
+  //Make sure the target url does not contain parameters
+  if (target && target.split("?").length < 2) {
+    const paramsStrings = reference.split("?");
+    //There are parameters, add them to the target
+    if (paramsStrings.length === 2) {
+      newURL = newURL + "?" + paramsStrings[1];
+    }
+  }
+  return newURL;
+}
+
+
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
   this.toBeDownloaded = 0;
@@ -62,7 +76,7 @@ exports.SceneLoader = function (sceneIn) {
       const promises = [];
       for (const [key, value] of Object.entries(views.Entries)) {
         if (referenceURL) {
-          newURL = (new URL(value, referenceURL)).href;
+          newURL = createNewURL(value, referenceURL);
           promises.push(new Promise((resolve, reject) => {
             // Add parameters if we are sent them
             fetch(newURL)
@@ -252,7 +266,7 @@ exports.SceneLoader = function (sceneIn) {
     if (isInline) {
       newGlyphset.load(glyphsetData, glyphurl, myCallback, isInline, displayLabels);
     }
-    else{
+    else {
       newGlyphset.load(glyphsetData, resolveURL(glyphurl), myCallback, isInline, displayLabels);
     }
     newGlyphset.anatomicalId = anatomicalId;
@@ -605,7 +619,7 @@ exports.SceneLoader = function (sceneIn) {
       if (item.URL) {
         newURL = item.URL;
         if (referenceURL)
-          newURL = (new URL(item.URL, referenceURL)).href;
+          newURL = createNewURL(item.URL, referenceURL);
       } else if (item.Inline) {
         newURL = item.Inline.URL;
         isInline = true;
@@ -631,7 +645,7 @@ exports.SceneLoader = function (sceneIn) {
           let newGeometryURL = undefined;
           if (!isInline) {
             newGeometryURL = item.GlyphGeometriesURL;
-            newGeometryURL = (new URL(item.GlyphGeometriesURL, referenceURL)).href;
+            newGeometryURL = createNewURL(item.GlyphGeometriesURL, referenceURL);
           } else {
             newGeometryURL = item.Inline.GlyphGeometriesURL;
           }
@@ -660,7 +674,7 @@ exports.SceneLoader = function (sceneIn) {
       if (item.URL) {
         newURL = item.URL;
         if (referenceURL)
-          newURL = (new URL(item.URL, referenceURL)).href;
+          newURL = createNewURL(item.URL, referenceURL);
       } else if (item.Inline) {
         newURL = item.Inline.URL;
         isInline = true;
@@ -678,8 +692,6 @@ exports.SceneLoader = function (sceneIn) {
           break;
         case "Settings":
           this.loadSettings(item);
-          if (finishCallback != undefined && (typeof finishCallback == 'function'))
-            finishCallback();
           break;
         default:
           break;
