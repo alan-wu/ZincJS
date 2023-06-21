@@ -167,8 +167,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   }
 
   this.getRelativeCoordsFromNDC = (x, y, positionIn) => {
-    if (rect === undefined)
-      rect = this.domElement.getBoundingClientRect();
+    updateRect(false);
     const position = positionIn ? positionIn : new THREE.Vector2();
     position.x = (x + 1) * rect.width / 2.0;
     position.y = (1 - y) * rect.height / 2.0;
@@ -199,8 +198,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   }
 	
 	const onDocumentMouseDown = event => {
-		if (rect === undefined)
-      rect = this.domElement.getBoundingClientRect();
+    updateRect(false);
     // Check if mouse event hapens inside the minimap
     let minimapCoordinates = undefined;
     if (currentMode === MODE.DEFAULT)
@@ -236,8 +234,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   }
 
 	const onDocumentMouseMove = event => {
-		if (rect === undefined)
-			rect = this.domElement.getBoundingClientRect();
+    updateRect(false);
 		this.pointer_x = event.clientX - rect.left;
 		this.pointer_y = event.clientY - rect.top;
     if (currentMode === MODE.MINIMAP) {
@@ -270,8 +267,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 	
 	const onDocumentTouchStart = event => {
-		if (rect === undefined)
-			rect = this.domElement.getBoundingClientRect();
+    updateRect(false);
 		const len = event.touches.length;
 		if (len == 1) {
 			this._state = STATE.TOUCH_ROTATE;
@@ -334,10 +330,27 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			}
 		}
 	}
+
+  const onDocumentEnter = () => {
+		updateRect(true);
+	}
+
+  const updateRect = forced => {
+    //Use intersectionObserver to reset the rect for ray tracing.
+    if (forced || rect === undefined) {
+      const observer = new IntersectionObserver((entries) => {
+        for (const entry of entries) {
+          rect = entry.boundingClientRect;
+        }
+        observer.disconnect();
+      });
+      
+      observer.observe(this.domElement);
+    }
+  }
 	
 	const onDocumentWheelEvent = event => {
-		if (rect === undefined)
-			rect = this.domElement.getBoundingClientRect();
+    updateRect(false);
 		this._state = STATE.SCROLL;
 		let changes = 0;
 		if (event.deltaY > 0)
@@ -578,7 +591,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.addEventListener( 'touchend', onDocumentTouchEnd, false);
 			this.domElement.addEventListener( 'wheel', onDocumentWheelEvent, false);
 			this.domElement.addEventListener( 'contextmenu', event => { event.preventDefault(); }, false );
-	    }
+      this.domElement.addEventListener( 'mouseenter', onDocumentEnter, false );
+	  }
 	}
 	
 	this.disable = function () {
@@ -592,6 +606,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.removeEventListener( 'touchmove', onDocumentTouchMove, false);
 			this.domElement.removeEventListener( 'touchend', onDocumentTouchEnd, false);
 			this.domElement.removeEventListener( 'wheel', onDocumentWheelEvent, false);
+      this.domElement.removeEventListener( 'mouseenter', onDocumentEnter, false );
 			this.domElement.removeEventListener( 'contextmenu', event => { event.preventDefault(); }, false );
 	    }
 	}
