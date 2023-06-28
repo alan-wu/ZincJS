@@ -8,7 +8,7 @@ const Points = require('../three/Points').Points;
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Geometry}
+ * @return {Pointset}
  */
 const Pointset = function () {
   (require('./zincObject').ZincObject).call(this);

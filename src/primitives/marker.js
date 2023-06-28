@@ -6,7 +6,13 @@ texture.image = markerImage;
 texture.needsUpdate = true;
 const size = [0.015, 0.02, 1];
 
-//Marker - used to indicate there is a 
+/**
+ * A special graphics type with a tear drop shape.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {Marker}
+ */
 const Marker = function(zincObject) {
   (require('./zincObject').ZincObject).call(this);
   this.texture = texture;

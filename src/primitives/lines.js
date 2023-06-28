@@ -6,7 +6,7 @@ const THREE = require('three');
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Lines}
+ * @return {Lines}
  */
 const Lines = function () {
   (require('./zincObject').ZincObject).call(this);

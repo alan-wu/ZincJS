@@ -10,7 +10,7 @@ const THREE = require('three');
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Glyph}
+ * @return {Glyph}
  */
 const Glyph = function(geometry, materialIn, idIn, glyphsetIn)  {
   (require('./zincObject').ZincObject).call(this);

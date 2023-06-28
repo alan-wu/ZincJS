@@ -14,15 +14,15 @@ const defaultMetadata = function() {
 const defaultDuration = 6000;
 
 /**
- * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
- * {@link Zinc.CameraControls} which controls the viewport and additional features.
+ * A Scene contains {@link Region},and 
+ * {@link CameraControls} which controls the viewport and additional features.
  * It is the main object used for controlling what is and what is not displayed
  * on the renderer.
  * 
  * @class
  * @param {Object} containerIn - Container to create the renderer on.
  * @author Alan Wu
- * @return {Zinc.Scene}
+ * @return {Scene}
  */
 exports.Scene = function (containerIn, rendererIn) {
   const container = containerIn;

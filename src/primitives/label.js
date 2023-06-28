@@ -1,5 +1,13 @@
 const SpriteText = require('three-spritetext').default;
 
+/**
+ * Bitmap labels, this can be used with {@link Glyph} to 
+ * provide labels.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {Label}
+ */
 exports.Label = function ( textIn, colour ) {
   let text = textIn;
   let sprite = undefined;

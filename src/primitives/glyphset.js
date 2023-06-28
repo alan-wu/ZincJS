@@ -2,14 +2,14 @@ const THREE = require('three');
 const JSONLoader = require('../loaders/JSONLoader').JSONLoader;
 
 /**
- * This is a container of {@link Zinc.Glyph} and their graphical properties 
+ * This is a container of {@link Glyph} and their graphical properties 
  * including transformations, colors, number of time steps, duration of animations
  * and group name. Please note that all glyphs in the glyphset share the same geometry
  * however they may have different transformations.
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Glyphset}
+ * @return {Glyphset}
  */
 const Glyphset = function () {
   (require('./zincObject').ZincObject).call(this);

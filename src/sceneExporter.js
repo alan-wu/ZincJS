@@ -5,7 +5,7 @@ const GLTFExporter = require('./three/GLTFExporter').GLTFExporter;
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Lines}
+ * @return {SceneExporter}
  */
 const SceneExporter = function (sceneIn) {
   const scene = sceneIn;

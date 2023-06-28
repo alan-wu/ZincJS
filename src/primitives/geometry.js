@@ -7,7 +7,7 @@ const THREE = require('three');
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Geometry}
+ * @return {Geometry}
  */
 const Geometry = function () {
   (require('./zincObject').ZincObject).call(this);

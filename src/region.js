@@ -1,5 +1,13 @@
 const { Group, Matrix4 } = require('three');
 
+/**
+ * Provides a hierachical structure to objects, Each region
+ * may contain multiple child regions and {@link ZincObject}.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {Region}
+ */
 let Region = function (parentIn) {
   let parent = parentIn;
   let group = new Group();

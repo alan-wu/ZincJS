@@ -1,6 +1,14 @@
 const THREE = require('three');
 const THREEGeometry = require('../three/Geometry').Geometry;
 
+/**
+ * Provides the base object for other primitive types.
+ * This class contains multiple base methods.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {ZincObject}
+ */
 const ZincObject = function() {
   this.isZincObject = true;
   this.geometry = undefined;

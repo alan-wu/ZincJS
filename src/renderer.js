@@ -3,14 +3,14 @@ const ResizeSensor = require('css-element-queries/src/ResizeSensor');
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
- * scene (@link Zinc.Scene} set to the renderer and each scene may contain as 
+ * scene (@link Scene} set to the renderer and each scene may contain as 
  * many geometries, glyphset and other primitives as the system can support.
  * Zinc.Renderer also allows additional scenes to be displayed.
  * 
  * @param {Object} containerIn - Container to create the renderer on.
  * @class
  * @author Alan Wu
- * @return {Zinc.Renderer}
+ * @return {Renderer}
  */
 exports.Renderer = function (containerIn) {
 

@@ -19,6 +19,13 @@ const Viewport = function () {
 
 };
 
+/**
+ * Provides the basic controls for a scene.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {CameraControls}
+ */
 const CameraControls = function ( object, domElement, renderer, scene ) {
 	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5, SYNC_CONTROL: 6 };
 	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };

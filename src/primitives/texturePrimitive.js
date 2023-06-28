@@ -4,7 +4,7 @@ const THREE = require('three');
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Lines}
+ * @return {TexturePrimitive}
  */
 const TexturePrimitive = function (textureIn) {
   (require('./zincObject').ZincObject).call(this);
