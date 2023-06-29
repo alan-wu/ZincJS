@@ -1,11 +1,23 @@
 const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
 
+/**
+ * Object with containg viewport information used in ZincJS.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {Viewport}
+ */
 const Viewport = function () {
+  /** @property {Number} */
 	this.nearPlane = 0.168248;
+  /** @property {Number} */
 	this.farPlane = 6.82906;
+  /**@property {Array} */
 	this.eyePosition = [0.5, -2.86496, 0.5];
+  /** @property {Array} */
 	this.targetPosition = [0.5, 0.5, 0.5];
+  /** @property {Array} */
 	this.upVector = [ 0.0, 0.0, 1.0];
 	const _this = this;
 
@@ -16,7 +28,6 @@ const Viewport = function () {
     _this.targetPosition = targetPosition;
     _this.upVector = upVector;
   }
-
 };
 
 /**
@@ -28,8 +39,17 @@ const Viewport = function () {
  */
 const CameraControls = function ( object, domElement, renderer, scene ) {
 	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5, SYNC_CONTROL: 6 };
+  /** 
+   * Actions states.
+   * Available states are NONE, ROTATE, ZOOM, PAN, TOUCH_ROTATE, TOUCH_ZOOM, TOUCH_PAN and SCROLL.
+   * @property {Object} 
+   */
 	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
   const ROTATE_DIRECTION = { NONE: -1, FREE: 1, HORIZONTAL: 2, VERTICAL: 3 };
+  /** 
+   * Available click actions are MAIN, AUXILIARY and SECONARY.
+   * @property {Object} 
+   */
 	const CLICK_ACTION = {};
 	CLICK_ACTION.MAIN = STATE.ROTATE;
 	CLICK_ACTION.AUXILIARY = STATE.ZOOM;
@@ -112,25 +132,58 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     }
   }
 
+  /**
+   * Add a viewport to the list of available named viewports.
+   * 
+   * @param {String} name - Name of the viewport
+   * @param {Viewport} viewportName - Viewport to be added
+   */
   this.addViewport = (viewportName, viewport) => {
     if (viewportName && viewport)
       viewports[viewportName] = viewport;
   }
 
+  /**
+   * Set the default viewport for this {@link CameraControls}.
+   * 
+   * @param {String} defaultName - Name of the viewport
+   * 
+   * @return {Boolean} true if set successfully, false otherwise.
+   */
   this.setDefaultViewport = defaultName => {
 		if (defaultName && (defaultName in viewports)) {
       defaultViewport = defaultName;
-    }	
+      return true;
+    }
+    return false
 	}
 
+  /**
+   * Get the name of the default viewport.
+   * 
+   * 
+   * @return {String}
+   */
   this.getDefaultViewport = () => {
 		return defaultViewport;
 	}
 	
+  /**
+   * Get the viewport with the provied name stored in this object.
+   * @param {String} name - Name of the viewport
+   * 
+   * @return {Viewport}
+   */
 	this.getViewportOfName = name => {
 		return viewports[name];
 	}
 
+  /**
+   * Set the viewport with a name if it is found in the list.
+   * @param {String} name - Name of the viewport
+   * 
+   * @return {Boolean} if viewport is found and set, otherwise false.
+   */
   this.setCurrentViewport = name => {
     if (name in viewports) {
       this.setCurrentCameraSettings(viewports[name])
@@ -139,6 +192,12 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     return false;
 	}
 
+  /**
+   * Set the direction of rotation allowed with this control.
+   * 
+   * @param {String} mode - available options are none, horizontal,
+   * vertical and free.
+   */
   this.setRotationMode = mode => {
     switch (mode) {
       case "none":
@@ -164,15 +223,36 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
         viewports[defaultViewport]);
 	}
 
-  //Get the NDC coordinates from the given dom coordiantes
+  /**
+   * Get normalised coordinates from windows coordinates.
+   * 
+   * @param {String} x
+   * @param {String} y
+   * @param {THREE.Vector2} positionIn - Optional, write the value into
+   * this object if it is provided, otherwise a new object will 
+   * be created and returned.
+   * 
+   * @return {THREE.Vector2} containing the normalised x and y coordinates.
+   */
   this.getNDCFromDocumentCoords = (x, y, positionIn) => {
-
+    updateRect(false);
     const position = positionIn ? positionIn : new THREE.Vector2();
     position.x = ((x - rect.left) / rect.width) * 2 - 1;
     position.y = -((y - rect.top) / rect.height) * 2 + 1;
     return position;
   }
 
+  /**
+   * Get the relative windows coordinates from normalised coordiantes.
+   * 
+   * @param {String} x 
+   * @param {String} y
+   * @param {THREE.Vector2} positionIn - Optional, write the value into
+   * this object if it is provided, otherwise a new object will 
+   * be created and returned.
+   * 
+   * @return {THREE.Vector2} containing the relative x and y coordinates.
+   */
   this.getRelativeCoordsFromNDC = (x, y, positionIn) => {
     updateRect(false);
     const position = positionIn ? positionIn : new THREE.Vector2();
@@ -181,6 +261,12 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     return position;
   }
 
+  /**
+   * Map a mouse click to the specified action.
+   * 
+   * @param {String} buttonName - please see {@link CLICK_ACTION}
+   * @param {String} actionName - please see {@link STATE}
+   */
 	this.setMouseButtonAction = (buttonName, actionName) => {
 		CLICK_ACTION[buttonName] = STATE[actionName];
   }

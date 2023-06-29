@@ -1,4 +1,5 @@
 const THREE = require('three');
+
 /**
  * Provides a base class object which stores textures and rendering object.
  * 

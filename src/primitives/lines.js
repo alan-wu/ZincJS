@@ -1,7 +1,8 @@
 const THREE = require('three');
+
 /**
- * Provides an object which stores points and provides method which controls its position.
- * This is created when a valid json file containing point is read into a {@link Zinc.Scene}
+ * Provides an object which stores lines.
+ * This is created when a valid json file containing lines is read into a {@link Zinc.Scene}
  * object.
  * 
  * @class
@@ -12,6 +13,17 @@ const Lines = function () {
   (require('./zincObject').ZincObject).call(this);
 	this.isLines = true;
 
+  /**
+   * Create the line segements using geometry and material.
+   * 
+   * @param {THREE.Geomtry} geometryIn - Geometry of lines to be rendered.
+   * @param {THREE.Material} materialIn - Material to be set for the lines.
+   * @param {Object} options - Provide various options
+   * @param {Boolean} options.localTimeEnabled - A flag to indicate either the lines is
+   * time dependent.
+   * @param {Boolean} options.localMorphColour - A flag to indicate either the colour is
+   * time dependent.
+   */
 	this.createLineSegment = (geometryIn, materialIn, options) => {
 		if (geometryIn && materialIn) {
 			let geometry = this.toBufferGeometry(geometryIn, options);
@@ -22,6 +34,12 @@ const Lines = function () {
 		}		
 	}
 
+
+  /**
+   * Set the width for the lines.
+   * 
+   * @param {Number} width - Width of the lines.
+   */
 	this.setWidth = width => {
 		if (this.morph && this.morph.material) {
 			this.morph.material.linewidth = width;

@@ -15,6 +15,19 @@ const Geometry = function () {
 	this.videoHandler = undefined;
   this.isGeometry = true;
 
+  /**
+   * Create the mesh for rendering
+   * 
+   * @param {THREE.Geomtry} geometryIn - Geometry to be rendered.
+   * @param {THREE.Material} materialIn - Material to be set for the geometry.
+   * @param {Object} options - Provide various options
+   * @param {THREE.Color}  options.colour - colour to be set for the geometry
+   * @param {Boolean} options.localTimeEnabled - A flag to indicate either the geometry is
+   * time dependent.
+   * @param {Boolean} options.localMorphColour - A flag to indicate either the colour is
+   * time dependent.
+   * @param {Number} options.opacity - Opacity to be set for the geometry
+   */
 	this.createMesh = (geometryIn, materialIn, options) => {
 		if (this.geometry && this.morph && (geometryIn != undefined))
 			return;
@@ -73,7 +86,10 @@ const Geometry = function () {
 		let mesh = new THREE.Mesh(geometry, material); 
 		this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
 	}
-	
+
+  /**
+   * Calculate the UV for texture rendering.
+   */
 	this.calculateUVs = () => {
 		this.geometry.computeBoundingBox();
 		const max = this.geometry.boundingBox.max, min = this.geometry.boundingBox.min;
