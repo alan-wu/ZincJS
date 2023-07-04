@@ -22,7 +22,7 @@
     "test": "npm --prefix ./test install && npm --prefix ./test run test-ci",
     "changelog": "auto-changelog -p --output CHANGELOG.md --template keepachangelog",
     "jsdoc": "jsdoc -c jsdoc_conf.json",
-    "version": "npm run build-bundle;npm run changelog; git add CHANGELOG.md",
+    "version": "npm run build-bundle;npm run jsdoc;npm run changelog; git add CHANGELOG.md docs",
     "release:beta": "npm version prerelease --preid=beta; npm publish --tag beta",
     "release:minor": "npm version minor; npm publish",
     "release:patch": "npm version patch;  npm publish"
