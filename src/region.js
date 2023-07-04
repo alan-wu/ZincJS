@@ -21,53 +21,99 @@ let Region = function (parentIn) {
   tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
   this.pickableUpdateRequired = true;
 
+  /**
+   * Hide all primitives belong to this region.
+   */
   this.hideAllPrimitives = () => {
     children.forEach(child => child.hideAllPrimitives());
     zincObjects.forEach(zincObject => zincObject.setVisibility(false));
   }
 
+  /**
+   * Show all primitives belong to this region.
+   */
   this.showAllPrimitives = () => {
     children.forEach(child => child.showAllPrimitives());
     zincObjects.forEach(zincObject => zincObject.setVisibility(true));
   }
 
-  /***
-   * Set the visibility and propagate it up and down the hierarchies
-   * depending on the flag
-  */
+  /**
+   * Set the visibility and propagate it down the hierarchies
+   * depending on the flag.
+   * 
+   * @param {Boolean} flag - A flag indicating either the visibilty to be on/off.
+   */
   this.setVisibility = (flag) => {
     group.visible = flag;
   }
 
+  /**
+   * Get the visibility of the region and its children.
+   * 
+   * @return {Boolean}
+   */
   this.getVisibility = () => {
     return group.visible;
   }
 
+  /**
+   * Get the {THREE.Group} containing all child regions and their
+   * primitives.
+   * 
+   * @return {THREE.Group}
+   */
   this.getGroup = () => {
     return group;
   }
 
+  /**
+   * Set the transformation with a {THREE.Matrix4} matrix, this will affect
+   * all primitives in this and its child regions
+   * 
+   * @param {THREE.Matrix4} transformation - The transformation matrix
+   * used for the transformation.
+   */
   this.setTransformation = transformation => {
     tMatrix.set(...transformation);
     group.matrix.copy(tMatrix);
     group.updateMatrixWorld();
   }
 
+  /**
+   * Set the name of this region.
+   * 
+   * @param {String} nameIn - Name to be set for this region. It must be defined
+   * and non-empty.
+   */
   this.setName = (nameIn) => {
     if (nameIn && nameIn !== "") {
       name = nameIn;
     }
   }
 
+  /**
+   * Get the name of this region.
+   * 
+   * @return {String}
+   */
   this.getName = () => {
     return name;
   }
 
+  /**
+   * Get the parent region.
+   * 
+   * @return {Region}
+   */
   this.getParent = () => {
     return parent;
   }
 
-  //This function returns the full path until it reaches the root
+  /**
+   * Get the array of each hierarachy from the root region to this region.
+   * 
+   * @return {Array}
+   */
   this.getFullSeparatedPath = () => {
     const paths = [];
     if (name !== "") {
@@ -83,7 +129,11 @@ let Region = function (parentIn) {
     return paths;
   }
 
-  //This function returns the full path until it reaches the root
+  /**
+   * Get the full paths from the root region to this region.
+   * 
+   * @return {String}
+   */
   this.getFullPath = () => {
     const paths = this.getFullSeparatedPath();
     if (paths.length > 0) {
@@ -96,6 +146,12 @@ let Region = function (parentIn) {
     return "";
   }
 
+  /**
+   * Create a new child region with the provided name.
+   * @param {String} nameIn - Name to be set for the new child region.
+   * 
+   * @return {Region}
+   */
   this.createChild = (nameIn) => {
     let childRegion = new Region(this);
     childRegion.setName(nameIn);
@@ -104,6 +160,12 @@ let Region = function (parentIn) {
     return childRegion;
   }
 
+  /**
+   * Get the child region with matching childName.
+   * @param {String} childName - Name to be matched.
+   * 
+   * @return {Region}
+   */
   this.getChildWithName = childName => {
     if (childName) {
       const lowerChildName = childName.toLowerCase();
@@ -115,6 +177,13 @@ let Region = function (parentIn) {
     return undefined;
   }
 
+  /**
+   * Find a child region using the path array.
+   * @param {Array} pathArray - Array containing regions' name at each
+   * hierarchy to match.
+   * 
+   * @return {Region}
+   */
   this.findChildFromSeparatedPath = pathArray => {
     if (pathArray && pathArray.length > 0) {
       if (pathArray[0] === "") {
@@ -133,11 +202,28 @@ let Region = function (parentIn) {
     return this;
   }
 
+  /**
+   * Find the region using the provided relative path.
+   * 
+   * @param {String} path - Relative paths from this region
+   * to the child region.
+   * 
+   * @return {Region}
+   */
   this.findChildFromPath = (path) => {
     const pathArray = path.split("/");
     return this.findChildFromSeparatedPath(pathArray);
   }
 
+  /**
+   * Create a new child using the path array. All required new regions
+   * down the path will be created.
+   * 
+   * @param {Array} pathArray - Array containing regions' name, new regions
+   * will be created along the path if not found.
+   * 
+   * @return {Region}
+   */
   this.createChildFromSeparatedPath = pathArray => {
     if (pathArray.length > 0) {
       if (pathArray[0] === "") {
@@ -155,11 +241,30 @@ let Region = function (parentIn) {
     return this;
   }
 
+  /**
+   * Create a new child using the path. All required new regions
+   * down the path will be created.
+   * 
+   * @param {String} path - Relative paths from the region
+   * to the child region.
+   * 
+   * @return {Region}
+   */
   this.createChildFromPath = (path) => {
     const pathArray = path.split("/");
     return this.createChildFromSeparatedPath(pathArray);
   }
 
+
+  /**
+   * Return existing region if it exists, otherwise, create a new
+   * region with the provided path.
+   * 
+   * @param {String} path - Relative paths from the region
+   * to the child region.
+   * 
+   * @return {Region}
+   */
   this.findOrCreateChildFromPath = (path) => {
     let childRegion = this.findChildFromPath(path);
     if (!childRegion) {
@@ -168,6 +273,13 @@ let Region = function (parentIn) {
     return childRegion;
   }
 
+  /**
+   * Add a zinc object into this region, the morph will be added
+   * to the group.
+   * 
+   * @param {ZincObject} zincObject - Zinc object to be added into
+   * this region.
+   */
   this.addZincObject = zincObject => {
     if (zincObject) {
       zincObject.setRegion(this);
@@ -180,7 +292,8 @@ let Region = function (parentIn) {
   /**
    * Remove a ZincObject from this region if it presents. This will eventually
    * destroy the object and free up the memory.
-   * @param {Zinc.Object} zincObject - object to be removed from this region.
+   * 
+   * @param {ZincObject} zincObject - object to be removed from this region.
    */
   this.removeZincObject = zincObject => {
     for (let i = 0; i < zincObjects.length; i++) {
@@ -193,6 +306,14 @@ let Region = function (parentIn) {
     }
   }
 
+  /**
+   * Return true if pickable objects require an update.
+   * 
+   * @param {Boolean} transverse - Check child regions as well
+   * if this is set to true.
+   * 
+   * @return {Boolean}
+   */
   this.checkPickableUpdateRequred = (transverse) => {
     if (this.pickableUpdateRequired) return true;
     if (transverse) {
@@ -234,6 +355,7 @@ let Region = function (parentIn) {
   /**
    * Set the default duration value for all zinc objects
    * that are to be loaded into this region.
+   * 
    * @param {Number} durationIn - duration of the scene.
    */
   this.setDuration = durationIn => {
@@ -284,6 +406,12 @@ let Region = function (parentIn) {
     return boundingBox1;
   }
 
+  /**
+   * Clear and dispose all objects belong to this region.
+   * 
+   * @param {Boolean} transverse - Clear and dispose child regions as well
+   * if this is set to true.
+   */
   this.clear = transverse => {
     if (transverse) {
       children.forEach(childRegion => childRegion.clear(transverse));
@@ -296,6 +424,14 @@ let Region = function (parentIn) {
     zincObjects = [];
   }
 
+  /**
+   * Check if a zincObject is a member of this region.
+   * 
+   * @param {ZincObject} zincObject - The ZincObject to be checked.
+   * @param {Boolean} transverse - Also check the child regions.
+   * 
+   * @return {Boolean}
+   */
   this.objectIsInRegion = (zincObject, transverse) => {
     for (let i = 0; i < zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
@@ -315,8 +451,11 @@ let Region = function (parentIn) {
   /**
    * A function which iterates through the list of geometries and call the callback
    * function with the geometries as the argument.
+   * 
    * @param {Function} callbackFunction - Callback function with the geometry
    * as an argument.
+   * @param {Boolean} transverse - Also perform the same callback function for
+   * all child regions if this is set to be true.
    */
   this.forEachGeometry = (callbackFunction, transverse) => {
     zincObjects.forEach(zincObject => {
@@ -331,8 +470,11 @@ let Region = function (parentIn) {
   /**
    * A function which iterates through the list of glyphsets and call the callback
    * function with the glyphset as the argument.
+   * 
    * @param {Function} callbackFunction - Callback function with the glyphset
    * as an argument.
+   * @param {Boolean} transverse - Also perform the same callback function for
+   * all child regions if this is set to be true.
    */
   this.forEachGlyphset = (callbackFunction, transverse) => {
     zincObjects.forEach(zincObject => {
@@ -347,8 +489,11 @@ let Region = function (parentIn) {
   /**
    * A function which iterates through the list of pointsets and call the callback
    * function with the pointset as the argument.
+   * 
    * @param {Function} callbackFunction - Callback function with the pointset
    * as an argument.
+   * @param {Boolean} transverse - Also perform the same callback function for
+   * all child regions if this is set to be true.
    */
   this.forEachPointset = (callbackFunction, transverse) => {
     zincObjects.forEach(zincObject => {
@@ -363,8 +508,11 @@ let Region = function (parentIn) {
   /**
   * A function which iterates through the list of lines and call the callback
   * function with the lines as the argument.
+  * 
   * @param {Function} callbackFunction - Callback function with the lines
   * as an argument.
+   * @param {Boolean} transverse - Also perform the same callback function for
+   * all child regions if this is set to be true.
   */
   this.forEachLine = (callbackFunction, transverse) => {
     zincObjects.forEach(zincObject => {
@@ -396,6 +544,8 @@ let Region = function (parentIn) {
    * the matching GroupName.
    * 
    * @param {String} groupName - Groupname to match with.
+   * @param {Boolean} transverse - Also look for the object with groupName
+   * in child regions if set to true.
    * @returns {Array}
    */
   this.findObjectsWithGroupName = (groupName, transverse) => {
@@ -420,6 +570,8 @@ let Region = function (parentIn) {
    * the matching GroupName.
    * 
    * @param {String} groupName - Groupname to match with.
+   * @param {Boolean} transverse - Also look for the object with groupName
+   * in child regions if set to true.
    * @returns {Array}
    */
   this.findGeometriesWithGroupName = (groupName, transverse) => {
@@ -433,6 +585,8 @@ let Region = function (parentIn) {
    * the matching groupName.
    * 
    * @param {String} groupName - Groupname to match with.
+   * @param {Boolean} transverse - Also look for the object with groupName
+   * in child regions if set to true.
    * @returns {Array}
    */
   this.findPointsetsWithGroupName = (groupName, transverse) => {
@@ -446,6 +600,8 @@ let Region = function (parentIn) {
    * the matching groupName.
    * 
    * @param {String} groupName - Groupname to match with.
+   * @param {Boolean} transverse - Also look for the object with groupName
+   * in child regions if set to true.
    * @returns {Array}
    */
   this.findGlyphsetsWithGroupName = (groupName, transverse) => {
@@ -459,6 +615,8 @@ let Region = function (parentIn) {
    * the matching groupName.
    * 
    * @param {String} groupName - Groupname to match with.
+   * @param {Boolean} transverse - Also look for the object with groupName
+   * in child regions if set to true.
    * @returns {Array}
    */
   this.findLinesWithGroupName = (groupName, transverse) => {
@@ -468,10 +626,10 @@ let Region = function (parentIn) {
   }
 
   /** 
-   * Find and return all lines in this and child regions with
-   * the matching groupName.
+   * Get all zinc objects in this region.
    * 
-   * @param {String} groupName - Groupname to match with.
+   * @param {Boolean} transverse - Include zinc objects in child regions if this is
+   * set to true.
    * @returns {Array}
    */
   this.getAllObjects = transverse => {
@@ -486,6 +644,7 @@ let Region = function (parentIn) {
   /**
    * Get the current time of the region.
    * Return -1 if no graphics in the region.
+   * 
    * @return {Number}
    */
   this.getCurrentTime = () => {
@@ -503,7 +662,10 @@ let Region = function (parentIn) {
 
   /**
    * Set the current time of all the objects of this region.
+   * 
    * @param {Number} time  - Value to set the time to.
+   * @param {Boolean} transverse - Set the time for chidl regions if
+   * this is set to true.
    */
   this.setMorphTime = (time, transverse) => {
     zincObjects.forEach(zincObject => {
