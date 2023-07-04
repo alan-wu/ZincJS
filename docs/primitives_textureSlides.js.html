@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: primitives/textureSlides.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: primitives/textureSlides.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const THREE = require('three');
+const shader = require("../shaders/textureSlide.js");
+/**
+ * Provides a class which create a texture stacks in a block
+ * with shaders allowing slices of texture to be displayed.
+ * 
+ * @param {TextureArray} textureIn - An object of texture array
+ * holding texture information.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {TextureSlides}
+ */
+const TextureSlides = function (textureIn) {
+  (require('./texturePrimitive').TexturePrimitive).call(this, textureIn);
+  this.isTextureSlides = true;
+  
+  /**
+    @typedef SLIDE_SETTINGS
+    @type {Set}
+    @property {String} direction - the value must be x, y or z, specify the
+    direction the slide should be facing.
+    @property {Number} value - Normalised value of the location on direction.
+   */
+  /**
+   * Create the slides required for visualisation based on the slide settings.
+   * The slides itself is an {THREE.PlanGeometry} object.
+   * 
+   * @param {SLIDE_SETTINGS} slideSettings - An array to each slide settings.
+   */
+  this.createSlides = slideSettings => {
+    if (!this.morph) this.morph = new THREE.Group();
+    if (this.texture &amp;&amp; this.texture.isTextureArray &amp;&amp; this.texture.isReady()) {
+      slideSettings.forEach(slide => {
+        if (slide.direction &amp;&amp; slide.value) {
+          const geometry = new THREE.PlaneGeometry( 1, 1 );
+          geometry.translate(0.5, 0.5, 0);
+          const uniforms = shader.getUniforms();
+          uniforms.diffuse.value = this.texture.impl;
+          uniforms.depth.value = this.texture.size.depth;
+          switch(slide.direction) {
+            case "x":
+              uniforms.slide.value.set(slide.value, 0, 0);
+              break;
+            case "y":
+              uniforms.slide.value.set(0, slide.value, 0);
+              break;
+            case "z":
+              uniforms.slide.value.set(0, 0, slide.value);
+              break;
+            default:
+              break;
+          }
+          const options = {
+            fs: shader.fs,
+            vs: shader.vs,
+            uniforms: uniforms,
+            glslVersion: shader.glslVersion,
+            side: THREE.DoubleSide,
+            transparent: false
+          };
+          const material = this.texture.getMaterial(options);
+          material.needsUpdate = true;
+          const mesh = new THREE.Mesh( geometry, material );
+          this.morph.add(mesh);
+        }
+      });
+    }
+  }
+
+  /**
+   * Get  the array of slides, return them in an array
+   *
+   * @return {Array} - Return an array of {@link THREE.Object)
+   */
+  this.getSlides = () => {
+    if (this.morph) return [...this.morph.children];
+    return [];
+  }
+
+  /**
+   * Remove a slide, this will dispose the slide and its material.
+   *
+   * @param {Slide} slide - An array to each slide settings.
+   */
+  this.removeSlide = slide => {
+    if (slide &amp;&amp; this.morph) {
+      if (this.morph.getObjectById(slide.id)) {
+        this.morph.remove(slide);
+        slide.disppose();
+        if (slide.geometry)
+          slide.geometry.dispose();
+        if (slide.material)
+          slide.material.dispose();
+      }
+    }
+  }
+
+  /**
+   * Clean up all internal objects.
+   */
+  this.dispose = () => {
+    this.morph.children.forEach(slide=> {
+      if (slide.geometry)
+        slide.geometry.dispose();
+      if (slide.material)
+        slide.material.dispose();
+    });
+    (require('./texturePrimitive').TexturePrimitive).prototype.dispose.call(this);
+  }
+
+  /**
+   * Get the bounding box of this geometry.
+   * 
+   * @return {THREE.Box3}.
+   */
+  this.getBoundingBox = function() {
+    if (this.morph &amp;&amp; this.morph.children &amp;&amp; this.morph.visible &amp;&amp;
+      this.boundingBoxUpdateRequired) {
+      let first = true;
+      this.morph.children.forEach( morph => {
+        if (first) {
+          this.cachedBoundingBox.setFromBufferAttribute(
+            morph.geometry.attributes.position);
+          first = false;
+        } else {
+          this.cachedBoundingBox.expandByObject(morph);
+        }
+      });
+      this.boundingBoxUpdateRequired = false;
+      return this.cachedBoundingBox;
+    }
+    return undefined;
+  }
+}
+
+
+TextureSlides.prototype = Object.create((require('./texturePrimitive').TexturePrimitive).prototype);
+exports.TextureSlides = TextureSlides;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Jul 04 2023 15:09:36 GMT+1200 (New Zealand Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

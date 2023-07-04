@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Class: Geometry</title>
+    <title>JSDoc: Class: Viewport</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Class: Geometry</h1>
+    <h1 class="page-title">Class: Viewport</h1>
 
     
 
@@ -28,7 +28,7 @@
 
 <header>
     
-        <h2><span class="attribs"><span class="type-signature"></span></span>Geometry<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Geometry.html">Geometry</a>}</span></h2>
+        <h2><span class="attribs"><span class="type-signature"></span></span>Viewport<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Viewport.html">Viewport</a>}</span></h2>
         
     
 </header>
@@ -41,7 +41,7 @@
     
 
     
-    <h4 class="name" id="Geometry"><span class="type-signature"></span>new Geometry<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Geometry.html">Geometry</a>}</span></h4>
+    <h4 class="name" id="Viewport"><span class="type-signature"></span>new Viewport<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Viewport.html">Viewport</a>}</span></h4>
     
 
     
@@ -49,9 +49,7 @@
 
 
 <div class="description">
-    Provides an object which stores geometry and provides method which controls its animations.
-This is created when a valid json file containging geometry is read into a Zinc.Scene
-object.
+    Object with containg viewport information used in ZincJS.
 </div>
 
 
@@ -102,7 +100,7 @@ object.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_geometry.js.html">primitives/geometry.js</a>, <a href="primitives_geometry.js.html#line12">line 12</a>
+        <a href="controls.js.html">controls.js</a>, <a href="controls.js.html#line11">line 11</a>
     </li></ul></dd>
     
 
@@ -138,7 +136,7 @@ object.
     </dt>
     <dd>
         
-<span class="param-type"><a href="Geometry.html">Geometry</a></span>
+<span class="param-type"><a href="Viewport.html">Viewport</a></span>
 
 
     </dd>
@@ -166,35 +164,65 @@ object.
     
 
     
-
-    
-        <h3 class="subsection-title">Methods</h3>
+        <h3 class="subsection-title">Members</h3>
 
         
             
+<h4 class="name" id="eyePosition"><span class="type-signature"></span>eyePosition<span class="type-signature"></span></h4>
+
+
+
+
+
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
 
     
 
+<table class="props">
+    <thead>
+    <tr>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
     
-    <h4 class="name" id="calculateUVs"><span class="type-signature"></span>calculateUVs<span class="signature">()</span><span class="type-signature"></span></h4>
-    
+
+        <tr>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
 
     
-
-
-
-<div class="description">
-    Calculate the UV for texture rendering.
-</div>
-
-
-
-
-
-
-
-
-
+    </tbody>
+</table>
 
 
 
@@ -228,7 +256,7 @@ object.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_geometry.js.html">primitives/geometry.js</a>, <a href="primitives_geometry.js.html#line93">line 93</a>
+        <a href="controls.js.html">controls.js</a>, <a href="controls.js.html#line17">line 17</a>
     </li></ul></dd>
     
 
@@ -244,53 +272,26 @@ object.
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         
             
+<h4 class="name" id="farPlane"><span class="type-signature"></span>farPlane<span class="type-signature"></span></h4>
+
+
+
+
+
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
 
     
 
-    
-    <h4 class="name" id="createMesh"><span class="type-signature"></span>createMesh<span class="signature">(geometryIn, materialIn, options)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Create the mesh for rendering
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
+<table class="props">
     <thead>
     <tr>
-        
-        <th>Name</th>
         
 
         <th>Type</th>
@@ -307,167 +308,6 @@ object.
     
 
         <tr>
-            
-                <td class="name"><code>geometryIn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Geomtry</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Geometry to be rendered.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>materialIn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Material</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Material to be set for the geometry.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Provide various options
-                <h6>Properties</h6>
-                
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>colour</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Color</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">colour to be set for the geometry</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>localTimeEnabled</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">A flag to indicate either the geometry is
-time dependent.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>localMorphColour</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">A flag to indicate either the colour is
-time dependent.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>opacity</code></td>
             
 
             <td class="type">
@@ -483,21 +323,12 @@ time dependent.</td>
 
             
 
-            <td class="description last">Opacity to be set for the geometry</td>
+            <td class="description last"></td>
         </tr>
 
     
     </tbody>
 </table>
-
-            </td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
 
 
 
@@ -531,7 +362,7 @@ time dependent.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_geometry.js.html">primitives/geometry.js</a>, <a href="primitives_geometry.js.html#line31">line 31</a>
+        <a href="controls.js.html">controls.js</a>, <a href="controls.js.html#line15">line 15</a>
     </li></ul></dd>
     
 
@@ -547,53 +378,26 @@ time dependent.</td>
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         
             
+<h4 class="name" id="nearPlane"><span class="type-signature"></span>nearPlane<span class="type-signature"></span></h4>
+
+
+
+
+
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
 
     
 
-    
-    <h4 class="name" id="setWireframe"><span class="type-signature"></span>setWireframe<span class="signature">(wireframe)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set wireframe display for this geometry.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
+<table class="props">
     <thead>
     <tr>
-        
-        <th>Name</th>
         
 
         <th>Type</th>
@@ -611,13 +415,11 @@ time dependent.</td>
 
         <tr>
             
-                <td class="name"><code>wireframe</code></td>
-            
 
             <td class="type">
             
                 
-<span class="param-type">Boolean</span>
+<span class="param-type">Number</span>
 
 
             
@@ -627,14 +429,12 @@ time dependent.</td>
 
             
 
-            <td class="description last">Flag to turn on/off wireframe display.</td>
+            <td class="description last"></td>
         </tr>
 
     
     </tbody>
 </table>
-
-
 
 
 
@@ -668,7 +468,7 @@ time dependent.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_geometry.js.html">primitives/geometry.js</a>, <a href="primitives_geometry.js.html#line118">line 118</a>
+        <a href="controls.js.html">controls.js</a>, <a href="controls.js.html#line13">line 13</a>
     </li></ul></dd>
     
 
@@ -684,6 +484,9 @@ time dependent.</td>
 
 
 
+        
+            
+<h4 class="name" id="targetPosition"><span class="type-signature"></span>targetPosition<span class="type-signature"></span></h4>
 
 
 
@@ -692,6 +495,95 @@ time dependent.</td>
 
 
 
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="controls.js.html">controls.js</a>, <a href="controls.js.html#line19">line 19</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
 
 
 
@@ -699,6 +591,114 @@ time dependent.</td>
 
 
         
+            
+<h4 class="name" id="upVector"><span class="type-signature"></span>upVector<span class="type-signature"></span></h4>
+
+
+
+
+
+
+
+
+
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    
+
+<table class="props">
+    <thead>
+    <tr>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="controls.js.html">controls.js</a>, <a href="controls.js.html#line21">line 21</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+        
+    
+
     
 
     

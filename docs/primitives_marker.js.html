@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: primitives/marker.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: primitives/marker.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>var THREE = require('three');
+const markerImage = new Image(128, 128);
+markerImage.src = require("../assets/mapMarker.svg");
+const texture = new THREE.Texture();
+texture.image = markerImage;
+texture.needsUpdate = true;
+const size = [0.015, 0.02, 1];
+
+/**
+ * A special graphics type with a tear drop shape.
+ * It is currently used to mark the location of a
+ * {@link zincObject}.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {Marker}
+ */
+const Marker = function(zincObject) {
+  (require('./zincObject').ZincObject).call(this);
+  this.texture = texture;
+  let spriteMaterial = undefined;
+  let sprite = undefined;
+  this.morph = new THREE.Group();
+  this.parent = zincObject;
+  this.isMarker = true;
+  let enabled = false;
+  let vector = new THREE.Vector3();
+
+
+	let initialise = () => {
+    spriteMaterial = new THREE.SpriteMaterial({
+      map: texture,
+      alphaTest: 0.5,
+      transparent: true,
+      depthTest: false,
+      depthWrite: false,
+      sizeAttenuation: false
+    });              
+    sprite = new THREE.Sprite(spriteMaterial);
+    sprite.center.set(0.5, 0);
+    this.morph.add(sprite);
+    this.morph.position.set(0, 0, 0);
+    this.morph.renderOrder = 10000;
+    sprite.scale.set(size[0], size[1], size[2]);
+    sprite.userData = this;
+  }
+
+  this.updateVisual = (min, max) => {
+    let scale = 1;
+    let opacity = 1;
+    let porportion = 0;
+    if (min !== max) {
+      porportion = (1 - (vector.z - min) / (max - min));
+      scale = 0.5 +  porportion * 0.5;
+      opacity = 0.6 +  porportion * 0.4;
+    }
+    sprite.material.opacity = opacity;
+    this.setSpriteSize(scale);
+  }
+
+  this.updateNDC = camera => {
+    vector.copy(this.morph.position);
+    vector.project(camera);
+    vector.z = Math.min(Math.max(vector.z, 0), 1);
+    return vector.z;
+  }
+
+  /**
+   * Set the position of the marker.
+   * 
+   * @param {Number} x - x coordinate to be set.
+   * @param {Number} y - y coordinate to be set.
+   * @param {Number} z - z coordinate to be set.
+   */
+  this.setPosition = (x, y, z) => {
+    this.morph.position.set(x, y, z);
+  }
+
+   /**
+   * Set the size of the marker.
+   * 
+   * @param {Number} size - size to be set.
+   */ 
+  this.setSpriteSize = size => {
+    sprite.scale.set(0.015, 0.02, 1);
+    sprite.scale.multiplyScalar(size);
+  }
+
+  this.isEnabled = () => {
+    return enabled;
+  }
+
+  /**
+   * Enable and visualise the marker.
+   */  
+  this.enable = () => {
+    enabled = true;
+    this.morph.visible = true;
+  }
+
+  /**
+   * Disable and hide the marker.
+   */ 
+  this.disable = () => {
+    enabled = false;
+    this.morph.visible = false;
+  }
+
+	//this should be handle by scene... check the sync at 
+	initialise();
+
+}
+
+Marker.prototype = Object.create((require('./zincObject').ZincObject).prototype);
+exports.Marker = Marker;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Jul 04 2023 15:09:36 GMT+1200 (New Zealand Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

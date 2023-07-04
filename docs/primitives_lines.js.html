@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: zinc.js</title>
+    <title>JSDoc: Source: primitives/lines.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: zinc.js</h1>
+    <h1 class="page-title">Source: primitives/lines.js</h1>
 
     
 
@@ -26,44 +26,59 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>require("url-polyfill");
+            <pre class="prettyprint source linenums"><code>const THREE = require('three');
 
 /**
- * Provides a global namespace for the Zinc javascript library and some default parameters for it.
+ * Provides an object which stores lines.
+ * This is created when a valid json file containing lines is read into a {@link Zinc.Scene}
+ * object.
  * 
- * @namespace
+ * @class
  * @author Alan Wu
+ * @return {Lines}
  */
+const Lines = function () {
+  (require('./zincObject').ZincObject).call(this);
+	this.isLines = true;
 
-const Zinc = function() {
-  this.Revision = "1.0.12";
-  this.defaultMaterialColor = 0xFFFFFF;
-  this.defaultOpacity = 1.0;
-  this.modelPrefix = undefined;
-  this.Geometry = require('./primitives/geometry').Geometry;
-  this.Glyph = require('./primitives/glyph').Glyph;
-  this.Glyphset = require('./primitives/glyphset').Glyphset;
-  this.Pointset = require('./primitives/pointset').Pointset;
-  this.Lines = require('./primitives/lines').Lines;
-  this.TextureArray = require('./texture/textureArray').TextureArray;
-  this.TextureSlides = require('./primitives/textureSlides').TextureSlides;
-  this.Renderer = require('./renderer').Renderer;
-  this.Scene = require('./scene').Scene;
-  this.GeometryCSG = require('./geometryCSG').GeometryCSG;
-  this.GlyphsetCSG = require('./glyphsetCSG').GlyphsetCSG;
-  this.Viewport = require('./controls').Viewport;
-  this.CameraControls = require('./controls').CameraControls;
-  this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
-  this.RayCaster = require('./controls').RayCaster;
-  this.CameraAutoTumble = require('./controls').CameraAutoTumble;
-  this.StereoEffect = require('./controls').StereoEffect;
-  this.loadExternalFile = require('./utilities').loadExternalFile;
-  this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.THREE = require('three'); 
-  
-};
+  /**
+   * Create the line segements using geometry and material.
+   * 
+   * @param {THREE.Geomtry} geometryIn - Geometry of lines to be rendered.
+   * @param {THREE.Material} materialIn - Material to be set for the lines.
+   * @param {Object} options - Provide various options
+   * @param {Boolean} options.localTimeEnabled - A flag to indicate either the lines is
+   * time dependent.
+   * @param {Boolean} options.localMorphColour - A flag to indicate either the colour is
+   * time dependent.
+   */
+	this.createLineSegment = (geometryIn, materialIn, options) => {
+		if (geometryIn &amp;&amp; materialIn) {
+			let geometry = this.toBufferGeometry(geometryIn, options);
+			if (options.localMorphColour &amp;&amp; geometry.morphAttributes[ "color" ])
+				materialIn.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
+      let line = new (require("../three/line/LineSegments").LineSegments)(geometry, materialIn);
+			this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
+		}		
+	}
 
-module.exports = new Zinc();
+
+  /**
+   * Set the width for the lines.
+   * 
+   * @param {Number} width - Width of the lines.
+   */
+	this.setWidth = width => {
+		if (this.morph &amp;&amp; this.morph.material) {
+			this.morph.material.linewidth = width;
+			this.morph.material.needsUpdate = true;
+		}
+	}
+
+}
+
+Lines.prototype = Object.create((require('./zincObject').ZincObject).prototype);
+exports.Lines = Lines;
 </code></pre>
         </article>
     </section>

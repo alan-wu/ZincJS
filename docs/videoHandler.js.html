@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: videoHandler.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: videoHandler.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>var THREE = require('three');
+
+/**
+ * Provide basic functionality to display video as texture.
+ * VideoTexture is used for creating and updating a video projected onto a Three.js texture
+ * 
+ * @class
+ * @param {Object} containerIn - Container to create the renderer on.
+ * @author Alan Wu
+ * @return {VideoHandler}
+ */
+exports.VideoHandler = function(srcIn)  {
+
+	var _this = this;
+	this.video = undefined;
+	this.videoTexture = undefined;
+	var src = srcIn;
+	var lastTime = 0;
+	var lastUpdate = 0;
+	var frameRate = 30;
+	var videoPlaneLoadedFlag = false;
+	var lastPlayPos    = 0;
+	var currentPlayPos = 0;
+	var bufferingDetected = false;
+	
+	var checkBuffering = function(delta, playAnimation) {
+	    currentPlayPos = _this.video.currentTime;
+
+	    // checking offset should be at most the check interval
+	    // but allow for some margin
+	    var offset = delta - 0.02;
+
+	    // if no buffering is currently detected,
+	    // and the position does not seem to increase
+	    // and the _this.video isn't manually paused...
+	    if (!bufferingDetected &amp;&amp; (currentPlayPos &lt; (lastPlayPos + offset)) &amp;&amp;
+	    		!_this.video.paused) {
+	        bufferingDetected = true;
+	    }
+
+	    // if we were buffering but the _this.video has advanced,
+	    // then there is no buffering
+	    if (bufferingDetected &amp;&amp; (currentPlayPos > (lastPlayPos + offset)) &amp;&amp;
+	    		!_this.video.paused) {
+	        bufferingDetected = false;
+	    }
+	    lastPlayPos = currentPlayPos;
+	}
+
+	var initialise = function(){
+		if (document) {
+		  	_this.video = document.createElement( 'video' );
+		  	_this.video.crossOrigin = "anonymous";
+		  	_this.video.src = src;
+		  	_this.video.load();
+        _this.video.loop = true;
+        
+		}
+	}
+
+	this.setMorphTime = function(time, duration){
+		var actualTime = time / duration * _this.video.duration;
+		_this.video.currentTime = actualTime;
+	}
+
+	// videoPlaneLoaded connects the video to the video texture once it has loaded
+	 this.getVideoDuration = function() {
+		 return _this.video.duration;
+	}
+
+	this.createCanvasVideoTexture = function(){
+		_this.videoTexture = new THREE.VideoTexture( _this.video );
+		_this.videoTexture.minFilter = THREE.LinearFilter;
+		_this.videoTexture.magFilter = THREE.LinearFilter;
+		_this.videoTexture.format = THREE.RGBFormat;
+    _this.video.currentTime = 0;
+		return _this.videoTexture;
+	}
+	
+	this.getCurrentTime = function(duration) {
+		if (_this.video)
+			return duration * (_this.video.currentTime / _this.video.duration);
+		else
+			return 0;
+	}
+
+	this.isReadyToPlay = function(){
+		// video.readyState 3 means we have data to load for the current time and foreseeable future
+		if (_this.video &amp;&amp; _this.video.readyState >= 3){
+			return true;
+		}
+		return false;
+	}
+	
+	//this should be handle by scene... check the sync at 
+	initialise();
+
+}</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Jul 04 2023 15:09:36 GMT+1200 (New Zealand Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

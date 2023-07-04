@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: zinc.js</title>
+    <title>JSDoc: Source: sceneExporter.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: zinc.js</h1>
+    <h1 class="page-title">Source: sceneExporter.js</h1>
 
     
 
@@ -26,44 +26,38 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>require("url-polyfill");
+            <pre class="prettyprint source linenums"><code>const GLTFExporter = require('./three/GLTFExporter').GLTFExporter;
 
 /**
- * Provides a global namespace for the Zinc javascript library and some default parameters for it.
+ * Provides an object which uses for exporting the scene
  * 
- * @namespace
+ * @class
  * @author Alan Wu
+ * @return {SceneExporter}
  */
+const SceneExporter = function (sceneIn) {
+  const scene = sceneIn;
 
-const Zinc = function() {
-  this.Revision = "1.0.12";
-  this.defaultMaterialColor = 0xFFFFFF;
-  this.defaultOpacity = 1.0;
-  this.modelPrefix = undefined;
-  this.Geometry = require('./primitives/geometry').Geometry;
-  this.Glyph = require('./primitives/glyph').Glyph;
-  this.Glyphset = require('./primitives/glyphset').Glyphset;
-  this.Pointset = require('./primitives/pointset').Pointset;
-  this.Lines = require('./primitives/lines').Lines;
-  this.TextureArray = require('./texture/textureArray').TextureArray;
-  this.TextureSlides = require('./primitives/textureSlides').TextureSlides;
-  this.Renderer = require('./renderer').Renderer;
-  this.Scene = require('./scene').Scene;
-  this.GeometryCSG = require('./geometryCSG').GeometryCSG;
-  this.GlyphsetCSG = require('./glyphsetCSG').GlyphsetCSG;
-  this.Viewport = require('./controls').Viewport;
-  this.CameraControls = require('./controls').CameraControls;
-  this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
-  this.RayCaster = require('./controls').RayCaster;
-  this.CameraAutoTumble = require('./controls').CameraAutoTumble;
-  this.StereoEffect = require('./controls').StereoEffect;
-  this.loadExternalFile = require('./utilities').loadExternalFile;
-  this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.THREE = require('three'); 
-  
-};
+	this.exportGLTF = (binary) => {
+    const rootRegion = scene.getRootRegion();
+    const zincObjects = rootRegion.getAllObjects(true);
+    const animations = [];
+    zincObjects.forEach(zincObject => {
+      if (zincObject.animationClip) {
+        animations.push({clip: zincObject.animationClip[0], mesh: zincObject.morph});
+      }
+    });
+    const exporter = new GLTFExporter();
+    const options = { binary, animations };
+    return new Promise((resolve, reject) => {
+      exporter.parse( scene.getThreeJSScene(), function ( gltf ) {
+        resolve(gltf);
+      }, options );
+    });
+	}
+}
 
-module.exports = new Zinc();
+exports.SceneExporter = SceneExporter;
 </code></pre>
         </article>
     </section>

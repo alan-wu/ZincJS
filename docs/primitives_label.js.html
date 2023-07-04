@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: zinc.js</title>
+    <title>JSDoc: Source: primitives/label.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: zinc.js</h1>
+    <h1 class="page-title">Source: primitives/label.js</h1>
 
     
 
@@ -26,44 +26,102 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>require("url-polyfill");
+            <pre class="prettyprint source linenums"><code>const SpriteText = require('three-spritetext').default;
 
 /**
- * Provides a global namespace for the Zinc javascript library and some default parameters for it.
+ * Bitmap labels, this is used with {@link Glyph} to 
+ * provide labels.
  * 
- * @namespace
+ * @param {String} textIn - Text to be displayed dwith the label.
+ * @param {THREE.Color} colour - Colour to be set for the label.
+ * 
+ * @class
  * @author Alan Wu
+ * @return {Label}
  */
+exports.Label = function (textIn, colour) {
+  let text = textIn;
+  let sprite = undefined;
+  if (colour)
+    sprite = new SpriteText(text, 0.015, colour.getStyle());
+  else
+    sprite = new SpriteText(text, 0.015);
+  sprite.material.sizeAttenuation = false;
+  sprite.center.x = -0.05;
+  sprite.center.y = 0;
 
-const Zinc = function() {
-  this.Revision = "1.0.12";
-  this.defaultMaterialColor = 0xFFFFFF;
-  this.defaultOpacity = 1.0;
-  this.modelPrefix = undefined;
-  this.Geometry = require('./primitives/geometry').Geometry;
-  this.Glyph = require('./primitives/glyph').Glyph;
-  this.Glyphset = require('./primitives/glyphset').Glyphset;
-  this.Pointset = require('./primitives/pointset').Pointset;
-  this.Lines = require('./primitives/lines').Lines;
-  this.TextureArray = require('./texture/textureArray').TextureArray;
-  this.TextureSlides = require('./primitives/textureSlides').TextureSlides;
-  this.Renderer = require('./renderer').Renderer;
-  this.Scene = require('./scene').Scene;
-  this.GeometryCSG = require('./geometryCSG').GeometryCSG;
-  this.GlyphsetCSG = require('./glyphsetCSG').GlyphsetCSG;
-  this.Viewport = require('./controls').Viewport;
-  this.CameraControls = require('./controls').CameraControls;
-  this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
-  this.RayCaster = require('./controls').RayCaster;
-  this.CameraAutoTumble = require('./controls').CameraAutoTumble;
-  this.StereoEffect = require('./controls').StereoEffect;
-  this.loadExternalFile = require('./utilities').loadExternalFile;
-  this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.THREE = require('three'); 
-  
+  /**
+   * Get the current position in an array containing the x, y and z
+   * coordinates.
+   * 
+   * @return {Array}
+   */
+  this.getPosition = () => {
+    if (sprite)
+      return [sprite.position.x, sprite.position.y, sprite.position.z];
+    return [0, 0, 0];
+  }
+
+  /**
+   * Set the position of the label in  3D coordinates.
+   * 
+   * @param {Number} x - x coordinate to be set.
+   * @param {Number} y - y coordinate to be set.
+   * @param {Number} z - z coordinate to be set.
+   */
+  this.setPosition = (x, y, z) => {
+    if (sprite)
+      sprite.position.set(x, y, z);
+  }
+
+  /**
+   * Set the colour of the label
+   * 
+   * @param {THREE.Color} colour - colour to be set
+   */
+  this.setColour = colour => {
+    sprite.color = colour.getStyle();
+  }
+
+  /**
+   * Scale the label.
+   * 
+   * @param {Number} scaling - Scale to be set.
+   */
+  this.setScale = scaling => {
+    if (sprite &amp;&amp; scaling > 0.0)
+      sprite.scale.set(scaling, scaling, 1.0);
+  }
+
+  /**
+   * Free up the memory
+   */
+  this.dispose = () => {
+    sprite.dispose();
+  }
+
+  /**
+   * Get the intrnal sprite.
+   * 
+   * @return {THREE.Sprite}
+   */
+  this.getSprite = () => {
+    return sprite;
+  }
+
+  /**
+   * Get the text.
+   * 
+   * @return {String}
+   */
+  this.getString = () => {
+    return text;
+  }
+
 };
 
-module.exports = new Zinc();
+
+
 </code></pre>
         </article>
     </section>

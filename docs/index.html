@@ -4,73 +4,22 @@
     <meta charset="utf-8">
     <title>JSDoc: Home</title>
 
-    <script src="scripts/prettify/prettify.js"></script>
-    <script src="scripts/prettify/lang-css.js"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link href="https://fonts.googleapis.com/css?family=Muli:100,400,700|Oswald:300|Inconsolata,700" rel="stylesheet">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
-    <link type="text/css" rel="stylesheet" href="https://jmblog.github.io/color-themes-for-google-code-prettify/themes/tomorrow-night.min.css">
-    <link type="text/css" rel="stylesheet" href="styles/app.min.css">
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
 </head>
 
 <body>
-    <div id="stickyNavbarOverlay"></div>
-    <div class="top-navbar">
-        <div class="container">
-            <nav class="navbar" role="navigation" aria-label="main navigation">
-                <div class="navbar-brand">
-                    
-                     
-                        <h1 class="navbar-item">ZincJS Documentation</h1>
-                    
-                    <a id="hamburger" role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
-                        <span aria-hidden="true"></span>
-                        <span aria-hidden="true"></span>
-                        <span aria-hidden="true"></span>
-                    </a>
-                </div>
-                 
-                <div class="navbar-menu">
-                    <div class="navbar-end">
-                    
-                        <div class="navbar-item">
-                            <a href="https://github.com/alan-wu/ZincJS" target="_blank">Github</a>
-                        </div>
-                    
-                        <div class="navbar-item">
-                            <a href="https://sites.bioeng.auckland.ac.nz/webgl_zinc_collections" target="_blank">Examples</a>
-                        </div>
-                    
-                        <div class="navbar-item">
-                            <a href="https://github.com/alan-wu/ZincJS-Tutorials" target="_blank">Tutorials</a>
-                        </div>
-                    
-                    </div>
-                </div>
-                
-            </nav>
-        </div>
-    </div>
-    <div class="container">
-        <div class="columns">
-            <div class="column is-3" id="sidebarNav">
-                <div class="sidebar">
-                    <nav>
-                        <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li></ul><h3>Global</h3><ul><li><a href="global.html#JSONLoader">JSONLoader</a></li><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li></ul>
-                    </nav>
-                </div>
-            </div>
-            <div class="column is-9-desktop">
-                <div class="content" id="main-content-wrapper">
-                    <header class="page-title">
-                        <p>Title</p>
-                        <h1>Home</h1>
-                    </header>
-                    
-                    
+
+<div id="main">
+
+    <h1 class="page-title">Home</h1>
+
+    
 
 
 
@@ -94,47 +43,74 @@
 
 
     <section>
-        <article><h1>ZincJS (Web-based-Zinc-Visualisation)</h1><h2>Webapp developed using ZincJS:</h2><p><a href="http://sites.bioeng.auckland.ac.nz/medtech/heart/">Braveheart Interactive hert</a></p>
+        <article><h1>ZincJS (Web-based-Zinc-Visualisation)</h1>
+<p>Some of the following documentations are currerntly out-of-date .</p>
+<h2>Webapp developed using ZincJS:</h2>
+<p><a href="http://sites.bioeng.auckland.ac.nz/medtech/heart/">Braveheart Interactive hert</a></p>
 <p><a href="http://sites.bioeng.auckland.ac.nz/silo6/lung/">Medtech Lungs</a></p>
 <p><a href="https://mapcore-demo.org/2018-datathon/">SPARC MAPcore 2018 Demo</a></p>
 <p><a href="https://sites.bioeng.auckland.ac.nz/mwu035/fitzlet/">Fitzlet</a></p>
-<h2>Installation:</h2><p>You need NPM to build the ZincJS library. Once NPM has been installed, follow the instructions below:</p>
+<p><a href="https://mapcore-demo.org/2019/colon/scaffold.html">Scaffold Maker</a></p>
+<p>[ScaffoldVuer] (https://mapcore-demo.org/current/scaffoldvuer)</p>
+<h2>Installation:</h2>
+<p>You need NPM to build the ZincJS library. Once NPM has been installed, follow the instructions below:</p>
 <pre class="prettyprint source lang-Shell"><code>$ npm install
-$ npm run build</code></pre><p>If everything works accordingly, a 'build' folder along with two files zinc.js and zinc.min.js in it should be created. The zinc.js and zinc.min.js can now be consumed in your preferred envirnoment.</p>
-<h2>Useful links:</h2><p><a href="https://github.com/alan-wu/ZincJS-Examples/">Examples</a></p>
+$ npm run build
+</code></pre>
+<p>If everything works accordingly, a 'build' folder along with two files zinc.js and zinc.min.js in it should be created. The zinc.js and zinc.min.js can now be consumed in your preferred envirnoment.</p>
+<h2>Useful links:</h2>
+<p><a href="https://github.com/alan-wu/ZincJS-Examples/">Examples</a></p>
 <p><a href="https://github.com/alan-wu/ZincJS-Tutorials/">Tutorials</a></p>
 <p><a href="http://alan-wu.github.io/ZincJS/">API Documentation</a></p>
-<h2>How to export models to ZincJS:</h2><p>Here is a short instruction on how to get simple models from CMGUI/Zinc showing on web brwoser quickly.</p>
-<h2>For PyZinc users:</h2><p><a href="https://github.com/alan-wu/PyZinc2ZincJS/">PyZinc2ZincJS</a></p>
-<h2>For Cmgui users:</h2><ol>
-<li><p>Download the latest cmgui from http://physiomeproject.org/software/opencmiss/cmgui/download/developer</p>
+<h2>How to export models to ZincJS:</h2>
+<p>Here is a short instruction on how to get simple models from CMGUI/Zinc showing on web brwoser quickly.</p>
+<h2>For PyZinc users:</h2>
+<p><a href="https://github.com/alan-wu/PyZinc2ZincJS/">PyZinc2ZincJS</a></p>
+<h2>For Cmgui users:</h2>
+<ol>
+<li>
+<p>Download the latest cmgui from http://physiomeproject.org/software/opencmiss/cmgui/download/developer</p>
 </li>
-<li><p>Read in your files, set up the graphics and viewing windows.</p>
+<li>
+<p>Read in your files, set up the graphics and viewing windows.</p>
 </li>
-<li><p>Export the json files using the following command gfx expore threejs, there are few different options regarding the export, make sure you read the instruction using &quot;gfx export threejs ?&quot; command. Please note down the filename_prefix you have chosen here. The number of files output is determined by the number of surfaces group you have created.</p>
+<li>
+<p>Export the json files using the following command gfx expore threejs, there are few different options regarding the export, make sure you read the instruction using &quot;gfx export threejs ?&quot; command. Please note down the filename_prefix you have chosen here. The number of files output may vary depending on the type of graphics.</p>
 </li>
-<li><p>Note down the values of eye point, interest point, upvector, near plane and far plane from the output of the &quot;gfx list win 1&quot; command.</p>
-</li>
-<li><p>Copy the model/newheart_view.json file available here in the repository and rename it to [filename_prefix]_view.json ; Open the file and edit the values inside.</p>
-</li>
-</ol>
-<p>Example: if I have 3 different group of surfaces output under the prefix &quot;new_models&quot; with the following graphics windows
-settings:</p>
-<pre class="prettyprint source"><code>farPlane: 601.1211762872496
+<li>
+<p>A file containing information of the viewport is also required. After adjusting the viewport on Cmgui to the desired setting then note down the values of eye point, interest point, upvector, near plane and far plane from the output of the &quot;gfx list win 1&quot; command. For example with the following output:</p>
+<p>farPlane: 601.1211762872496
 nearPlane: 14.809855917663832
 upVector: [0.0, 1.0, 0.0]
-interest point: [9.704483032226562, 6.385875701904297, -5.001008987426758] 
-eye point: [9.704483032226562, 6.385875701904297, 291.1961093658496]}</code></pre><p>I will create and edit the new_models_view.json file and its content will be </p>
-<pre class="prettyprint source"><code>{&quot;farPlane&quot;: 601.1211762872496, &quot;nearPlane&quot;: 14.809855917663832, &quot;upVector&quot;: [0.0, 1.0, 0.0], &quot;numberOfResources&quot;: 3, &quot;targetPosition&quot;: [9.704483032226562, 6.385875701904297, -5.001008987426758], &quot;timeEnabled&quot;: [1, 1, 1], &quot;morphColour&quot; : [0, 0, 0], &quot;eyePosition&quot;: [9.704483032226562, 6.385875701904297, 291.1961093658496]}</code></pre><p>Note that:</p>
-<pre class="prettyprint source"><code>[timeEnabled] values in this case indicates that time varying vertices have been output for all 3 group of surfaces.
-[morphColour] values in this case indicates that time varying spectrum colours have not been output for all 3 group of surfaces.
-[numberOfResources] indicates the number of files output from cmgui.</code></pre><p>Make sure all the json files are located in the same folder and now we should have all files required and we are ready to view them.</p>
+interest point: [9.704483032226562, 6.385875701904297, -5.001008987426758]
+eye point: [9.704483032226562, 6.385875701904297, 291.1961093658496]}</p>
+</li>
+</ol>
+<p>The viewport file will look like this:</p>
+<pre><code>{&quot;farPlane&quot;: 601.1211762872496, &quot;nearPlane&quot;: 14.809855917663832, &quot;upVector&quot;: [0.0, 1.0, 0.0], &quot;targetPosition&quot;: [9.704483032226562, 6.385875701904297, -5.001008987426758],  &quot;eyePosition&quot;: [9.704483032226562, 6.385875701904297, 291.1961093658496]}
+</code></pre>
+<ol start="5">
+<li>
+<p>The first exported file -[filename]_1.json is the metadata file and contains
+informations of other required files including primitives type, url and etc. It also contains information of the viewport file (as mentioned above) but as the parameters are not known to the exporters. Users have to add it to the metadata file themselves and it looks something like:</p>
+<p>{
+&quot;Type&quot; : &quot;View&quot;,
+&quot;URL&quot; : &quot;new_models_view.json&quot;
+}</p>
+</li>
+</ol>
+<p>Make sure all the json files are located in the same folder and now we should have all files required and we are ready to view them.</p>
 <p>*please not that only surfaces are supported at this moment.</p>
-<h2>Using the sample page:</h2><p>I have included a simple html page - multiscenes_example.html which will display simple models.
+<h2>For PyZinc users:</h2>
+<p>Take a look at the following page: https://github.com/alan-wu/PyZinc2ZincJS</p>
+<h2>Using the sample page:</h2>
+<p>I have included a simple html page - multiscenes_example.html which will display simple models.
 You can also view the following page to see mroe WebGL based Zinc in action: http://sites.bioeng.auckland.ac.nz/webgl_zinc_collections/</p>
-<h2>Use of ThreeJS:</h2><p>This library wraps the ThreeJS library and provides a more Zinc-like experience to users.
+<h2>Use of ThreeJS:</h2>
+<p>This library wraps the ThreeJS library and provides a more Zinc-like experience to users.
 I have modified the ThreeJS backend slightly to fit my usage here, you can find the github repository of my ThreeJS fork here: https://github.com/alan-wu/three.js</p>
-<h2>Basic controls:</h2><ul>
+<h2>Basic controls:</h2>
+<ul>
 <li>Left click/single finger touch move: Rotate</li>
 <li>Middle click/three finger touch move: Translate</li>
 <li>Right click/two finger pinch: Zoom</li>
@@ -146,23 +122,19 @@ I have modified the ThreeJS backend slightly to fit my usage here, you can find 
 
 
 
-                </div>
-            </div>
-        </div>
-    </div>
+</div>
 
-<footer class="footer">
-    <div class="content has-text-centered">
-        <p>Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a> on Tue Jan 22 2019 14:17:44 GMT+1300 (NZDT)</p>
-        <p class="sidebar-created-by">
-            <a href="https://github.com/SoftwareBrothers/better-docs" target="_blank">BetterDocs theme</a> provided with <i class="fas fa-heart"></i> by 
-            <a href="http://softwarebrothers.co" target="_blank">SoftwareBrothers</a>
-        </p>
-    </div>
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Jul 04 2023 15:09:36 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>
-<script src="scripts/app.min.js"></script>
 <script src="scripts/linenumber.js"> </script>
 </body>
 </html>

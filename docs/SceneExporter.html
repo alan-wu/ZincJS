@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: zinc.js</title>
+    <title>JSDoc: Class: SceneExporter</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,56 +17,162 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: zinc.js</h1>
+    <h1 class="page-title">Class: SceneExporter</h1>
 
     
 
 
 
+
+<section>
+
+<header>
     
-    <section>
-        <article>
-            <pre class="prettyprint source linenums"><code>require("url-polyfill");
+        <h2><span class="attribs"><span class="type-signature"></span></span>SceneExporter<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="SceneExporter.html">SceneExporter</a>}</span></h2>
+        
+    
+</header>
 
-/**
- * Provides a global namespace for the Zinc javascript library and some default parameters for it.
- * 
- * @namespace
- * @author Alan Wu
- */
+<article>
+    <div class="container-overview">
+    
+        
 
-const Zinc = function() {
-  this.Revision = "1.0.12";
-  this.defaultMaterialColor = 0xFFFFFF;
-  this.defaultOpacity = 1.0;
-  this.modelPrefix = undefined;
-  this.Geometry = require('./primitives/geometry').Geometry;
-  this.Glyph = require('./primitives/glyph').Glyph;
-  this.Glyphset = require('./primitives/glyphset').Glyphset;
-  this.Pointset = require('./primitives/pointset').Pointset;
-  this.Lines = require('./primitives/lines').Lines;
-  this.TextureArray = require('./texture/textureArray').TextureArray;
-  this.TextureSlides = require('./primitives/textureSlides').TextureSlides;
-  this.Renderer = require('./renderer').Renderer;
-  this.Scene = require('./scene').Scene;
-  this.GeometryCSG = require('./geometryCSG').GeometryCSG;
-  this.GlyphsetCSG = require('./glyphsetCSG').GlyphsetCSG;
-  this.Viewport = require('./controls').Viewport;
-  this.CameraControls = require('./controls').CameraControls;
-  this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
-  this.RayCaster = require('./controls').RayCaster;
-  this.CameraAutoTumble = require('./controls').CameraAutoTumble;
-  this.StereoEffect = require('./controls').StereoEffect;
-  this.loadExternalFile = require('./utilities').loadExternalFile;
-  this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.THREE = require('three'); 
-  
-};
+    
 
-module.exports = new Zinc();
-</code></pre>
-        </article>
-    </section>
+    
+    <h4 class="name" id="SceneExporter"><span class="type-signature"></span>new SceneExporter<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="SceneExporter.html">SceneExporter</a>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Provides an object which uses for exporting the scene
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-author">Author:</dt>
+    <dd class="tag-author">
+        <ul>
+            <li>Alan Wu</li>
+        </ul>
+    </dd>
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="sceneExporter.js.html">sceneExporter.js</a>, <a href="sceneExporter.js.html#line10">line 10</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="SceneExporter.html">SceneExporter</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
 
 
 

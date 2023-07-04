@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: zinc.js</title>
+    <title>JSDoc: Source: primitives/texturePrimitive.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: zinc.js</h1>
+    <h1 class="page-title">Source: primitives/texturePrimitive.js</h1>
 
     
 
@@ -26,44 +26,23 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>require("url-polyfill");
+            <pre class="prettyprint source linenums"><code>const THREE = require('three');
 
 /**
- * Provides a global namespace for the Zinc javascript library and some default parameters for it.
+ * Provides a base class object which stores textures and rendering object.
  * 
- * @namespace
+ * @class
  * @author Alan Wu
+ * @return {TexturePrimitive}
  */
+const TexturePrimitive = function (textureIn) {
+  (require('./zincObject').ZincObject).call(this);
+  this.isTexturePrimitive = true;
+  this.texture = textureIn;
+}
 
-const Zinc = function() {
-  this.Revision = "1.0.12";
-  this.defaultMaterialColor = 0xFFFFFF;
-  this.defaultOpacity = 1.0;
-  this.modelPrefix = undefined;
-  this.Geometry = require('./primitives/geometry').Geometry;
-  this.Glyph = require('./primitives/glyph').Glyph;
-  this.Glyphset = require('./primitives/glyphset').Glyphset;
-  this.Pointset = require('./primitives/pointset').Pointset;
-  this.Lines = require('./primitives/lines').Lines;
-  this.TextureArray = require('./texture/textureArray').TextureArray;
-  this.TextureSlides = require('./primitives/textureSlides').TextureSlides;
-  this.Renderer = require('./renderer').Renderer;
-  this.Scene = require('./scene').Scene;
-  this.GeometryCSG = require('./geometryCSG').GeometryCSG;
-  this.GlyphsetCSG = require('./glyphsetCSG').GlyphsetCSG;
-  this.Viewport = require('./controls').Viewport;
-  this.CameraControls = require('./controls').CameraControls;
-  this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
-  this.RayCaster = require('./controls').RayCaster;
-  this.CameraAutoTumble = require('./controls').CameraAutoTumble;
-  this.StereoEffect = require('./controls').StereoEffect;
-  this.loadExternalFile = require('./utilities').loadExternalFile;
-  this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.THREE = require('three'); 
-  
-};
-
-module.exports = new Zinc();
+TexturePrimitive.prototype = Object.create((require('./zincObject').ZincObject).prototype);
+exports.TexturePrimitive = TexturePrimitive;
 </code></pre>
         </article>
     </section>

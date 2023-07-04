@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Source: zinc.js</title>
+    <title>JSDoc: Source: primitives/augmentShader.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,7 +17,7 @@
 
 <div id="main">
 
-    <h1 class="page-title">Source: zinc.js</h1>
+    <h1 class="page-title">Source: primitives/augmentShader.js</h1>
 
     
 
@@ -26,44 +26,32 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>require("url-polyfill");
-
+            <pre class="prettyprint source linenums"><code>
 /**
- * Provides a global namespace for the Zinc javascript library and some default parameters for it.
- * 
- * @namespace
- * @author Alan Wu
+ * Provide additional shaders to render time dependent color.
  */
-
-const Zinc = function() {
-  this.Revision = "1.0.12";
-  this.defaultMaterialColor = 0xFFFFFF;
-  this.defaultOpacity = 1.0;
-  this.modelPrefix = undefined;
-  this.Geometry = require('./primitives/geometry').Geometry;
-  this.Glyph = require('./primitives/glyph').Glyph;
-  this.Glyphset = require('./primitives/glyphset').Glyphset;
-  this.Pointset = require('./primitives/pointset').Pointset;
-  this.Lines = require('./primitives/lines').Lines;
-  this.TextureArray = require('./texture/textureArray').TextureArray;
-  this.TextureSlides = require('./primitives/textureSlides').TextureSlides;
-  this.Renderer = require('./renderer').Renderer;
-  this.Scene = require('./scene').Scene;
-  this.GeometryCSG = require('./geometryCSG').GeometryCSG;
-  this.GlyphsetCSG = require('./glyphsetCSG').GlyphsetCSG;
-  this.Viewport = require('./controls').Viewport;
-  this.CameraControls = require('./controls').CameraControls;
-  this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
-  this.RayCaster = require('./controls').RayCaster;
-  this.CameraAutoTumble = require('./controls').CameraAutoTumble;
-  this.StereoEffect = require('./controls').StereoEffect;
-  this.loadExternalFile = require('./utilities').loadExternalFile;
-  this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.THREE = require('three'); 
-  
-};
-
-module.exports = new Zinc();
+exports.augmentMorphColor = function() {
+    return function(shader) {
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include &lt;color_pars_vertex>',
+            [
+	            'varying vec3 vColor;',
+                'attribute vec3 morphColor0;',
+                'attribute vec3 morphColor1;'
+            ].join( '\n' )
+        );
+        shader.vertexShader = shader.vertexShader.replace(
+            '#include &lt;color_vertex>',
+            [
+                'vColor.xyz = color.xyz;',
+                '#ifdef USE_MORPHTARGETS',
+                'vColor = morphColor0 * morphTargetInfluences[ 0 ];',
+                'vColor += morphColor1 * morphTargetInfluences[ 1 ];',
+                '#endif'
+            ].join( '\n' )
+        );
+    };
+}
 </code></pre>
         </article>
     </section>
