@@ -1,10 +1,11 @@
 const THREE = require('three');
+
 /**
  * Provides a base class object which stores textures and rendering object.
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Lines}
+ * @return {TexturePrimitive}
  */
 const TexturePrimitive = function (textureIn) {
   (require('./zincObject').ZincObject).call(this);

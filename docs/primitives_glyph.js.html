@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: primitives/glyph.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: primitives/glyph.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const THREE = require('three');
+
+/**
+ * Zinc representation of glyph graphic, it contains the colours, 
+ * geometry and transformation of the glyph.
+ * 
+ * @param {THREE.Geometry} geometry - Geometry of the glyph .
+ * @param {THREE.Material} materialIn - Material of the glyph.
+ * @param {Number} idIn - Id of the glyph.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {Glyph}
+ */
+const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
+  (require('./zincObject').ZincObject).call(this);
+  let material = undefined;
+  if (materialIn) {
+    material = materialIn.clone();
+    material.vertexColors = THREE.FaceColors;
+  }
+  const parent = glyphsetIn;
+  this.id = idIn;
+  let label = undefined;
+  let labelString = undefined;
+  const group = new THREE.Group();
+  this.isGlyph = true;
+
+  /**
+   * Create a glyph using mesh
+   * @param   {THREE.Mesh} meshIn - Mesh to create the glyph from
+   *
+   * @returns {Boolean} true if successful
+   */
+  this.fromMesh = meshIn => {
+    if (meshIn &amp;&amp; meshIn.isMesh) {
+      this.morph = meshIn.clone();
+      this.morph.userData = this;
+      group.add(this.morph);
+      return true;
+    }
+    return false;
+  }
+
+  if (geometry &amp;&amp; material) {
+    this.fromMesh(new THREE.Mesh(geometry, material));
+  }
+
+  /**
+   * Get the {Glyphset} containing this glyph.
+   *
+   * @returns {Boolean} true if successful
+   */
+  this.getGlyphset = function () {
+    return parent;
+  }
+
+  /**
+   * Set and update the text containing this glyph.
+   * @param   {String} text - Label to be set for this instance
+   */
+  this.setLabel = text => {
+    if (text &amp;&amp; (typeof text === 'string' || text instanceof String)) {
+      labelString = text;
+      if (this.morph)
+        this.morph.name = text;
+    }
+    if (label)
+      this.showLabel();
+  }
+
+  /**
+   * Display label with the choosen colour. It will replace the current
+   * label.
+   * @param   {THREE.Color} colour - Colour for the label.
+   */
+  this.showLabel = (colour) => {
+    if (label) {
+      position = label.getPosition();
+      group.remove(label.getSprite());
+      label.dispose();
+      label = undefined;
+    }
+    if (labelString &amp;&amp; (typeof labelString === 'string' || labelString instanceof String)) {
+      let position = [0, 0, 0];
+      label = new (require('./label').Label)(labelString, colour);
+      label.setPosition(position[0], position[1], position[2]);
+      group.add(label.getSprite());
+    }
+  }
+
+  /**
+   * Get the group containing the label and mesh.
+   * @return {THREE.Group}
+   */
+  this.getGroup = () => {
+    return group;
+  }
+
+  /**
+   * Get the label of this glyph
+   * @return {Label}
+   */
+  this.getLabel = () => {
+    return labelString;
+  }
+
+  /**
+   * Get the mesh of this glyph.
+   * @return {THREE.Mesh}
+   */
+  this.getMesh = () => {
+    return this.morph;
+  }
+
+  /**
+   * Set the transformation of this glyph.
+   * @param {Array} position - Three components vectors containing position of the
+   * transformation.
+   * @param {Array} axis1 - Three components vectors containing axis1 rotation of the
+   * transformation.
+   * @param {Array} axis2 - Three components vectors containing axis2 rotation of the
+   * transformation.
+   * @param {Array} position - Three components vectors containing axis3 rotation of the
+   * transformation.
+   */
+  this.setTransformation = (position, axis1, axis2, axis3) => {
+    if (this.morph) {
+      this.morph.matrix.elements[0] = axis1[0];
+      this.morph.matrix.elements[1] = axis1[1];
+      this.morph.matrix.elements[2] = axis1[2];
+      this.morph.matrix.elements[3] = 0.0;
+      this.morph.matrix.elements[4] = axis2[0];
+      this.morph.matrix.elements[5] = axis2[1];
+      this.morph.matrix.elements[6] = axis2[2];
+      this.morph.matrix.elements[7] = 0.0;
+      this.morph.matrix.elements[8] = axis3[0];
+      this.morph.matrix.elements[9] = axis3[1];
+      this.morph.matrix.elements[10] = axis3[2];
+      this.morph.matrix.elements[11] = 0.0;
+      this.morph.matrix.elements[12] = position[0];
+      this.morph.matrix.elements[13] = position[1];
+      this.morph.matrix.elements[14] = position[2];
+      this.morph.matrix.elements[15] = 1.0;
+      this.morph.matrixAutoUpdate = false;
+    }
+    if (label)
+      label.setPosition(position[0], position[1], position[2]);
+  }
+
+  /**
+   * Set the color of the glyph and its label.
+   * 
+   * @param {THREE.Color} color - Colour to be set.
+   */
+  this.setColour = (color) => {
+    if (label)
+      label.setColour(color);
+    if (this.secondaryMesh &amp;&amp; this.secondaryMesh.material)
+      this.secondaryMesh.material.color = colour;
+    this.geometry.colorsNeedUpdate = true;
+  }
+
+  /**
+   * Clear and free its memory.
+   */
+  this.dispose = () => {
+    if (this.material)
+      this.material.dispose();
+    this.morph = undefined;
+  }
+}
+
+Glyph.prototype = Object.create((require('./zincObject').ZincObject).prototype);
+exports.Glyph = Glyph;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Jul 04 2023 15:45:02 GMT+1200 (New Zealand Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

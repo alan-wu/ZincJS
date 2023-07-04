@@ -6,7 +6,15 @@ texture.image = markerImage;
 texture.needsUpdate = true;
 const size = [0.015, 0.02, 1];
 
-//Marker - used to indicate there is a 
+/**
+ * A special graphics type with a tear drop shape.
+ * It is currently used to mark the location of a
+ * {@link zincObject}.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {Marker}
+ */
 const Marker = function(zincObject) {
   (require('./zincObject').ZincObject).call(this);
   this.texture = texture;
@@ -17,6 +25,7 @@ const Marker = function(zincObject) {
   this.isMarker = true;
   let enabled = false;
   let vector = new THREE.Vector3();
+
 
 	let initialise = () => {
     spriteMaterial = new THREE.SpriteMaterial({
@@ -56,10 +65,22 @@ const Marker = function(zincObject) {
     return vector.z;
   }
 
+  /**
+   * Set the position of the marker.
+   * 
+   * @param {Number} x - x coordinate to be set.
+   * @param {Number} y - y coordinate to be set.
+   * @param {Number} z - z coordinate to be set.
+   */
   this.setPosition = (x, y, z) => {
     this.morph.position.set(x, y, z);
   }
 
+   /**
+   * Set the size of the marker.
+   * 
+   * @param {Number} size - size to be set.
+   */ 
   this.setSpriteSize = size => {
     sprite.scale.set(0.015, 0.02, 1);
     sprite.scale.multiplyScalar(size);
@@ -69,11 +90,17 @@ const Marker = function(zincObject) {
     return enabled;
   }
 
+  /**
+   * Enable and visualise the marker.
+   */  
   this.enable = () => {
     enabled = true;
     this.morph.visible = true;
   }
-  
+
+  /**
+   * Disable and hide the marker.
+   */ 
   this.disable = () => {
     enabled = false;
     this.morph.visible = false;

@@ -21,7 +21,8 @@
     "build-backend": "webpack --config webpack.backend.js",
     "test": "npm --prefix ./test install && npm --prefix ./test run test-ci",
     "changelog": "auto-changelog -p --output CHANGELOG.md --template keepachangelog",
-    "version": "npm run build-bundle;npm run changelog; git add CHANGELOG.md",
+    "jsdoc": "jsdoc -c jsdoc_conf.json",
+    "version": "npm run build-bundle;npm run jsdoc;npm run changelog; git add CHANGELOG.md docs",
     "release:beta": "npm version prerelease --preid=beta; npm publish --tag beta",
     "release:minor": "npm version minor; npm publish",
     "release:patch": "npm version patch;  npm publish"
@@ -49,6 +50,7 @@
     "babel-loader": "^8.0.6",
     "babel-preset-minify": "^0.5.1",
     "better-docs": "^1.3.0",
+    "jsdoc": "^4.0.2",
     "webpack": "^4.40.2",
     "webpack-cli": "^3.3.8",
     "webpack-node-externals": "^1.7.2"

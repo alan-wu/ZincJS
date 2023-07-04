@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: texture/textureArray.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: texture/textureArray.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const THREE = require('three');
+
+/**
+ * Texture array object for holding array of images into
+ * texures unit that can be used by other texture primitives.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {TextureArray}
+ */
+const TextureArray = function () {
+  (require('./texture').Texture).call(this);
+  this.isTextureArray = true;
+
+
+  /**
+   * Read images from an array containg src locations.
+   * 
+   * @async
+   * @param {Array} srcArrays - List of source location of the images.
+   */
+  this.loadFromImages = async function (srcArrays) {
+    let w = 1;
+    let h = 1;
+    let d = 0;
+    if (srcArrays &amp;&amp; srcArrays.length) {
+      this.isLoading = true;
+      const image = new Image();
+      image.crossOrigin = "Anonymous";
+      const canvas = document.createElement("canvas");
+      let length = 0;
+      const dataStacks = new Array(srcArrays.length);
+      for (let i = 0; i &lt; srcArrays.length; i++) {
+        const data = await this.imageToUint8Array(image, srcArrays[i], canvas);
+        if (data &amp;&amp; data.array) {
+          w = data.width;
+          h = data.height;
+          dataStacks[d] = data.array;
+          length += dataStacks[d].length;
+          d++;
+        }
+      }
+      const fullArray = new Uint8Array(length);
+      length = 0;
+      dataStacks.forEach(data => {
+        fullArray.set(data, length);
+        length += data.length;
+      });
+
+      this.impl = new THREE.DataTexture2DArray(fullArray, w, h, d);
+      this.size = {
+        width: w,
+        height: h,
+        depth: d
+      };
+      this.isLoading = false;
+    }
+  }
+
+  /**
+   * Get and create the material containing shaders and the textures.
+   * The texture must be read and ready before calling this function.
+   * 
+   *
+   * @param {Object} options - Customise the material with the options object.
+   * @param {String} options.fs - string of the fragment shader used for 
+   * visualisation.
+   * @param {String} options.vs - string of the vertex shader used for 
+   * visualisation.
+   * @param {Object} options.uniforms - Containing the data to be passed into the shaders.
+   * @param {String} options.glslVersion - Version of glsl used for compile this shader.
+   * 
+   */
+  this.getMaterial = function (options) {
+    if (this.impl) {
+      let material = undefined;
+      if (options) {
+        if (options.vs &amp;&amp; options.fs) {
+          let transparent = true;
+          if (options.transparent)
+            transparent = options.transparent;
+          let side = THREE.FrontSide;
+          if (options.side)
+            side = options.side;
+          material = new THREE.ShaderMaterial({
+            transparent,
+            uniforms: options.uniforms,
+            vertexShader: options.vs,
+            fragmentShader: options.fs,
+            side
+          });
+          if (options.glslVersion) {
+            material.glslVersion = options.glslVersion;
+          }
+        }
+      } else {
+        material = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(1, 1, 1),
+          transparent: false,
+          opacity: 1.0,
+          map: this.impl,
+          side: THREE.DoubleSide
+        });
+      }
+      if (material) {
+        material.needsUpdate = true;
+        return material;
+      }
+    }
+  }
+}
+
+TextureArray.prototype = Object.create((require('./texture').Texture).prototype);
+exports.TextureArray = TextureArray;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Jul 04 2023 15:45:02 GMT+1200 (New Zealand Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

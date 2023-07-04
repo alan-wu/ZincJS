@@ -17,7 +17,15 @@ const createNewURL = (target, reference) => {
   return newURL;
 }
 
-
+/**
+ * A helper class to help with reading / importing primitives and
+ * settings into a {@link Scene}.
+ * 
+ * @class
+ * @param {Object} containerIn - Container to create the renderer on.
+ * @author Alan Wu
+ * @return {SceneLoader}
+ */
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
   this.toBeDownloaded = 0;

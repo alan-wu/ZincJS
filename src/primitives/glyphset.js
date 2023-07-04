@@ -2,14 +2,14 @@ const THREE = require('three');
 const JSONLoader = require('../loaders/JSONLoader').JSONLoader;
 
 /**
- * This is a container of {@link Zinc.Glyph} and their graphical properties 
+ * This is a container of {@link Glyph} and their graphical properties 
  * including transformations, colors, number of time steps, duration of animations
  * and group name. Please note that all glyphs in the glyphset share the same geometry
  * however they may have different transformations.
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Glyphset}
+ * @return {Glyphset}
  */
 const Glyphset = function () {
   (require('./zincObject').ZincObject).call(this);
@@ -49,25 +49,25 @@ const Glyphset = function () {
     _points[i] = new THREE.Vector3();
   }
 
-	/**
-	 * Get the {@link Three.Group} containing all of the glyphs' meshes.
-	 * @returns {Three.Group}
-	 */
+  /**
+   * Get the {@link Three.Group} containing all of the glyphs' meshes.
+   * @returns {Three.Group}
+   */
   this.getGroup = () => {
     return this.morph;
   }
 
-	/**
-	 * Copy glyphset data into this glyphset then load the glyph's geoemtry 
-	 * with the provided glyphURL. FinishCallback will be called once
-	 * glyph is loaded.
-	 * 
-	 * @param {Array} glyphsetData - contains the informations about the glyphs.
-	 * @param {String} glyphURL - URL to the geometry which will be applied to all
-	 * all the glyphs in the glyphset once loaded.
-	 * @param {Function} finishCallback - User's function to be called once glyph's
-	 * geometry is loaded.
-	 */
+  /**
+   * Copy glyphset data into this glyphset then load the glyph's geoemtry 
+   * with the provided glyphURL. FinishCallback will be called once
+   * glyph is loaded.
+   * 
+   * @param {Array} glyphsetData - contains the informations about the glyphs.
+   * @param {String} glyphURL - URL to the geometry which will be applied to all
+   * all the glyphs in the glyphset once loaded.
+   * @param {Function} finishCallback - User's function to be called once glyph's
+   * geometry is loaded.
+   */
   this.load = (glyphsetData, glyphURL, finishCallback, isInline, displayLabels) => {
     axis1s = glyphsetData.axis1;
     axis2s = glyphsetData.axis2;
@@ -101,11 +101,12 @@ const Glyphset = function () {
     }
   }
 
-	/**
-	 * Calculate the actual transformation value that can be applied 
-	 * to the transformation matrix.
-	 * @returns {Array}
-	 */
+  /**
+   * Calculate the actual transformation value that can be applied 
+   * to the transformation matrix.
+   * 
+   * @returns {Array}
+   */
   const resolve_glyph_axes = (point, axis1, axis2, axis3, scale, return_arrays) => {
     if (repeat_mode == "NONE" || repeat_mode == "MIRROR") {
       let axis_scale = [0.0, 0.0, 0.0];
@@ -166,7 +167,7 @@ const Glyphset = function () {
           mirrored_axis3[1] = -mirrored_axis3[1];
           mirrored_axis3[2] = -mirrored_axis3[2];
         }
-        return_arrays[1] =[mirrored_point, mirrored_axis1, mirrored_axis2, mirrored_axis3];
+        return_arrays[1] = [mirrored_point, mirrored_axis1, mirrored_axis2, mirrored_axis3];
       }
     }
     else if (repeat_mode == "AXES_2D" || repeat_mode == "AXES_3D") {
@@ -236,9 +237,9 @@ const Glyphset = function () {
     return return_arrays;
   };
 
-	/**
-	 * Update transformation for each of the glyph in this glyphset.
-	 */
+  /**
+   * Update transformation for each of the glyph in this glyphset.
+   */
   const updateGlyphsetTransformation = (
     current_positions,
     current_axis1s,
@@ -298,9 +299,9 @@ const Glyphset = function () {
     this.morph.instanceMatrix.needsUpdate = true;
   };
 
-	/**
-	 * Update colour for each of the glyph in this glyphset.
-	 */
+  /**
+   * Update colour for each of the glyph in this glyphset.
+   */
   const updateGlyphsetHexColors = current_colors => {
     let numberOfGlyphs = 1;
     if (repeat_mode == "AXES_2D" || repeat_mode == "MIRROR")
@@ -323,11 +324,11 @@ const Glyphset = function () {
     this.morph.instanceColor.needsUpdate = true;
   };
 
-	/**
-	 * Update the current states of the glyphs in this glyphset, this includes transformation and
-	 * colour for each of them. This is called when glyphset and glyphs are initialised and whenever
-	 * the internal time has been updated.
-	 */
+  /**
+   * Update the current states of the glyphs in this glyphset, this includes transformation and
+   * colour for each of them. This is called when glyphset and glyphs are initialised and whenever
+   * the internal time has been updated.
+   */
   const updateMorphGlyphsets = () => {
     const current_positions = _current_positions;
     const current_axis1s = _current_axis1s;
@@ -387,11 +388,11 @@ const Glyphset = function () {
             _bot_colour.b * proportion + _top_colour.b * (1 - proportion));
           current_colors[i] = _bot_colour.getHex();
         }
-				/*
-				for (var i = 0; i < bottom_colors.length; i++) {
-					current_colors.push(proportion * bottom_colors[i] + (1.0 - proportion) * top_colors[i]);
-				}
-				*/
+        /*
+        for (var i = 0; i < bottom_colors.length; i++) {
+          current_colors.push(proportion * bottom_colors[i] + (1.0 - proportion) * top_colors[i]);
+        }
+        */
       } else {
         current_colors = colors["0"];
       }
@@ -399,12 +400,20 @@ const Glyphset = function () {
     }
   };
 
+  /**
+   * Display the label of the glyphs in the glyphset.
+   */
   this.showLabel = () => {
     for (let i = 0; i < glyphList.length; i++) {
       glyphList[i].showLabel(this.morph.material ? this.morph.material.color : undefined);
     }
   }
 
+  /**
+   * Create the glyphs in the glyphset.
+   * 
+   * @param {Boolean} displayLabels -Flag to determine either the labels should be display or not.
+   */
   const createGlyphs = (displayLabels) => {
     if ((labels != undefined) && displayLabels) {
       for (let i = 0; i < numberOfVertices; i++) {
@@ -433,6 +442,11 @@ const Glyphset = function () {
     this.boundingBoxUpdateRequired = true;
   };
 
+  /**
+   * Add a custom {@link Glyph} to this {@link Glyphset}.
+   * 
+   * @param {Glyph} Glyph to be added.
+   */
   this.addCustomGlyph = glyph => {
     if (glyph.isGlyph)
       glyphList.push(glyph);
@@ -440,6 +454,12 @@ const Glyphset = function () {
     this.boundingBoxUpdateRequired = true;
   }
 
+  /**
+   * Add a THREE.Mesh object to be displayed as glyph in this {@link Glyphset}.
+   * 
+   * @param {THREE.Mesh} Mesh to be added.
+   * @param {Number} id of the mesh.
+   */
   this.addMeshAsGlyph = (mesh, id) => {
     if (mesh.isMesh) {
       const glyph = new (require('./glyph').Glyph)(undefined, undefined, id, this);
@@ -453,12 +473,13 @@ const Glyphset = function () {
     return undefined;
   }
 
-	/**
-	 * A function which iterates through the list of glyphs and call the callback
-	 * function with the glyph as the argument.
-	 * @param {Function} callbackFunction - Callback function with the glyph
-	 * as an argument.
-	 */
+  /**
+   * A function which iterates through the list of glyphs and call the callback
+   * function with the glyph as the argument.
+   * 
+   * @param {Function} callbackFunction - Callback function with the glyph
+   * as an argument.
+   */
   this.forEachGlyph = callbackFunction => {
     for (let i = 0; i < glyphList.length; i++) {
       callbackFunction(glyphList[i]);
@@ -552,11 +573,11 @@ const Glyphset = function () {
   }
 
 
-	/**
-	 * Get the bounding box for the whole set of glyphs.
-	 * 
-	 * @return {Three.Box3};
-	 */
+  /**
+   * Get the bounding box for the whole set of glyphs.
+   * 
+   * @return {Three.Box3};
+   */
   this.getBoundingBox = () => {
     if (this.morph && this.ready && this.morph.visible) {
       if (this.boundingBoxUpdateRequired) {
@@ -582,11 +603,11 @@ const Glyphset = function () {
     return undefined;
   }
 
-	/**
-	 * Set the local time of this glyphset.
-	 * 
-	 * @param {Number} time - Can be any value between 0 to duration.
-	 */
+  /**
+   * Set the local time of this glyphset.
+   * 
+   * @param {Number} time - Can be any value between 0 to duration.
+   */
   this.setMorphTime = time => {
     if (time > this.duration)
       this.inbuildTime = this.duration;
@@ -612,14 +633,19 @@ const Glyphset = function () {
     return false;
   }
 
+  /**
+   * Get the current inbuild time of the 
+   * 
+   * @return {Number}
+   */
   this.getCurrentTime = () => {
     return this.inbuildTime;
   }
 
 
-	/**
-	 * Clear this glyphset and its list of glyphs which will release them from the memory.
-	 */
+  /**
+   * Clear this glyphset and its list of glyphs which will release them from the memory.
+   */
   this.dispose = () => {
     for (let i = glyphList.length - 1; i >= 0; i--) {
       glyphList[i].dispose();
@@ -638,12 +664,14 @@ const Glyphset = function () {
     this.groupName = undefined;
   }
 
-  //Update the geometry and colours depending on the morph.
+  /**
+   * Update the glyphsets if required the render.
+   */
   this.render = (delta, playAnimation, options) => {
     if (playAnimation == true) {
       let targetTime = this.inbuildTime + delta;
       if (targetTime > this.duration)
-        targetTime = targetTime - this.duration
+        targetTime = targetTime - this.duration;
       this.inbuildTime = targetTime;
       if (morphColours || morphVertices) {
         updateMorphGlyphsets();

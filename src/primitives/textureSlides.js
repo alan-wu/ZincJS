@@ -1,18 +1,32 @@
 const THREE = require('three');
 const shader = require("../shaders/textureSlide.js");
 /**
- * Provides a base class object which stores textures and rendering object.
+ * Provides a class which create a texture stacks in a block
+ * with shaders allowing slices of texture to be displayed.
+ * 
+ * @param {TextureArray} textureIn - An object of texture array
+ * holding texture information.
  * 
  * @class
  * @author Alan Wu
- * @return {Zinc.Lines}
+ * @return {TextureSlides}
  */
 const TextureSlides = function (textureIn) {
   (require('./texturePrimitive').TexturePrimitive).call(this, textureIn);
   this.isTextureSlides = true;
   
-  /*
-   * Create slides
+  /**
+    @typedef SLIDE_SETTINGS
+    @type {Set}
+    @property {String} direction - the value must be x, y or z, specify the
+    direction the slide should be facing.
+    @property {Number} value - Normalised value of the location on direction.
+   */
+  /**
+   * Create the slides required for visualisation based on the slide settings.
+   * The slides itself is an {THREE.PlanGeometry} object.
+   * 
+   * @param {SLIDE_SETTINGS} slideSettings - An array to each slide settings.
    */
   this.createSlides = slideSettings => {
     if (!this.morph) this.morph = new THREE.Group();
@@ -54,16 +68,20 @@ const TextureSlides = function (textureIn) {
     }
   }
 
-  /*
-   * Get all slides, return them in an array
+  /**
+   * Get  the array of slides, return them in an array
+   *
+   * @return {Array} - Return an array of {@link THREE.Object)
    */
   this.getSlides = () => {
     if (this.morph) return [...this.morph.children];
     return [];
   }
 
-  /*
+  /**
    * Remove a slide, this will dispose the slide and its material.
+   *
+   * @param {Slide} slide - An array to each slide settings.
    */
   this.removeSlide = slide => {
     if (slide && this.morph) {
@@ -78,6 +96,9 @@ const TextureSlides = function (textureIn) {
     }
   }
 
+  /**
+   * Clean up all internal objects.
+   */
   this.dispose = () => {
     this.morph.children.forEach(slide=> {
       if (slide.geometry)

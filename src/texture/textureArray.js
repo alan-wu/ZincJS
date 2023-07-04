@@ -1,10 +1,25 @@
 const THREE = require('three');
 
-const TextureArray = function() {
+/**
+ * Texture array object for holding array of images into
+ * texures unit that can be used by other texture primitives.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {TextureArray}
+ */
+const TextureArray = function () {
   (require('./texture').Texture).call(this);
   this.isTextureArray = true;
-  
-  this.loadFromImages = async function(srcArrays) {
+
+
+  /**
+   * Read images from an array containg src locations.
+   * 
+   * @async
+   * @param {Array} srcArrays - List of source location of the images.
+   */
+  this.loadFromImages = async function (srcArrays) {
     let w = 1;
     let h = 1;
     let d = 0;
@@ -31,8 +46,8 @@ const TextureArray = function() {
         fullArray.set(data, length);
         length += data.length;
       });
-      
-      this.impl = new THREE.DataTexture2DArray( fullArray, w, h, d );
+
+      this.impl = new THREE.DataTexture2DArray(fullArray, w, h, d);
       this.size = {
         width: w,
         height: h,
@@ -42,7 +57,21 @@ const TextureArray = function() {
     }
   }
 
-  this.getMaterial = function(options) {
+  /**
+   * Get and create the material containing shaders and the textures.
+   * The texture must be read and ready before calling this function.
+   * 
+   *
+   * @param {Object} options - Customise the material with the options object.
+   * @param {String} options.fs - string of the fragment shader used for 
+   * visualisation.
+   * @param {String} options.vs - string of the vertex shader used for 
+   * visualisation.
+   * @param {Object} options.uniforms - Containing the data to be passed into the shaders.
+   * @param {String} options.glslVersion - Version of glsl used for compile this shader.
+   * 
+   */
+  this.getMaterial = function (options) {
     if (this.impl) {
       let material = undefined;
       if (options) {
@@ -53,24 +82,24 @@ const TextureArray = function() {
           let side = THREE.FrontSide;
           if (options.side)
             side = options.side;
-          material = new THREE.ShaderMaterial( {
+          material = new THREE.ShaderMaterial({
             transparent,
             uniforms: options.uniforms,
             vertexShader: options.vs,
             fragmentShader: options.fs,
             side
-          } ); 
+          });
           if (options.glslVersion) {
             material.glslVersion = options.glslVersion;
           }
         }
       } else {
         material = new THREE.MeshBasicMaterial({
-          color : new THREE.Color(1, 1, 1),
-          transparent : false,
-          opacity : 1.0,
-          map : this.impl,
-          side : THREE.DoubleSide
+          color: new THREE.Color(1, 1, 1),
+          transparent: false,
+          opacity: 1.0,
+          map: this.impl,
+          side: THREE.DoubleSide
         });
       }
       if (material) {

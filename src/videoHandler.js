@@ -1,8 +1,14 @@
 var THREE = require('three');
 
-
-// Alan notes: pause video when stuck
-//VideoTexture is used for creating and updating a video projected onto a Three.js texture
+/**
+ * Provide basic functionality to display video as texture.
+ * VideoTexture is used for creating and updating a video projected onto a Three.js texture
+ * 
+ * @class
+ * @param {Object} containerIn - Container to create the renderer on.
+ * @author Alan Wu
+ * @return {VideoHandler}
+ */
 exports.VideoHandler = function(srcIn)  {
 
 	var _this = this;

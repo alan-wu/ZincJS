@@ -1,11 +1,23 @@
 const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
 
+/**
+ * Object with containg viewport information used in ZincJS.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {Viewport}
+ */
 const Viewport = function () {
+  /** @property {Number} */
 	this.nearPlane = 0.168248;
+  /** @property {Number} */
 	this.farPlane = 6.82906;
+  /**@property {Array} */
 	this.eyePosition = [0.5, -2.86496, 0.5];
+  /** @property {Array} */
 	this.targetPosition = [0.5, 0.5, 0.5];
+  /** @property {Array} */
 	this.upVector = [ 0.0, 0.0, 1.0];
 	const _this = this;
 
@@ -16,13 +28,28 @@ const Viewport = function () {
     _this.targetPosition = targetPosition;
     _this.upVector = upVector;
   }
-
 };
 
+/**
+ * Provides the basic controls for a scene.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {CameraControls}
+ */
 const CameraControls = function ( object, domElement, renderer, scene ) {
 	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5, SYNC_CONTROL: 6 };
+  /** 
+   * Actions states.
+   * Available states are NONE, ROTATE, ZOOM, PAN, TOUCH_ROTATE, TOUCH_ZOOM, TOUCH_PAN and SCROLL.
+   * @property {Object} 
+   */
 	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
   const ROTATE_DIRECTION = { NONE: -1, FREE: 1, HORIZONTAL: 2, VERTICAL: 3 };
+  /** 
+   * Available click actions are MAIN, AUXILIARY and SECONARY.
+   * @property {Object} 
+   */
 	const CLICK_ACTION = {};
 	CLICK_ACTION.MAIN = STATE.ROTATE;
 	CLICK_ACTION.AUXILIARY = STATE.ZOOM;
@@ -105,25 +132,58 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     }
   }
 
+  /**
+   * Add a viewport to the list of available named viewports.
+   * 
+   * @param {String} name - Name of the viewport
+   * @param {Viewport} viewportName - Viewport to be added
+   */
   this.addViewport = (viewportName, viewport) => {
     if (viewportName && viewport)
       viewports[viewportName] = viewport;
   }
 
+  /**
+   * Set the default viewport for this {@link CameraControls}.
+   * 
+   * @param {String} defaultName - Name of the viewport
+   * 
+   * @return {Boolean} true if set successfully, false otherwise.
+   */
   this.setDefaultViewport = defaultName => {
 		if (defaultName && (defaultName in viewports)) {
       defaultViewport = defaultName;
-    }	
+      return true;
+    }
+    return false
 	}
 
+  /**
+   * Get the name of the default viewport.
+   * 
+   * 
+   * @return {String}
+   */
   this.getDefaultViewport = () => {
 		return defaultViewport;
 	}
 	
+  /**
+   * Get the viewport with the provied name stored in this object.
+   * @param {String} name - Name of the viewport
+   * 
+   * @return {Viewport}
+   */
 	this.getViewportOfName = name => {
 		return viewports[name];
 	}
 
+  /**
+   * Set the viewport with a name if it is found in the list.
+   * @param {String} name - Name of the viewport
+   * 
+   * @return {Boolean} if viewport is found and set, otherwise false.
+   */
   this.setCurrentViewport = name => {
     if (name in viewports) {
       this.setCurrentCameraSettings(viewports[name])
@@ -132,6 +192,12 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     return false;
 	}
 
+  /**
+   * Set the direction of rotation allowed with this control.
+   * 
+   * @param {String} mode - available options are none, horizontal,
+   * vertical and free.
+   */
   this.setRotationMode = mode => {
     switch (mode) {
       case "none":
@@ -157,15 +223,36 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
         viewports[defaultViewport]);
 	}
 
-  //Get the NDC coordinates from the given dom coordiantes
+  /**
+   * Get normalised coordinates from windows coordinates.
+   * 
+   * @param {String} x
+   * @param {String} y
+   * @param {THREE.Vector2} positionIn - Optional, write the value into
+   * this object if it is provided, otherwise a new object will 
+   * be created and returned.
+   * 
+   * @return {THREE.Vector2} containing the normalised x and y coordinates.
+   */
   this.getNDCFromDocumentCoords = (x, y, positionIn) => {
-
+    updateRect(false);
     const position = positionIn ? positionIn : new THREE.Vector2();
     position.x = ((x - rect.left) / rect.width) * 2 - 1;
     position.y = -((y - rect.top) / rect.height) * 2 + 1;
     return position;
   }
 
+  /**
+   * Get the relative windows coordinates from normalised coordiantes.
+   * 
+   * @param {String} x 
+   * @param {String} y
+   * @param {THREE.Vector2} positionIn - Optional, write the value into
+   * this object if it is provided, otherwise a new object will 
+   * be created and returned.
+   * 
+   * @return {THREE.Vector2} containing the relative x and y coordinates.
+   */
   this.getRelativeCoordsFromNDC = (x, y, positionIn) => {
     updateRect(false);
     const position = positionIn ? positionIn : new THREE.Vector2();
@@ -174,6 +261,12 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     return position;
   }
 
+  /**
+   * Map a mouse click to the specified action.
+   * 
+   * @param {String} buttonName - please see {@link CLICK_ACTION}
+   * @param {String} actionName - please see {@link STATE}
+   */
 	this.setMouseButtonAction = (buttonName, actionName) => {
 		CLICK_ACTION[buttonName] = STATE[actionName];
   }
@@ -426,6 +519,12 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	    return {position: _v, up: _a};
 	}
 	
+  /**
+   * Rotate around the axis with the amount specified by angle.
+   * 
+   * @param {THREE.Vector3} axis - The rotational axis.
+   * @param {Number} Angle - Specify how much the camera shoudl rotate by.
+   */
 	this.rotateAboutLookAtpoint = (axis, angle) => {
 	  const returned_values = this.getVectorsFromRotateAboutLookAtPoints(axis, angle);
 	  this.cameraObject.position.copy(returned_values.position);
@@ -502,7 +601,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     const delta_y = unit * this.scrollRate;
     this.changeZoomByValue(delta_y);
   }
-  
+
   this.changeZoomByValue = delta_y => {
 		if (typeof this.cameraObject !== "undefined")
 		{
@@ -569,7 +668,10 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.setDirectionalLight = directionalLightIn => {
 		this.directionalLight = directionalLightIn;
 	};
-	
+
+  /**
+   * Force an update to the position of the directional light.
+   */
 	this.updateDirectionalLight = () => {
 		if (this.directionalLight != 0) {
 			this.directionalLight.position.set(this.cameraObject.position.x,
@@ -578,7 +680,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		}
 	}
 	
-	
+	/**
+   * Enable the camera control.
+   */
 	this.enable = function () {
 		enabled = true;
 		if (this.domElement && this.domElement.addEventListener) {
@@ -594,7 +698,10 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
       this.domElement.addEventListener( 'mouseenter', onDocumentEnter, false );
 	  }
 	}
-	
+
+  /**
+   * Disable the camera control.
+   */
 	this.disable = function () {
 		enabled = false;
 		if (this.domElement && this.domElement.removeEventListener) {
@@ -616,6 +723,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		numberOfCameraPoint = pathData.NumberOfPoints;
 	}
 	
+  /**
+   * This is an experimental feature. It loads a path - point to point which
+   * the camera will travel.
+   * 
+   * @param {String} path_url - The path.
+   * @param {requestCallback} finishCallback - The callback once the path is load.
+   */
 	this.loadPathURL = (path_url, finishCallback) => {
 		const xmlhttp = new XMLHttpRequest();
 		xmlhttp.onreadystatechange = () => {
@@ -630,7 +744,12 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		xmlhttp.open("GET", requestURL, true);
 		xmlhttp.send();
 	}
-	
+
+  /**
+   * Set the duration for the camera to travel along the path.
+   * 
+   * @param {Number} durationIn - the duration for the path.
+   */
 	this.setPathDuration = durationIn => {
     duration = durationIn;
     if (smoothCameraTransitionObject)
@@ -639,14 +758,33 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
       rotateCameraTransitionObject.setDuration(duration);
 	}
 	
+  /**
+   * Get the playRate - this determines how fast it takes to 
+   * finish one duration.
+   * 
+   * @return {Number}
+   */
 	 this.getPlayRate = () => {
 	    return playRate;
 	  }
 	
+  /**
+   * Set the playRate - this determines how fast it takes to 
+   * finish one duration.
+   * 
+   * @param {Number} playRateIn - The play rate speed.
+   */
 	this.setPlayRate = playRateIn => {
 		playRate = playRateIn;
 	}
-	 
+
+  /**
+   * Update the internal timer by the set amount, this can
+   * be used to force a time update by setting delta to zero.
+   * 
+   * @param {Number} delta - The amount of time to increment
+   * the time by.
+   */
 	const updateTime = delta => {
 		let targetTime = inbuildTime + delta;
 		if (targetTime > duration)
@@ -654,10 +792,21 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		inbuildTime = targetTime;
 	};
 	
+  /**
+   * Get the current inbuild time,
+   * 
+   * @return {Number}
+   */
 	 this.getTime = () => {
 	    return inbuildTime;
 	  }
 	
+  /**
+   * Set the current inbuild time,
+   * 
+   * @param {Number} timeIn - this will be used as the current time,
+   * it should be between the range of zero and the set duration.
+   */
 	this.setTime = timeIn => {
 	  if (timeIn > duration)
 	    inbuildTime = duration;
@@ -667,10 +816,22 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	    inbuildTime = timeIn;
 	}
 	
+  /**
+   * Get the number of frame which is determine by number of points
+   * in the camera path.
+   * 
+   * @return {Number}
+   */
 	this.getNumberOfTimeFrame = () => {
 		return numberOfCameraPoint;
 	}
-	
+
+  /**
+   * Get the current time frame and it will return three values in
+   * an array.
+   * 
+   * @return {Array} - bottom frame, top frame and the proportion.
+   */
 	this.getCurrentTimeFrame = () => {
 	  if (numberOfCameraPoint > 2) {
   		const current_time = inbuildTime/duration * (numberOfCameraPoint - 1);
@@ -692,6 +853,11 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	  return undefined;
 	}
 	
+  /**
+   * Set the current time frame.
+   * 
+   * @param {Number} targetTimeFrame - bottom frame, top frame and the proportion.
+   */
 	this.setCurrentTimeFrame = targetTimeFrame => {
 	   if (numberOfCameraPoint > 2) {
   		inbuildTime = duration * targetTimeFrame / (numberOfCameraPoint - 1);
@@ -702,6 +868,11 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	   }
 	}
 
+  /**
+   * Update the progress on the path by the specified amount - delta.
+   * 
+   * @param {Number} delta - The amount of time to increment
+   */
 	const updatePath = delta => {
 		if (currentMode === MODE.PATH) {
 			updateTime(delta);
@@ -728,11 +899,15 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		}
 	};
 	
+  /**
+   * Force recalculation of the current path.
+   */
 	this.calculatePathNow = () => {
 	  updatePath(0.0);
 	}
 
-  handleSyncControl = () => {
+  // handle synchronised control based on information in the idc
+  const handleSyncControl = () => {
     if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
       //rotateion does not trigger callback
       tumble();
@@ -751,6 +926,11 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     }
   }
 	
+  /**
+   * Update all controls related changes - including calculation of the viewport.
+   * 
+   * @param {Number} timeChanged - Time eclipse since last called.
+   */
 	this.update = timeChanged => {
 		const delta = timeChanged * playRate;
 		let controlEnabled = enabled;
@@ -801,41 +981,70 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		}
 	};
 	
+  /**
+   * Switch to path mode and begin traveling through the camera path.
+   */
 	this.playPath = () => {
 		currentMode = MODE.PATH;
 	}
-	
+
+  /**
+   * Stop playing path and switch back to normal control.
+   */
 	this.stopPath = () => {
 		currentMode = MODE.DEFAULT;
 	}
 	
+  /**
+   * Check rather the control is currently in path mode.
+   * 
+   * @return {Boolean}
+   */
 	this.isPlayingPath = () => {
 		return (currentMode === MODE.PATH);
 	}
 	
+  /**
+   * Enable directional light update as the camera
+   * is traveling through path.
+   * 
+   * @param {Boolean} flag
+   */
 	this.enableDirectionalLightUpdateWithPath = flag => {
 		updateLightWithPathFlag = flag;
 	}
 	
+  /**
+   * Enable rotation using the devices's accelerometer.
+   */
 	this.enableDeviceOrientation = () => {
 		if (!deviceOrientationControl)
 			deviceOrientationControl = new ModifiedDeviceOrientationControls(this.cameraObject);
 	}
-	
+
+  /**
+   * Disable rotation using the devices's accelerometer.
+   */
 	this.disableDeviceOrientation = () => {
 		if (deviceOrientationControl) {
 			deviceOrientationControl.dispose();
 			deviceOrientationControl = undefined;
 		}
 	}
-	
+
+  /**
+   * Check rather device orientation based on accelerometer is on.
+   */
 	this.isDeviceOrientationEnabled = () => {
 		if (deviceOrientationControl) {
 			return true;
 		}
 		return false;
 	}
-	
+
+  /**
+   * Reset the viewport settings to the one provided by default viewport.
+   */
 	this.resetView = () => {
     const viewport = viewports[defaultViewport];
 		this.cameraObject.near = viewport.nearPlane;
@@ -850,7 +1059,11 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		this.updateDirectionalLight();
 	}
 
-	
+  /**
+   * Set the current camera settings with the provided viewport.
+   * 
+   * @param {Viewport} newViewport - viewport settings.
+   */
 	this.setCurrentCameraSettings = newViewport => {
 		if (newViewport.nearPlane)
 			this.cameraObject.near = newViewport.nearPlane;
@@ -868,7 +1081,19 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		this.cameraObject.updateProjectionMatrix();
 		this.updateDirectionalLight();
 	}
-	
+
+  /**
+   * Get the viewport based on centre, radius, view_angle and clip distance.
+   * 
+   * @param {Number} centreX - x coordinate of the centre.
+   * @param {Number} centreY - y coordinate of the centre.
+   * @param {Number} centreZ - z coordinate of the centre.
+   * @param {Number} radius - radius if the viewport.
+   * @param {Number} view_angle - view angle.
+   * @param {Number} clip_distance - clip_distance between the near and far plane.
+   * 
+   * @return {Viewport}
+   */	
 	this.getViewportFromCentreAndRadius = (centreX, centreY, centreZ, radius, view_angle, clip_distance) => {
 		let eyex = this.cameraObject.position.x-this.cameraObject.target.x;
 		let eyey = this.cameraObject.position.y-this.cameraObject.target.y;
@@ -905,6 +1130,11 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		return newViewport;
 	}
 
+  /**
+   * Get the current camera viewport.
+   * 
+   * @return {Viewport}
+   */
 	this.getCurrentViewport = () => {
 		const currentViewport = new Viewport();
 		currentViewport.nearPlane = this.cameraObject.near;
@@ -928,78 +1158,160 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.getDefaultTargetPosition = () => {
 		return targetPosition;
 	}
-	
+
+  /**
+   * Setup a smooth transition object which transition the camera from one 
+   * viewport to the other in the specified duration. This will not work if 
+   * {@link rotateCameraTransition} is active.
+   * To use this object, the transition must be enabled using
+   * {@link enableCameraTransition}.
+   * 
+   * @param {Viewport} startingViewport - the starting viewport
+   * @param {Viewport} endingViewport - the viewport ti end the transistion with.
+   * @param {Number} durationIn - duration of the smooth transition.
+   */
 	this.cameraTransition = (startingViewport, endingViewport, durationIn) => {
 	  if (rotateCameraTransitionObject == undefined)
 	    smoothCameraTransitionObject = new SmoothCameraTransition(startingViewport, endingViewport,
 	        this, durationIn);
 	}
-	
+
+  /**
+   * Setup a rotate camera transition object which rotate the 
+   * camera by the specified the angle in the specified 
+   * duration. This will not work if {@link cameraTransition}
+   * is active.
+   * To use this object, the transition must be enabled using
+   * {@link enableCameraTransition}.
+   * 
+   * @param {THREE.Vector3} axis - the starting viewport
+   * @param {Number} angle - the viewport ti end the transistion with.
+   * @param {Number} duration - duration of the smooth transition.
+   */
 	this.rotateCameraTransition = (axis, angle, duration) => {
 	  if (smoothCameraTransitionObject == undefined)
 	    rotateCameraTransitionObject = new RotateCameraTransition(axis, angle,
 	      this, duration);
 	}
-	
+
+  /**
+   * Enable camera transition, {@link rotateCameraTransition} amd
+   * {@link cameraTransition} must be called before camera transition can
+   * be enabled.
+   */
 	this.enableCameraTransition = () => {
 	  if (smoothCameraTransitionObject)
 	    currentMode = MODE.SMOOTH_CAMERA_TRANSITION;
 	  if (rotateCameraTransitionObject)
 	    currentMode = MODE.ROTATE_CAMERA_TRANSITION;
 	}
-	
+
+  /**
+   * Pause the camera transition.
+   */
 	this.pauseCameraTransition = () => {
 		currentMode = MODE.DEFAULT;
 	}
-	
+
+  /**
+   * Stop the camera transition and remove camera transition
+   * and rotate camera transition.
+   */
 	this.stopCameraTransition = () => {
 		currentMode = MODE.DEFAULT;
 		smoothCameraTransitionObject = undefined;
 		rotateCameraTransitionObject = undefined;
 	}
-	
+
+  /**
+   * Check if camera transition is active.
+   */
 	this.isTransitioningCamera = () => {
 		return (currentMode === MODE.SMOOTH_CAMERA_TRANSITION ||
 		    currentMode === MODE.ROTATE_CAMERA_TRANSITION);
 	}
   
-  /* tumble rate is in radians per second */
+  /**
+   * Setup auto tumble object of the camera which will rotate the camera
+   * around the target as if the user is rotating the camera by mouse/touch
+   * interaction.
+   * The tumbling will only be enabled with {@link enabelAutoTumble}. 
+   * 
+   * @param {Array} tumbleDirectionIn - direction of the mouse/touch.
+   * @param {Number} tumbleRateIn - Speed of the tumbling.
+   * @param {Boolean} stopOnCameraInputIn - Disable the tumbling once the user
+   * start interacting with the scene.
+   */
 	this.autoTumble = (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn) => {
 		cameraAutoTumbleObject = new CameraAutoTumble(tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, this);
 	}
-	
+
+  /**
+   * Enable autotumble.
+   */
 	this.enableAutoTumble = () => {
 		currentMode = MODE.AUTO_TUMBLE;
 	}
-	
+
+  /**
+   * Disable the autotumble.
+   */
 	this.stopAutoTumble = () => {
 		currentMode = MODE.DEFAULT;
 		cameraAutoTumbleObject = undefined;
 	}
-	
+
+  /**
+   * Update the autotumble object.
+   */
 	this.updateAutoTumble = () => {
 		if (cameraAutoTumbleObject)
 			cameraAutoTumbleObject.requireUpdate = true;
 	}
-	
+
+  /**
+   * Check rather autotumble is active.
+   * 
+   * @return {Boolean}
+   */
 	this.isAutoTumble = () => {
 		return (currentMode === MODE.AUTO_TUMBLE);
 	}
 	
+  /**
+   * Create an internal raycaster object and enable it for picking.
+   * 
+   * @param {Scene} sceneIn - The scene to pick from, it can be different from the
+   * camera's scene.
+   * @param {requestCallback} callbackFunctionIn - The callback for pick event.
+   * @param {requestCallback} hoverCallbackFunctionIn - The callback for hover
+   * over event.
+   */
   this.enableRaycaster = (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) => {
     if (zincRayCaster == undefined)
       zincRayCaster = new RayCaster(sceneIn, this.scene, callbackFunctionIn, hoverCallbackFunctionIn, this.renderer);
   }
 
+  /**
+   * Disable raycaster and remove the internal ray caster object.
+   */
   this.disableRaycaster = () => {
     zincRayCaster.disable();
     zincRayCaster = undefined;
   }
 
+  /**
+   * Check rather the camera is in syncControl mode.
+   * 
+   * @return {Boolean}
+   */
   this.isSyncControl = () => {
     return currentMpde === MODE.SYNC_CONTROL;
   }
 
+  /**
+   * Enable syncControl.
+   */
   this.enableSyncControl = () => {
     currentMode = MODE.SYNC_CONTROL;
     if (!ndcControl)
@@ -1009,6 +1321,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     return ndcControl;
   }
 
+  /**
+   * Disable syncControl.
+   */
   this.disableSyncControl = () => {
     currentMode = MODE.DEFAULT;
     this.cameraObject.zoom = 1;
