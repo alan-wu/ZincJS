@@ -1,5 +1,13 @@
 const THREE = require('three');
 
+/**
+ * This provide a full scale minimap. It will always
+ * display the whole map.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {Minimap}
+ */
 exports.Minimap = function (sceneIn) {
   let targetScene = sceneIn;
   this.camera = new THREE.OrthographicCamera(

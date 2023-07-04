@@ -44,6 +44,11 @@ How to export models to ZincJS:
 
 Here is a short instruction on how to get simple models from CMGUI/Zinc showing on web brwoser quickly.
 
+For Mapping Tool users:
+-----------------------
+
+[Argon scene exporter](https://abi-mapping-tools.readthedocs.io/en/v1.2.1/mapclientplugins.argonsceneexporterstep/docs/index.html)
+
 For PyZinc users:
 -----------------
 

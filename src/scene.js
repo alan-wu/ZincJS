@@ -14,15 +14,15 @@ const defaultMetadata = function() {
 const defaultDuration = 6000;
 
 /**
- * A Zinc.Scene contains {@link Zinc.Geometry}, {@link Zinc.Glyphset} and 
- * {@link Zinc.CameraControls} which controls the viewport and additional features.
+ * A Scene contains {@link Region},and 
+ * {@link CameraControls} which controls the viewport and additional features.
  * It is the main object used for controlling what is and what is not displayed
  * on the renderer.
  * 
  * @class
  * @param {Object} containerIn - Container to create the renderer on.
  * @author Alan Wu
- * @return {Zinc.Scene}
+ * @return {Scene}
  */
 exports.Scene = function (containerIn, rendererIn) {
   const container = containerIn;
@@ -276,6 +276,14 @@ exports.Scene = function (containerIn, rendererIn) {
     return rootRegion.findLinesWithGroupName(GroupName, true);
   }
 
+  /** 
+   * Find a list of objects with the specified name, this will
+   * tranverse through the region tree to find all child objects
+   * with matching name.
+   * 
+   * @param {String} GroupName - Groupname to match with.
+   * @returns {Array}
+   */
   this.findObjectsWithGroupName = GroupName => {
     return rootRegion.findObjectsWithGroupName(GroupName, true);
   }
@@ -284,6 +292,12 @@ exports.Scene = function (containerIn, rendererIn) {
     return rootRegion.findObjectsWithAnatomicalId(anatomicalId, true);
   }
 
+  /** 
+   * Get the bounding box of all zinc objects in list.
+   * 
+   * @param {Array} objectsArray - Groupname to match with.
+   * @returns {THREE.Box3}
+   */
   this.getBoundingBoxOfZincObjects = objectsArray => {
     let boundingBox = undefined;
     for (let i = 0; i < objectsArray.length; i++) {
@@ -298,6 +312,14 @@ exports.Scene = function (containerIn, rendererIn) {
     return boundingBox;
   }
 
+  /** 
+   * Convert the vector3 into screen coordinates.
+   * 
+   * @param {THREE.Vector3} point - Vector 3 containing the point to convert,
+   * this vector will be overwritten with the returned value.
+   * @param {Array} objectsArray - Groupname to match with.
+   * @returns {THREE.Vector3}
+   */
   this.vectorToScreenXY = point => {
     point.project(this.camera);
     let width = getDrawingWidth();
@@ -309,6 +331,12 @@ exports.Scene = function (containerIn, rendererIn) {
     return point;
   }
 
+  /** 
+   * Get the screen coordinate of the centroid of provided list of objects.
+   * 
+   * @param {Array} zincObjects - List of {@link ZincObject}.
+   * @returns {THREE.Vector3}
+   */
   this.getObjectsScreenXY = zincObjects => {
     if (zincObjects && zincObjects.length > 0) {
       let boundingBox = this.getBoundingBoxOfZincObjects(zincObjects);
@@ -319,11 +347,24 @@ exports.Scene = function (containerIn, rendererIn) {
     return undefined;
   }
 
+  /** 
+   * Get the screen coordinate of the centroid of all objects 
+   * in scene with the provided name.
+   * 
+   * @param {String} name - List of {@link ZincObject}.
+   * @returns {THREE.Vector3}
+   */
   this.getNamedObjectsScreenXY = name => {
     let zincObjects = this.findObjectsWithGroupName(name);
     return this.getObjectsScreenXY(zincObjects);
   };
 
+  /** 
+   * Add zinc object into the root {@link Region} of sfcene.
+   * 
+   * @param {ZincObject} - zinc object ot be added.
+   * @returns {THREE.Vector3}
+   */
   this.addZincObject = zincObject => {
     if (zincObject) {
       rootRegion.addZincObject(zincObject);
@@ -684,7 +725,7 @@ exports.Scene = function (containerIn, rendererIn) {
 
   /**
    * Get the default duration value.
-   * returns {Number}
+   * @return {Number}
    */
   this.getDuration = () => {
     return duration;
@@ -692,7 +733,7 @@ exports.Scene = function (containerIn, rendererIn) {
 
   /**
    * Enable or disable stereo effect of this scene.
-   * @param {Boolean} flag - Indicate either stereo effect control 
+   * @param {Boolean} stereoFlag - Indicate either stereo effect control 
    * should be enabled or disabled.
    */
   this.setStereoEffectEnable = stereoFlag => {
@@ -706,10 +747,24 @@ exports.Scene = function (containerIn, rendererIn) {
     stereoEffectFlag = stereoFlag;
   }
 
+
+  /**
+   * Check rather object is in scene.
+   * 
+   * @return {Boolean}
+   */
   this.objectIsInScene = zincObject => {
     return rootRegion.objectIsInRegion(zincObject, true);
   }
 
+  /**
+   * Transition the camera view to view the entirety of the 
+   * bounding box with a smooth transition within the providied
+   * transitionTime.
+   * 
+   * @param {THREE.Box3} boundingBox - the bounding box to target
+   * @param {Number} transitionTime - Duration to perform the transition.
+   */
   this.alignBoundingBoxToCameraView = (boundingBox, transitionTime) => {
     if (boundingBox) {
       const center = new THREE.Vector3();
@@ -738,6 +793,13 @@ exports.Scene = function (containerIn, rendererIn) {
     }
   }
 
+  /**
+   * Transition the camera into viewing the zinc object with a 
+   * smooth transition within the providied transitionTime.
+   * 
+   * @param {ZincObject} zincObject - the bounding box to target
+   * @param {Number} transitionTime - Duration to perform the transition.
+   */
   this.alignObjectToCameraView = (zincObject, transitionTime) => {
     if (this.objectIsInScene(zincObject)) {
       const boundingBox = zincObject.getBoundingBox();
@@ -745,6 +807,11 @@ exports.Scene = function (containerIn, rendererIn) {
     }
   }
 
+  /**
+   * Set the camera to point to the centroid of the zinc object.
+   * 
+   * @param {ZincObject} zincObject - the bounding box to target
+   */
   this.setCameraTargetToObject = zincObject => {
     if (this.objectIsInScene(zincObject)) {
       const center = new THREE.Vector3();
@@ -952,11 +1019,25 @@ exports.Scene = function (containerIn, rendererIn) {
     this.setMetadataTag("OriginalDuration", string);
   }
 
+  /**
+   * Export the scene in GLTF format, it can either return it in
+   * string or binary form.
+   * 
+   * @param {Boolean} binary - Indicate it should be exported as binary or
+   * text.
+   * 
+   * @return {Promise} The exported data if the promise resolve successfully
+   */
   this.exportGLTF = (binary) => {
     const exporter = new SceneExporter(this);
     return exporter.exportGLTF(binary);
   }
 
+  /**
+   * Get the root region of the scene.
+   * 
+   * @return {Region} Return the root region of the scene
+   */
   this.getRootRegion = () => {
     return rootRegion;
   }

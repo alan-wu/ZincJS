@@ -3,7 +3,7 @@
     "title": "ZincJS",
     "recurseDepth": 10,
     "source": {
-    	"include": [ "README.md", "src" ],
+    	"include": [ "README.md", "src", "src/primitives", "src/texture" ],
     	"exclude": [ "src/OBJLoader.js", "src/STLLoader.js"], 
         "includePattern": ".+\\.js(doc|x)?$",
         "excludePattern": "(^|\\/|\\\\)_"

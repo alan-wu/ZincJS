@@ -1,6 +1,14 @@
 const THREE = require('three');
 const THREEGeometry = require('../three/Geometry').Geometry;
 
+/**
+ * Provides the base object for other primitive types.
+ * This class contains multiple base methods.
+ * 
+ * @class
+ * @author Alan Wu
+ * @return {ZincObject}
+ */
 const ZincObject = function() {
   this.isZincObject = true;
   this.geometry = undefined;
@@ -20,7 +28,7 @@ const ZincObject = function() {
   this.animationGroup = undefined;
 	/**
 	 * Total duration of the animation, this value interacts with the 
-	 * {@link Zinc.Renderer#playRate} to produce the actual duration of the
+	 * {@link Renderer#playRate} to produce the actual duration of the
 	 * animation. Actual time in second = duration / playRate.
 	 */
   this.duration = 6000;
@@ -38,6 +46,11 @@ const ZincObject = function() {
   this.animationClip = undefined;
 }
 
+/**
+ * Set the duration of the animation of this object.
+ * 
+ * @param {Number} durationIn - Duration of the animation.
+ */
 ZincObject.prototype.setDuration = function(durationIn) {
   this.duration = durationIn;
   if (this.clipAction) {
@@ -45,18 +58,36 @@ ZincObject.prototype.setDuration = function(durationIn) {
   }
 }
 
+/**
+ * Get the duration of the animation of this object.
+ * 
+ * @return {Number}
+ */
 ZincObject.prototype.getDuration = function() {
   return this.duration;
 }
 
+/**
+ * Set the region this object belongs to.
+ * 
+ * @param {Region} region
+ */
 ZincObject.prototype.setRegion = function(region) {
   this.region = region;
 }
 
+/**
+ * Get the region this object belongs to.
+ * 
+ * @return {Region}
+ */
 ZincObject.prototype.getRegion = function() {
   return this.region;
 }
 
+/**
+ * Convert a {THREE.Geometry} into a {THREE.BufferGeometry}.
+ */
 ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
   let geometry = undefined;
   if (geometryIn instanceof THREEGeometry) {
@@ -78,7 +109,11 @@ ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
   return geometry;
 }
 
-ZincObject.prototype.checkAndCreateTransparentMesh = function(options) {
+/**
+ * Handle transparent mesh, create a clone for backside rendering if it is
+ * transparent.
+ */
+ZincObject.prototype.checkAndCreateTransparentMesh = function() {
   if (this.isGeometry && this.morph.material && this.morph.material.transparent) {
     if (!this.secondaryMesh) {
       let secondaryMaterial = this.morph.material.clone();
@@ -95,6 +130,10 @@ ZincObject.prototype.checkAndCreateTransparentMesh = function(options) {
   }
 }
 
+/**
+ * Handle transparent mesh, remove a clone for backside rendering if it is
+ * transparent.
+ */
 ZincObject.prototype.checkAndRemoveTransparentMesh = function() {
   if (this.isGeometry && this.secondaryMesh) {
     this.morph.remove(this.secondaryMesh);
@@ -104,6 +143,15 @@ ZincObject.prototype.checkAndRemoveTransparentMesh = function() {
   this.morph.material.side = THREE.DoubleSide;
 }
 
+/**
+ * Set the mesh function for zincObject.
+ * 
+ * @param {THREE.Mesh} mesh - Mesh to be set for this zinc object.
+ * @param {Boolean} localTimeEnabled - A flag to indicate either the mesh is
+ * time dependent.
+ * @param {Boolean} localMorphColour - A flag to indicate either the colour is
+ * time dependent.
+ */
 ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour) {
   this.animationGroup = new THREE.AnimationObjectGroup(mesh);
   this.mixer = new THREE.AnimationMixer(this.animationGroup);
@@ -145,6 +193,11 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   this.boundingBoxUpdateRequired = true;
 }
 
+/**
+ * Set the name for this ZincObject.
+ * 
+ * @param {String} groupNameIn - Name to be set.
+ */
 ZincObject.prototype.setName = function(groupNameIn) {
   this.groupName = groupNameIn;
   if (this.morph) {
@@ -290,12 +343,25 @@ ZincObject.prototype.setAlpha = function(alpha) {
     this.secondaryMesh.material.opacity = alpha;
 }
 
+/**
+ * The rendering will be culled if it is outside of the frustrum
+ * when this flag is set to true, it should be set to false if
+ * morphing is enabled.
+ * 
+ * @param {Boolean} flag - Set frustrum culling on/off based on this flag.
+ */
 ZincObject.prototype.setFrustumCulled = function(flag) {
   if (this.morph) {
     this.morph.frustumCulled = flag;
   }
 }
 
+/**
+ * Set rather a zinc object should be displayed using per vertex colour or
+ * not.
+ * 
+ * @param {Boolean} vertexColors - Set display with vertex color on/off.
+ */
 ZincObject.prototype.setVertexColors = function(vertexColors) {
   this.morph.material.vertexColors = vertexColors;
   this.geometry.colorsNeedUpdate = true;
@@ -304,18 +370,18 @@ ZincObject.prototype.setVertexColors = function(vertexColors) {
 }
 
 /**
- * Set the colour of the geometry.
+ * Get the colour of the mesh.
  * 
- * @param {THREE.Color} colour - Colour to be set for this geometry.
+ * @return {THREE.Color}
  */
-ZincObject.prototype.getColour = function(colour) {
+ZincObject.prototype.getColour = function() {
   if (this.morph && this.morph.material)
     return this.morph.material.color;
 	return undefined;
 }
   
 /**
- * Set the colour of the geometry.
+ * Set the colour of the mesh.
  * 
  * @param {THREE.Color} colour - Colour to be set for this geometry.
  */
@@ -326,6 +392,11 @@ ZincObject.prototype.setColour = function(colour) {
   this.geometry.colorsNeedUpdate = true;
 }
 
+/**
+ * Get the colour of the mesh in hex string form.
+ * 
+ * @return {String}
+ */
 ZincObject.prototype.getColourHex = function() {
   if (!this.morphColour) {
     if (this.morph && this.morph.material && this.morph.material.color)
@@ -334,6 +405,11 @@ ZincObject.prototype.getColourHex = function() {
   return undefined;
 }
 
+/**
+ * Set the colour of the mesh using hex in string form.
+ * 
+ * @param {String} hex - The colour value in hex form.
+ */
 ZincObject.prototype.setColourHex = function(hex) {
   this.morph.material.color.setHex(hex);
   if (this.secondaryMesh && this.secondaryMesh.material)
@@ -357,6 +433,8 @@ ZincObject.prototype.setMaterial = function(material) {
 
 /**
  * Get the index of the closest vertex to centroid.
+ * 
+ * @return {Number} - integer index in the array
  */
 ZincObject.prototype.getClosestVertexIndex = function() {
   let closestIndex = -1;
@@ -386,6 +464,8 @@ ZincObject.prototype.getClosestVertexIndex = function() {
 
 /**
  * Get the  closest vertex to centroid.
+ * 
+ * @return {THREE.Vector3}
  */
 ZincObject.prototype.getClosestVertex = function() {
   let position = new THREE.Vector3();
@@ -474,6 +554,9 @@ ZincObject.prototype.dispose = function() {
   this.groupName = undefined;
 }
 
+/**
+ * Update the marker's position and size based on current viewport. 
+ */
 ZincObject.prototype.updateMarker = function(playAnimation, options) {
   if ((playAnimation == false) &&
     (options && options.displayMarkers))
@@ -530,6 +613,11 @@ ZincObject.prototype.setRenderOrder = function(renderOrder) {
   }
 }
 
+/**
+ * Get the windows coordinates.
+ * 
+ * @return {Object} - position and rather the closest vertex is on screen.
+ */
 ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
   if (scene && scene.camera) {
     let inView = true;

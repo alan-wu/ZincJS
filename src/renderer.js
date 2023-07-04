@@ -3,14 +3,14 @@ const ResizeSensor = require('css-element-queries/src/ResizeSensor');
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
- * scene (@link Zinc.Scene} set to the renderer and each scene may contain as 
+ * scene (@link Scene} set to the renderer and each scene may contain as 
  * many geometries, glyphset and other primitives as the system can support.
  * Zinc.Renderer also allows additional scenes to be displayed.
  * 
  * @param {Object} containerIn - Container to create the renderer on.
  * @class
  * @author Alan Wu
- * @return {Zinc.Renderer}
+ * @return {Renderer}
  */
 exports.Renderer = function (containerIn) {
 
@@ -73,13 +73,13 @@ exports.Renderer = function (containerIn) {
 		const width = this.getDrawingWidth();
 		const height = this.getDrawingHeight();
 		if (renderer != undefined) {
-			let rect = undefined;
+			let localRect = undefined;
 			if (container) {
-				rect = container.getBoundingClientRect();
+				localRect = container.getBoundingClientRect();
 				renderer.setSize(width, height);
 			} else if (canvas) {
 				if (typeof canvas.getBoundingClientRect !== 'undefined') {
-					rect = canvas.getBoundingClientRect();
+					localRect = canvas.getBoundingClientRect();
 					canvas.width = width;
 					canvas.height = height;
 					renderer.setSize(width, height, false);
@@ -88,9 +88,9 @@ exports.Renderer = function (containerIn) {
 					
 				}
 			}
-			if (rect) {
-				currentOffset[0] = rect.left;
-				currentOffset[1] = rect.top;
+			if (localRect) {
+				currentOffset[0] = localRect.left;
+				currentOffset[1] = localRect.top;
 			}
 			const target = new THREE.Vector2();
 			renderer.getSize(target);
