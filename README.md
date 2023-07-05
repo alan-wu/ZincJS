@@ -6,11 +6,7 @@ Some of the following documentations are currerntly out-of-date .
 Webapp developed using ZincJS:
 ------------------------------
 
-[Braveheart Interactive hert](http://sites.bioeng.auckland.ac.nz/medtech/heart/)
-
-[Medtech Lungs](http://sites.bioeng.auckland.ac.nz/silo6/lung/)
-
-[SPARC MAPcore 2018 Demo](https://mapcore-demo.org/2018-datathon/)
+[SPARC Portal](https://sparc.science/maps?type=wholebody)
 
 [Fitzlet](https://sites.bioeng.auckland.ac.nz/mwu035/fitzlet/)
 
@@ -25,7 +21,7 @@ You need NPM to build the ZincJS library. Once NPM has been installed, follow th
 
 ```Shell
 $ npm install
-$ npm run build
+$ npm run build-bundle
 ```
 
 If everything works accordingly, a 'build' folder along with two files zinc.js and zinc.min.js in it should be created. The zinc.js and zinc.min.js can now be consumed in your preferred envirnoment.
