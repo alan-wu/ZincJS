@@ -37,7 +37,7 @@ Useful links:
 
 [Tutorials](https://github.com/alan-wu/ZincJS-Tutorials/)
 
-[API Documentation](http://alan-wu.github.io/ZincJS/)
+[API Documentation](https://abi-software.github.io/ZincJS/)
 
 How to export models to ZincJS:
 -------------------------------
