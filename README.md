@@ -12,7 +12,7 @@ Webapp developed using ZincJS:
 
 [Scaffold Maker](https://mapcore-demo.org/2019/colon/scaffold.html)
 
-[ScaffoldVuer] (https://mapcore-demo.org/current/scaffoldvuer)
+[ScaffoldVuer](https://mapcore-demo.org/current/scaffoldvuer)
 
 Installation:
 -------------
