@@ -65,6 +65,7 @@ const TextureSlides = function (textureIn) {
           this.morph.add(mesh);
         }
       });
+      this.boundingBoxUpdateRequired = true;
     }
   }
 
@@ -92,6 +93,7 @@ const TextureSlides = function (textureIn) {
           slide.geometry.dispose();
         if (slide.material)
           slide.material.dispose();
+        this.boundingBoxUpdateRequired = true;
       }
     }
   }
@@ -107,30 +109,27 @@ const TextureSlides = function (textureIn) {
         slide.material.dispose();
     });
     (require('./texturePrimitive').TexturePrimitive).prototype.dispose.call(this);
+    this.boundingBoxUpdateRequired = true;
   }
 
   /**
-   * Get the bounding box of this geometry.
+   * Get the bounding box of this slides.
+   * It uses the max and min of the slides position and the
+   * transformation to calculate the position of the box.
    * 
    * @return {THREE.Box3}.
    */
   this.getBoundingBox = function() {
     if (this.morph && this.morph.children && this.morph.visible &&
       this.boundingBoxUpdateRequired) {
-      let first = true;
-      this.morph.children.forEach( morph => {
-        if (first) {
-          this.cachedBoundingBox.setFromBufferAttribute(
-            morph.geometry.attributes.position);
-          first = false;
-        } else {
-          this.cachedBoundingBox.expandByObject(morph);
-        }
+      this.morph.children.forEach(slide=> {
+        const value = slide.material.uniforms.slide.value;
+        this.cachedBoundingBox.expandByPoint(value);
       });
+      this.cachedBoundingBox.applyMatrix4(this.morph.matrix);
       this.boundingBoxUpdateRequired = false;
-      return this.cachedBoundingBox;
     }
-    return undefined;
+    return this.cachedBoundingBox;
   }
 }
 
