@@ -528,6 +528,7 @@ ZincObject.prototype.getBoundingBox = function() {
       if (!found)
         this.cachedBoundingBox.setFromBufferAttribute(
           this.morph.geometry.attributes.position);
+      this.cachedBoundingBox.applyMatrix4(this.morph.matrix);
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;
