@@ -485,16 +485,17 @@ ZincObject.prototype.getClosestVertex = function() {
           position.add(this._vertex.multiplyScalar(influences[i]));
         }
       }
-      if (found)
-        return position;
+      if (found) {
+        return position.applyMatrix4(this.morph.matrixWorld);
+      }
     } else {
       position.fromArray(this.morph.geometry.attributes.position.array,
         this.closestVertexIndex * 3);
-      return position;
+      return position.applyMatrix4(this.morph.matrixWorld);
     }
   }
   this.getBoundingBox().getCenter(position);
-  return position;
+  return position.applyMatrix4(this.morph.matrixWorld);
 }
 
 /**
@@ -525,10 +526,12 @@ ZincObject.prototype.getBoundingBox = function() {
         if (found)
           this.cachedBoundingBox.set(min, max);
       }
-      if (!found)
+      if (!found) {
         this.cachedBoundingBox.setFromBufferAttribute(
           this.morph.geometry.attributes.position);
-      this.cachedBoundingBox.applyMatrix4(this.morph.matrix);
+      }
+      this.morph.updateWorldMatrix();
+      this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;
