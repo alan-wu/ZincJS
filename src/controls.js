@@ -237,9 +237,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   this.getNDCFromDocumentCoords = (x, y, positionIn) => {
     updateRect(false);
     const position = positionIn ? positionIn : new THREE.Vector2();
-    position.x = ((x - rect.left) / rect.width) * 2 - 1;
-    position.y = -((y - rect.top) / rect.height) * 2 + 1;
-    return position;
+    const out_x = ((x - rect.left) / rect.width) * 2 - 1;
+    const out_y = -((y - rect.top) / rect.height) * 2 + 1;
+    return position.set(out_x, out_y);
   }
 
   /**
