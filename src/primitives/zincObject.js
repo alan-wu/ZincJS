@@ -1,6 +1,12 @@
 const THREE = require('three');
 const THREEGeometry = require('../three/Geometry').Geometry;
 
+let uniqueiId = 0;
+
+const getUniqueId = function () {
+  return "pr" + uniqueiId++;
+}
+
 /**
  * Provides the base object for other primitive types.
  * This class contains multiple base methods.
@@ -44,6 +50,7 @@ const ZincObject = function() {
   this.anatomicalId = undefined;
   this.region = undefined;
   this.animationClip = undefined;
+  this.uuid = getUniqueId();
 }
 
 /**

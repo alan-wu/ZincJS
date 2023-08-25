@@ -1,5 +1,11 @@
 const { Group, Matrix4 } = require('three');
 
+let uniqueiId = 0;
+
+const getUniqueId = function () {
+  return "re" + uniqueiId++;
+}
+
 /**
  * Provides a hierachical structure to objects, Each region
  * may contain multiple child regions and {@link ZincObject}.
@@ -21,6 +27,8 @@ let Region = function (parentIn) {
   tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
   this.pickableUpdateRequired = true;
   this.isRegion = true;
+  this.uuid = getUniqueId();
+  
 
   /**
    * Hide all primitives belong to this region.
