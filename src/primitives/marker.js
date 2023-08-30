@@ -86,6 +86,21 @@ const Marker = function(zincObject) {
     sprite.scale.multiplyScalar(size);
   }
 
+  /**
+   * Clean up this object,
+   */ 
+  this.dispose = () => {
+    if (this.morph) {
+      this.morph.dispose();
+    }
+    if (spriteMaterial) {
+      spriteMaterial.dispose();
+    }
+    if (sprite) {
+      sprite.dispose();
+    }
+  }
+
   this.isEnabled = () => {
     return enabled;
   }

@@ -1,6 +1,12 @@
 const THREE = require('three');
 const THREEGeometry = require('../three/Geometry').Geometry;
 
+let uniqueiId = 0;
+
+const getUniqueId = function () {
+  return "pr" + uniqueiId++;
+}
+
 /**
  * Provides the base object for other primitive types.
  * This class contains multiple base methods.
@@ -44,6 +50,7 @@ const ZincObject = function() {
   this.anatomicalId = undefined;
   this.region = undefined;
   this.animationClip = undefined;
+  this.uuid = getUniqueId();
 }
 
 /**
@@ -467,7 +474,7 @@ ZincObject.prototype.getClosestVertexIndex = function() {
  * 
  * @return {THREE.Vector3}
  */
-ZincObject.prototype.getClosestVertex = function() {
+ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
   let position = new THREE.Vector3();
   if (this.closestVertexIndex == -1) {
     this.closestVertexIndex = this.getClosestVertexIndex();
@@ -485,16 +492,17 @@ ZincObject.prototype.getClosestVertex = function() {
           position.add(this._vertex.multiplyScalar(influences[i]));
         }
       }
-      if (found)
-        return position;
+      if (found) {
+        return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
+      }
     } else {
       position.fromArray(this.morph.geometry.attributes.position.array,
         this.closestVertexIndex * 3);
-      return position;
+      return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
     }
   }
   this.getBoundingBox().getCenter(position);
-  return position;
+  return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
 }
 
 /**
@@ -525,10 +533,12 @@ ZincObject.prototype.getBoundingBox = function() {
         if (found)
           this.cachedBoundingBox.set(min, max);
       }
-      if (!found)
+      if (!found) {
         this.cachedBoundingBox.setFromBufferAttribute(
           this.morph.geometry.attributes.position);
-      this.cachedBoundingBox.applyMatrix4(this.morph.matrix);
+      }
+      this.morph.updateWorldMatrix();
+      this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;
@@ -568,7 +578,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
         this.markerUpdateRequired = true;
       }
       if (this.markerUpdateRequired) {
-        let position = this.getClosestVertex();
+        let position = this.getClosestVertex(false);
         if (position) {
           this.marker.setPosition(position.x, position.y, position.z);
           this.markerUpdateRequired = false;
@@ -622,7 +632,7 @@ ZincObject.prototype.setRenderOrder = function(renderOrder) {
 ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
   if (scene && scene.camera) {
     let inView = true;
-    const position = this.getClosestVertex();
+    const position = this.getClosestVertex(true);
     position.project(scene.camera);
     position.z = Math.min(Math.max(position.z, 0), 1);
     if (position.x > 1 || position.x < -1 || position.y > 1 || position.y < -1) {

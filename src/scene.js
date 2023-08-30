@@ -3,6 +3,12 @@ const SceneLoader = require('./sceneLoader').SceneLoader;
 const SceneExporter = require('./sceneExporter').SceneExporter;
 const Viewport = require('./controls').Viewport;
 
+let uniqueiId = 0;
+
+const getUniqueId = function () {
+  return "sc" + uniqueiId++;
+}
+
 const defaultMetadata = function() {
   return { 
     Duration: "6 secs",
@@ -62,6 +68,7 @@ exports.Scene = function (containerIn, rendererIn) {
   let _markerTarget = new THREE.Vector2();
   let pickableObjectsList = [];
   this.forcePickableObjectsUpdate = false;
+  this.uuid = getUniqueId();
 
   const getDrawingWidth = () => {
     if (container)

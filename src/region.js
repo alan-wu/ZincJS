@@ -1,5 +1,11 @@
 const { Group, Matrix4 } = require('three');
 
+let uniqueiId = 0;
+
+const getUniqueId = function () {
+  return "re" + uniqueiId++;
+}
+
 /**
  * Provides a hierachical structure to objects, Each region
  * may contain multiple child regions and {@link ZincObject}.
@@ -20,6 +26,9 @@ let Region = function (parentIn) {
   let duration = 3000;
   tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
   this.pickableUpdateRequired = true;
+  this.isRegion = true;
+  this.uuid = getUniqueId();
+  
 
   /**
    * Hide all primitives belong to this region.
@@ -374,6 +383,8 @@ let Region = function (parentIn) {
 
   /**
    * Get the bounding box of all the object in this and child regions only.
+   * Do not include the matrix transformation here, it is done at the primitives
+   * level.
    * 
    * @returns {THREE.Box3} 
    */
@@ -389,8 +400,6 @@ let Region = function (parentIn) {
         }
       }
     });
-    if (boundingBox1)
-      boundingBox1.applyMatrix4(group.matrixWorld);
     if (transverse) {
       children.forEach(childRegion => {
         boundingBox2 = childRegion.getBoundingBox(transverse);
@@ -634,10 +643,30 @@ let Region = function (parentIn) {
    */
   this.getAllObjects = transverse => {
     const objectsArray = [...zincObjects];
-    children.forEach(childRegion => {
-      let childObjects = childRegion.getAllObjects(transverse);
-      objectsArray.push(...childObjects);
-    });
+    if (transverse) {
+      children.forEach(childRegion => {
+        let childObjects = childRegion.getAllObjects(transverse);
+        objectsArray.push(...childObjects);
+      });
+    }
+    return objectsArray;
+  }
+
+  /** 
+   * Get all child regions.
+   * 
+   * @param {Boolean} transverse - Include all regions which are descendants of 
+   * this reigon when this is set to true.
+   * @returns {Array}
+   */
+   this.getChildRegions = transverse => {
+    const objectsArray = [...children];
+    if (transverse) {
+      children.forEach(childRegion => {
+        const childObjects = childRegion.getChildRegions(transverse);
+        objectsArray.push(...childObjects);
+      });
+    }
     return objectsArray;
   }
 
