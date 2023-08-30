@@ -474,7 +474,7 @@ ZincObject.prototype.getClosestVertexIndex = function() {
  * 
  * @return {THREE.Vector3}
  */
-ZincObject.prototype.getClosestVertex = function() {
+ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
   let position = new THREE.Vector3();
   if (this.closestVertexIndex == -1) {
     this.closestVertexIndex = this.getClosestVertexIndex();
@@ -493,16 +493,16 @@ ZincObject.prototype.getClosestVertex = function() {
         }
       }
       if (found) {
-        return position.applyMatrix4(this.morph.matrixWorld);
+        return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
       }
     } else {
       position.fromArray(this.morph.geometry.attributes.position.array,
         this.closestVertexIndex * 3);
-      return position.applyMatrix4(this.morph.matrixWorld);
+      return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
     }
   }
   this.getBoundingBox().getCenter(position);
-  return position.applyMatrix4(this.morph.matrixWorld);
+  return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
 }
 
 /**
@@ -578,7 +578,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
         this.markerUpdateRequired = true;
       }
       if (this.markerUpdateRequired) {
-        let position = this.getClosestVertex();
+        let position = this.getClosestVertex(false);
         if (position) {
           this.marker.setPosition(position.x, position.y, position.z);
           this.markerUpdateRequired = false;
@@ -632,7 +632,7 @@ ZincObject.prototype.setRenderOrder = function(renderOrder) {
 ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
   if (scene && scene.camera) {
     let inView = true;
-    const position = this.getClosestVertex();
+    const position = this.getClosestVertex(true);
     position.project(scene.camera);
     position.z = Math.min(Math.max(position.z, 0), 1);
     if (position.x > 1 || position.x < -1 || position.y > 1 || position.y < -1) {
