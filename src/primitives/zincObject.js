@@ -50,6 +50,7 @@ const ZincObject = function() {
   this.anatomicalId = undefined;
   this.region = undefined;
   this.animationClip = undefined;
+  this.markerMode = "inherited";
   this.uuid = getUniqueId();
 }
 
@@ -566,11 +567,26 @@ ZincObject.prototype.dispose = function() {
 }
 
 /**
+ * Check if marker is enabled based on the objects settings with 
+ * the provided scene options.
+ * 
+ * @return {Boolean} 
+ */
+ZincObject.prototype.markerIsEnabled = function(options) {
+  if (this.markerMode === "on" || (options && options.displayMarkers &&
+    (this.markerMode === "inherited"))) {
+      
+      return true;
+  }
+  return false;
+}
+
+/**
  * Update the marker's position and size based on current viewport. 
  */
 ZincObject.prototype.updateMarker = function(playAnimation, options) {
   if ((playAnimation == false) &&
-    (options && options.displayMarkers))
+    (this.markerIsEnabled(options)))
   {
     if (this.groupName) {
       if (!this.marker) {
@@ -642,6 +658,29 @@ ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
     return {position, inView};
   } else {
     return undefined;
+  }
+}
+
+/**
+ * Set marker mode for this zinc object which determine rather the
+ * markers should be displayed or not.
+ *
+ * @param {string} mode - There are three options:
+ * "on" - marker is enabled regardless of settings of scene
+ * "off" - marker is disabled regardless of settings of scene
+ * "inherited" - Marker settings on scene will determine the visibility
+ *  of the marker.
+ * 
+ * @return {Boolean} 
+ */
+ ZincObject.prototype.setMarkerMode = function(mode) {
+  if (mode !== this.markerMode) {
+    if (mode === "on" || mode === "off") {
+      this.markerMode = mode;
+    } else {
+      this.markerMode = "inherited";
+    }
+    if (this.region) this.region.pickableUpdateRequired = true;
   }
 }
 
