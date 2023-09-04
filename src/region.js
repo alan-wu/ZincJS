@@ -338,23 +338,19 @@ let Region = function (parentIn) {
   /**
    * Get all pickable objects.
    */
-  this.getPickableThreeJSObjects = (objectsList, pickMarkers, transverse) => {
+  this.getPickableThreeJSObjects = (objectsList,  transverse) => {
     zincObjects.forEach(zincObject => {
       if (zincObject.morph && zincObject.morph.visible) {
-        if (pickMarkers) {
-          let marker = zincObject.marker;
-          if (marker && marker.isEnabled()) {
-            objectsList.push(marker.morph);
-          }
-        } else {
-          objectsList.push(zincObject.morph);
+        let marker = zincObject.marker;
+        if (marker && marker.isEnabled()) {
+          objectsList.push(marker.morph);
         }
+        objectsList.push(zincObject.morph);
       }
     });
     if (transverse) {
       children.forEach(childRegion => {
-        childRegion.getPickableThreeJSObjects(objectsList, pickMarkers,
-          transverse);
+        childRegion.getPickableThreeJSObjects(objectsList, transverse);
       });
     }
     this.pickableUpdateRequired = false;

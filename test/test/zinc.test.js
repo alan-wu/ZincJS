@@ -246,6 +246,14 @@ function checkGeometry(scene) {
         assert.isTrue(geometry.morph.material.transparent, 'transparent is true');
         assert.equal(geometry.morph.material.opacity, 0.5, 'opacity is correct');
       });
+      it('setMarkerMode', function() {
+        assert.isUndefined(geometry.setMarkerMode("on"), 'setMarkerMode is successfully called');
+        assert.equal(geometry.markerMode, "on", 'marker is set correctly');
+        assert.isUndefined(geometry.setMarkerMode("off"), 'setMarkerMode is successfully called');
+        assert.equal(geometry.markerMode, "off", 'marker is set correctly');
+        assert.isUndefined(geometry.setMarkerMode("inherited"), 'setMarkerMode is successfully called');
+        assert.equal(geometry.markerMode, "inherited", 'marker is set correctly');
+      });
       it('getCurrentTime', function() {
         assert.equal(geometry.getCurrentTime(), 0.0, 'getCurrentTime returns the correct value');
       });
@@ -703,9 +711,9 @@ function checkRegion(scene) {
         assert.isTrue(flag, 'Pickable flag is not correct');
       });
       it('getPickableThreeJSObjects', function(){
-        const objectsList = [];
-        rootRegion.getPickableThreeJSObjects(objectsList, false, true);
-        assert.equal(objectsList.length, 6, 'Pickable flag is not correct');
+        let objectsList = [];
+        rootRegion.getPickableThreeJSObjects(objectsList, true);
+        assert.equal(objectsList.length, 6, 'Number of pickable object is not correct');
       });
       
       it('duration', function() {
