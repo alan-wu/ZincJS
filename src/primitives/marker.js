@@ -91,13 +91,14 @@ const Marker = function(zincObject) {
    */ 
   this.dispose = () => {
     if (this.morph) {
-      this.morph.dispose();
+      this.morph.clear();
     }
     if (spriteMaterial) {
       spriteMaterial.dispose();
     }
     if (sprite) {
-      sprite.dispose();
+      sprite.clear();
+      sprite = undefined;
     }
   }
 

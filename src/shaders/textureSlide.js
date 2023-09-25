@@ -28,16 +28,17 @@ const vs =
 out vec3 vUw;
 uniform float depth;
 uniform vec3 slide;
+uniform int direction;
 
 void main() {
 
   vec3 slidePos = position.xyz;
 
-  if (slide.x > 0.0)
+  if (direction == 1)
     slidePos = vec3(slide.x, position.x, position.y);
-  if (slide.y > 0.0)
+  if (direction == 2)
     slidePos = vec3(position.x, slide.y, position.y);
-  if (slide.z > 0.0)
+  if (direction == 3)
     slidePos = vec3(position.x, position.y, slide.z);
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4( slidePos, 1.0 );
@@ -51,7 +52,8 @@ const getUniforms = function() {
   return {
     diffuse: { value: undefined },
     depth: { value: 1 },
-    slide: { value: new THREE.Vector3( 0, 0, 1 ) }
+    slide: { value: new THREE.Vector3( 0, 0, 1 ) },
+    direction: {value: 1},
   };
 }
 

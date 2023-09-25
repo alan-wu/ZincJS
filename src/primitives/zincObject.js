@@ -312,7 +312,7 @@ ZincObject.prototype.isTimeVarying = function() {
  * 
  */
 ZincObject.prototype.getVisibility = function() {
-  return this.morph.visible;
+  return this.morph ? this.morph.visible : false;
 }
 
 /**
