@@ -1,4 +1,5 @@
 const THREE = require('three');
+const THREEGeometry = require('./three/Geometry').Geometry;
 
 function resolveURL(url) {
 	let actualURL = url;
@@ -15,6 +16,7 @@ function resolveURL(url) {
 	
 	return actualURL;
 }
+
 
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {
@@ -81,218 +83,264 @@ exports.getColorsRGB = (colors, index) => {
     return [mycolor.r, mycolor.g, mycolor.b];
 }
 
+exports.updateMorphColorAttribute = function(targetGeometry, morph) {
+  if (morph && targetGeometry && targetGeometry.morphAttributes &&
+    targetGeometry.morphAttributes[ "color" ]) {
+    const morphColors = targetGeometry.morphAttributes[ "color" ];
+    const influences = morph.morphTargetInfluences;
+    const length = influences.length;
+    targetGeometry.deleteAttribute( 'morphColor0' );
+    targetGeometry.deleteAttribute( 'morphColor1' );
+    let bound = 0;
+    let morphArray = [];
+    for (let i = 0; (1 > bound) || (i < length); i++) {
+      if (influences[i] > 0) {
+        bound++;
+        morphArray.push([i, influences[i]]);
+      }
+    }
+    if (morphArray.length == 2) {
+      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
+      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
+    } else if (morphArray.length == 1) {
+      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
+      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
+    }
+  }
+}
+
+
+exports.toBufferGeometry = (geometryIn, options) => {
+  let geometry = undefined;
+  if (geometryIn instanceof THREEGeometry) {
+    if (options.localTimeEnabled && !geometryIn.morphNormalsReady && 
+      (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
+      geometryIn.computeMorphNormals();
+    geometry = geometryIn.toIndexedBufferGeometry();
+    if (options.localMorphColour) {
+      copyMorphColorsToIndexedBufferGeometry(geometryIn, geometry);
+    }
+  } else if (geometryIn instanceof THREE.BufferGeometry) {
+    geometry = geometryIn.clone();
+  }
+  geometry.colorsNeedUpdate = true;
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  if (geometryIn._video)
+    geometry._video = geometryIn._video;
+  return geometry;
+}
 
 exports.copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
-    if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
-      let array = [];
-      let morphColors = geometry.morphColors;
-      const getColorsRGB = require("./utilities").getColorsRGB;
-      for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
-        let morphColor = morphColors[ i ];
-        let colorArray = [];
-		    for ( var j = 0; j < geometry.faces.length; j ++ ) {
-          let face = geometry.faces[j];
-          let color = getColorsRGB(morphColor.colors, face.a);
-          colorArray.push(color[0], color[1], color[2]);
-          color = getColorsRGB(morphColor.colors, face.b);
-          colorArray.push(color[0], color[1], color[2]);
-          color = getColorsRGB(morphColor.colors, face.c);
-          colorArray.push(color[0], color[1], color[2]);
-        }
-        var attribute = new THREE.Float32BufferAttribute( geometry.faces.length * 3 * 3, 3 );
-        attribute.name = morphColor.name;
-        array.push( attribute.copyArray( colorArray ) );
+  if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
+    let array = [];
+    let morphColors = geometry.morphColors;
+    const getColorsRGB = require("./utilities").getColorsRGB;
+    for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
+      let morphColor = morphColors[ i ];
+      let colorArray = [];
+      for ( var j = 0; j < geometry.faces.length; j ++ ) {
+        let face = geometry.faces[j];
+        let color = getColorsRGB(morphColor.colors, face.a);
+        colorArray.push(color[0], color[1], color[2]);
+        color = getColorsRGB(morphColor.colors, face.b);
+        colorArray.push(color[0], color[1], color[2]);
+        color = getColorsRGB(morphColor.colors, face.c);
+        colorArray.push(color[0], color[1], color[2]);
       }
-      bufferGeometry.morphAttributes[ "color" ] = array; 
+      var attribute = new THREE.Float32BufferAttribute( geometry.faces.length * 3 * 3, 3 );
+      attribute.name = morphColor.name;
+      array.push( attribute.copyArray( colorArray ) );
     }
+    bufferGeometry.morphAttributes[ "color" ] = array; 
+  }
+}
+
+
+const copyMorphColorsToIndexedBufferGeometry = (geometry, bufferGeometry) => {
+  if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
+    let array = [];
+    let morphColors = geometry.morphColors;
+    const getColorsRGB = require("./utilities").getColorsRGB;
+    for ( let i = 0, l = morphColors.length; i < l; i ++ ) {
+      const morphColor = morphColors[ i ];
+      const colorArray = [];
+      for ( let j = 0; j < morphColor.colors.length * 3; j ++ ) {
+        let color = getColorsRGB(morphColor.colors, j);
+        colorArray.push(color[0], color[1], color[2]);
+      }
+      const attribute = new THREE.Float32BufferAttribute( colorArray, 3 );
+      attribute.name = morphColor.name;
+      array.push( attribute );
+    }
+    bufferGeometry.morphAttributes[ "color" ] = array; 
+  }
+}
+
+exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
+
+  tolerance = Math.max( tolerance, Number.EPSILON );
+
+  // Generate an index buffer if the geometry doesn't have one, or optimize it
+  // if it's already available.
+  var hashToIndex = {};
+  var indices = geometry.getIndex();
+  var positions = geometry.getAttribute( 'position' );
+  var vertexCount = indices ? indices.count : positions.count;
+
+  // next value for triangle indices
+  var nextIndex = 0;
+
+  // attributes and new attribute arrays
+  var attributeNames = Object.keys( geometry.attributes );
+  var attrArrays = {};
+  var morphAttrsArrays = {};
+  var newIndices = [];
+  var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
+
+  // initialize the arrays
+  for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
+      var name = attributeNames[ i ];
+
+      attrArrays[ name ] = [];
+
+      var morphAttr = geometry.morphAttributes[ name ];
+      if ( morphAttr ) {
+
+          morphAttrsArrays[ name ] = new Array( morphAttr.length ).fill().map( () => [] );
+
+      }
+
   }
 
+  // convert the error tolerance to an amount of decimal places to truncate to
+  var decimalShift = Math.log10( 1 / tolerance );
+  var shiftMultiplier = Math.pow( 10, decimalShift );
+  for ( var i = 0; i < vertexCount; i ++ ) {
 
-  exports.copyMorphColorsToIndexedBufferGeometry = (geometry, bufferGeometry) => {
-    if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
-      let array = [];
-      let morphColors = geometry.morphColors;
-      const getColorsRGB = require("./utilities").getColorsRGB;
-      for ( let i = 0, l = morphColors.length; i < l; i ++ ) {
-        const morphColor = morphColors[ i ];
-        const colorArray = [];
-		    for ( let j = 0; j < morphColor.colors.length * 3; j ++ ) {
-          let color = getColorsRGB(morphColor.colors, j);
-          colorArray.push(color[0], color[1], color[2]);
-        }
-        const attribute = new THREE.Float32BufferAttribute( colorArray, 3 );
-        attribute.name = morphColor.name;
-        array.push( attribute );
+      var index = indices ? indices.getX( i ) : i;
+
+      // Generate a hash for the vertex attributes at the current index 'i'
+      var hash = '';
+      for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+
+          var name = attributeNames[ j ];
+          var attribute = geometry.getAttribute( name );
+          var itemSize = attribute.itemSize;
+
+          for ( var k = 0; k < itemSize; k ++ ) {
+
+              // double tilde truncates the decimal value
+              hash += `${ ~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier ) },`;
+
+          }
+
       }
-      bufferGeometry.morphAttributes[ "color" ] = array; 
-    }
+
+      // Add another reference to the vertex if it's already
+      // used by another index
+      if ( hash in hashToIndex ) {
+
+          newIndices.push( hashToIndex[ hash ] );
+
+      } else {
+
+          // copy data to the new index in the attribute arrays
+          for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+
+              var name = attributeNames[ j ];
+              var attribute = geometry.getAttribute( name );
+              var morphAttr = geometry.morphAttributes[ name ];
+              var itemSize = attribute.itemSize;
+              var newarray = attrArrays[ name ];
+              var newMorphArrays = morphAttrsArrays[ name ];
+
+              for ( var k = 0; k < itemSize; k ++ ) {
+
+                  var getterFunc = getters[ k ];
+                  newarray.push( attribute[ getterFunc ]( index ) );
+
+                  if ( morphAttr ) {
+
+                      for ( var m = 0, ml = morphAttr.length; m < ml; m ++ ) {
+
+                          newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
+
+                      }
+
+                  }
+
+              }
+
+          }
+
+          hashToIndex[ hash ] = nextIndex;
+          newIndices.push( nextIndex );
+          nextIndex ++;
+
+      }
+
   }
 
-  exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
+  // Generate typed arrays from new attribute arrays and update
+  // the attributeBuffers
+  const result = geometry.clone();
+  for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
 
-    tolerance = Math.max( tolerance, Number.EPSILON );
+      var name = attributeNames[ i ];
+      var oldAttribute = geometry.getAttribute( name );
+      var attribute;
 
-    // Generate an index buffer if the geometry doesn't have one, or optimize it
-    // if it's already available.
-    var hashToIndex = {};
-    var indices = geometry.getIndex();
-    var positions = geometry.getAttribute( 'position' );
-    var vertexCount = indices ? indices.count : positions.count;
+      var buffer = new oldAttribute.array.constructor( attrArrays[ name ] );
+      if ( oldAttribute.isInterleavedBufferAttribute ) {
 
-    // next value for triangle indices
-    var nextIndex = 0;
+          attribute = new THREE.BufferAttribute( buffer, oldAttribute.itemSize, oldAttribute.itemSize );
 
-    // attributes and new attribute arrays
-    var attributeNames = Object.keys( geometry.attributes );
-    var attrArrays = {};
-    var morphAttrsArrays = {};
-    var newIndices = [];
-    var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
+      } else {
 
-    // initialize the arrays
-    for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
-        var name = attributeNames[ i ];
+          attribute = geometry.getAttribute( name ).clone();
+          attribute.setArray( buffer );
 
-        attrArrays[ name ] = [];
+      }
 
-        var morphAttr = geometry.morphAttributes[ name ];
-        if ( morphAttr ) {
+      result.setAttribute( name, attribute );
 
-            morphAttrsArrays[ name ] = new Array( morphAttr.length ).fill().map( () => [] );
+      // Update the attribute arrays
+      if ( name in morphAttrsArrays ) {
 
-        }
+          for ( var j = 0; j < morphAttrsArrays[ name ].length; j ++ ) {
 
-    }
+              var morphAttribute = geometry.morphAttributes[ name ][ j ].clone();
+              morphAttribute.setArray( new morphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] ) );
+              result.morphAttributes[ name ][ j ] = morphAttribute;
 
-    // convert the error tolerance to an amount of decimal places to truncate to
-    var decimalShift = Math.log10( 1 / tolerance );
-    var shiftMultiplier = Math.pow( 10, decimalShift );
-    for ( var i = 0; i < vertexCount; i ++ ) {
+          }
 
-        var index = indices ? indices.getX( i ) : i;
+      }
 
-        // Generate a hash for the vertex attributes at the current index 'i'
-        var hash = '';
-        for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+  }
 
-            var name = attributeNames[ j ];
-            var attribute = geometry.getAttribute( name );
-            var itemSize = attribute.itemSize;
+  // Generate an index buffer typed array
+  var cons = Uint8Array;
+  if ( newIndices.length >= Math.pow( 2, 8 ) ) cons = Uint16Array;
+  if ( newIndices.length >= Math.pow( 2, 16 ) ) cons = Uint32Array;
 
-            for ( var k = 0; k < itemSize; k ++ ) {
+  var newIndexBuffer = new cons( newIndices );
+  var newIndices = null;
+  if ( indices === null ) {
 
-                // double tilde truncates the decimal value
-                hash += `${ ~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier ) },`;
+      newIndices = new THREE.BufferAttribute( newIndexBuffer, 1 );
 
-            }
+  } else {
 
-        }
+      newIndices = geometry.getIndex().clone();
+      newIndices.setArray( newIndexBuffer );
 
-        // Add another reference to the vertex if it's already
-        // used by another index
-        if ( hash in hashToIndex ) {
+  }
 
-            newIndices.push( hashToIndex[ hash ] );
+  result.setIndex( newIndices );
 
-        } else {
-
-            // copy data to the new index in the attribute arrays
-            for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
-
-                var name = attributeNames[ j ];
-                var attribute = geometry.getAttribute( name );
-                var morphAttr = geometry.morphAttributes[ name ];
-                var itemSize = attribute.itemSize;
-                var newarray = attrArrays[ name ];
-                var newMorphArrays = morphAttrsArrays[ name ];
-
-                for ( var k = 0; k < itemSize; k ++ ) {
-
-                    var getterFunc = getters[ k ];
-                    newarray.push( attribute[ getterFunc ]( index ) );
-
-                    if ( morphAttr ) {
-
-                        for ( var m = 0, ml = morphAttr.length; m < ml; m ++ ) {
-
-                            newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
-
-                        }
-
-                    }
-
-                }
-
-            }
-
-            hashToIndex[ hash ] = nextIndex;
-            newIndices.push( nextIndex );
-            nextIndex ++;
-
-        }
-
-    }
-
-    // Generate typed arrays from new attribute arrays and update
-    // the attributeBuffers
-    const result = geometry.clone();
-    for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
-
-        var name = attributeNames[ i ];
-        var oldAttribute = geometry.getAttribute( name );
-        var attribute;
-
-        var buffer = new oldAttribute.array.constructor( attrArrays[ name ] );
-        if ( oldAttribute.isInterleavedBufferAttribute ) {
-
-            attribute = new THREE.BufferAttribute( buffer, oldAttribute.itemSize, oldAttribute.itemSize );
-
-        } else {
-
-            attribute = geometry.getAttribute( name ).clone();
-            attribute.setArray( buffer );
-
-        }
-
-        result.setAttribute( name, attribute );
-
-        // Update the attribute arrays
-        if ( name in morphAttrsArrays ) {
-
-            for ( var j = 0; j < morphAttrsArrays[ name ].length; j ++ ) {
-
-                var morphAttribute = geometry.morphAttributes[ name ][ j ].clone();
-                morphAttribute.setArray( new morphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] ) );
-                result.morphAttributes[ name ][ j ] = morphAttribute;
-
-            }
-
-        }
-
-    }
-
-    // Generate an index buffer typed array
-    var cons = Uint8Array;
-    if ( newIndices.length >= Math.pow( 2, 8 ) ) cons = Uint16Array;
-    if ( newIndices.length >= Math.pow( 2, 16 ) ) cons = Uint32Array;
-
-    var newIndexBuffer = new cons( newIndices );
-    var newIndices = null;
-    if ( indices === null ) {
-
-        newIndices = new THREE.BufferAttribute( newIndexBuffer, 1 );
-
-    } else {
-
-        newIndices = geometry.getIndex().clone();
-        newIndices.setArray( newIndexBuffer );
-
-    }
-
-    result.setIndex( newIndices );
-
-    return result;
-
+  return result;
 }
 
 function PhongToToon(materialIn) {

@@ -1,4 +1,5 @@
 const THREE = require('three');
+const toBufferGeometry = require('../utilities').toBufferGeometry;
 
 /**
  * Provides an object which stores geometry and provides method which controls its animations.
@@ -32,7 +33,7 @@ const Geometry = function () {
 		if (this.geometry && this.morph && (geometryIn != undefined))
 			return;
 		// First copy the geometry
-		let geometry = this.toBufferGeometry(geometryIn, options);
+		let geometry = toBufferGeometry(geometryIn, options);
 
 		let isTransparent = false;
 		if (1.0 > options.opacity)
@@ -109,6 +110,37 @@ const Geometry = function () {
 		}
 		geometry.uvsNeedUpdate = true;	
 	}
+
+  this.checkAndCreateTransparentMesh = function() {
+    if (this.morph.material && this.morph.material.transparent) {
+      if (!this.secondaryMesh) {
+        let secondaryMaterial = this.morph.material.clone();
+        secondaryMaterial.side =  THREE.FrontSide;
+        this.secondaryMesh = new THREE.Mesh(this.morph.geometry, secondaryMaterial);
+        this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
+        this.secondaryMesh.userData = this;
+        this.secondaryMesh.name = this.groupName;
+      }
+      this.morph.material.side = THREE.BackSide;
+      this.morph.material.needsUpdate = true;
+      this.morph.add(this.secondaryMesh);
+      this.animationGroup.add(this.secondaryMesh);
+    }
+  }
+
+/**
+ * Handle transparent mesh, remove a clone for backside rendering if it is
+ * transparent.
+ */
+ this.checkAndRemoveTransparentMesh = function() {
+  if (this.secondaryMesh) {
+    this.morph.remove(this.secondaryMesh);
+    this.animationGroup.uncache(this.secondaryMesh);
+    this.animationGroup.remove(this.secondaryMesh);
+  }
+  this.morph.material.side = THREE.DoubleSide;
+}
+  
 	
 	/**
 	 * Set wireframe display for this geometry.
@@ -119,6 +151,7 @@ const Geometry = function () {
 		this.morph.material.wireframe = wireframe;
 	}
 	
+
 }
 
 Geometry.prototype = Object.create((require('./zincObject').ZincObject).prototype);
