@@ -1,6 +1,5 @@
 const THREE = require('three');
-const THREEGeometry = require('../three/Geometry').Geometry;
-
+const updateMorphColorAttribute = require("../utilities").updateMorphColorAttribute;
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -94,48 +93,11 @@ ZincObject.prototype.getRegion = function() {
 }
 
 /**
- * Convert a {THREE.Geometry} into a {THREE.BufferGeometry}.
- */
-ZincObject.prototype.toBufferGeometry = function(geometryIn, options) {
-  let geometry = undefined;
-  if (geometryIn instanceof THREEGeometry) {
-    if (options.localTimeEnabled && !geometryIn.morphNormalsReady && 
-      (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
-      geometryIn.computeMorphNormals();
-    geometry = geometryIn.toIndexedBufferGeometry();
-    if (options.localMorphColour) {
-      require("../utilities").copyMorphColorsToIndexedBufferGeometry(geometryIn, geometry);
-    }
-  } else if (geometryIn instanceof THREE.BufferGeometry) {
-    geometry = geometryIn.clone();
-  }
-  geometry.colorsNeedUpdate = true;
-  geometry.computeBoundingBox();
-  geometry.computeBoundingSphere();
-  if (geometryIn._video)
-    geometry._video = geometryIn._video;
-  return geometry;
-}
-
-/**
  * Handle transparent mesh, create a clone for backside rendering if it is
  * transparent.
  */
 ZincObject.prototype.checkAndCreateTransparentMesh = function() {
-  if (this.isGeometry && this.morph.material && this.morph.material.transparent) {
-    if (!this.secondaryMesh) {
-      let secondaryMaterial = this.morph.material.clone();
-      secondaryMaterial.side =  THREE.FrontSide;
-      this.secondaryMesh = new THREE.Mesh(this.morph.geometry, secondaryMaterial);
-      this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
-      this.secondaryMesh.userData = this;
-      this.secondaryMesh.name = this.groupName;
-    }
-    this.morph.material.side = THREE.BackSide;
-    this.morph.material.needsUpdate = true;
-    this.morph.add(this.secondaryMesh);
-    this.animationGroup.add(this.secondaryMesh);
-  }
+  return;
 }
 
 /**
@@ -143,12 +105,7 @@ ZincObject.prototype.checkAndCreateTransparentMesh = function() {
  * transparent.
  */
 ZincObject.prototype.checkAndRemoveTransparentMesh = function() {
-  if (this.isGeometry && this.secondaryMesh) {
-    this.morph.remove(this.secondaryMesh);
-    this.animationGroup.uncache(this.secondaryMesh);
-    this.animationGroup.remove(this.secondaryMesh);
-  }
-  this.morph.material.side = THREE.DoubleSide;
+  return;
 }
 
 /**
@@ -228,32 +185,6 @@ ZincObject.prototype.getCurrentTime = function() {
     return this.duration * ratio;
   } else {
     return this.inbuildTime;
-  }
-}
-
-const updateMorphColorAttribute = function(targetGeometry, morph) {
-  if (morph && targetGeometry && targetGeometry.morphAttributes &&
-    targetGeometry.morphAttributes[ "color" ]) {
-    const morphColors = targetGeometry.morphAttributes[ "color" ];
-    const influences = morph.morphTargetInfluences;
-    const length = influences.length;
-    targetGeometry.deleteAttribute( 'morphColor0' );
-    targetGeometry.deleteAttribute( 'morphColor1' );
-    let bound = 0;
-    let morphArray = [];
-    for (let i = 0; (1 > bound) || (i < length); i++) {
-      if (influences[i] > 0) {
-        bound++;
-        morphArray.push([i, influences[i]]);
-      }
-    }
-    if (morphArray.length == 2) {
-      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
-    } else if (morphArray.length == 1) {
-      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
-    }
   }
 }
 

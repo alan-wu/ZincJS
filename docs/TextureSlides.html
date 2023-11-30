@@ -225,6 +225,167 @@ holding texture information.</td>
     
 
     
+    <h4 class="name" id="createSlide"><span class="type-signature"></span>createSlide<span class="signature">(settings)</span><span class="type-signature"> &rarr; {<a href="global.html#SLIDE_SETTINGS">SLIDE_SETTINGS</a>}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Create a slide required for visualisation based on the slide settings.
+The slide itself is an {THREE.PlanGeometry} object.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>settings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="global.html#SLIDE_SETTINGS">SLIDE_SETTINGS</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">settings of the slide to be created.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line94">line 94</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    - Returned settings, it includes the newly
+created mesh's id.
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="global.html#SLIDE_SETTINGS">SLIDE_SETTINGS</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
     <h4 class="name" id="createSlides"><span class="type-signature"></span>createSlides<span class="signature">(slideSettings)</span><span class="type-signature"></span></h4>
     
 
@@ -234,7 +395,7 @@ holding texture information.</td>
 
 <div class="description">
     Create the slides required for visualisation based on the slide settings.
-The slides itself is an {THREE.PlanGeometry} object.
+The slides themselves are {THREE.PlanGeometry} objects.
 </div>
 
 
@@ -327,7 +488,7 @@ The slides itself is an {THREE.PlanGeometry} object.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line31">line 31</a>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line39">line 39</a>
     </li></ul></dd>
     
 
@@ -415,7 +576,7 @@ The slides itself is an {THREE.PlanGeometry} object.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line104">line 104</a>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line184">line 184</a>
     </li></ul></dd>
     
 
@@ -505,7 +666,7 @@ transformation to calculate the position of the box.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line122">line 122</a>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line202">line 202</a>
     </li></ul></dd>
     
 
@@ -615,7 +776,7 @@ transformation to calculate the position of the box.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line77">line 77</a>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line141">line 141</a>
     </li></ul></dd>
     
 
@@ -644,12 +805,7 @@ transformation to calculate the position of the box.
 
         
 <div class="param-desc">
-    - Return an array of {@link THREE.Object)
-</div>
-
-
-
-<dl>
+    - Return an array of </div> <dl>
     <dt>
         Type
     </dt>
@@ -662,6 +818,253 @@ transformation to calculate the position of the box.
 </dl>
 
     
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getTextureSettings"><span class="type-signature"></span>getTextureSettings<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="global.html#SLIDE_SETTINGS">SLIDE_SETTINGS</a></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Return a copy of texture settings used by this object.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line132">line 132</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+<div class="param-desc">
+    - Returned the list of settings..
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="global.html#SLIDE_SETTINGS">SLIDE_SETTINGS</a></span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="modifySlideSettings"><span class="type-signature"></span>modifySlideSettings<span class="signature">(settings)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Modify the mesh based on a setting
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>settings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="global.html#SLIDE_SETTINGS">SLIDE_SETTINGS</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">s.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line78">line 78</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -733,7 +1136,7 @@ transformation to calculate the position of the box.
 
             
 
-            <td class="description last">An array to each slide settings.</td>
+            <td class="description last">Slide to be remvoed</td>
         </tr>
 
     
@@ -774,7 +1177,305 @@ transformation to calculate the position of the box.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line87">line 87</a>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line151">line 151</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="removeSlideWithId"><span class="type-signature"></span>removeSlideWithId<span class="signature">(id)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Remove a slide, this will dispose the slide and its material.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>id</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">id of slide to be remvoed</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line162">line 162</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="~setUniformSlideSettingsOfMesh"><span class="type-signature">(inner) </span>setUniformSlideSettingsOfMesh<span class="signature">(mesh, slideSettings)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Set the value of the uniforms for a specific mesh in this
+texture slide object.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>mesh</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">THREE.Mesh</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Mesh to be modified</td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>slideSettings</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="global.html#SLIDE_SETTINGS">SLIDE_SETTINGS</a></span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Slide settings.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_textureSlides.js.html">primitives/textureSlides.js</a>, <a href="primitives_textureSlides.js.html#line50">line 50</a>
     </li></ul></dd>
     
 
@@ -826,7 +1527,7 @@ transformation to calculate the position of the box.
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Mon Sep 04 2023 14:43:21 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Mon Sep 25 2023 13:23:49 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>
