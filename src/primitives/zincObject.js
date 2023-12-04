@@ -45,12 +45,14 @@ const ZincObject = function() {
   this.closestVertexIndex = -1;
   this.boundingBoxUpdateRequired = true;
   this.cachedBoundingBox = new THREE.Box3();
-  this._vertex = new THREE.Vector3();
   this.anatomicalId = undefined;
   this.region = undefined;
   this.animationClip = undefined;
   this.markerMode = "inherited";
   this.uuid = getUniqueId();
+  this._v1 = new THREE.Vector3();
+  this._v2 = new THREE.Vector3();
+  this._b1 = new THREE.Box3();
 }
 
 /**
@@ -90,6 +92,15 @@ ZincObject.prototype.setRegion = function(region) {
  */
 ZincObject.prototype.getRegion = function() {
   return this.region;
+}
+
+/**
+ * Get the threejs object3D. 
+ * 
+ * @return {Number}
+ */
+ ZincObject.prototype.getMorph = function() {
+  return this.morph;
 }
 
 /**
@@ -379,16 +390,14 @@ ZincObject.prototype.getClosestVertexIndex = function() {
   let closestIndex = -1;
   if (this.morph) {
     let position = this.morph.geometry.attributes.position;
-    let boundingBox = new THREE.Box3().setFromBufferAttribute(position);
-    let center = new THREE.Vector3();
-    boundingBox.getCenter(center);
-    if (position && boundingBox) {
+    this._b1.setFromBufferAttribute(position);
+    this._b1.getCenter(this._v1);
+    if (position) {
       let distance = -1;
       let currentDistance = 0;
-      let current = new THREE.Vector3();
       for (let i = 0; i < position.count; i++) {
-        current.fromArray(position.array, i * 3);
-        currentDistance = current.distanceTo(center);
+        this._v2.fromArray(position.array, i * 3);
+        currentDistance = this._v2.distanceTo(this._v1);
         if (distance == -1)
           distance = currentDistance;
         else if (distance > (currentDistance)) {
@@ -419,9 +428,9 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
       for (let i = 0; i < influences.length; i++) {
         if (influences[i] > 0) {
           found = true;
-          this._vertex.fromArray(
+          this._v1.fromArray(
             attributes.position[i].array, this.closestVertexIndex * 3);
-          position.add(this._vertex.multiplyScalar(influences[i]));
+          position.add(this._v1.multiplyScalar(influences[i]));
         }
       }
       if (found) {
@@ -445,32 +454,8 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
 ZincObject.prototype.getBoundingBox = function() {
   if (this.morph && this.morph.visible) {
     if (this.boundingBoxUpdateRequired) {
-      let influences = this.morph.morphTargetInfluences;
-      let attributes = undefined;
-      if (this.morph.geometry)
-        attributes = this.morph.geometry.morphAttributes;
-      let found = false;
-      if (influences && attributes && attributes.position) {
-        let min = new THREE.Vector3();
-        let max = new THREE.Vector3();
-        let box = new THREE.Box3();
-        for (let i = 0; i < influences.length; i++) {
-          if (influences[i] > 0) {
-            found = true;
-            box.setFromArray(attributes.position[i].array);
-            min.add(box.min.multiplyScalar(influences[i]));
-            max.add(box.max.multiplyScalar(influences[i]));
-          }
-        }
-        if (found)
-          this.cachedBoundingBox.set(min, max);
-      }
-      if (!found) {
-        this.cachedBoundingBox.setFromBufferAttribute(
-          this.morph.geometry.attributes.position);
-      }
-      this.morph.updateWorldMatrix();
-      this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
+      require("../utilities").getBoundingBox(this.morph, this.cachedBoundingBox,
+        this._b1, this._v1, this._v2);
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;

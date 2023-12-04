@@ -510,19 +510,17 @@ const Glyphset = function () {
   this.getClosestVertexIndex = function () {
     let closestIndex = -1;
     if (this.morph && this.ready) {
-      let center = new THREE.Vector3();
-      this.getBoundingBox().getCenter(center);
+      this.getBoundingBox().getCenter(this._v1);
       let current_positions = positions["0"];
       const numberOfPositions = current_positions.length / 3;
-      let position = new THREE.Vector3();
       let distance = -1;
       let currentDistance = 0;
       for (let i = 0; i < numberOfPositions; i++) {
         const current_index = i * 3;
-        position.set(current_positions[current_index],
+        this._v2.set(current_positions[current_index],
           current_positions[current_index + 1],
           current_positions[current_index + 2]);
-        currentDistance = center.distanceTo(position);
+        currentDistance = this._v1.distanceTo(this._v2);
         if (distance == -1) {
           distance = currentDistance;
           closestIndex = i;

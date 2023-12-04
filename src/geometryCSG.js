@@ -17,16 +17,16 @@ const GeometryCSG = function (hostIn) {
   let myResolve = undefined;
   
   var createGeometryFromJSON = json => {
-	  	const material = host.morph.material.clone();
-	  	material.morphTargets = false;
-	    const newGeometry = new Geometry();
+	  const material = host.morph.material.clone();
+	  material.morphTargets = false;
+	  const newGeometry = new Geometry();
 		const JSONParser = new JSONLoader();
 		const geometry = JSONParser.parse(json);
-        const mesh = new THREE.Mesh(geometry.geometry, material);
-	    newGeometry.geometry = mesh.geometry;
-	    newGeometry.morph = mesh;
-	    newGeometry.morph.userData = newGeometry;
-	    return newGeometry;
+    const mesh = new THREE.Mesh(geometry.geometry, material);
+	  newGeometry.geometry = mesh.geometry;
+	  newGeometry.morph = mesh;
+	  newGeometry.morph.userData = newGeometry;
+	  return newGeometry;
   }
   
   var workerEventHandler = ev => {
