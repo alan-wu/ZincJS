@@ -97,10 +97,17 @@ ZincObject.prototype.getRegion = function() {
 /**
  * Get the threejs object3D. 
  * 
- * @return {Number}
+ * @return {Object}
  */
  ZincObject.prototype.getMorph = function() {
   return this.morph;
+}
+
+/**
+ * Set the internal threejs object3D. 
+ */
+ ZincObject.prototype.setMorph = function(mesh) {
+  this.morph = mesh;
 }
 
 /**

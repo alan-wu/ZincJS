@@ -362,32 +362,6 @@ exports.SceneLoader = function (sceneIn) {
       false, groupName, undefined, undefined,finishCallback));
   }
 
-  //Loader for the OBJ format, 
-  const objloader = (
-    region,
-    colour,
-    opacity,
-    localTimeEnabled,
-    localMorphColour,
-    groupName,
-    finishCallback
-  ) => {
-    return object => {
-      this.toBeDownloaded--;
-      object.traverse(child => {
-        if (child instanceof THREE.Mesh) {
-          const zincGeometry = addMeshToZincGeometry(child, localTimeEnabled, localMorphColour);
-          region.addZincObject(zincGeometry);
-          if (zincGeometry.morph)
-            zincGeometry.morph.name = groupName;
-          zincGeometry.groupName = groupName;
-          if (finishCallback != undefined && (typeof finishCallback == 'function'))
-            finishCallback(zincGeometry);
-        }
-      });
-    };
-  }
-
   /**
    * Load a geometry into this scene, this is a subsequent called from 
    * {@link Zinc.Scene#loadMetadataURL}, although it can be used to read
@@ -422,8 +396,8 @@ exports.SceneLoader = function (sceneIn) {
       } else if (fileFormat == "OBJ") {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
-        loader.load(url, objloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(i), this.onError);
+        loader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
+          localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError);
         return;
       }
     }
@@ -529,7 +503,7 @@ exports.SceneLoader = function (sceneIn) {
    * 
    * @returns {Zinc.Geometry}
    */
-  addZincGeometry = (
+  createZincGeometry = (
     region,
     geometryIn,
     colour,
@@ -547,7 +521,7 @@ exports.SceneLoader = function (sceneIn) {
     options.localMorphColour = localMorphColour
     const newGeometry = new (require('./primitives/geometry').Geometry)();
     newGeometry.createMesh(geometryIn, materialIn, options);
-    if (newGeometry.morph) {
+    if (newGeometry.getMorph()) {
       newGeometry.setName(groupName);
       if (region) region.addZincObject(newGeometry);
       newGeometry.setDuration(scene.getDuration());
@@ -577,7 +551,7 @@ exports.SceneLoader = function (sceneIn) {
       if (materials && materials[0]) {
         material = materials[0];
       }
-      const zincGeometry = addZincGeometry(region, geometry, colour, opacity, 
+      const zincGeometry = createZincGeometry(region, geometry, colour, opacity, 
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder);
       zincGeometry.anatomicalId = anatomicalId;
       zincGeometry.setRenderOrder(renderOrder);

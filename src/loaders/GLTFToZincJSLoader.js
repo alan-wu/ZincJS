@@ -39,8 +39,9 @@ const GLTFToZincJSLoader = function () {
           }
           zincGeometry.setMesh(object.clone(), localTimeEnabled, localMorphColour);
           region.addZincObject(zincGeometry);
-          zincGeometry.groupName = zincGeometry.morph.name;
-          zincGeometry.morph.matrixAutoUpdate = true;
+          const morph = zincGeometry.getMorph();
+          zincGeometry.groupName = morph.name;
+          morph.matrixAutoUpdate = true;
           if (finishCallback != undefined && (typeof finishCallback == 'function'))
             finishCallback(zincGeometry);
         }

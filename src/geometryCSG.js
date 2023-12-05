@@ -17,15 +17,15 @@ const GeometryCSG = function (hostIn) {
   let myResolve = undefined;
   
   var createGeometryFromJSON = json => {
-	  const material = host.morph.material.clone();
+	  const material = host.getMorph().material.clone();
 	  material.morphTargets = false;
 	  const newGeometry = new Geometry();
 		const JSONParser = new JSONLoader();
 		const geometry = JSONParser.parse(json);
     const mesh = new THREE.Mesh(geometry.geometry, material);
 	  newGeometry.geometry = mesh.geometry;
-	  newGeometry.morph = mesh;
-	  newGeometry.morph.userData = newGeometry;
+    mesh.userData = newGeometry;
+	  newGeometry.setMorph(mesh);
 	  return newGeometry;
   }
   
@@ -54,7 +54,7 @@ const GeometryCSG = function (hostIn) {
 	    core = new (require('./workers/geometryCSGInternal').GeometryCSGInternal)(hostIn);
 	  } else {
 		if (hostIn && hostIn.isGeometry) {
-		  let mesh = hostIn.morph;
+		  let mesh = hostIn.getMorph();
 		  let json = mesh.geometry.clone().applyMatrix(mesh.matrix).toJSON();
 		  worker.addEventListener('message', function (ev) {
 			  workerEventHandler(ev);
@@ -65,20 +65,20 @@ const GeometryCSG = function (hostIn) {
   }
   
   this.getHostGeometry = () => {
-	const tempCSG = new ThreeBSP(host.morph);
+	const tempCSG = new ThreeBSP(host.getMorph());
     return new createZincGeometry(tempCSG);
   }
   
   this.getGeometry = () => host;
   
   const createZincGeometry = csgMesh => {
-		const material = host.morph.material.clone();
+		const material = host.getMorph().material.clone();
 		material.morphTargets = false;
 		const newMesh = csgMesh.toMesh(material);
 	    const newGeometry = new Geometry();
 	    newGeometry.geometry = newMesh.geometry;
-	    newGeometry.morph = newMesh;
-	    newGeometry.morph.userData = newGeometry;
+	    newMesh.userData = newGeometry;
+	    newGeometry.setMorph(newMesh);
 	    return newGeometry;
   }
   
@@ -88,7 +88,7 @@ const GeometryCSG = function (hostIn) {
   
   const sendToWork = (guestGeometry, action, resolve, reject) => {
 	  if (!onProgress) {
-		  let mesh = guestGeometry.morph;
+		  let mesh = guestGeometry.getMorph();
 		  const json = mesh.geometry.clone().applyMatrix(mesh.matrix).toJSON();
 		  myResolve = resolve;
 		  onProgress = true;

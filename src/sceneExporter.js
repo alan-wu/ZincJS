@@ -16,7 +16,7 @@ const SceneExporter = function (sceneIn) {
     const animations = [];
     zincObjects.forEach(zincObject => {
       if (zincObject.animationClip) {
-        animations.push({clip: zincObject.animationClip[0], mesh: zincObject.morph});
+        animations.push({clip: zincObject.animationClip[0], mesh: zincObject.getMorph()});
       }
     });
     const exporter = new GLTFExporter();
