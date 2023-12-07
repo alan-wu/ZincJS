@@ -50,6 +50,9 @@ const ZincObject = function() {
   this._v1 = new THREE.Vector3();
   this._v2 = new THREE.Vector3();
   this._b1 = new THREE.Box3();
+  this.center = new THREE.Vector3();
+  this.radius = 0;
+  this.visible = true;
 }
 
 /**
@@ -254,8 +257,7 @@ ZincObject.prototype.isTimeVarying = function() {
  * 
  */
 ZincObject.prototype.getVisibility = function() {
-  const morph = this.getMorph();
-  return morph ? morph.visible : false;
+  return this.visible;
 }
 
 /**
@@ -264,6 +266,7 @@ ZincObject.prototype.getVisibility = function() {
  * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
  */
 ZincObject.prototype.setVisibility = function(visible) {
+  this.visible = visible;
   const morph = this.getMorph();
   if (morph.visible !== visible) {
     morph.visible = visible;
@@ -429,7 +432,8 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
       return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
     }
   }
-  this.getBoundingBox().getCenter(position);
+  this.getBoundingBox();
+  position.copy(this.center);
   return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
 }
 
@@ -444,6 +448,8 @@ ZincObject.prototype.getBoundingBox = function() {
     if (this.boundingBoxUpdateRequired) {
       require("../utilities").getBoundingBox(morph, this.cachedBoundingBox,
         this._b1, this._v1, this._v2);
+      this.cachedBoundingBox.getCenter(this.center);
+      this.radius = this.center.distanceTo(this.cachedBoundingBox.max);
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;
@@ -581,7 +587,11 @@ ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
 }
 
 //Update the geometry and colours depending on the morph.
-ZincObject.prototype.render = function(delta, playAnimation, options) {
+ZincObject.prototype.render = function(delta, playAnimation,
+  cameraControls, options) {
+  if (this.visible) {
+    this._lod.update(cameraControls, this.radius, this.center);
+  }
   if (playAnimation == true)
   {
     if ((this.clipAction) && this.isTimeVarying()) {
@@ -594,7 +604,7 @@ ZincObject.prototype.render = function(delta, playAnimation, options) {
       this.inbuildTime = targetTime;
     }
     //multilayers
-    if (delta != 0) {
+    if (this.visible && delta != 0) {
       this.boundingBoxUpdateRequired = true;
       if (this.morphColour == 1) {
         this._lod.updateMorphColorAttribute(true);

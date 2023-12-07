@@ -292,7 +292,7 @@ let Region = function (parentIn) {
   this.addZincObject = zincObject => {
     if (zincObject) {
       zincObject.setRegion(this);
-      group.add(zincObject.morph);
+      group.add(zincObject.getMorph());
       zincObjects.push(zincObject);
       this.pickableUpdateRequired = true;
     }
@@ -307,7 +307,7 @@ let Region = function (parentIn) {
   this.removeZincObject = zincObject => {
     for (let i = 0; i < zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
-        group.remove(zincObject.morph);
+        group.remove(zincObject.getMorph());
         zincObjects.splice(i, 1);
         zincObject.dispose();
         return;
@@ -340,12 +340,12 @@ let Region = function (parentIn) {
    */
   this.getPickableThreeJSObjects = (objectsList,  transverse) => {
     zincObjects.forEach(zincObject => {
-      if (zincObject.morph && zincObject.morph.visible) {
+      if (zincObject.getMorph() && zincObject.getMorph().visible) {
         let marker = zincObject.marker;
         if (marker && marker.isEnabled()) {
-          objectsList.push(marker.morph);
+          objectsList.push(marker.getMorph());
         }
-        objectsList.push(zincObject.morph);
+        objectsList.push(zincObject.getMorph());
       }
     });
     if (transverse) {
@@ -422,7 +422,7 @@ let Region = function (parentIn) {
       children.forEach(childRegion => childRegion.clear(transverse));
     }
     zincObjects.forEach(zincObject => {
-      group.remove(zincObject.morph);
+      group.remove(zincObject.getMorph());
       zincObject.dispose();
     });
     children = [];
@@ -731,7 +731,7 @@ let Region = function (parentIn) {
     // Let video dictates the progress if one is present
     const allObjects = this.getAllObjects(transverse);
     allObjects.forEach(zincObject => {
-      zincObject.render(playRate * delta, playAnimation, options);
+      zincObject.render(playRate * delta, playAnimation, this.zincCameraControls, options);
     });
     //process markers visibility and size
     if (options && options.displayMarkers && (playAnimation === false)) {
