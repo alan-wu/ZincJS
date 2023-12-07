@@ -16,7 +16,7 @@ const TextureSlides = function (textureIn) {
   this.isTextureSlides = true;
   const textureSettings = [];
   const idTextureMap = {};
-  this.morph = new THREE.Group();
+  this.setMorph(new THREE.Group());
   this.morph.userData = this;
   const alpha = 1.0;
 

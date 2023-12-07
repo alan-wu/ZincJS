@@ -1,5 +1,4 @@
 const THREE = require('three');
-const updateMorphColorAttribute = require("../utilities").updateMorphColorAttribute;
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -19,9 +18,7 @@ const ZincObject = function() {
   this.geometry = undefined;
   // THREE.Mesh
   this.morph = undefined;
-  // THREE.Mesh - for utilities purpose such as rendering 
-  // transparent surfaces - one for front face and one for back face.
-  this.secondaryMesh = undefined;
+  this._lod = new (require("./lod").LOD)();
   /**
 	 * Groupname given to this geometry.
 	 */
@@ -78,7 +75,7 @@ ZincObject.prototype.getDuration = function() {
 
 /**
  * Set the region this object belongs to.
- * 
+ *
  * @param {Region} region
  */
 ZincObject.prototype.setRegion = function(region) {
@@ -100,7 +97,8 @@ ZincObject.prototype.getRegion = function() {
  * @return {Object}
  */
  ZincObject.prototype.getMorph = function() {
-  return this.morph;
+  const morph =  this._lod.getCurrentMorph();
+  return morph ? morph : this.morph;
 }
 
 /**
@@ -108,21 +106,16 @@ ZincObject.prototype.getRegion = function() {
  */
  ZincObject.prototype.setMorph = function(mesh) {
   this.morph = mesh;
+  //this is the base level object
+  this._lod.addLevel(mesh, 0);
+  this._lod.setMaterial(mesh.material);
 }
 
 /**
  * Handle transparent mesh, create a clone for backside rendering if it is
  * transparent.
  */
-ZincObject.prototype.checkAndCreateTransparentMesh = function() {
-  return;
-}
-
-/**
- * Handle transparent mesh, remove a clone for backside rendering if it is
- * transparent.
- */
-ZincObject.prototype.checkAndRemoveTransparentMesh = function() {
+ZincObject.prototype.checkTransparentMesh = function(transparentChanged) {
   return;
 }
 
@@ -136,16 +129,20 @@ ZincObject.prototype.checkAndRemoveTransparentMesh = function() {
  * time dependent.
  */
 ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour) {
+  //Note: we assume all layers are consistent with time frame
+  //Thus adding them to the same animation group should work.
+  //This step is only required for the primary (level 0) mesh.
   this.animationGroup = new THREE.AnimationObjectGroup(mesh);
   this.mixer = new THREE.AnimationMixer(this.animationGroup);
+  const geometry = mesh.geometry;
   this.geometry = mesh.geometry;
   this.clipAction = undefined;
-  if (this.geometry && this.geometry.morphAttributes) {
-    let morphAttribute = this.geometry.morphAttributes.position;
+  if (geometry && geometry.morphAttributes) {
+    let morphAttribute = geometry.morphAttributes.position;
     if (!morphAttribute) {
-      morphAttribute = this.geometry.morphAttributes.color ?
-        this.geometry.morphAttributes.color :
-        this.geometry.morphAttributes.normal;
+      morphAttribute = geometry.morphAttributes.color ?
+        geometry.morphAttributes.color :
+        geometry.morphAttributes.normal;
     }
     if (morphAttribute) {
       this.animationClip = THREE.AnimationClip.CreateClipsFromMorphTargetSequences(
@@ -161,16 +158,16 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   }
   this.timeEnabled = localTimeEnabled;
   this.morphColour = localMorphColour;
-  this.morph = mesh;
-  this.morph.userData = this;
-  this.morph.matrixAutoUpdate = false;
-  this.checkAndCreateTransparentMesh();
+  mesh.userData = this;
+  mesh.matrixAutoUpdate = false;
+  this.setMorph(mesh);
+  this.checkTransparentMesh(true);
   if (this.timeEnabled) {
     this.setFrustumCulled(false);
   } else {
     if (this.morphColour) {
-      this.geometry.setAttribute('morphTarget0', this.geometry.getAttribute( 'position' ) );
-      this.geometry.setAttribute('morphTarget1', this.geometry.getAttribute( 'position' ) );
+      geometry.setAttribute('morphTarget0', geometry.getAttribute( 'position' ) );
+      geometry.setAttribute('morphTarget1', geometry.getAttribute( 'position' ) );
     }
   }
   this.boundingBoxUpdateRequired = true;
@@ -183,12 +180,7 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
  */
 ZincObject.prototype.setName = function(groupNameIn) {
   this.groupName = groupNameIn;
-  if (this.morph) {
-    this.morph.name = this.groupName;
-  }
-  if (this.secondaryMesh) {
-    this.secondaryMesh.name = this.groupName;
-  }
+  this._lod.setName(groupNameIn);
 }
 
 /**
@@ -239,7 +231,8 @@ ZincObject.prototype.setMorphTime = function(time) {
   }
   if (timeChanged) {
     this.boundingBoxUpdateRequired = true;
-    updateMorphColorAttribute(this.geometry, this.morph);
+    const morph = this._lod.getCurrentMorph();
+    this._lod.updateMorphColorAttribute(true);
     if (this.timeEnabled)
       this.markerUpdateRequired = true;
   }
@@ -261,7 +254,8 @@ ZincObject.prototype.isTimeVarying = function() {
  * 
  */
 ZincObject.prototype.getVisibility = function() {
-  return this.morph ? this.morph.visible : false;
+  const morph = this.getMorph();
+  return morph ? morph.visible : false;
 }
 
 /**
@@ -270,8 +264,9 @@ ZincObject.prototype.getVisibility = function() {
  * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
  */
 ZincObject.prototype.setVisibility = function(visible) {
-  if (this.morph.visible !== visible) {
-    this.morph.visible = visible;
+  const morph = this.getMorph();
+  if (morph.visible !== visible) {
+    morph.visible = visible;
     if (this.region) this.region.pickableUpdateRequired = true;
   }
 }
@@ -284,20 +279,14 @@ ZincObject.prototype.setVisibility = function(visible) {
  * can be any value between from 0 to 1.0.
  */
 ZincObject.prototype.setAlpha = function(alpha) {
-  const material = this.morph.material;
+  const material = this._lod._material;
   let isTransparent = false;
   if (alpha  < 1.0)
     isTransparent = true;
   let transparentChanged = material.transparent == isTransparent ? false : true;
   material.opacity = alpha;
   material.transparent = isTransparent;
-  if (transparentChanged)
-    if (isTransparent)
-      this.checkAndCreateTransparentMesh();
-    else
-      this.checkAndRemoveTransparentMesh();
-  if (this.secondaryMesh && this.secondaryMesh.material)
-    this.secondaryMesh.material.opacity = alpha;
+  this.checkTransparentMesh(transparentChanged);
 }
 
 /**
@@ -308,9 +297,8 @@ ZincObject.prototype.setAlpha = function(alpha) {
  * @param {Boolean} flag - Set frustrum culling on/off based on this flag.
  */
 ZincObject.prototype.setFrustumCulled = function(flag) {
-  if (this.morph) {
-    this.morph.frustumCulled = flag;
-  }
+  //multilayers - set for all layers
+  this._lod.setFrustumCulled(flag);
 }
 
 /**
@@ -320,10 +308,9 @@ ZincObject.prototype.setFrustumCulled = function(flag) {
  * @param {Boolean} vertexColors - Set display with vertex color on/off.
  */
 ZincObject.prototype.setVertexColors = function(vertexColors) {
-  this.morph.material.vertexColors = vertexColors;
-  this.geometry.colorsNeedUpdate = true;
-  if (this.secondaryMesh && this.secondaryMesh.material)
-    this.secondaryMesh.material.vertexColors = vertexColors;
+  //multilayers - set for all
+  this._lod.setVertexColors(vertexColors);
+
 }
 
 /**
@@ -332,8 +319,8 @@ ZincObject.prototype.setVertexColors = function(vertexColors) {
  * @return {THREE.Color}
  */
 ZincObject.prototype.getColour = function() {
-  if (this.morph && this.morph.material)
-    return this.morph.material.color;
+  if (this._lod._material)
+    return this._lod._material.color;
 	return undefined;
 }
   
@@ -343,10 +330,7 @@ ZincObject.prototype.getColour = function() {
  * @param {THREE.Color} colour - Colour to be set for this geometry.
  */
 ZincObject.prototype.setColour = function(colour) {
-  this.morph.material.color = colour;
-  if (this.secondaryMesh && this.secondaryMesh.material)
-    this.secondaryMesh.material.color = colour;
-  this.geometry.colorsNeedUpdate = true;
+  this._lod.setColour(colour);
 }
 
 /**
@@ -356,8 +340,8 @@ ZincObject.prototype.setColour = function(colour) {
  */
 ZincObject.prototype.getColourHex = function() {
   if (!this.morphColour) {
-    if (this.morph && this.morph.material && this.morph.material.color)
-      return this.morph.material.color.getHexString();
+    if (this._lod._material && this._lod._material.color)
+      return this._lod._material.color.getHexString();
   }
   return undefined;
 }
@@ -368,9 +352,10 @@ ZincObject.prototype.getColourHex = function() {
  * @param {String} hex - The colour value in hex form.
  */
 ZincObject.prototype.setColourHex = function(hex) {
-  this.morph.material.color.setHex(hex);
-  if (this.secondaryMesh && this.secondaryMesh.material)
-    this.secondaryMesh.material.color.setHex(hex);
+  this._lod._material.color.setHex(hex);
+  if (this._lod._secondaryMaterial) {
+    this._lod._secondaryMaterial.color.setHex(hex);
+  }
 }
 
 /**
@@ -379,13 +364,7 @@ ZincObject.prototype.setColourHex = function(hex) {
  * @param {THREE.Material} material - Material to be set for this geometry.
  */
 ZincObject.prototype.setMaterial = function(material) {
-  this.morph.material = material;
-  this.geometry.colorsNeedUpdate = true;
-  if (this.secondaryMesh && this.secondaryMesh.material) {
-    this.secondaryMesh.material.dispose();
-    this.secondaryMesh.material = material.clone()
-    this.secondaryMesh.material.side = THREE.FrontSide;
-  }
+  this._lod.setMaterial(material);
 }
 
 /**
@@ -395,8 +374,9 @@ ZincObject.prototype.setMaterial = function(material) {
  */
 ZincObject.prototype.getClosestVertexIndex = function() {
   let closestIndex = -1;
-  if (this.morph) {
-    let position = this.morph.geometry.attributes.position;
+  const morph = this.getMorph();
+  if (morph) {
+    let position = morph.geometry.attributes.position;
     this._b1.setFromBufferAttribute(position);
     this._b1.getCenter(this._v1);
     if (position) {
@@ -459,9 +439,10 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
  * @return {THREE.Box3}.
  */
 ZincObject.prototype.getBoundingBox = function() {
-  if (this.morph && this.morph.visible) {
+  const morph = this._lod.getCurrentMorph();
+  if (morph && morph.visible) {
     if (this.boundingBoxUpdateRequired) {
-      require("../utilities").getBoundingBox(this.morph, this.cachedBoundingBox,
+      require("../utilities").getBoundingBox(morph, this.cachedBoundingBox,
         this._b1, this._v1, this._v2);
       this.boundingBoxUpdateRequired = false;
     }
@@ -474,14 +455,8 @@ ZincObject.prototype.getBoundingBox = function() {
  * Clear this geometry and free the memory.
  */
 ZincObject.prototype.dispose = function() {
-  if (this.morph && this.morph.geometry)
-    this.morph.geometry.dispose();
-  if (this.morph && this.morph.material)
-    this.morph.material.dispose();
-  if (this.secondaryMesh && this.secondaryMesh.material)
-    this.secondaryMesh.material.dispose();
-  if (this.geometry)
-    this.geometry.dispose();
+  //multilayyers
+  this._lod.dispose();
   this.animationGroup = undefined;
   this.mixer = undefined;
   this.morph = undefined;
@@ -529,13 +504,13 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
       }
       if (!this.marker.isEnabled()) {
         this.marker.enable();
-        this.morph.add(this.marker.morph);
+        this._lod.toggleMarker(this.marker.morph, true);
       }
     }
   } else {
     if (this.marker && this.marker.isEnabled()) {
       this.marker.disable();
-      this.morph.remove(this.marker.morph);
+      this._lod.toggleMarker(this.marker.morph, false);
     }
     this.markerUpdateRequired = true;
   }
@@ -548,19 +523,15 @@ ZincObject.prototype.processMarkerVisual = function(min, max) {
 }
 
 ZincObject.prototype.initiateMorphColor = function() {
-  if ((this.morphColour == 1) && (typeof this.geometry !== "undefined") &&
-      ((this.morph.material.vertexColors == THREE.VertexColors) ||
-      (this.morph.material.vertexColors == true))) {
-        updateMorphColorAttribute(this.geometry, this.morph);
-      }
+  //Multilayers - set all
+  if (this.morphColour == 1) {
+    this._lod.updateMorphColorAttribute(false);
+  }
 }
 
 ZincObject.prototype.setRenderOrder = function(renderOrder) {
-  if (this.morph && (renderOrder !== undefined)) {
-    this.morph.renderOrder = renderOrder;
-    if (this.secondaryMesh)
-      this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
-  }
+  //multiilayers
+  this._lod.setRenderOrder(renderOrder);
 }
 
 /**
@@ -603,7 +574,9 @@ ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
     } else {
       this.markerMode = "inherited";
     }
-    if (this.region) this.region.pickableUpdateRequired = true;
+    if (this.region) {
+      this.region.pickableUpdateRequired = true;
+    }
   }
 }
 
@@ -620,12 +593,12 @@ ZincObject.prototype.render = function(delta, playAnimation, options) {
         targetTime = targetTime - this.duration;
       this.inbuildTime = targetTime;
     }
+    //multilayers
     if (delta != 0) {
       this.boundingBoxUpdateRequired = true;
-      if ((this.morphColour == 1) && (typeof this.geometry !== "undefined") &&
-         ((this.morph.material.vertexColors == THREE.VertexColors) ||
-         (this.morph.material.vertexColors == true)))
-        updateMorphColorAttribute(this.geometry, this.morph);
+      if (this.morphColour == 1) {
+        this._lod.updateMorphColorAttribute(true);
+      }
     }
   }
   this.updateMarker(playAnimation, options);

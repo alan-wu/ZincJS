@@ -86,7 +86,8 @@ const Geometry = function () {
    * @param {Number} options.opacity - Opacity to be set for the geometry
    */
 	this.createMesh = (geometryIn, materialIn, options) => {
-		if (this.geometry && this.morph && (geometryIn != undefined))
+    //Skip if there is a morph already
+		if (this.morph && this.morph.geometry && (geometryIn != undefined))
 			return;
 		const mesh = createMeshForGeometry(geometryIn, materialIn, options); 
 		this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
@@ -96,6 +97,7 @@ const Geometry = function () {
    * Calculate the UV for texture rendering.
    */
 	this.calculateUVs = () => {
+    //Multilayers
 		this.geometry.computeBoundingBox();
 		const max = this.geometry.boundingBox.max, min = this.geometry.boundingBox.min;
 		const offset = new THREE.Vector2(0 - min.x, 0 - min.y);
@@ -119,36 +121,9 @@ const Geometry = function () {
    * Handle transparent mesh, create a clone for backside rendering if it is
    * transparent.
    */
-  this.checkAndCreateTransparentMesh = function() {
-    if (this.morph.material && this.morph.material.transparent) {
-      if (!this.secondaryMesh) {
-        let secondaryMaterial = this.morph.material.clone();
-        secondaryMaterial.side =  THREE.FrontSide;
-        this.secondaryMesh = new THREE.Mesh(this.morph.geometry, secondaryMaterial);
-        this.secondaryMesh.renderOrder = this.morph.renderOrder + 1;
-        this.secondaryMesh.userData = this;
-        this.secondaryMesh.name = this.groupName;
-      }
-      this.morph.material.side = THREE.BackSide;
-      this.morph.material.needsUpdate = true;
-      this.morph.add(this.secondaryMesh);
-      this.animationGroup.add(this.secondaryMesh);
-    }
+  this.checkTransparentMesh = function(transparentChanged) {
+    this._lod.checkTransparentMesh(this.animationGroup, transparentChanged);
   }
-
-/**
- * Handle transparent mesh, remove a clone for backside rendering if it is
- * transparent.
- */
- this.checkAndRemoveTransparentMesh = function() {
-  if (this.secondaryMesh) {
-    this.morph.remove(this.secondaryMesh);
-    this.animationGroup.uncache(this.secondaryMesh);
-    this.animationGroup.remove(this.secondaryMesh);
-  }
-  this.morph.material.side = THREE.DoubleSide;
-}
-  
 	
 	/**
 	 * Set wireframe display for this geometry.

@@ -90,7 +90,8 @@ const Glyphset = function () {
     scaleFactors = glyphsetData.metadata.scale_factors;
     const loader = new JSONLoader();
     this.geometry = new THREE.BufferGeometry();
-    this.morph = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
+    const instancedMesh = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
+    this.setMorph(instancedMesh);
     if (isInline) {
       var object = loader.parse(glyphURL);
       (meshloader(finishCallback, displayLabels))(object.geometry, object.materials);
@@ -498,6 +499,7 @@ const Glyphset = function () {
       createGlyphs(displayLabels);
       this.morph.name = this.groupName;
       this.morph.userData = this;
+      this.setMorph(this.morph);
       geometry.dispose();
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(this);
