@@ -1,4 +1,5 @@
 const THREE = require('three');
+
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -18,7 +19,8 @@ const ZincObject = function() {
   this.geometry = undefined;
   // THREE.Mesh
   this.morph = undefined;
-  this._lod = new (require("./lod").LOD)();
+  this.group = new THREE.Group();
+  this._lod = new (require("./lod").LOD)(this);
   /**
 	 * Groupname given to this geometry.
 	 */
@@ -105,12 +107,23 @@ ZincObject.prototype.getRegion = function() {
 }
 
 /**
+ * Get the threejs object3D. 
+ * 
+ * @return {Object}
+ */
+ ZincObject.prototype.getGroup = function() {
+  return this.group;
+}
+
+/**
  * Set the internal threejs object3D. 
  */
  ZincObject.prototype.setMorph = function(mesh) {
   this.morph = mesh;
+  this.group.add(this.morph);
   //this is the base level object
-  this._lod.addLevel(mesh, 0);
+  const distance = this._lod.calculateDistance("far");
+  this._lod.addLevel(mesh, distance);
   this._lod.setMaterial(mesh.material);
 }
 
@@ -267,11 +280,14 @@ ZincObject.prototype.getVisibility = function() {
  */
 ZincObject.prototype.setVisibility = function(visible) {
   this.visible = visible;
+  this.group.visible = visible;
+  /*
   const morph = this.getMorph();
   if (morph.visible !== visible) {
     morph.visible = visible;
     if (this.region) this.region.pickableUpdateRequired = true;
   }
+  */
 }
 
 /**
@@ -443,7 +459,7 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
  * @return {THREE.Box3}.
  */
 ZincObject.prototype.getBoundingBox = function() {
-  const morph = this._lod.getCurrentMorph();
+  let morph = this._lod.getCurrentMorph();
   if (morph && morph.visible) {
     if (this.boundingBoxUpdateRequired) {
       require("../utilities").getBoundingBox(morph, this.cachedBoundingBox,
@@ -466,6 +482,7 @@ ZincObject.prototype.dispose = function() {
   this.animationGroup = undefined;
   this.mixer = undefined;
   this.morph = undefined;
+  this.group = undefined;
   this.clipAction = undefined;
   this.groupName = undefined;
 }
@@ -510,13 +527,15 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
       }
       if (!this.marker.isEnabled()) {
         this.marker.enable();
-        this._lod.toggleMarker(this.marker.morph, true);
+        this.group.add(this.marker.morph);
+        //this._lod.toggleMarker(this.marker.morph, true);
       }
     }
   } else {
     if (this.marker && this.marker.isEnabled()) {
       this.marker.disable();
-      this._lod.toggleMarker(this.marker.morph, false);
+      this.group.remove(this.marker.morph);
+      //this._lod.toggleMarker(this.marker.morph, false);
     }
     this.markerUpdateRequired = true;
   }
@@ -589,8 +608,8 @@ ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
 //Update the geometry and colours depending on the morph.
 ZincObject.prototype.render = function(delta, playAnimation,
   cameraControls, options) {
-  if (this.visible) {
-    this._lod.update(cameraControls, this.radius, this.center);
+  if (this.visible && !(this.timeEnabled && playAnimation)) {
+    this._lod.update(cameraControls, this.center);
   }
   if (playAnimation == true)
   {
@@ -613,5 +632,15 @@ ZincObject.prototype.render = function(delta, playAnimation,
   }
   this.updateMarker(playAnimation, options);
 }
+
+
+/**
+ * Add lod from an url into the lod object.
+ */
+ZincObject.prototype.addLOD = function(loader, level, url, preload) {
+  this._lod.addLevelFromURL(loader, level, url, preload);
+}
+
+
 
 exports.ZincObject = ZincObject;

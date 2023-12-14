@@ -581,7 +581,7 @@ exports.Scene = function (containerIn, rendererIn) {
 				  zincCameraControls.setTime(currentTime);
 				  zincCameraControls.update(0);
           rootRegion.setMorphTime(currentTime, true);
-          rootRegion.renderGeometries(0, 0, playAnimation, this.zincCameraControls, undefined, true);
+          rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, undefined, true);
 			  } else {
 				  zincCameraControls.update(0);
 			  }
@@ -592,7 +592,7 @@ exports.Scene = function (containerIn, rendererIn) {
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded) {
         zincCameraControls.update(delta);
-        rootRegion.renderGeometries(playRate, delta, playAnimation, this.zincCameraControls, options, true);
+        rootRegion.renderGeometries(playRate, delta, playAnimation, zincCameraControls, options, true);
 		  } else {
 			  zincCameraControls.update(0);
 		  }

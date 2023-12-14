@@ -292,11 +292,13 @@ let Region = function (parentIn) {
   this.addZincObject = zincObject => {
     if (zincObject) {
       zincObject.setRegion(this);
-      group.add(zincObject.getMorph());
+      //group.add(zincObject.getMorph());
+      group.add(zincObject.getGroup());
       zincObjects.push(zincObject);
       this.pickableUpdateRequired = true;
     }
   }
+
 
   /**
    * Remove a ZincObject from this region if it presents. This will eventually
@@ -307,7 +309,7 @@ let Region = function (parentIn) {
   this.removeZincObject = zincObject => {
     for (let i = 0; i < zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
-        group.remove(zincObject.getMorph());
+        group.remove(zincObject.getGroup());
         zincObjects.splice(i, 1);
         zincObject.dispose();
         return;
@@ -340,12 +342,12 @@ let Region = function (parentIn) {
    */
   this.getPickableThreeJSObjects = (objectsList,  transverse) => {
     zincObjects.forEach(zincObject => {
-      if (zincObject.getMorph() && zincObject.getMorph().visible) {
+      if (zincObject.getGroup() && zincObject.getGroup().visible) {
         let marker = zincObject.marker;
         if (marker && marker.isEnabled()) {
           objectsList.push(marker.getMorph());
         }
-        objectsList.push(zincObject.getMorph());
+        objectsList.push(zincObject.getGroup());
       }
     });
     if (transverse) {
@@ -727,11 +729,11 @@ let Region = function (parentIn) {
    * Update geometries and glyphsets based on the calculated time.
    * @private
    */
-  this.renderGeometries = (playRate, delta, playAnimation, options, transverse) => {
+  this.renderGeometries = (playRate, delta, playAnimation, cameraControls, options, transverse) => {
     // Let video dictates the progress if one is present
     const allObjects = this.getAllObjects(transverse);
     allObjects.forEach(zincObject => {
-      zincObject.render(playRate * delta, playAnimation, this.zincCameraControls, options);
+      zincObject.render(playRate * delta, playAnimation, cameraControls, options);
     });
     //process markers visibility and size
     if (options && options.displayMarkers && (playAnimation === false)) {

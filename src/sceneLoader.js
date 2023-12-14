@@ -160,7 +160,7 @@ exports.SceneLoader = function (sceneIn) {
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
       primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
-        undefined, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        undefined, undefined, finishCallback), this.onProgress(i), this.onError(finishCallback));
     }
   }
 
@@ -340,7 +340,7 @@ exports.SceneLoader = function (sceneIn) {
     const loader = new STLLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined, finishCallback));
+      false, groupName, undefined, undefined, undefined, finishCallback));
   }
 
   /**
@@ -359,7 +359,7 @@ exports.SceneLoader = function (sceneIn) {
     const loader = new OBJLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined,finishCallback));
+      false, groupName, undefined, undefined, undefined, finishCallback));
   }
 
   /**
@@ -397,18 +397,18 @@ exports.SceneLoader = function (sceneIn) {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
         loader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError);
+          localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(i), this.onError);
         return;
       }
     }
     if (isInline) {
       const object = primitivesLoader.parse( url );
 			(meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback))( object.geometry, object.materials );
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback))( object.geometry, object.materials );
     } else {
       loader.crossOrigin = "Anonymous";
       primitivesLoader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(i), this.onError(finishCallback));
     }
   };
 
@@ -544,6 +544,7 @@ exports.SceneLoader = function (sceneIn) {
     groupName,
     anatomicalId,
     renderOrder,
+    options,
     finishCallback
   ) => {
     return (geometry, materials) => {
@@ -555,6 +556,12 @@ exports.SceneLoader = function (sceneIn) {
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder);
       zincGeometry.anatomicalId = anatomicalId;
       zincGeometry.setRenderOrder(renderOrder);
+      console.log(options)
+      if (options.lod && options.lod.levels) {
+        for (const [key, value] of Object.entries(options.lod.levels)) {
+          zincGeometry.addLOD(primitivesLoader, key, value.URL, options.lod.preload);
+        }
+      }
       --this.toBeDownloaded;
       geometry.dispose();
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
@@ -606,6 +613,15 @@ exports.SceneLoader = function (sceneIn) {
         newURL = item.Inline.URL;
         isInline = true;
       }
+      const lod = {};
+      if (item.LOD && item.LOD.Levels) {
+        lod.preload = item.LOD.Preload ? true : false;
+        lod.levels = {};
+        for (const [key, value] of Object.entries(item.LOD.Levels)) {
+          lod.levels[key] = {};
+          lod.levels[key]["URL"] = createNewURL(value.URL, referenceURL);
+        }
+      }
       let groupName = item.GroupName;
       if (groupName === undefined || groupName === "") {
         groupName = "_Unnamed";
@@ -616,6 +632,7 @@ exports.SceneLoader = function (sceneIn) {
         fileFormat: item.FileFormat,
         anatomicalId: item.AnatomicalId,
         compression: item.compression,
+        lod: lod,
         renderOrder: order
       };
       

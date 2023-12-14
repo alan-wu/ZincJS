@@ -21,6 +21,7 @@ const Marker = function(zincObject) {
   let spriteMaterial = undefined;
   let sprite = undefined;
   this.morph = new THREE.Group();
+  this.group = this.morph;
   this.parent = zincObject;
   this.isMarker = true;
   let enabled = false;
