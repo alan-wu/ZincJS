@@ -49,15 +49,7 @@ const Glyphset = function () {
     _points[i] = new THREE.Vector3();
   }
 
-  /**
-   * Get the {@link Three.Group} containing all of the glyphs' meshes.
-   * @returns {Three.Group}
-   */
-  this.getGroup = () => {
-    return this.morph;
-  }
-
-  /**
+/**
    * Copy glyphset data into this glyphset then load the glyph's geoemtry 
    * with the provided glyphURL. FinishCallback will be called once
    * glyph is loaded.
