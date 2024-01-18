@@ -1594,7 +1594,7 @@ const CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCamera
 /**
  * @author mrdoob / http://mrdoob.com/
  */
-StereoCameraZoomFixed = function () {
+const StereoCameraZoomFixed = function () {
 
 	this.type = 'StereoCamera';
 
@@ -1732,7 +1732,7 @@ const StereoEffect = function ( renderer ) {
  * W3C Device Orientation control (http://w3c.github.io/deviceorientation/spec-source-orientation.html)
  */
 
-ModifiedDeviceOrientationControls = function ( object ) {
+const ModifiedDeviceOrientationControls = function ( object ) {
 
 	const scope = this;
 
