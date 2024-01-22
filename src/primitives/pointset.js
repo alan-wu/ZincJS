@@ -1,5 +1,6 @@
 const THREE = require('three');
 const Points = require('../three/Points').Points;
+const toBufferGeometry = require('../utilities').toBufferGeometry;
 
 /**
  * Provides an object which stores points and provides method which controls its position.
@@ -37,7 +38,7 @@ const Pointset = function () {
    */
   this.createMesh = (geometryIn, materialIn, options) => {
     if (geometryIn && materialIn) {
-      let geometry = this.toBufferGeometry(geometryIn, options);
+      let geometry = toBufferGeometry(geometryIn, options);
       const texture = getCircularTexture();
       materialIn.map = texture;
       let point = new Points(geometry, materialIn);
