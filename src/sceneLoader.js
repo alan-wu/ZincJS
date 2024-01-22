@@ -29,7 +29,7 @@ const createNewURL = (target, reference) => {
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
   this.toBeDownloaded = 0;
-  this.progressMap = [];
+  this.progressMap = {};
   let viewLoaded = false;
   let errorDownload = false;
   const primitivesLoader = new PrimitivesLoader();
@@ -131,7 +131,7 @@ exports.SceneLoader = function (sceneIn) {
         }
       }
     }
-    requestURL = resolveURL(url);
+    const requestURL = resolveURL(url);
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
@@ -160,7 +160,7 @@ exports.SceneLoader = function (sceneIn) {
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
       primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
-        undefined, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
     }
   }
 
@@ -187,7 +187,7 @@ exports.SceneLoader = function (sceneIn) {
         this.loadModelsURL(targetRegion, urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback);
       }
     }
-    requestURL = resolveURL(jsonFilePrefix + "_view.json");
+    const requestURL = resolveURL(jsonFilePrefix + "_view.json");
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
@@ -253,7 +253,7 @@ exports.SceneLoader = function (sceneIn) {
         renderOrder, finishCallback))( object.geometry, object.materials );
     } else {
       primitivesLoader.load(url, linesloader(region, localTimeEnabled, localMorphColour, groupName, 
-        anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        anatomicalId, renderOrder, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   }
 
@@ -423,7 +423,7 @@ exports.SceneLoader = function (sceneIn) {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
         loader.load(url, objloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(i), this.onError);
+          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(url), this.onError);
         return;
       }
     }
@@ -434,7 +434,7 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       loader.crossOrigin = "Anonymous";
       primitivesLoader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   };
 
@@ -488,7 +488,7 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       primitivesLoader.load(url, pointsetloader(region, localTimeEnabled, localMorphColour,
         groupName, anatomicalId, renderOrder, finishCallback),
-        this.onProgress(i), this.onError(finishCallback));
+        this.onProgress(url), this.onError(finishCallback));
     }
   }
 
@@ -529,7 +529,7 @@ exports.SceneLoader = function (sceneIn) {
    * 
    * @returns {Zinc.Geometry}
    */
-  addZincGeometry = (
+  const addZincGeometry = (
     region,
     geometryIn,
     colour,
@@ -824,7 +824,7 @@ exports.SceneLoader = function (sceneIn) {
     */
   this.loadMetadataURL = (targetRegion, url, finishCallback, allCompletedCallback) => {
     const xmlhttp = new XMLHttpRequest();
-    var requestURL = resolveURL(url);
+    const requestURL = resolveURL(url);
     xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
         scene.resetMetadata();
