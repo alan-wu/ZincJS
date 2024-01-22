@@ -237,7 +237,7 @@ exports.Renderer = function (containerIn) {
 		if (currentScene) {	
 			const boundingBox = currentScene.getBoundingBox();
 			if (boundingBox) {
-			    for(i = 0; i < additionalActiveScenes.length; i++) {
+			    for(let i = 0; i < additionalActiveScenes.length; i++) {
 			        const boundingBox2 = additionalActiveScenes[i].getBoundingBox();
 			        if (boundingBox2) {
 			        	boundingBox.union(boundingBox2);
@@ -470,7 +470,7 @@ exports.Renderer = function (containerIn) {
 		}
 		const delta = clock.getDelta();
 		currentScene.renderGeometries(playRate, delta, this.playAnimation);
-	    for(i = 0; i < additionalActiveScenes.length; i++) {
+	    for(let i = 0; i < additionalActiveScenes.length; i++) {
 	        const sceneItem = additionalActiveScenes[i];
 	        sceneItem.renderGeometries(playRate, delta, this.playAnimation);
 	    }
@@ -478,13 +478,13 @@ exports.Renderer = function (containerIn) {
 			renderer.clearDepth();
 			renderer.render( sceneOrtho, cameraOrtho );
 		}
-    for (key in preRenderCallbackFunctions) {
+    for (let key in preRenderCallbackFunctions) {
       if (preRenderCallbackFunctions.hasOwnProperty(key)) {
         preRenderCallbackFunctions[key].call();
       }
     }
     currentScene.render(renderer);
-    for (key in postRenderCallbackFunctions) {
+    for (let key in postRenderCallbackFunctions) {
       if (postRenderCallbackFunctions.hasOwnProperty(key)) {
         postRenderCallbackFunctions[key].call();
       }
@@ -507,7 +507,7 @@ exports.Renderer = function (containerIn) {
 		if (currentScene === sceneIn) {
 			return true;
 		} else {
-		    for(i = 0; i < additionalActiveScenes.length; i++) {
+		    for(let i = 0; i < additionalActiveScenes.length; i++) {
 		        const sceneItem = additionalActiveScenes[i];
 		        if (sceneItem === sceneIn)
 		        	return true;
@@ -534,7 +534,7 @@ exports.Renderer = function (containerIn) {
 	 * @param {Zinc.Scene} additionalScene - Scene to be removed from rendering.
 	 */
 	this.removeActiveScene = additionalScene => {
-	    for(i = 0; i < additionalActiveScenes.length; i++) {
+	    for(let i = 0; i < additionalActiveScenes.length; i++) {
 	        const sceneItem = additionalActiveScenes[i];
 	        if (sceneItem === additionalScene) {
 	        	additionalActiveScenes.splice(i, 1);

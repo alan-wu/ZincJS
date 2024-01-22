@@ -71,6 +71,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.directionalLight = 0;
 	this.scrollRate = 50;
 	let duration = 6000;
+  let enabled = true;
 	let inbuildTime = 0;
 	let cameraPath = undefined;
 	let numberOfCameraPoint = undefined;
@@ -740,7 +741,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	            finishCallback();
 		    }
 		}
-		requestURL = resolveURL(path_url);
+		const requestURL = resolveURL(path_url);
 		xmlhttp.open("GET", requestURL, true);
 		xmlhttp.send();
 	}
