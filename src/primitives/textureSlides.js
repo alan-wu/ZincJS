@@ -47,7 +47,7 @@ const TextureSlides = function (textureIn) {
    * @param {THREE.Mesh} mesh - Mesh to be modified
    * @param {SLIDE_SETTINGS} slideSettings - Slide settings.
    */
-  setUniformSlideSettingsOfMesh = (mesh, settings) => {
+  const setUniformSlideSettingsOfMesh = (mesh, settings) => {
     const material = mesh.material;
     const uniforms = material.uniforms;
     switch (settings.direction) {
