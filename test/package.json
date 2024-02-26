@@ -6,9 +6,9 @@
     "README.md"
   ],
   "scripts": {
-    "test": "mocha-webpack --watch ",
-    "test-ci": "mocha-webpack --reporter mocha-junit-reporter",
-    "test-standard": "mocha-webpack",
+    "test": "mochapack --webpack-config ./webpack.config-test.js --glob *.test.{js,ts} --require prepare/setup.js --watch ",
+    "test-ci": "mochapack  --webpack-config ./webpack.config-test.js --glob *.test.{js,ts} --require prepare/setup.js --reporter mocha-junit-reporter",
+    "test-standard": "mochapack --webpack-config ./webpack.config-test.js --glob *.test.{js,ts} --require prepare/setup.js",
     "cover": "cross-env NODE_ENV=coverage nyc --cwd=../ --reporter=lcov --reporter=text npm run test-ci"
   },
   "repository": {
@@ -28,32 +28,30 @@
   },
   "homepage": "https://github.com/alan-wu/ZincJS/",
   "devDependencies": {
-    "@babel/core": "^7.6.0",
-    "@babel/preset-env": "^7.6.0",
-    "babel-loader": "^8.0.6",
-    "canvas": "2.11.0",
-    "chai": "*",
+    "@babel/core": "^7.23.9",
+    "@babel/preset-env": "^7.23.9",
+    "babel-loader": "^9.1.3",
+    "babel-plugin-istanbul": "^6.1.1",
+    "canvas": "2.11.2",
+    "chai": "^4.1.0",
     "cross-env": "*",
-    "gl": "^4.2.2",
-    "istanbul-instrumenter-loader": "*",
-    "jsdom": "*",
-    "mocha": "^6.2.3",
+    "file-system": "^2.2.2",
+    "gl": "^6.0.2",
+    "happy-dom": "^13.6.0",
+    "mocha": "^10.3.0",
     "mocha-junit-reporter": "^1.23.1",
-    "mocha-webpack": "^2.0.0-beta.0",
-    "nyc": "^14.1.1",
-    "url-loader": "^2.0.0",
-    "webpack": "^4.40.2",
-    "webpack-cli": "^3.3.8",
-    "webpack-node-externals": "^1.7.2"
+    "mochapack": "^2.1.4",
+    "nock": "^13.5.3",
+    "node-polyfill-webpack-plugin": "^3.0.0",
+    "nyc": "^15.1.0",
+    "url-loader": "^4.1.1",
+    "webpack": "^5.90.3",
+    "webpack-cli": "^5.1.4",
+    "webpack-node-externals": "^3.0.0",
+    "xhr2": "^0.2.1"
   },
   "dependencies": {
-    "diff": ">=3.5.0",
-    "file-system": "^2.2.2",
-    "mem": ">=4.0.0",
-    "nock": "^10.0.6",
-    "node-fetch": "^2.6.9",
-    "three": "^0.130.1",
-    "xhr2": "^0.2.0"
+    "three": "^0.130.1"
   },
   "nyc": {
     "all": true,
