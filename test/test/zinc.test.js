@@ -1,12 +1,10 @@
-const Zinc = require("../../src/zinc");
-const path = require("path");
-var assert = require('chai').assert;
-var expect = require('chai').expect;
-const nock = require('nock');
-var THREE= Zinc.THREE;
-var fs = require('file-system');
+import Zinc from "../../src/zinc";
+import {assert} from 'chai';
+import nock from 'nock';
+const THREE = Zinc.THREE;
+import fs from 'file-system';
 const container = window.document.querySelector("#container");
-var geometryCount = 0;
+let geometryCount = 0;
 global.XMLHttpRequest = require("xhr2");
 
 var testBoxGeometry = new THREE.BoxGeometry( 10, 10, 10 );
@@ -553,7 +551,6 @@ function checkScene(renderer) {
       });
       it('resetView', function(){
         assert.isUndefined(scene.resetView(), 'resetView is successfully called');
-        testRenderer = renderer;
       });
       it('viewAll', function(){
         assert.isUndefined(scene.viewAll(), 'viewAll is successfully called');
@@ -725,7 +722,7 @@ function checkRegion(scene) {
         assert.isObject(boundingBox, 'Cannot get bounding box for the root region');
       });
       it('objectIsInRegion', function() {
-        objects = rootRegion.findGeometriesWithGroupName('cube texture', true);
+        const objects = rootRegion.findGeometriesWithGroupName('cube texture', true);
         assert.equal(objects.length, 1, 'cannot find surface in region');
         assert.isTrue(objects[0].isGeometry, "Object is not geometry");
         assert.isFalse(rootRegion.objectIsInRegion(objects[0], false),
