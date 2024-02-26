@@ -71,6 +71,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.directionalLight = 0;
 	this.scrollRate = 50;
 	let duration = 6000;
+  let enabled = true;
 	let inbuildTime = 0;
 	let cameraPath = undefined;
 	let numberOfCameraPoint = undefined;
@@ -740,7 +741,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	            finishCallback();
 		    }
 		}
-		requestURL = resolveURL(path_url);
+		const requestURL = resolveURL(path_url);
 		xmlhttp.open("GET", requestURL, true);
 		xmlhttp.send();
 	}
@@ -1594,7 +1595,7 @@ const CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCamera
 /**
  * @author mrdoob / http://mrdoob.com/
  */
-StereoCameraZoomFixed = function () {
+const StereoCameraZoomFixed = function () {
 
 	this.type = 'StereoCamera';
 
@@ -1732,7 +1733,7 @@ const StereoEffect = function ( renderer ) {
  * W3C Device Orientation control (http://w3c.github.io/deviceorientation/spec-source-orientation.html)
  */
 
-ModifiedDeviceOrientationControls = function ( object ) {
+const ModifiedDeviceOrientationControls = function ( object ) {
 
 	const scope = this;
 

@@ -1,6 +1,6 @@
 var nodeExternals = require('webpack-node-externals');
 var path = require('path');
-var isCoverage = process.env.NODE_ENV === 'coverage';
+const NodePolyfillPlugin = require("node-polyfill-webpack-plugin")
 
 module.exports = {
   mode: 'none',
@@ -15,33 +15,26 @@ module.exports = {
   },
   module: {
     rules: [].concat(
-      isCoverage ? {
-        test: /\.(js|ts)/,
-        include: path.resolve('../src'), // instrument only testing sources with Istanbul, after ts-loader runs
-        exclude: /(node_modules|bower_components)/,
-        loader: 'istanbul-instrumenter-loader',
-        query: {
-          esModules: true
-        }
-      }: [],
       {
         test: /\.js$/,
         loader: 'babel-loader',
-        query: {
-            presets: [
-              [
-                "@babel/preset-env",
-                {
-                  "targets": {
-                    "esmodules": true
-                  }
+        options: {
+          plugins: ['babel-plugin-istanbul'],
+          presets: [
+            [
+              "@babel/preset-env",
+              {
+                "targets": {
+                  "esmodules": true
                 }
-              ],
-              ['minify',  {
-                builtIns: false,
-                evaluate: false,
-                mangle: false,
-               }]]
+              }
+            ],
+            ['minify',  {
+              builtIns: false,
+              evaluate: false,
+              mangle: false,
+            }]
+          ]
         }
       },
       {
@@ -59,6 +52,8 @@ module.exports = {
   },
   target: 'node',  // webpack should compile node compatible code
   externals: [nodeExternals()], // in order to ignore all modules in node_modules folder
-  devtool: "inline-cheap-module-source-map"
+  devtool: "inline-cheap-module-source-map",
+  plugins: [
+    new NodePolyfillPlugin()
+  ]
 };
-
