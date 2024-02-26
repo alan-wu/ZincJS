@@ -160,7 +160,7 @@ exports.SceneLoader = function (sceneIn) {
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
       primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
-        undefined, undefined, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        undefined, undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
     }
   }
 
@@ -397,7 +397,7 @@ exports.SceneLoader = function (sceneIn) {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
         loader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(i), this.onError);
+          localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError);
         return;
       }
     }
@@ -408,7 +408,7 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       loader.crossOrigin = "Anonymous";
       primitivesLoader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   };
 
