@@ -421,8 +421,9 @@ exports.SceneLoader = function (sceneIn) {
       if (zincObject && (finishCallback != undefined) && (typeof finishCallback == 'function')) {
         finishCallback(zincObject);
         let zincCameraControls = scene.getZincCameraControls();
-        if (zincCameraControls)
+        if (zincCameraControls) {
           zincCameraControls.calculateMaxAllowedDistance(scene);
+        }
       }
       if (downloadedItem == numberOfDownloaded) {
         if (viewLoaded === false)

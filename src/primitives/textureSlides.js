@@ -207,7 +207,7 @@ const TextureSlides = function (textureIn) {
         const value = slide.material.uniforms.slide.value;
         this.cachedBoundingBox.expandByPoint(value);
       });
-      this.morph.updateWorldMatrix();
+      this.morph.updateWorldMatrix(true, true);
       this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
       this.boundingBoxUpdateRequired = false;
     }

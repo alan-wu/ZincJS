@@ -39,14 +39,15 @@ function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
         v2.add(b1.max.multiplyScalar(influences[i]));
       }
     }
-    if (found)
-    cachedBox.set(v1, v2);
+    if (found) {
+      cachedBox.set(v1, v2);
+    }
   }
   if (!found) {
     cachedBox.setFromBufferAttribute(
       mesh.geometry.attributes.position);
   }
-  mesh.updateWorldMatrix();
+  mesh.updateWorldMatrix(true, true);
   cachedBox.applyMatrix4(mesh.matrixWorld);
 }
 

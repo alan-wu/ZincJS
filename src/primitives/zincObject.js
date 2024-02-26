@@ -461,7 +461,6 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
 ZincObject.prototype.getBoundingBox = function() {
   let morph = this._lod.getCurrentMorph();
   if (morph && morph.visible) {
-    console.log(this.groupName)
     if (this.boundingBoxUpdateRequired) {
       require("../utilities").getBoundingBox(morph, this.cachedBoundingBox,
         this._b1, this._v1, this._v2);

@@ -573,7 +573,7 @@ const Glyphset = function () {
         }
         if (_boundingBox3) {
           this.cachedBoundingBox.copy(_boundingBox3);
-          this.morph.updateWorldMatrix();
+          this.morph.updateWorldMatrix(true, true);
           this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
           this.boundingBoxUpdateRequired = false;
         } else
