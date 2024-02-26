@@ -27,7 +27,6 @@ const LOD = function (parent) {
   //The owning Zinc Object
   this._parent = parent;
 
-
   /*
    * Add a level of LOD at the specified distance
    */
@@ -59,8 +58,7 @@ const LOD = function (parent) {
   this.levelLoaded = (object, distanceIn) => {
     if (object) {
       const distance = Math.abs(distanceIn);
-      let l;
-      for (l = 0; l < this.levels.length; l++) {
+      for (let l = 0; l < this.levels.length; l++) {
         if (distance === this.levels[l].distance) {
           this._parent.group.add(object);
           this.levels[l].morph = object;
@@ -82,6 +80,7 @@ const LOD = function (parent) {
       loading: false,
       url: url,
     };
+    let l;
     for (l = 0; l < this.levels.length; l++) {
       if (distance < this.levels[l].distance) {
         break;
@@ -366,7 +365,7 @@ const LOD = function (parent) {
     });
   }
 
-  updateGeometryColour = () => {
+  const updateGeometryColour = () => {
     this.levels.forEach((level) => {
       if (level.morph && level.morph.geometry) {
         level.morph.geometry.colorsNeedUpdate = true;

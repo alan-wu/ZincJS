@@ -556,7 +556,6 @@ exports.SceneLoader = function (sceneIn) {
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder);
       zincGeometry.anatomicalId = anatomicalId;
       zincGeometry.setRenderOrder(renderOrder);
-      console.log(options)
       if (options.lod && options.lod.levels) {
         for (const [key, value] of Object.entries(options.lod.levels)) {
           zincGeometry.addLOD(primitivesLoader, key, value.URL, options.lod.preload);
