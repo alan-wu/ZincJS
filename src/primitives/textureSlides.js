@@ -16,7 +16,8 @@ const TextureSlides = function (textureIn) {
   this.isTextureSlides = true;
   const textureSettings = [];
   const idTextureMap = {};
-  this.setMorph(new THREE.Group());
+  this.morph = new THREE.Group();
+  this.group = this.morph;
   this.morph.userData = this;
   const alpha = 1.0;
 
@@ -199,7 +200,7 @@ const TextureSlides = function (textureIn) {
    * 
    * @return {THREE.Box3}.
    */
-  this.getBoundingBox = function () {
+  this.getBoundingBox = () => {
     if (this.morph && this.morph.children && this.morph.visible &&
       this.boundingBoxUpdateRequired) {
       this.cachedBoundingBox.makeEmpty();

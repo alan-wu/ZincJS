@@ -19,7 +19,7 @@ const TextureArray = function () {
    * @async
    * @param {Array} srcArrays - List of source location of the images.
    */
-  this.loadFromImages = async function (srcArrays) {
+  this.loadFromImages = async (srcArrays) => {
     let w = 1;
     let h = 1;
     let d = 0;
@@ -31,7 +31,7 @@ const TextureArray = function () {
       let length = 0;
       const dataStacks = new Array(srcArrays.length);
       for (let i = 0; i < srcArrays.length; i++) {
-        const data = await this.imageToUint8Array(image, srcArrays[i], canvas);
+        const data = await this.imageToUint8Array(this, image, srcArrays[i], canvas);
         if (data && data.array) {
           w = data.width;
           h = data.height;
@@ -71,7 +71,7 @@ const TextureArray = function () {
    * @param {String} options.glslVersion - Version of glsl used for compile this shader.
    * 
    */
-  this.getMaterial = function (options) {
+  this.getMaterial = (options) => {
     if (this.impl) {
       let material = undefined;
       if (options) {

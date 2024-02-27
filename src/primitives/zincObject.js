@@ -279,15 +279,11 @@ ZincObject.prototype.getVisibility = function() {
  * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
  */
 ZincObject.prototype.setVisibility = function(visible) {
-  this.visible = visible;
-  this.group.visible = visible;
-  /*
-  const morph = this.getMorph();
-  if (morph.visible !== visible) {
-    morph.visible = visible;
+  if (visible !== this.visible) {
+    this.visible = visible;
+    this.group.visible = visible;
     if (this.region) this.region.pickableUpdateRequired = true;
   }
-  */
 }
 
 /**
@@ -640,7 +636,5 @@ ZincObject.prototype.render = function(delta, playAnimation,
 ZincObject.prototype.addLOD = function(loader, level, url, preload) {
   this._lod.addLevelFromURL(loader, level, url, preload);
 }
-
-
 
 exports.ZincObject = ZincObject;

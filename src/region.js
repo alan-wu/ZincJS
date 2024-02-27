@@ -53,7 +53,10 @@ let Region = function (parentIn) {
    * @param {Boolean} flag - A flag indicating either the visibilty to be on/off.
    */
   this.setVisibility = (flag) => {
-    group.visible = flag;
+    if (flag != group.visible) {
+      group.visible = flag;
+      this.pickableUpdateRequired = true;
+    }
   }
 
   /**
@@ -341,21 +344,23 @@ let Region = function (parentIn) {
    * Get all pickable objects.
    */
   this.getPickableThreeJSObjects = (objectsList,  transverse) => {
-    zincObjects.forEach(zincObject => {
-      if (zincObject.getGroup() && zincObject.getGroup().visible) {
-        let marker = zincObject.marker;
-        if (marker && marker.isEnabled()) {
-          objectsList.push(marker.getMorph());
+    if (group.visible) {
+      zincObjects.forEach(zincObject => {
+        if (zincObject.getGroup() && zincObject.getGroup().visible) {
+          let marker = zincObject.marker;
+          if (marker && marker.isEnabled()) {
+            objectsList.push(marker.getMorph());
+          }
+          objectsList.push(zincObject.getGroup());
         }
-        objectsList.push(zincObject.getGroup());
-      }
-    });
-    if (transverse) {
-      children.forEach(childRegion => {
-        childRegion.getPickableThreeJSObjects(objectsList, transverse);
       });
+      if (transverse) {
+        children.forEach(childRegion => {
+          childRegion.getPickableThreeJSObjects(objectsList, transverse);
+        });
+      }
+      this.pickableUpdateRequired = false;
     }
-    this.pickableUpdateRequired = false;
     return objectsList;
   }
 
@@ -424,7 +429,7 @@ let Region = function (parentIn) {
       children.forEach(childRegion => childRegion.clear(transverse));
     }
     zincObjects.forEach(zincObject => {
-      group.remove(zincObject.getMorph());
+      group.remove(zincObject.getGroup());
       zincObject.dispose();
     });
     children = [];
