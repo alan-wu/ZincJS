@@ -396,8 +396,8 @@ exports.SceneLoader = function (sceneIn) {
       } else if (fileFormat == "OBJ") {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
-        loader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError);
+        loader.load(url, objloader(region, colour, opacity, localTimeEnabled,
+          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(url), this.onError);
         return;
       }
     }
@@ -504,7 +504,7 @@ exports.SceneLoader = function (sceneIn) {
    * 
    * @returns {Zinc.Geometry}
    */
-  const createZincGeometry = (
+  const addZincGeometry = (
     region,
     geometryIn,
     colour,
