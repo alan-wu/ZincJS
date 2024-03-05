@@ -455,16 +455,18 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
  * @return {THREE.Box3}.
  */
 ZincObject.prototype.getBoundingBox = function() {
-  let morph = this._lod.getCurrentMorph();
-  if (morph && morph.visible) {
-    if (this.boundingBoxUpdateRequired) {
-      require("../utilities").getBoundingBox(morph, this.cachedBoundingBox,
-        this._b1, this._v1, this._v2);
-      this.cachedBoundingBox.getCenter(this.center);
-      this.radius = this.center.distanceTo(this.cachedBoundingBox.max);
-      this.boundingBoxUpdateRequired = false;
+  if (this.visible) {
+    let morph = this._lod.getCurrentMorph();
+    if (morph && morph.visible) {
+      if (this.boundingBoxUpdateRequired) {
+        require("../utilities").getBoundingBox(morph, this.cachedBoundingBox,
+          this._b1, this._v1, this._v2);
+        this.cachedBoundingBox.getCenter(this.center);
+        this.radius = this.center.distanceTo(this.cachedBoundingBox.max);
+        this.boundingBoxUpdateRequired = false;
+      }
+      return this.cachedBoundingBox;
     }
-    return this.cachedBoundingBox;
   }
   return undefined;
 }
