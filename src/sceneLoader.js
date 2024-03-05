@@ -553,7 +553,7 @@ exports.SceneLoader = function (sceneIn) {
       if (materials && materials[0]) {
         material = materials[0];
       }
-      const zincGeometry = createZincGeometry(region, geometry, colour, opacity, 
+      const zincGeometry = addZincGeometry(region, geometry, colour, opacity, 
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder);
       zincGeometry.anatomicalId = anatomicalId;
       zincGeometry.setRenderOrder(renderOrder);
