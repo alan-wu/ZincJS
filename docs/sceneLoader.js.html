@@ -57,7 +57,7 @@ const createNewURL = (target, reference) => {
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
   this.toBeDownloaded = 0;
-  this.progressMap = [];
+  this.progressMap = {};
   let viewLoaded = false;
   let errorDownload = false;
   const primitivesLoader = new PrimitivesLoader();
@@ -159,7 +159,7 @@ exports.SceneLoader = function (sceneIn) {
         }
       }
     }
-    requestURL = resolveURL(url);
+    const requestURL = resolveURL(url);
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
@@ -188,7 +188,7 @@ exports.SceneLoader = function (sceneIn) {
       if (morphColour != undefined &amp;&amp; morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
       primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
-        undefined, undefined, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        undefined, undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
     }
   }
 
@@ -215,7 +215,7 @@ exports.SceneLoader = function (sceneIn) {
         this.loadModelsURL(targetRegion, urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback);
       }
     }
-    requestURL = resolveURL(jsonFilePrefix + "_view.json");
+    const requestURL = resolveURL(jsonFilePrefix + "_view.json");
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
@@ -281,7 +281,7 @@ exports.SceneLoader = function (sceneIn) {
         renderOrder, finishCallback))( object.geometry, object.materials );
     } else {
       primitivesLoader.load(url, linesloader(region, localTimeEnabled, localMorphColour, groupName, 
-        anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        anatomicalId, renderOrder, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   }
 
@@ -425,7 +425,7 @@ exports.SceneLoader = function (sceneIn) {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
         loader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(i), this.onError);
+          localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError);
         return;
       }
     }
@@ -436,7 +436,7 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       loader.crossOrigin = "Anonymous";
       primitivesLoader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   };
 
@@ -449,8 +449,9 @@ exports.SceneLoader = function (sceneIn) {
       if (zincObject &amp;&amp; (finishCallback != undefined) &amp;&amp; (typeof finishCallback == 'function')) {
         finishCallback(zincObject);
         let zincCameraControls = scene.getZincCameraControls();
-        if (zincCameraControls)
+        if (zincCameraControls) {
           zincCameraControls.calculateMaxAllowedDistance(scene);
+        }
       }
       if (downloadedItem == numberOfDownloaded) {
         if (viewLoaded === false)
@@ -490,7 +491,7 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       primitivesLoader.load(url, pointsetloader(region, localTimeEnabled, localMorphColour,
         groupName, anatomicalId, renderOrder, finishCallback),
-        this.onProgress(i), this.onError(finishCallback));
+        this.onProgress(url), this.onError(finishCallback));
     }
   }
 
@@ -531,7 +532,7 @@ exports.SceneLoader = function (sceneIn) {
    * 
    * @returns {Zinc.Geometry}
    */
-  createZincGeometry = (
+  const createZincGeometry = (
     region,
     geometryIn,
     colour,
@@ -584,7 +585,6 @@ exports.SceneLoader = function (sceneIn) {
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder);
       zincGeometry.anatomicalId = anatomicalId;
       zincGeometry.setRenderOrder(renderOrder);
-      console.log(options)
       if (options.lod &amp;&amp; options.lod.levels) {
         for (const [key, value] of Object.entries(options.lod.levels)) {
           zincGeometry.addLOD(primitivesLoader, key, value.URL, options.lod.preload);
@@ -843,7 +843,7 @@ exports.SceneLoader = function (sceneIn) {
     */
   this.loadMetadataURL = (targetRegion, url, finishCallback, allCompletedCallback) => {
     const xmlhttp = new XMLHttpRequest();
-    var requestURL = resolveURL(url);
+    const requestURL = resolveURL(url);
     xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 &amp;&amp; xmlhttp.status == 200) {
         scene.resetMetadata();
@@ -883,7 +883,7 @@ exports.SceneLoader = function (sceneIn) {
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Feb 27 2024 11:47:03 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Mar 05 2024 13:31:50 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>
