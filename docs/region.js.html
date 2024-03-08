@@ -81,7 +81,10 @@ let Region = function (parentIn) {
    * @param {Boolean} flag - A flag indicating either the visibilty to be on/off.
    */
   this.setVisibility = (flag) => {
-    group.visible = flag;
+    if (flag != group.visible) {
+      group.visible = flag;
+      this.pickableUpdateRequired = true;
+    }
   }
 
   /**
@@ -320,11 +323,13 @@ let Region = function (parentIn) {
   this.addZincObject = zincObject => {
     if (zincObject) {
       zincObject.setRegion(this);
-      group.add(zincObject.morph);
+      //group.add(zincObject.getMorph());
+      group.add(zincObject.getGroup());
       zincObjects.push(zincObject);
       this.pickableUpdateRequired = true;
     }
   }
+
 
   /**
    * Remove a ZincObject from this region if it presents. This will eventually
@@ -335,7 +340,7 @@ let Region = function (parentIn) {
   this.removeZincObject = zincObject => {
     for (let i = 0; i &lt; zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
-        group.remove(zincObject.morph);
+        group.remove(zincObject.getGroup());
         zincObjects.splice(i, 1);
         zincObject.dispose();
         return;
@@ -367,21 +372,23 @@ let Region = function (parentIn) {
    * Get all pickable objects.
    */
   this.getPickableThreeJSObjects = (objectsList,  transverse) => {
-    zincObjects.forEach(zincObject => {
-      if (zincObject.morph &amp;&amp; zincObject.morph.visible) {
-        let marker = zincObject.marker;
-        if (marker &amp;&amp; marker.isEnabled()) {
-          objectsList.push(marker.morph);
+    if (group.visible) {
+      zincObjects.forEach(zincObject => {
+        if (zincObject.getGroup() &amp;&amp; zincObject.getGroup().visible) {
+          let marker = zincObject.marker;
+          if (marker &amp;&amp; marker.isEnabled()) {
+            objectsList.push(marker.getMorph());
+          }
+          objectsList.push(zincObject.getGroup());
         }
-        objectsList.push(zincObject.morph);
-      }
-    });
-    if (transverse) {
-      children.forEach(childRegion => {
-        childRegion.getPickableThreeJSObjects(objectsList, transverse);
       });
+      if (transverse) {
+        children.forEach(childRegion => {
+          childRegion.getPickableThreeJSObjects(objectsList, transverse);
+        });
+      }
+      this.pickableUpdateRequired = false;
     }
-    this.pickableUpdateRequired = false;
     return objectsList;
   }
 
@@ -450,7 +457,7 @@ let Region = function (parentIn) {
       children.forEach(childRegion => childRegion.clear(transverse));
     }
     zincObjects.forEach(zincObject => {
-      group.remove(zincObject.morph);
+      group.remove(zincObject.getGroup());
       zincObject.dispose();
     });
     children = [];
@@ -755,11 +762,11 @@ let Region = function (parentIn) {
    * Update geometries and glyphsets based on the calculated time.
    * @private
    */
-  this.renderGeometries = (playRate, delta, playAnimation, options, transverse) => {
+  this.renderGeometries = (playRate, delta, playAnimation, cameraControls, options, transverse) => {
     // Let video dictates the progress if one is present
     const allObjects = this.getAllObjects(transverse);
     allObjects.forEach(zincObject => {
-      zincObject.render(playRate * delta, playAnimation, options);
+      zincObject.render(playRate * delta, playAnimation, cameraControls, options);
     });
     //process markers visibility and size
     if (options &amp;&amp; options.displayMarkers &amp;&amp; (playAnimation === false)) {
@@ -785,13 +792,13 @@ exports.Region = Region;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Jan 18 2024 14:07:15 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 13:28:09 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

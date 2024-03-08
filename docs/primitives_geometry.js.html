@@ -27,6 +27,63 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>const THREE = require('three');
+const toBufferGeometry = require('../utilities').toBufferGeometry;
+
+const createMeshForGeometry =  (geometryIn, materialIn, options) => {
+  // First copy the geometry
+  let geometry = toBufferGeometry(geometryIn, options);
+
+  let isTransparent = false;
+  if (1.0 > options.opacity)
+      isTransparent = true;
+
+  let material = undefined;
+  if (geometry._video === undefined) {
+    const morphTargets = options.localTimeEnabled || options.localMorphColour;
+    if (materialIn) {
+      material = materialIn;
+      material.morphTargets = morphTargets;
+      material.morphNormals = options.localTimeEnabled;
+    } else {
+      if (geometry instanceof THREE.BufferGeometry &amp;&amp; geometry.attributes.color === undefined) {
+        material = new THREE.MeshPhongMaterial({
+          color : options.colour,
+          morphTargets : morphTargets,
+          morphNormals : options.localTimeEnabled,
+          transparent : isTransparent,
+          opacity : options.opacity,
+          side : THREE.DoubleSide
+        });
+      } else {
+        material = new THREE.MeshPhongMaterial({
+          color : options.colour,
+          morphTargets : morphTargets,
+          morphNormals : options.localTimeEnabled,
+          vertexColors : THREE.VertexColors,
+          transparent : isTransparent,
+          opacity : options.opacity,
+          side : THREE.DoubleSide
+        });
+      }
+    }
+    //material = PhongToToon(material);
+    if (options.localMorphColour &amp;&amp; geometry.morphAttributes[ "color" ]) {
+      material.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
+    }
+  } else {
+    let videoTexture = geometry._video.createCanvasVideoTexture();
+    material = new THREE.MeshBasicMaterial({
+      morphTargets : options.localTimeEnabled,
+      color : new THREE.Color(1, 1, 1),
+      transparent : isTransparent,
+      opacity : options.opacity,
+      map : videoTexture,
+      side : THREE.DoubleSide
+    });
+    this.videoHandler = geometry._video;
+  }
+  return new THREE.Mesh(geometry, material); 
+}
 
 /**
  * Provides an object which stores geometry and provides method which controls its animations.
@@ -57,61 +114,10 @@ const Geometry = function () {
    * @param {Number} options.opacity - Opacity to be set for the geometry
    */
 	this.createMesh = (geometryIn, materialIn, options) => {
-		if (this.geometry &amp;&amp; this.morph &amp;&amp; (geometryIn != undefined))
+    //Skip if there is a morph already
+		if (this.morph &amp;&amp; this.morph.geometry &amp;&amp; (geometryIn != undefined))
 			return;
-		// First copy the geometry
-		let geometry = this.toBufferGeometry(geometryIn, options);
-
-		let isTransparent = false;
-		if (1.0 > options.opacity)
-			  isTransparent = true;
-
-		let material = undefined;
-		if (geometry._video === undefined) {
-      const morphTargets = options.localTimeEnabled || options.localMorphColour;
-			if (materialIn) {
-				material = materialIn;
-				material.morphTargets = morphTargets;
-				material.morphNormals = options.localTimeEnabled;
-			} else {
-				if (geometry instanceof THREE.BufferGeometry &amp;&amp; geometry.attributes.color === undefined) {
-					material = new THREE.MeshPhongMaterial({
-						color : options.colour,
-						morphTargets : morphTargets,
-						morphNormals : options.localTimeEnabled,
-						transparent : isTransparent,
-						opacity : options.opacity,
-						side : THREE.DoubleSide
-					});
-				} else {
-					material = new THREE.MeshPhongMaterial({
-						color : options.colour,
-						morphTargets : morphTargets,
-						morphNormals : options.localTimeEnabled,
-						vertexColors : THREE.VertexColors,
-						transparent : isTransparent,
-						opacity : options.opacity,
-						side : THREE.DoubleSide
-					});
-				}
-			}
-			//material = PhongToToon(material);
-			if (options.localMorphColour &amp;&amp; geometry.morphAttributes[ "color" ]) {
-				material.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
-			}
-		} else {
-			let videoTexture = geometry._video.createCanvasVideoTexture();
-			material = new THREE.MeshBasicMaterial({
-				morphTargets : options.localTimeEnabled,
-				color : new THREE.Color(1, 1, 1),
-				transparent : isTransparent,
-				opacity : options.opacity,
-				map : videoTexture,
-				side : THREE.DoubleSide
-			});
-			this.videoHandler = geometry._video;
-		}
-		let mesh = new THREE.Mesh(geometry, material); 
+		const mesh = createMeshForGeometry(geometryIn, materialIn, options); 
 		this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
 	}
 
@@ -119,6 +125,7 @@ const Geometry = function () {
    * Calculate the UV for texture rendering.
    */
 	this.calculateUVs = () => {
+    //Multilayers
 		this.geometry.computeBoundingBox();
 		const max = this.geometry.boundingBox.max, min = this.geometry.boundingBox.min;
 		const offset = new THREE.Vector2(0 - min.x, 0 - min.y);
@@ -137,6 +144,14 @@ const Geometry = function () {
 		}
 		geometry.uvsNeedUpdate = true;	
 	}
+
+  /**
+   * Handle transparent mesh, create a clone for backside rendering if it is
+   * transparent.
+   */
+  this.checkTransparentMesh = function(transparentChanged) {
+    this._lod.checkTransparentMesh(this.animationGroup, transparentChanged);
+  }
 	
 	/**
 	 * Set wireframe display for this geometry.
@@ -147,6 +162,7 @@ const Geometry = function () {
 		this.morph.material.wireframe = wireframe;
 	}
 	
+
 }
 
 Geometry.prototype = Object.create((require('./zincObject').ZincObject).prototype);
@@ -161,13 +177,13 @@ exports.Geometry = Geometry;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Jan 18 2024 14:07:15 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 13:28:09 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

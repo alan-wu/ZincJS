@@ -17,6 +17,40 @@ function resolveURL(url) {
 	return actualURL;
 }
 
+/*
+ * Calculate the bounding box of a mesh, values will be
+ * set for cachedBox, b1, v1 and v2 and they need to be
+ * defined. 
+ */
+function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
+  let influences = mesh.morphTargetInfluences;
+  let attributes = undefined;
+  if (mesh.geometry)
+    attributes = mesh.geometry.morphAttributes;
+  let found = false;
+  if (influences && attributes && attributes.position) {
+    v1.set(0.0, 0.0, 0.0);
+    v2.set(0.0, 0.0, 0.0);
+    for (let i = 0; i < influences.length; i++) {
+      if (influences[i] > 0) {
+        found = true;
+        b1.setFromArray(attributes.position[i].array);
+        v1.add(b1.min.multiplyScalar(influences[i]));
+        v2.add(b1.max.multiplyScalar(influences[i]));
+      }
+    }
+    if (found) {
+      cachedBox.set(v1, v2);
+    }
+  }
+  if (!found) {
+    cachedBox.setFromBufferAttribute(
+      mesh.geometry.attributes.position);
+  }
+  mesh.updateWorldMatrix(true, true);
+  cachedBox.applyMatrix4(mesh.matrixWorld);
+}
+
 
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {
@@ -362,7 +396,7 @@ function PhongToToon(materialIn) {
 	return materialIn;
 }
 
-
+exports.getBoundingBox = getBoundingBox;
 exports.resolveURL = resolveURL;
 exports.loadExternalFile = loadExternalFile;
 exports.loadExternalFiles = loadExternalFiles;

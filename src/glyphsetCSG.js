@@ -44,11 +44,11 @@ const GlyphsetCSG = function (hostIn) {
   };
   
   const prepareCSG = guestGeometry => {
-	  if (host && guestGeometry && guestGeometry.morph) {
+	  if (host && guestGeometry && guestGeometry.getMorph()) {
 	      if (hostCSGs.length == 0) {
 	    	  host.forEachGlyph(prepareCSGForGlyphs());
 	      }
-	     const guestCSG = new ThreeBSP(guestGeometry.morph);
+	     const guestCSG = new ThreeBSP(guestGeometry.getMorph());
 	     return guestCSG;
 	  }
 	  return undefined;

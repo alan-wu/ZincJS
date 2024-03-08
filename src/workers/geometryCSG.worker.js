@@ -9,10 +9,10 @@ module.exports = function (self) {
 		var JSONParser = new JSONLoader();
 		var geometry = JSONParser.parse(object);
 		var material = new THREE.MeshPhongMaterial();
-        var mesh = new THREE.Mesh(geometry.geometry, material);
-        var host = new Geometry();
-        host.morph = mesh;
-        return host;
+    var mesh = new THREE.Mesh(geometry.geometry, material);
+    var host = new Geometry();
+    host.setMorph(mesh);
+    return host;
 	}
 
 	var initialise = function(object) {

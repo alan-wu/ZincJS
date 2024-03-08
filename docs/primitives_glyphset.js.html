@@ -77,15 +77,7 @@ const Glyphset = function () {
     _points[i] = new THREE.Vector3();
   }
 
-  /**
-   * Get the {@link Three.Group} containing all of the glyphs' meshes.
-   * @returns {Three.Group}
-   */
-  this.getGroup = () => {
-    return this.morph;
-  }
-
-  /**
+/**
    * Copy glyphset data into this glyphset then load the glyph's geoemtry 
    * with the provided glyphURL. FinishCallback will be called once
    * glyph is loaded.
@@ -118,7 +110,8 @@ const Glyphset = function () {
     scaleFactors = glyphsetData.metadata.scale_factors;
     const loader = new JSONLoader();
     this.geometry = new THREE.BufferGeometry();
-    this.morph = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
+    const instancedMesh = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
+    this.setMorph(instancedMesh);
     if (isInline) {
       var object = loader.parse(glyphURL);
       (meshloader(finishCallback, displayLabels))(object.geometry, object.materials);
@@ -526,6 +519,7 @@ const Glyphset = function () {
       createGlyphs(displayLabels);
       this.morph.name = this.groupName;
       this.morph.userData = this;
+      this.setMorph(this.morph);
       geometry.dispose();
       if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function'))
         finishCallback(this);
@@ -538,19 +532,17 @@ const Glyphset = function () {
   this.getClosestVertexIndex = function () {
     let closestIndex = -1;
     if (this.morph &amp;&amp; this.ready) {
-      let center = new THREE.Vector3();
-      this.getBoundingBox().getCenter(center);
+      this.getBoundingBox().getCenter(this._v1);
       let current_positions = positions["0"];
       const numberOfPositions = current_positions.length / 3;
-      let position = new THREE.Vector3();
       let distance = -1;
       let currentDistance = 0;
       for (let i = 0; i &lt; numberOfPositions; i++) {
         const current_index = i * 3;
-        position.set(current_positions[current_index],
+        this._v2.set(current_positions[current_index],
           current_positions[current_index + 1],
           current_positions[current_index + 2]);
-        currentDistance = center.distanceTo(position);
+        currentDistance = this._v1.distanceTo(this._v2);
         if (distance == -1) {
           distance = currentDistance;
           closestIndex = i;
@@ -609,7 +601,7 @@ const Glyphset = function () {
         }
         if (_boundingBox3) {
           this.cachedBoundingBox.copy(_boundingBox3);
-          this.morph.updateWorldMatrix();
+          this.morph.updateWorldMatrix(true, true);
           this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
           this.boundingBoxUpdateRequired = false;
         } else
@@ -710,13 +702,13 @@ exports.Glyphset = Glyphset;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Jan 18 2024 14:07:15 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 13:28:09 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

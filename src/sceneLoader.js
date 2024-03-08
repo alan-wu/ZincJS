@@ -160,7 +160,7 @@ exports.SceneLoader = function (sceneIn) {
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
       primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
-        undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
+        undefined, undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
     }
   }
 
@@ -340,7 +340,7 @@ exports.SceneLoader = function (sceneIn) {
     const loader = new STLLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined, finishCallback));
+      false, groupName, undefined, undefined, undefined, finishCallback));
   }
 
   /**
@@ -359,33 +359,7 @@ exports.SceneLoader = function (sceneIn) {
     const loader = new OBJLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined,finishCallback));
-  }
-
-  //Loader for the OBJ format, 
-  const objloader = (
-    region,
-    colour,
-    opacity,
-    localTimeEnabled,
-    localMorphColour,
-    groupName,
-    finishCallback
-  ) => {
-    return object => {
-      this.toBeDownloaded--;
-      object.traverse(child => {
-        if (child instanceof THREE.Mesh) {
-          const zincGeometry = addMeshToZincGeometry(child, localTimeEnabled, localMorphColour);
-          region.addZincObject(zincGeometry);
-          if (zincGeometry.morph)
-            zincGeometry.morph.name = groupName;
-          zincGeometry.groupName = groupName;
-          if (finishCallback != undefined && (typeof finishCallback == 'function'))
-            finishCallback(zincGeometry);
-        }
-      });
-    };
+      false, groupName, undefined, undefined, undefined, finishCallback));
   }
 
   /**
@@ -430,11 +404,11 @@ exports.SceneLoader = function (sceneIn) {
     if (isInline) {
       const object = primitivesLoader.parse( url );
 			(meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback))( object.geometry, object.materials );
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback))( object.geometry, object.materials );
     } else {
       loader.crossOrigin = "Anonymous";
       primitivesLoader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(url), this.onError(finishCallback));
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   };
 
@@ -447,8 +421,9 @@ exports.SceneLoader = function (sceneIn) {
       if (zincObject && (finishCallback != undefined) && (typeof finishCallback == 'function')) {
         finishCallback(zincObject);
         let zincCameraControls = scene.getZincCameraControls();
-        if (zincCameraControls)
+        if (zincCameraControls) {
           zincCameraControls.calculateMaxAllowedDistance(scene);
+        }
       }
       if (downloadedItem == numberOfDownloaded) {
         if (viewLoaded === false)
@@ -547,7 +522,7 @@ exports.SceneLoader = function (sceneIn) {
     options.localMorphColour = localMorphColour
     const newGeometry = new (require('./primitives/geometry').Geometry)();
     newGeometry.createMesh(geometryIn, materialIn, options);
-    if (newGeometry.morph) {
+    if (newGeometry.getMorph()) {
       newGeometry.setName(groupName);
       if (region) region.addZincObject(newGeometry);
       newGeometry.setDuration(scene.getDuration());
@@ -570,6 +545,7 @@ exports.SceneLoader = function (sceneIn) {
     groupName,
     anatomicalId,
     renderOrder,
+    options,
     finishCallback
   ) => {
     return (geometry, materials) => {
@@ -581,6 +557,11 @@ exports.SceneLoader = function (sceneIn) {
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder);
       zincGeometry.anatomicalId = anatomicalId;
       zincGeometry.setRenderOrder(renderOrder);
+      if (options.lod && options.lod.levels) {
+        for (const [key, value] of Object.entries(options.lod.levels)) {
+          zincGeometry.addLOD(primitivesLoader, key, value.URL, options.lod.preload);
+        }
+      }
       --this.toBeDownloaded;
       geometry.dispose();
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
@@ -632,6 +613,15 @@ exports.SceneLoader = function (sceneIn) {
         newURL = item.Inline.URL;
         isInline = true;
       }
+      const lod = {};
+      if (item.LOD && item.LOD.Levels) {
+        lod.preload = item.LOD.Preload ? true : false;
+        lod.levels = {};
+        for (const [key, value] of Object.entries(item.LOD.Levels)) {
+          lod.levels[key] = {};
+          lod.levels[key]["URL"] = createNewURL(value.URL, referenceURL);
+        }
+      }
       let groupName = item.GroupName;
       if (groupName === undefined || groupName === "") {
         groupName = "_Unnamed";
@@ -642,6 +632,7 @@ exports.SceneLoader = function (sceneIn) {
         fileFormat: item.FileFormat,
         anatomicalId: item.AnatomicalId,
         compression: item.compression,
+        lod: lod,
         renderOrder: order
       };
       

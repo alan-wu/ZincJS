@@ -219,7 +219,7 @@ function checkGeometry(scene) {
         assert.isFalse(geometry.morphColour, 'morphColour is an object');
       });
       it('morph', function(){
-        assert.isObject(geometry.morph, 'morph is an object');
+        assert.isObject(geometry.getMorph(), 'morph is an object');
       });
       it('clipAction', function(){
         assert.isUndefined(geometry.clipAction, 'clipAction is an object');
@@ -237,12 +237,12 @@ function checkGeometry(scene) {
       });
       it('setVisibility', function() {
         assert.isUndefined(geometry.setVisibility(false), 'setVisibility is successfully called');
-        assert.isFalse(geometry.morph.visible, 'visibility is false');
+        assert.isFalse(geometry.getVisibility(), 'visibility is false');
       });
       it('setAlpha', function() {
         assert.isUndefined(geometry.setAlpha(0.5), 'setAlpha is successfully called');
-        assert.isTrue(geometry.morph.material.transparent, 'transparent is true');
-        assert.equal(geometry.morph.material.opacity, 0.5, 'opacity is correct');
+        assert.isTrue(geometry.getMorph().material.transparent, 'transparent is true');
+        assert.equal(geometry.getMorph().material.opacity, 0.5, 'opacity is correct');
       });
       it('setMarkerMode', function() {
         assert.isUndefined(geometry.setMarkerMode("on"), 'setMarkerMode is successfully called');
@@ -261,22 +261,22 @@ function checkGeometry(scene) {
       });
       it('setWireframe', function() {
         assert.isUndefined(geometry.setWireframe(true), 'setWireframe is successfully called');
-        assert.isTrue(geometry.morph.material.wireframe , 'wireframe is correct');
+        assert.isTrue(geometry.getMorph().material.wireframe , 'wireframe is correct');
       });
       it('setColour', function() {
         assert.isUndefined(geometry.setColour(0x888888), 'setColour is successfully called');
-        assert.equal(geometry.morph.material.color , 0x888888, 'colour is correct');
+        assert.equal(geometry.getMorph().material.color , 0x888888, 'colour is correct');
       });
       it('setVertexColour', function() {
         assert.isUndefined(geometry.setVertexColors(THREE.NoColors), 'setVertexColour is successfully called');
-        assert.equal(geometry.morph.material.vertexColors , THREE.NoColors, 'colour is correct');
+        assert.equal(geometry.getMorph().material.vertexColors , THREE.NoColors, 'colour is correct');
       });
       it('setMaterial', function() {
         var material = new THREE.MeshBasicMaterial( {
           color: 0x000000
         } );
         assert.isUndefined(geometry.setMaterial(material), 'setMaterial is successfully called');;
-        assert.equal(geometry.morph.material, material, 'material is correct');
+        assert.equal(geometry.getMorph().material, material, 'material is correct');
       });
       it('render', function() {
         assert.isUndefined(geometry.render(100, true), 'render is successfully called');
@@ -289,7 +289,7 @@ function checkLines(lines) {
   describe('Lines()', function(){
     describe('Local Variables()', function(){
       it('lines', function(){
-        assert.isObject(lines.morph, 'geometry is an object');
+        assert.isObject(lines.getMorph(), 'geometry is an object');
       });
       it('timeEnabled', function(){
         assert.isTrue(lines.timeEnabled, 'timeEnabled is true');
@@ -326,7 +326,7 @@ function checkLines(lines) {
       });
       it('setWidth', function() {
         assert.isUndefined(lines.setWidth(3), 'setWidth is successfully called');
-        assert.equal(lines.morph.material.linewidth, 3.0, 'setWidth sets the correct value');
+        assert.equal(lines.getMorph().material.linewidth, 3.0, 'setWidth sets the correct value');
       });
       it('isTimeVarying', function() {
         assert.isTrue(lines.isTimeVarying(), 'isTimeVarying is true');
@@ -342,7 +342,7 @@ function checkPoints(points) {
   describe('Points()', function(){
     describe('Local Variables()', function(){
       it('points', function(){
-        assert.isObject(points.morph, 'geometry is an object');
+        assert.isObject(points.getMorph(), 'geometry is an object');
       });
       it('timeEnabled', function(){
         assert.isFalse(points.timeEnabled, 'timeEnabled is true');
@@ -379,11 +379,11 @@ function checkPoints(points) {
       });
       it('setSize', function() {
         assert.isUndefined(points.setSize(3.0), 'setSize is successfully called');
-        assert.equal(points.morph.material.size, 3.0, 'setSize sets the correct value');
+        assert.equal(points.getMorph().material.size, 3.0, 'setSize sets the correct value');
       });
       it('setSizeAttenuation', function() {
         assert.isUndefined(points.setSizeAttenuation(true), 'setSizeAttenuation is successfully called');
-        assert.isTrue(points.morph.material.sizeAttenuation, 'setSizeAttenuation sets the correct value');
+        assert.isTrue(points.getMorph().material.sizeAttenuation, 'setSizeAttenuation sets the correct value');
       });
       it('isTimeVarying', function() {
         assert.isFalse(points.isTimeVarying(), 'isTimeVarying is true');
@@ -451,7 +451,7 @@ function checkTextureSlides(scene) {
     });
     describe('Local Variables()', function(done){
       it('texture array', function(){
-        assert.isObject(textureSlides.morph, 'textureSlides is an object');
+        assert.isObject(textureSlides.getMorph(), 'textureSlides is an object');
       });
       it('groupName', function(){
         assert.equal(textureSlides.groupName, "texture slides", 'groupName is correct');
