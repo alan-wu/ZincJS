@@ -67,6 +67,7 @@ const LOD = function (parent) {
           break;
         }
       }
+      this.checkTransparentMesh();
     }
   }
 
@@ -133,7 +134,7 @@ const LOD = function (parent) {
    * Check if material is transparent, create secondary mesh
    * for better rendering if required.
    */
-  this.checkTransparentMesh = (animationGroup, transparentChanged) => {
+  this.checkTransparentMesh = () => {
     const level = this.levels[this._currentLevel];
     if (this._material) {
       if (this._material.transparent) {
@@ -142,6 +143,10 @@ const LOD = function (parent) {
           this._secondaryMaterial.side = THREE.FrontSide;
         }
         this._secondaryMaterial.opacity = this._material.opacity;
+        if (this._secondaryMaterial.emissive) {
+          this._secondaryMaterial.emissive.copy(this._material.emissive);
+        }
+        this._secondaryMaterial.needsUpdate = true;
         // THREE.Mesh - for utilities purpose such as rendering 
         // transparent surfaces - one for front face and one for back face.
         if (!level.secondaryMesh) {
@@ -151,21 +156,26 @@ const LOD = function (parent) {
           level.secondaryMesh.userData = level.morph.userData;
           level.secondaryMesh.name = level.morph.name;
         }
-        if (transparentChanged) {
-          this._material.side = THREE.BackSide;
-          this._material.needsUpdate = true;
+        this._material.side = THREE.BackSide;
+        this._material.needsUpdate = true;
+        if (!level.secondaryMesh.parent) {
           level.morph.add(level.secondaryMesh);
-          animationGroup.add(level.secondaryMesh);
+          if (this._parent.animationGroup) {
+            this._parent.animationGroup.add(level.secondaryMesh);
+          }
         }
       } else {
         if (level.secondaryMesh) {
           //Do not delete this mesh, remove it from
           //rendering and animation group instead
           level.morph.remove(level.secondaryMesh);
-          animationGroup.uncache(level.secondaryMesh);
-          animationGroup.remove(level.secondaryMesh);
+          if (this._parent.animationGroup) {
+            this._parent.animationGroup.uncache(level.secondaryMesh);
+            this._parent.animationGroup.remove(level.secondaryMesh);
+          }
         }
         this._material.side = THREE.DoubleSide;
+        this._material.needsUpdate = true;
       }
     }
   }
@@ -257,9 +267,10 @@ const LOD = function (parent) {
         this._material = material;
         if (this._secondaryMaterial) {
           this._secondaryMaterial.dispose();
-          this._secondaryMaterial = material.clone()
-          this._secondaryMaterial.side = THREE.FrontSide;
         }
+        this._secondaryMaterial = material.clone()
+        this._secondaryMaterial.side = THREE.FrontSide;
+        this._secondaryMaterial.transparent = true;
         this.levels.forEach((level) => {
           if (level.morph) {
             level.morph.material = this._material;
@@ -349,7 +360,10 @@ const LOD = function (parent) {
           }
         }
       }
-      this._currentLevel = visibleIndex;
+      if (this._currentLevel != visibleIndex) {
+        this._currentLevel = visibleIndex;
+        this.checkTransparentMesh();
+      }
     }
   }
 

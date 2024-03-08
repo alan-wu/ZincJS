@@ -256,8 +256,6 @@ exports.SceneLoader = function (sceneIn) {
   /**
    * Load lines into this scene object.
    * 
-   * @param {String} metaurl - Provide informations such as transformations, colours 
-   * and others for each of the glyph in the glyphsset.
    * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
    * @param {Boolean} morphColour - Indicate if color morphing is enabled.
    * @param {STRING} groupName - name to assign the pointset's groupname to.
@@ -320,7 +318,7 @@ exports.SceneLoader = function (sceneIn) {
     };
   };
 
-  //Internal loader for a regular zinc geometry.
+  //Internal loader for zinc pointset.
   const pointsetloader = (region, localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, finishCallback) => {
     return (geometry, materials) => {
       const newPointset = new (require('./primitives/pointset').Pointset)();
@@ -340,6 +338,7 @@ exports.SceneLoader = function (sceneIn) {
       if (newPointset) {
         newPointset.createMesh(geometry, material, options);
         newPointset.setName(groupName);
+        newPointset.anatomicalId = anatomicalId;
         region.addZincObject(newPointset);
         newPointset.setDuration(scene.getDuration());
         newPointset.setRenderOrder(renderOrder);
@@ -351,8 +350,7 @@ exports.SceneLoader = function (sceneIn) {
     };
   }
 
-
-   /**
+  /**
    * Read a STL file into this scene, the geometry will be presented as
    * {@link Zinc.Geometry}. 
    * 
@@ -424,8 +422,8 @@ exports.SceneLoader = function (sceneIn) {
       } else if (fileFormat == "OBJ") {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
-        loader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError);
+        loader.load(url, objloader(region, colour, opacity, localTimeEnabled,
+          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(url), this.onError);
         return;
       }
     }
@@ -465,8 +463,6 @@ exports.SceneLoader = function (sceneIn) {
   /**
    * Load a pointset into this scene object.
    * 
-   * @param {String} metaurl - Provide informations such as transformations, colours 
-   * and others for each of the glyph in the glyphsset.
    * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
    * @param {Boolean} morphColour - Indicate if color morphing is enabled.
    * @param {STRING} groupName - name to assign the pointset's groupname to.
@@ -492,6 +488,62 @@ exports.SceneLoader = function (sceneIn) {
       primitivesLoader.load(url, pointsetloader(region, localTimeEnabled, localMorphColour,
         groupName, anatomicalId, renderOrder, finishCallback),
         this.onProgress(url), this.onError(finishCallback));
+    }
+  }
+
+  const loadTexture = (region, textureData, groupName, finishCallback, options) => {
+    let isInline  = (options &amp;&amp; options.isInline) ? options.isInline : undefined;
+    let anatomicalId = (options &amp;&amp; options.anatomicalId) ? options.anatomicalId : undefined;
+    let renderOrder = (options &amp;&amp; options.renderOrder) ? options.renderOrder : undefined;
+    let newTexture = undefined;
+    if (textureData) {
+      if (textureData.type === "slides") {
+        newTexture = new (require('./primitives/textureSlides').TextureSlides)();
+      }
+      if (newTexture) {
+        newTexture.groupName = groupName;
+        let myCallback = () => {
+          --this.toBeDownloaded;
+          if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function'))
+            finishCallback(newTexture);
+        }
+        ++this.toBeDownloaded;
+        newTexture.load(textureData, myCallback, isInline);
+        newTexture.anatomicalId = anatomicalId;
+        newTexture.setRenderOrder(renderOrder);
+        region.addZincObject(newTexture);
+      }
+    }
+  };
+
+
+  //Load a glyphset into this scene.
+  const onLoadTextureReady = (region, xmlhttp, groupName, finishCallback, options) => {
+    return () => {
+      if (xmlhttp.readyState == 4 &amp;&amp; xmlhttp.status == 200) {
+        const textureData = JSON.parse(xmlhttp.responseText);
+        loadTexture(region, textureData, groupName, finishCallback, options);
+      }
+    };
+  };
+
+  /**
+   * Load a texture into this scene object.
+   * 
+   * @param {STRING} groupName - name to assign the pointset's groupname to.
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the glyphset is succssfully load in.
+   */
+  this.loadTextureURL = (region, url, groupName, finishCallback, options) => {
+    const isInline = (options &amp;&amp; options.isInline) ? options.isInline : false;
+    if (isInline) {
+      loadTexture(region, url, groupName, finishCallback, options);
+    } else {
+      const xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = onLoadTextureReady(region, xmlhttp,
+        groupName, finishCallback, options);
+      xmlhttp.open("GET", resolveURL(url), true);
+      xmlhttp.send();
     }
   }
 
@@ -532,7 +584,7 @@ exports.SceneLoader = function (sceneIn) {
    * 
    * @returns {Zinc.Geometry}
    */
-  const createZincGeometry = (
+  const addZincGeometry = (
     region,
     geometryIn,
     colour,
@@ -581,7 +633,7 @@ exports.SceneLoader = function (sceneIn) {
       if (materials &amp;&amp; materials[0]) {
         material = materials[0];
       }
-      const zincGeometry = createZincGeometry(region, geometry, colour, opacity, 
+      const zincGeometry = addZincGeometry(region, geometry, colour, opacity, 
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder);
       zincGeometry.anatomicalId = anatomicalId;
       zincGeometry.setRenderOrder(renderOrder);
@@ -687,6 +739,9 @@ exports.SceneLoader = function (sceneIn) {
         case "Lines":
           this.loadLinesURL(region, newURL, item.MorphVertices, item.MorphColours, groupName, finishCallback, options);
           break;
+        case "Texture":
+          this.loadTextureURL(region, newURL, groupName, finishCallback, options);
+          break;
         default:
           break;
       }
@@ -769,7 +824,8 @@ exports.SceneLoader = function (sceneIn) {
           array[i].Type === "Surfaces" ||
           array[i].Type === "Glyph" ||
           array[i].Type === "Points" ||
-          array[i].Type === "Lines"))
+          array[i].Type === "Lines" ||
+          array[i].Type === "Texture"))
         {
           count++;
         }
@@ -883,11 +939,7 @@ exports.SceneLoader = function (sceneIn) {
 <br class="clear">
 
 <footer>
-<<<<<<< HEAD
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue Mar 05 2024 13:31:50 GMT+1300 (New Zealand Daylight Time)
-=======
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Jan 18 2024 14:07:15 GMT+1300 (New Zealand Daylight Time)
->>>>>>> develop
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 15:07:56 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

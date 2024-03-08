@@ -27,6 +27,8 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>const THREE = require('three');
+const resolveURL = require('../utilities').resolveURL;
+
 
 /**
  * Provides a base class object which stores textures and rendering object.
@@ -39,9 +41,50 @@ const TexturePrimitive = function (textureIn) {
   (require('./zincObject').ZincObject).call(this);
   this.isTexturePrimitive = true;
   this.texture = textureIn;
+
+  /**
+   * Load texture data into this primitves.
+   * 
+   * @param {Object} textureData - contains the informations about the textures.
+   * @param {Function} finishCallback - User's function to be called once texture's
+   *  is loaded.
+   */
+  this.load = (textureData, finishCallback, isInline) => {
+    if (textureData) {
+      if (textureData.images &amp;&amp; textureData.images.source) {
+        const texture = new (require('../texture/textureArray').TextureArray)();
+        const imgArray = [];
+        textureData.images.source.forEach(img => {
+          imgArray.push(resolveURL(img));
+        });
+        const _this = this;
+        texture.loadFromImages(imgArray).then(() => {
+          _this.texture = texture;
+          _this.initialise(textureData, finishCallback);
+        });
+      }
+    }
+  }
+
+  /**
+   * Initialise a texture based on the provided textureData, this should be used
+   * internally only.
+   * 
+   * @param {Object} textureData - contains the informations about the textures.
+   * @param {Function} finishCallback - User's function to be called once texture's
+   *  is loaded.
+   */
+  this.initialise = (textureData, finishCallback) => {
+    if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function')) {
+      finishCallback(this);
+    }
+  }
+
+
 }
 
 TexturePrimitive.prototype = Object.create((require('./zincObject').ZincObject).prototype);
+TexturePrimitive.prototype.constructor = TexturePrimitive;
 exports.TexturePrimitive = TexturePrimitive;
 </code></pre>
         </article>
@@ -53,13 +96,13 @@ exports.TexturePrimitive = TexturePrimitive;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 13:28:09 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 15:07:56 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

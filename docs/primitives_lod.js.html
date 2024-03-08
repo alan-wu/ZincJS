@@ -95,6 +95,7 @@ const LOD = function (parent) {
           break;
         }
       }
+      this.checkTransparentMesh();
     }
   }
 
@@ -161,7 +162,7 @@ const LOD = function (parent) {
    * Check if material is transparent, create secondary mesh
    * for better rendering if required.
    */
-  this.checkTransparentMesh = (animationGroup, transparentChanged) => {
+  this.checkTransparentMesh = () => {
     const level = this.levels[this._currentLevel];
     if (this._material) {
       if (this._material.transparent) {
@@ -170,6 +171,10 @@ const LOD = function (parent) {
           this._secondaryMaterial.side = THREE.FrontSide;
         }
         this._secondaryMaterial.opacity = this._material.opacity;
+        if (this._secondaryMaterial.emissive) {
+          this._secondaryMaterial.emissive.copy(this._material.emissive);
+        }
+        this._secondaryMaterial.needsUpdate = true;
         // THREE.Mesh - for utilities purpose such as rendering 
         // transparent surfaces - one for front face and one for back face.
         if (!level.secondaryMesh) {
@@ -179,21 +184,26 @@ const LOD = function (parent) {
           level.secondaryMesh.userData = level.morph.userData;
           level.secondaryMesh.name = level.morph.name;
         }
-        if (transparentChanged) {
-          this._material.side = THREE.BackSide;
-          this._material.needsUpdate = true;
+        this._material.side = THREE.BackSide;
+        this._material.needsUpdate = true;
+        if (!level.secondaryMesh.parent) {
           level.morph.add(level.secondaryMesh);
-          animationGroup.add(level.secondaryMesh);
+          if (this._parent.animationGroup) {
+            this._parent.animationGroup.add(level.secondaryMesh);
+          }
         }
       } else {
         if (level.secondaryMesh) {
           //Do not delete this mesh, remove it from
           //rendering and animation group instead
           level.morph.remove(level.secondaryMesh);
-          animationGroup.uncache(level.secondaryMesh);
-          animationGroup.remove(level.secondaryMesh);
+          if (this._parent.animationGroup) {
+            this._parent.animationGroup.uncache(level.secondaryMesh);
+            this._parent.animationGroup.remove(level.secondaryMesh);
+          }
         }
         this._material.side = THREE.DoubleSide;
+        this._material.needsUpdate = true;
       }
     }
   }
@@ -285,9 +295,10 @@ const LOD = function (parent) {
         this._material = material;
         if (this._secondaryMaterial) {
           this._secondaryMaterial.dispose();
-          this._secondaryMaterial = material.clone()
-          this._secondaryMaterial.side = THREE.FrontSide;
         }
+        this._secondaryMaterial = material.clone()
+        this._secondaryMaterial.side = THREE.FrontSide;
+        this._secondaryMaterial.transparent = true;
         this.levels.forEach((level) => {
           if (level.morph) {
             level.morph.material = this._material;
@@ -377,7 +388,10 @@ const LOD = function (parent) {
           }
         }
       }
-      this._currentLevel = visibleIndex;
+      if (this._currentLevel != visibleIndex) {
+        this._currentLevel = visibleIndex;
+        this.checkTransparentMesh();
+      }
     }
   }
 
@@ -413,13 +427,13 @@ exports.LOD = LOD;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 13:28:09 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 15:07:56 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

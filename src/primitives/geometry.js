@@ -121,8 +121,8 @@ const Geometry = function () {
    * Handle transparent mesh, create a clone for backside rendering if it is
    * transparent.
    */
-  this.checkTransparentMesh = function(transparentChanged) {
-    this._lod.checkTransparentMesh(this.animationGroup, transparentChanged);
+  this.checkTransparentMesh = function() {
+    this._lod.checkTransparentMesh();
   }
 	
 	/**

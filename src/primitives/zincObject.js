@@ -131,7 +131,7 @@ ZincObject.prototype.getRegion = function() {
  * Handle transparent mesh, create a clone for backside rendering if it is
  * transparent.
  */
-ZincObject.prototype.checkTransparentMesh = function(transparentChanged) {
+ZincObject.prototype.checkTransparentMesh = function() {
   return;
 }
 
@@ -177,7 +177,7 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
   mesh.userData = this;
   mesh.matrixAutoUpdate = false;
   this.setMorph(mesh);
-  this.checkTransparentMesh(true);
+  this.checkTransparentMesh();
   if (this.timeEnabled) {
     this.setFrustumCulled(false);
   } else {
@@ -298,10 +298,9 @@ ZincObject.prototype.setAlpha = function(alpha) {
   let isTransparent = false;
   if (alpha  < 1.0)
     isTransparent = true;
-  let transparentChanged = material.transparent == isTransparent ? false : true;
   material.opacity = alpha;
   material.transparent = isTransparent;
-  this.checkTransparentMesh(transparentChanged);
+  this.checkTransparentMesh();
 }
 
 /**
@@ -372,6 +371,21 @@ ZincObject.prototype.setColourHex = function(hex) {
     this._lod._secondaryMaterial.color.setHex(hex);
   }
 }
+
+/**
+ * Set the emissive rgb of the mesh using rgb.
+ * 
+ * @param {String} colour - The colour value in rgb form.
+ */
+ZincObject.prototype.setEmissiveRGB = function(colour) {
+  if (this._lod._material && this._lod._material.emissive) {
+    this._lod._material.emissive.setRGB(...colour);
+  }
+  if (this._lod._secondaryMaterial) {
+    this._lod._secondaryMaterial.emissive.setRGB(...colour);
+  }
+}
+
 
 /**
  * Set the material of the geometry.
