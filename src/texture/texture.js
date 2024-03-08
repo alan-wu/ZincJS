@@ -53,8 +53,8 @@ Texture.prototype.loadImage = function (img, src) {
  * 
  * @return {IMAGE_UNIT8_RETURN}
  */
-Texture.prototype.imageToUint8Array = async function (img, src, canvas) {
-  await this.loadImage(img, src);
+Texture.prototype.imageToUint8Array = async function (instance, img, src, canvas) {
+  await instance.loadImage(img, src);
   canvas.width = img.width;
   canvas.height = img.height;
   const ctx = canvas.getContext("2d");

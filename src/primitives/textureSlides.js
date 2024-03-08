@@ -17,6 +17,7 @@ const TextureSlides = function (textureIn) {
   const textureSettings = [];
   const idTextureMap = {};
   this.morph = new THREE.Group();
+  this.group = this.morph;
   this.morph.userData = this;
   const alpha = 1.0;
 
@@ -199,7 +200,7 @@ const TextureSlides = function (textureIn) {
    * 
    * @return {THREE.Box3}.
    */
-  this.getBoundingBox = function () {
+  this.getBoundingBox = () => {
     if (this.morph && this.morph.children && this.morph.visible &&
       this.boundingBoxUpdateRequired) {
       this.cachedBoundingBox.makeEmpty();
@@ -207,13 +208,55 @@ const TextureSlides = function (textureIn) {
         const value = slide.material.uniforms.slide.value;
         this.cachedBoundingBox.expandByPoint(value);
       });
-      this.morph.updateWorldMatrix();
+      this.morph.updateWorldMatrix(true, true);
       this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;
   }
+
+  this.applyTransformation = (rotation, position, scale) => {
+    const matrix = new THREE.Matrix4();
+    matrix.set(
+      rotation[0],
+      rotation[1],
+      rotation[2],
+      0,
+      rotation[3],
+      rotation[4],
+      rotation[5],
+      0,
+      rotation[6],
+      rotation[7],
+      rotation[8],
+      0,
+      0,
+      0,
+      0,
+      0
+    );
+    const quaternion = new THREE.Quaternion().setFromRotationMatrix(matrix);
+    this.morph.position.set(...position);
+    this.morph.quaternion.copy( quaternion );
+    this.morph.scale.set(...scale);
+    this.morph.updateMatrix();
+  }
+
+  this.initialise = (textureData, finishCallback) => {
+    if (textureData) {
+      this.createSlides(textureData.settings.slides);
+      const locations = textureData.locations;
+      if (locations && locations.length > 0) {
+        this.applyTransformation(locations[0].orientation,
+          locations[0].position, locations[0].scale);
+      }
+      if (finishCallback != undefined && (typeof finishCallback == 'function')) {
+        finishCallback(this);
+      }
+    }
+  }
 }
 
 TextureSlides.prototype = Object.create((require('./texturePrimitive').TexturePrimitive).prototype);
+TextureSlides.prototype.constructor = TextureSlides;
 exports.TextureSlides = TextureSlides;

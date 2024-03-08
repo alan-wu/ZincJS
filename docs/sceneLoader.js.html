@@ -57,7 +57,7 @@ const createNewURL = (target, reference) => {
 exports.SceneLoader = function (sceneIn) {
   const scene = sceneIn;
   this.toBeDownloaded = 0;
-  this.progressMap = [];
+  this.progressMap = {};
   let viewLoaded = false;
   let errorDownload = false;
   const primitivesLoader = new PrimitivesLoader();
@@ -159,7 +159,7 @@ exports.SceneLoader = function (sceneIn) {
         }
       }
     }
-    requestURL = resolveURL(url);
+    const requestURL = resolveURL(url);
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
@@ -188,7 +188,7 @@ exports.SceneLoader = function (sceneIn) {
       if (morphColour != undefined &amp;&amp; morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
       primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
-        undefined, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        undefined, undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
     }
   }
 
@@ -215,7 +215,7 @@ exports.SceneLoader = function (sceneIn) {
         this.loadModelsURL(targetRegion, urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback);
       }
     }
-    requestURL = resolveURL(jsonFilePrefix + "_view.json");
+    const requestURL = resolveURL(jsonFilePrefix + "_view.json");
     xmlhttp.open("GET", requestURL, true);
     xmlhttp.send();
   }
@@ -256,8 +256,6 @@ exports.SceneLoader = function (sceneIn) {
   /**
    * Load lines into this scene object.
    * 
-   * @param {String} metaurl - Provide informations such as transformations, colours 
-   * and others for each of the glyph in the glyphsset.
    * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
    * @param {Boolean} morphColour - Indicate if color morphing is enabled.
    * @param {STRING} groupName - name to assign the pointset's groupname to.
@@ -281,7 +279,7 @@ exports.SceneLoader = function (sceneIn) {
         renderOrder, finishCallback))( object.geometry, object.materials );
     } else {
       primitivesLoader.load(url, linesloader(region, localTimeEnabled, localMorphColour, groupName, 
-        anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        anatomicalId, renderOrder, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   }
 
@@ -320,7 +318,7 @@ exports.SceneLoader = function (sceneIn) {
     };
   };
 
-  //Internal loader for a regular zinc geometry.
+  //Internal loader for zinc pointset.
   const pointsetloader = (region, localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, finishCallback) => {
     return (geometry, materials) => {
       const newPointset = new (require('./primitives/pointset').Pointset)();
@@ -340,6 +338,7 @@ exports.SceneLoader = function (sceneIn) {
       if (newPointset) {
         newPointset.createMesh(geometry, material, options);
         newPointset.setName(groupName);
+        newPointset.anatomicalId = anatomicalId;
         region.addZincObject(newPointset);
         newPointset.setDuration(scene.getDuration());
         newPointset.setRenderOrder(renderOrder);
@@ -351,8 +350,7 @@ exports.SceneLoader = function (sceneIn) {
     };
   }
 
-
-   /**
+  /**
    * Read a STL file into this scene, the geometry will be presented as
    * {@link Zinc.Geometry}. 
    * 
@@ -368,7 +366,7 @@ exports.SceneLoader = function (sceneIn) {
     const loader = new STLLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined, finishCallback));
+      false, groupName, undefined, undefined, undefined, finishCallback));
   }
 
   /**
@@ -387,33 +385,7 @@ exports.SceneLoader = function (sceneIn) {
     const loader = new OBJLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined,finishCallback));
-  }
-
-  //Loader for the OBJ format, 
-  const objloader = (
-    region,
-    colour,
-    opacity,
-    localTimeEnabled,
-    localMorphColour,
-    groupName,
-    finishCallback
-  ) => {
-    return object => {
-      this.toBeDownloaded--;
-      object.traverse(child => {
-        if (child instanceof THREE.Mesh) {
-          const zincGeometry = addMeshToZincGeometry(child, localTimeEnabled, localMorphColour);
-          region.addZincObject(zincGeometry);
-          if (zincGeometry.morph)
-            zincGeometry.morph.name = groupName;
-          zincGeometry.groupName = groupName;
-          if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function'))
-            finishCallback(zincGeometry);
-        }
-      });
-    };
+      false, groupName, undefined, undefined, undefined, finishCallback));
   }
 
   /**
@@ -451,18 +423,18 @@ exports.SceneLoader = function (sceneIn) {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
         loader.load(url, objloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(i), this.onError);
+          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(url), this.onError);
         return;
       }
     }
     if (isInline) {
       const object = primitivesLoader.parse( url );
 			(meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback))( object.geometry, object.materials );
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback))( object.geometry, object.materials );
     } else {
       loader.crossOrigin = "Anonymous";
       primitivesLoader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   };
 
@@ -475,8 +447,9 @@ exports.SceneLoader = function (sceneIn) {
       if (zincObject &amp;&amp; (finishCallback != undefined) &amp;&amp; (typeof finishCallback == 'function')) {
         finishCallback(zincObject);
         let zincCameraControls = scene.getZincCameraControls();
-        if (zincCameraControls)
+        if (zincCameraControls) {
           zincCameraControls.calculateMaxAllowedDistance(scene);
+        }
       }
       if (downloadedItem == numberOfDownloaded) {
         if (viewLoaded === false)
@@ -490,8 +463,6 @@ exports.SceneLoader = function (sceneIn) {
   /**
    * Load a pointset into this scene object.
    * 
-   * @param {String} metaurl - Provide informations such as transformations, colours 
-   * and others for each of the glyph in the glyphsset.
    * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
    * @param {Boolean} morphColour - Indicate if color morphing is enabled.
    * @param {STRING} groupName - name to assign the pointset's groupname to.
@@ -516,7 +487,63 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       primitivesLoader.load(url, pointsetloader(region, localTimeEnabled, localMorphColour,
         groupName, anatomicalId, renderOrder, finishCallback),
-        this.onProgress(i), this.onError(finishCallback));
+        this.onProgress(url), this.onError(finishCallback));
+    }
+  }
+
+  const loadTexture = (region, textureData, groupName, finishCallback, options) => {
+    let isInline  = (options &amp;&amp; options.isInline) ? options.isInline : undefined;
+    let anatomicalId = (options &amp;&amp; options.anatomicalId) ? options.anatomicalId : undefined;
+    let renderOrder = (options &amp;&amp; options.renderOrder) ? options.renderOrder : undefined;
+    let newTexture = undefined;
+    if (textureData) {
+      if (textureData.type === "slides") {
+        newTexture = new (require('./primitives/textureSlides').TextureSlides)();
+      }
+      if (newTexture) {
+        newTexture.groupName = groupName;
+        let myCallback = () => {
+          --this.toBeDownloaded;
+          if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function'))
+            finishCallback(newTexture);
+        }
+        ++this.toBeDownloaded;
+        newTexture.load(textureData, myCallback, isInline);
+        newTexture.anatomicalId = anatomicalId;
+        newTexture.setRenderOrder(renderOrder);
+        region.addZincObject(newTexture);
+      }
+    }
+  };
+
+
+  //Load a glyphset into this scene.
+  const onLoadTextureReady = (region, xmlhttp, groupName, finishCallback, options) => {
+    return () => {
+      if (xmlhttp.readyState == 4 &amp;&amp; xmlhttp.status == 200) {
+        const textureData = JSON.parse(xmlhttp.responseText);
+        loadTexture(region, textureData, groupName, finishCallback, options);
+      }
+    };
+  };
+
+  /**
+   * Load a texture into this scene object.
+   * 
+   * @param {STRING} groupName - name to assign the pointset's groupname to.
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the glyphset is succssfully load in.
+   */
+  this.loadTextureURL = (region, url, groupName, finishCallback, options) => {
+    const isInline = (options &amp;&amp; options.isInline) ? options.isInline : false;
+    if (isInline) {
+      loadTexture(region, url, groupName, finishCallback, options);
+    } else {
+      const xmlhttp = new XMLHttpRequest();
+      xmlhttp.onreadystatechange = onLoadTextureReady(region, xmlhttp,
+        groupName, finishCallback, options);
+      xmlhttp.open("GET", resolveURL(url), true);
+      xmlhttp.send();
     }
   }
 
@@ -557,7 +584,7 @@ exports.SceneLoader = function (sceneIn) {
    * 
    * @returns {Zinc.Geometry}
    */
-  addZincGeometry = (
+  const addZincGeometry = (
     region,
     geometryIn,
     colour,
@@ -575,7 +602,7 @@ exports.SceneLoader = function (sceneIn) {
     options.localMorphColour = localMorphColour
     const newGeometry = new (require('./primitives/geometry').Geometry)();
     newGeometry.createMesh(geometryIn, materialIn, options);
-    if (newGeometry.morph) {
+    if (newGeometry.getMorph()) {
       newGeometry.setName(groupName);
       if (region) region.addZincObject(newGeometry);
       newGeometry.setDuration(scene.getDuration());
@@ -598,6 +625,7 @@ exports.SceneLoader = function (sceneIn) {
     groupName,
     anatomicalId,
     renderOrder,
+    options,
     finishCallback
   ) => {
     return (geometry, materials) => {
@@ -609,6 +637,11 @@ exports.SceneLoader = function (sceneIn) {
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder);
       zincGeometry.anatomicalId = anatomicalId;
       zincGeometry.setRenderOrder(renderOrder);
+      if (options.lod &amp;&amp; options.lod.levels) {
+        for (const [key, value] of Object.entries(options.lod.levels)) {
+          zincGeometry.addLOD(primitivesLoader, key, value.URL, options.lod.preload);
+        }
+      }
       --this.toBeDownloaded;
       geometry.dispose();
       if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function'))
@@ -660,6 +693,15 @@ exports.SceneLoader = function (sceneIn) {
         newURL = item.Inline.URL;
         isInline = true;
       }
+      const lod = {};
+      if (item.LOD &amp;&amp; item.LOD.Levels) {
+        lod.preload = item.LOD.Preload ? true : false;
+        lod.levels = {};
+        for (const [key, value] of Object.entries(item.LOD.Levels)) {
+          lod.levels[key] = {};
+          lod.levels[key]["URL"] = createNewURL(value.URL, referenceURL);
+        }
+      }
       let groupName = item.GroupName;
       if (groupName === undefined || groupName === "") {
         groupName = "_Unnamed";
@@ -670,6 +712,7 @@ exports.SceneLoader = function (sceneIn) {
         fileFormat: item.FileFormat,
         anatomicalId: item.AnatomicalId,
         compression: item.compression,
+        lod: lod,
         renderOrder: order
       };
       
@@ -695,6 +738,9 @@ exports.SceneLoader = function (sceneIn) {
           break;
         case "Lines":
           this.loadLinesURL(region, newURL, item.MorphVertices, item.MorphColours, groupName, finishCallback, options);
+          break;
+        case "Texture":
+          this.loadTextureURL(region, newURL, groupName, finishCallback, options);
           break;
         default:
           break;
@@ -778,7 +824,8 @@ exports.SceneLoader = function (sceneIn) {
           array[i].Type === "Surfaces" ||
           array[i].Type === "Glyph" ||
           array[i].Type === "Points" ||
-          array[i].Type === "Lines"))
+          array[i].Type === "Lines" ||
+          array[i].Type === "Texture"))
         {
           count++;
         }
@@ -852,7 +899,7 @@ exports.SceneLoader = function (sceneIn) {
     */
   this.loadMetadataURL = (targetRegion, url, finishCallback, allCompletedCallback) => {
     const xmlhttp = new XMLHttpRequest();
-    var requestURL = resolveURL(url);
+    const requestURL = resolveURL(url);
     xmlhttp.onreadystatechange = () => {
       if (xmlhttp.readyState == 4 &amp;&amp; xmlhttp.status == 200) {
         scene.resetMetadata();
@@ -886,13 +933,13 @@ exports.SceneLoader = function (sceneIn) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Jan 18 2024 14:07:15 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 15:07:56 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

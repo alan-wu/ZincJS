@@ -49,15 +49,7 @@ const Glyphset = function () {
     _points[i] = new THREE.Vector3();
   }
 
-  /**
-   * Get the {@link Three.Group} containing all of the glyphs' meshes.
-   * @returns {Three.Group}
-   */
-  this.getGroup = () => {
-    return this.morph;
-  }
-
-  /**
+/**
    * Copy glyphset data into this glyphset then load the glyph's geoemtry 
    * with the provided glyphURL. FinishCallback will be called once
    * glyph is loaded.
@@ -90,7 +82,8 @@ const Glyphset = function () {
     scaleFactors = glyphsetData.metadata.scale_factors;
     const loader = new JSONLoader();
     this.geometry = new THREE.BufferGeometry();
-    this.morph = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
+    const instancedMesh = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
+    this.setMorph(instancedMesh);
     if (isInline) {
       var object = loader.parse(glyphURL);
       (meshloader(finishCallback, displayLabels))(object.geometry, object.materials);
@@ -498,6 +491,7 @@ const Glyphset = function () {
       createGlyphs(displayLabels);
       this.morph.name = this.groupName;
       this.morph.userData = this;
+      this.setMorph(this.morph);
       geometry.dispose();
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(this);
@@ -510,19 +504,17 @@ const Glyphset = function () {
   this.getClosestVertexIndex = function () {
     let closestIndex = -1;
     if (this.morph && this.ready) {
-      let center = new THREE.Vector3();
-      this.getBoundingBox().getCenter(center);
+      this.getBoundingBox().getCenter(this._v1);
       let current_positions = positions["0"];
       const numberOfPositions = current_positions.length / 3;
-      let position = new THREE.Vector3();
       let distance = -1;
       let currentDistance = 0;
       for (let i = 0; i < numberOfPositions; i++) {
         const current_index = i * 3;
-        position.set(current_positions[current_index],
+        this._v2.set(current_positions[current_index],
           current_positions[current_index + 1],
           current_positions[current_index + 2]);
-        currentDistance = center.distanceTo(position);
+        currentDistance = this._v1.distanceTo(this._v2);
         if (distance == -1) {
           distance = currentDistance;
           closestIndex = i;
@@ -581,7 +573,7 @@ const Glyphset = function () {
         }
         if (_boundingBox3) {
           this.cachedBoundingBox.copy(_boundingBox3);
-          this.morph.updateWorldMatrix();
+          this.morph.updateWorldMatrix(true, true);
           this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
           this.boundingBoxUpdateRequired = false;
         } else

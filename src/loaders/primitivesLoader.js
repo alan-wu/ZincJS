@@ -33,7 +33,9 @@ exports.PrimitivesLoader = function () {
   const onFinally = function(callback, loader) {
     return (...args) => {
       --concurrentDownloads;
-      callback(...args);
+      if (callback) {
+        callback(...args);
+      }
       loader.loadFromWaitingList();
     }
   }

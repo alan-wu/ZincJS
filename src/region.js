@@ -53,7 +53,10 @@ let Region = function (parentIn) {
    * @param {Boolean} flag - A flag indicating either the visibilty to be on/off.
    */
   this.setVisibility = (flag) => {
-    group.visible = flag;
+    if (flag != group.visible) {
+      group.visible = flag;
+      this.pickableUpdateRequired = true;
+    }
   }
 
   /**
@@ -292,11 +295,13 @@ let Region = function (parentIn) {
   this.addZincObject = zincObject => {
     if (zincObject) {
       zincObject.setRegion(this);
-      group.add(zincObject.morph);
+      //group.add(zincObject.getMorph());
+      group.add(zincObject.getGroup());
       zincObjects.push(zincObject);
       this.pickableUpdateRequired = true;
     }
   }
+
 
   /**
    * Remove a ZincObject from this region if it presents. This will eventually
@@ -307,7 +312,7 @@ let Region = function (parentIn) {
   this.removeZincObject = zincObject => {
     for (let i = 0; i < zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
-        group.remove(zincObject.morph);
+        group.remove(zincObject.getGroup());
         zincObjects.splice(i, 1);
         zincObject.dispose();
         return;
@@ -339,21 +344,23 @@ let Region = function (parentIn) {
    * Get all pickable objects.
    */
   this.getPickableThreeJSObjects = (objectsList,  transverse) => {
-    zincObjects.forEach(zincObject => {
-      if (zincObject.morph && zincObject.morph.visible) {
-        let marker = zincObject.marker;
-        if (marker && marker.isEnabled()) {
-          objectsList.push(marker.morph);
+    if (group.visible) {
+      zincObjects.forEach(zincObject => {
+        if (zincObject.getGroup() && zincObject.getGroup().visible) {
+          let marker = zincObject.marker;
+          if (marker && marker.isEnabled()) {
+            objectsList.push(marker.getMorph());
+          }
+          objectsList.push(zincObject.getGroup());
         }
-        objectsList.push(zincObject.morph);
-      }
-    });
-    if (transverse) {
-      children.forEach(childRegion => {
-        childRegion.getPickableThreeJSObjects(objectsList, transverse);
       });
+      if (transverse) {
+        children.forEach(childRegion => {
+          childRegion.getPickableThreeJSObjects(objectsList, transverse);
+        });
+      }
+      this.pickableUpdateRequired = false;
     }
-    this.pickableUpdateRequired = false;
     return objectsList;
   }
 
@@ -422,7 +429,7 @@ let Region = function (parentIn) {
       children.forEach(childRegion => childRegion.clear(transverse));
     }
     zincObjects.forEach(zincObject => {
-      group.remove(zincObject.morph);
+      group.remove(zincObject.getGroup());
       zincObject.dispose();
     });
     children = [];
@@ -727,11 +734,11 @@ let Region = function (parentIn) {
    * Update geometries and glyphsets based on the calculated time.
    * @private
    */
-  this.renderGeometries = (playRate, delta, playAnimation, options, transverse) => {
+  this.renderGeometries = (playRate, delta, playAnimation, cameraControls, options, transverse) => {
     // Let video dictates the progress if one is present
     const allObjects = this.getAllObjects(transverse);
     allObjects.forEach(zincObject => {
-      zincObject.render(playRate * delta, playAnimation, options);
+      zincObject.render(playRate * delta, playAnimation, cameraControls, options);
     });
     //process markers visibility and size
     if (options && options.displayMarkers && (playAnimation === false)) {

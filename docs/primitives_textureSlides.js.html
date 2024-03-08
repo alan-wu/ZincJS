@@ -45,6 +45,7 @@ const TextureSlides = function (textureIn) {
   const textureSettings = [];
   const idTextureMap = {};
   this.morph = new THREE.Group();
+  this.group = this.morph;
   this.morph.userData = this;
   const alpha = 1.0;
 
@@ -75,7 +76,7 @@ const TextureSlides = function (textureIn) {
    * @param {THREE.Mesh} mesh - Mesh to be modified
    * @param {SLIDE_SETTINGS} slideSettings - Slide settings.
    */
-  setUniformSlideSettingsOfMesh = (mesh, settings) => {
+  const setUniformSlideSettingsOfMesh = (mesh, settings) => {
     const material = mesh.material;
     const uniforms = material.uniforms;
     switch (settings.direction) {
@@ -227,7 +228,7 @@ const TextureSlides = function (textureIn) {
    * 
    * @return {THREE.Box3}.
    */
-  this.getBoundingBox = function () {
+  this.getBoundingBox = () => {
     if (this.morph &amp;&amp; this.morph.children &amp;&amp; this.morph.visible &amp;&amp;
       this.boundingBoxUpdateRequired) {
       this.cachedBoundingBox.makeEmpty();
@@ -235,15 +236,57 @@ const TextureSlides = function (textureIn) {
         const value = slide.material.uniforms.slide.value;
         this.cachedBoundingBox.expandByPoint(value);
       });
-      this.morph.updateWorldMatrix();
+      this.morph.updateWorldMatrix(true, true);
       this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;
   }
+
+  this.applyTransformation = (rotation, position, scale) => {
+    const matrix = new THREE.Matrix4();
+    matrix.set(
+      rotation[0],
+      rotation[1],
+      rotation[2],
+      0,
+      rotation[3],
+      rotation[4],
+      rotation[5],
+      0,
+      rotation[6],
+      rotation[7],
+      rotation[8],
+      0,
+      0,
+      0,
+      0,
+      0
+    );
+    const quaternion = new THREE.Quaternion().setFromRotationMatrix(matrix);
+    this.morph.position.set(...position);
+    this.morph.quaternion.copy( quaternion );
+    this.morph.scale.set(...scale);
+    this.morph.updateMatrix();
+  }
+
+  this.initialise = (textureData, finishCallback) => {
+    if (textureData) {
+      this.createSlides(textureData.settings.slides);
+      const locations = textureData.locations;
+      if (locations &amp;&amp; locations.length > 0) {
+        this.applyTransformation(locations[0].orientation,
+          locations[0].position, locations[0].scale);
+      }
+      if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function')) {
+        finishCallback(this);
+      }
+    }
+  }
 }
 
 TextureSlides.prototype = Object.create((require('./texturePrimitive').TexturePrimitive).prototype);
+TextureSlides.prototype.constructor = TextureSlides;
 exports.TextureSlides = TextureSlides;
 </code></pre>
         </article>
@@ -255,13 +298,13 @@ exports.TextureSlides = TextureSlides;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Jan 18 2024 14:07:15 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 15:07:56 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>
