@@ -408,7 +408,7 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       loader.crossOrigin = "Anonymous";
       primitivesLoader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, finishCallback), this.onProgress(i), this.onError(finishCallback));
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   };
 
