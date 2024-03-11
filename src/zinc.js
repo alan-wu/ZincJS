@@ -1,4 +1,6 @@
 require("url-polyfill");
+const PACKAGE = require('../package.json');
+const version = PACKAGE.version;
 
 /**
  * Provides a global namespace for the Zinc javascript library and some default parameters for it.
@@ -8,7 +10,7 @@ require("url-polyfill");
  */
 
 const Zinc = function() {
-  this.Revision = "1.0.12";
+  this.Revision = version;
   this.defaultMaterialColor = 0xFFFFFF;
   this.defaultOpacity = 1.0;
   this.modelPrefix = undefined;
