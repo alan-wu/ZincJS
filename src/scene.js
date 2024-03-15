@@ -35,9 +35,12 @@ exports.Scene = function (containerIn, rendererIn) {
   let videoHandler = undefined;
   let sceneLoader = new SceneLoader(this);
   let minimap = undefined;
+  let zincObjectAddedCallbacks = {};
+  let zincObjectAddedCallbacks_id = 0;
   const scene = new THREE.Scene();
-  const rootRegion = new (require('./region').Region)();
+  const rootRegion = new (require('./region').Region)(undefined, this);
   scene.add(rootRegion.getGroup());
+  
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
    */
@@ -927,6 +930,7 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.clearAll = () => {
     rootRegion.clear(true);
+    this.clearZincObjectAddedCallbacks();
     sceneLoader.toBeDwonloaded = 0;
     if (zincCameraControls)
       zincCameraControls.calculateMaxAllowedDistance(this);
@@ -1047,4 +1051,59 @@ exports.Scene = function (containerIn, rendererIn) {
   this.getRootRegion = () => {
     return rootRegion;
   }
+
+  /**
+   * Create points in region specified in the path 
+   *
+   */
+  this.createPoints = ( regionPath, groupName, coords, labels, colour ) => {
+    let region = rootRegion.findChildFromPath(regionPath);
+    if (region === undefined) {
+      region = rootRegion.createChildFromPath(regionPath);
+    }
+    return region.createPoints(groupName, coords, labels, colour);
+  }
+
+	/**
+	 * Add a callback function which will be called everytime zinc object is added.
+	 * @param {Function} callbackFunction - callbackFunction to be added.
+	 * 
+	 * @return {Number}
+	 */
+	this.addZincObjectAddedCallbacks = callbackFunction => {
+		zincObjectAddedCallbacks_id = zincObjectAddedCallbacks_id + 1;
+		zincObjectAddedCallbacks[zincObjectAddedCallbacks_id] = callbackFunction;
+		return zincObjectAddedCallbacks_id;
+	}
+	
+	/**
+	 * Remove a callback function that is previously added to the scene.
+	 * @param {Number} id - identifier of the previously added callback function.
+	 */
+	this.removeZincObjectAddedCallbacks = id => {
+		if (id in zincObjectAddedCallbacks_id) {
+   			delete zincObjectAddedCallbacks[id];
+		}
+	}
+
+  /**
+	 * Clear all zinc object callback function
+	 */
+	this.clearZincObjectAddedCallbacks = () => {
+		zincObjectAddedCallbacks = {};
+    zincObjectAddedCallbacks_id = 0;
+	}
+
+  /**
+	 * Used to trigger zinc object added callback
+	 */
+  this.triggerObjectAddedCallback = (zincObject) => {
+    for (let key in zincObjectAddedCallbacks) {
+      if (zincObjectAddedCallbacks.hasOwnProperty(key)) {
+        zincObjectAddedCallbacks[key](zincObject);
+      }
+    }
+  }
 }
+
+

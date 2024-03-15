@@ -14,6 +14,7 @@ const toBufferGeometry = require('../utilities').toBufferGeometry;
 const Pointset = function () {
   (require('./zincObject').ZincObject).call(this);
   this.isPointset = true;
+  let drawRange = -1;
 
   /** Shape of the points is created using the function below */
   const getCircularTexture = () => {
@@ -42,7 +43,55 @@ const Pointset = function () {
       const texture = getCircularTexture();
       materialIn.map = texture;
       let point = new Points(geometry, materialIn);
-      this.setMesh(point, options.localTimeEnabled, options.localMorphColour);
+      this.setMesh(point, options.localTimeEnabled, 
+        options.localMorphColour);
+    }
+  }
+
+  /**
+   * Add points to existing mesh if it exists, otherwise
+   * create a new one and add to it.
+   * @param {Array} coords  -An array of three components coordinates.
+   * @param {Array} labels - An array of strings, these are only added
+   * if the number of coords equals to the number labels provided.
+   * @param {Number} colour - A hex value of the colour for the points
+   */
+  this.addPoints = (coords, labels, colour) => {
+    if (coords && coords.length > 0) {
+      let mesh = this.getMorph();
+      if (!mesh) {
+        const geometry = new THREE.BufferGeometry()
+        const vertices = new Float32Array((coords.length + 500) * 3);
+        let i = 0;
+        coords.forEach(coord => {
+          vertices[i++] = coord[0];
+          vertices[i++] = coord[1];
+          vertices[i++] = coord[2];
+        });
+        geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+        drawRange = coords.length;
+        geometry.setDrawRange(0, drawRange);
+        let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 10,
+          color: colour, sizeAttenuation: false });
+        const options = { localTimeEnabled: false, localMorphColour: false};
+        geometry.colorsNeedUpdate = true;
+        this.createMesh(geometry, material, options);
+      } else {
+        if (drawRange > -1) {
+          const positionAttribute = mesh.geometry.getAttribute( 'position' );
+          const start = drawRange;
+          coords.forEach(coord => {
+            positionAttribute.setXYZ(drawRange, coord[0], coord[1], coord[2])
+            ++drawRange;
+          });
+          //positionAttribute.updateRange.offset = start;
+          //positionAttribute.updateRange.count = coords.length;
+          positionAttribute.needsUpdate = true;
+          mesh.geometry.setDrawRange(0, drawRange);
+          mesh.geometry.computeBoundingBox();
+          mesh.geometry.computeBoundingSphere();
+        }
+      }
     }
   }
 

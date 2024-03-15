@@ -1,5 +1,7 @@
 const { Group, Matrix4 } = require('three');
 
+const Pointset = require('./primitives/pointset').Pointset;
+
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -14,7 +16,7 @@ const getUniqueId = function () {
  * @author Alan Wu
  * @return {Region}
  */
-let Region = function (parentIn) {
+let Region = function (parentIn, sceneIn) {
   let parent = parentIn;
   let group = new Group();
   group.matrixAutoUpdate = false;
@@ -22,6 +24,7 @@ let Region = function (parentIn) {
   let children = [];
   let name = "";
   let zincObjects = [];
+  let scene = sceneIn;
   const tMatrix = new Matrix4();
   let duration = 3000;
   tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
@@ -165,7 +168,7 @@ let Region = function (parentIn) {
    * @return {Region}
    */
   this.createChild = (nameIn) => {
-    let childRegion = new Region(this);
+    let childRegion = new Region(this, scene);
     childRegion.setName(nameIn);
     children.push(childRegion);
     group.add(childRegion.getGroup());
@@ -295,10 +298,12 @@ let Region = function (parentIn) {
   this.addZincObject = zincObject => {
     if (zincObject) {
       zincObject.setRegion(this);
-      //group.add(zincObject.getMorph());
       group.add(zincObject.getGroup());
       zincObjects.push(zincObject);
       this.pickableUpdateRequired = true;
+      if (scene) {
+        scene.triggerObjectAddedCallback(zincObject);
+      }
     }
   }
 
@@ -750,6 +755,23 @@ let Region = function (parentIn) {
         });
       }
     }
+  }
+
+  /**
+   * Update geometries and glyphsets based on the calculated time.
+   */
+  this.createPoints = ( groupName, coords, labels, colour ) => {
+    let isNew = false;
+    const zincObjects = this.findObjectsWithGroupName(groupName, false);
+    const index = zincObjects.findIndex((zincObject) => zincObject.isPointset);
+    const pointset = index > -1 ? zincObjects[index] : new Pointset();
+    pointset.addPoints(coords, labels, colour);
+    if (index === -1) {
+      pointset.setName(groupName);
+      this.addZincObject(pointset);
+      isNew = true;
+    }
+    return { zincObject: pointset, isNew };
   }
 }
 

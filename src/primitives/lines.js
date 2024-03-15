@@ -35,7 +35,6 @@ const Lines = function () {
 		}
 	}
 
-
   /**
    * Set the width for the lines.
    * 
