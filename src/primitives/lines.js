@@ -47,6 +47,25 @@ const Lines = function () {
 		}
 	}
 
+  /**
+   * Add new lines to existing lines if it exists, otherwise
+   * create a new one and add to it.
+   * @param {Array} coords  -An array of three components coordinates.
+
+   * @param {Number} colour - A hex value of the colour for the points
+   */
+	this.addLines = (coords, colour)  => {
+    if (coords && coords.length > 0) {
+      const geometry = this.addVertices(coords);
+      let mesh = this.getMorph();
+      if (!mesh) {
+        let material = new THREE.LineBasicMaterial({color:colour});
+        const options = { localTimeEnabled: false, localMorphColour: false};
+        geometry.colorsNeedUpdate = true;
+        this.createLineSegment(geometry, material, options);
+      }
+    }
+	}
 }
 
 Lines.prototype = Object.create((require('./zincObject').ZincObject).prototype);

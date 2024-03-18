@@ -55,6 +55,9 @@ const ZincObject = function() {
   this.center = new THREE.Vector3();
   this.radius = 0;
   this.visible = true;
+  //Draw range is only used by primitives added
+  //programatically with addVertices function
+  this.drawRange = -1;
 }
 
 /**
@@ -651,6 +654,41 @@ ZincObject.prototype.render = function(delta, playAnimation,
  */
 ZincObject.prototype.addLOD = function(loader, level, url, preload) {
   this._lod.addLevelFromURL(loader, level, url, preload);
+}
+
+/**
+ * Add lod from an url into the lod object.
+ */
+ZincObject.prototype.addVertices = function(coords) {
+  let mesh = this.getMorph();
+  let geometry = undefined;
+  if (!mesh) {
+    geometry = new THREE.BufferGeometry()
+    const vertices = new Float32Array((coords.length + 500) * 3);
+    let i = 0;
+    coords.forEach(coord => {
+      vertices[i++] = coord[0];
+      vertices[i++] = coord[1];
+      vertices[i++] = coord[2];
+    });
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    this.drawRange = coords.length;
+    geometry.setDrawRange(0, this.drawRange);
+  } else {
+    if (this.drawRange > -1) {
+      const positionAttribute = mesh.geometry.getAttribute( 'position' );
+      coords.forEach(coord => {
+        positionAttribute.setXYZ(this.drawRange, coord[0], coord[1], coord[2])
+        ++this.drawRange;
+      });
+      positionAttribute.needsUpdate = true;
+      mesh.geometry.setDrawRange(0, this.drawRange);
+      mesh.geometry.computeBoundingBox();
+      mesh.geometry.computeBoundingSphere();
+      geometry = mesh.geoemtry;
+    }
+  }
+  return geometry;
 }
 
 exports.ZincObject = ZincObject;

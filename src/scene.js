@@ -1056,6 +1056,18 @@ exports.Scene = function (containerIn, rendererIn) {
    * Create points in region specified in the path 
    *
    */
+  this.createLines = ( regionPath, groupName, coords, colour ) => {
+    let region = rootRegion.findChildFromPath(regionPath);
+    if (region === undefined) {
+      region = rootRegion.createChildFromPath(regionPath);
+    }
+    return region.createLines(groupName, coords, colour);
+  }
+
+  /**
+   * Create points in region specified in the path 
+   *
+   */
   this.createPoints = ( regionPath, groupName, coords, labels, colour ) => {
     let region = rootRegion.findChildFromPath(regionPath);
     if (region === undefined) {

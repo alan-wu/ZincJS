@@ -1,6 +1,7 @@
 const { Group, Matrix4 } = require('three');
 
 const Pointset = require('./primitives/pointset').Pointset;
+const Lines = require('./primitives/lines').Lines;
 
 let uniqueiId = 0;
 
@@ -770,8 +771,29 @@ let Region = function (parentIn, sceneIn) {
       pointset.setName(groupName);
       this.addZincObject(pointset);
       isNew = true;
+    } else {
+      this.pickableUpdateRequired = true;
     }
     return { zincObject: pointset, isNew };
+  }
+
+  /**
+   * Update geometries and glyphsets based on the calculated time.
+   */
+  this.createLines = ( groupName, coords, colour ) => {
+    let isNew = false;
+    const zincObjects = this.findObjectsWithGroupName(groupName, false);
+    const index = zincObjects.findIndex((zincObject) => zincObject.isLines);
+    const lines = index > -1 ? zincObjects[index] : new Lines();
+    lines.addLines(coords, colour);
+    if (index === -1) {
+      lines.setName(groupName);
+      this.addZincObject(lines);
+      isNew = true;
+    } else {
+      this.pickableUpdateRequired = true;
+    }
+    return { zincObject: lines, isNew };
   }
 }
 
