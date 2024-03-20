@@ -407,7 +407,7 @@ ZincObject.prototype.setMaterial = function(material) {
 ZincObject.prototype.getClosestVertexIndex = function() {
   let closestIndex = -1;
   const morph = this.getMorph();
-  if (morph) {
+  if (morph && morph.geoemtry) {
     let position = morph.geometry.attributes.position;
     this._b1.setFromBufferAttribute(position);
     this._b1.getCenter(this._v1);
@@ -439,9 +439,10 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
   if (this.closestVertexIndex == -1) {
     this.closestVertexIndex = this.getClosestVertexIndex();
   }
-  if (this.closestVertexIndex >= 0) {
-    let influences = this.morph.morphTargetInfluences;
-    let attributes = this.morph.geometry.morphAttributes;
+  const morph = this.getMorph();
+  if (morph && morph.geometry && this.closestVertexIndex >= 0) {
+    let influences = morph.morphTargetInfluences;
+    let attributes = morph.geometry.morphAttributes;
     if (influences && attributes && attributes.position) {
       let found = false;
       for (let i = 0; i < influences.length; i++) {
@@ -453,12 +454,12 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
         }
       }
       if (found) {
-        return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
+        return applyMatrixWorld ? position.applyMatrix4(morph.matrixWorld) : position;
       }
     } else {
-      position.fromArray(this.morph.geometry.attributes.position.array,
+      position.fromArray(morph.geometry.attributes.position.array,
         this.closestVertexIndex * 3);
-      return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
+      return applyMatrixWorld ? position.applyMatrix4(morph.matrixWorld) : position;
     }
   }
   this.getBoundingBox();
@@ -511,7 +512,6 @@ ZincObject.prototype.dispose = function() {
 ZincObject.prototype.markerIsEnabled = function(options) {
   if (this.markerMode === "on" || (options && options.displayMarkers &&
     (this.markerMode === "inherited"))) {
-      
       return true;
   }
   return false;
