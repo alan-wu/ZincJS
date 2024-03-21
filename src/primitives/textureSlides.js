@@ -19,7 +19,7 @@ const TextureSlides = function (textureIn) {
   this.morph = new THREE.Group();
   this.group = this.morph;
   this.morph.userData = this;
-  const alpha = 1.0;
+   let flipY = true;
 
   /**
     @typedef SLIDE_SETTINGS
@@ -100,6 +100,8 @@ const TextureSlides = function (textureIn) {
         const uniforms = shader.getUniforms();
         uniforms.diffuse.value = this.texture.impl;
         uniforms.depth.value = this.texture.size.depth;
+        uniforms.flipY.value = flipY;
+        
         const options = {
           fs: shader.fs,
           vs: shader.vs,
@@ -244,12 +246,16 @@ const TextureSlides = function (textureIn) {
 
   this.initialise = (textureData, finishCallback) => {
     if (textureData) {
-      this.createSlides(textureData.settings.slides);
+
       const locations = textureData.locations;
       if (locations && locations.length > 0) {
         this.applyTransformation(locations[0].orientation,
           locations[0].position, locations[0].scale);
+        if ("flipY" in locations[0]) {
+          flipY = locations[0].flipY;
+        }
       }
+      this.createSlides(textureData.settings.slides);
       if (finishCallback != undefined && (typeof finishCallback == 'function')) {
         finishCallback(this);
       }
