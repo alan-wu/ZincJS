@@ -49,7 +49,7 @@ const Glyphset = function () {
     _points[i] = new THREE.Vector3();
   }
 
-/**
+  /**
    * Copy glyphset data into this glyphset then load the glyph's geoemtry 
    * with the provided glyphURL. FinishCallback will be called once
    * glyph is loaded.
@@ -609,7 +609,8 @@ const Glyphset = function () {
    * @return {Boolean}
    */
   this.isTimeVarying = () => {
-    if ((numberOfTimeSteps > 0) && (morphColours || morphVertices))
+    if (((this.ready === false) || (numberOfTimeSteps > 0)) && 
+      (morphColours || morphVertices))
       return true;
     return false;
   }

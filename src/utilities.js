@@ -17,6 +17,19 @@ function resolveURL(url) {
 	return actualURL;
 }
 
+function createNewURL(target, reference) {
+  let newURL = (new URL(target, reference)).href;
+  //Make sure the target url does not contain parameters
+  if (target && target.split("?").length < 2) {
+    const paramsStrings = reference.split("?");
+    //There are parameters, add them to the target
+    if (paramsStrings.length === 2) {
+      newURL = newURL + "?" + paramsStrings[1];
+    }
+  }
+  return newURL;
+}
+
 /*
  * Calculate the bounding box of a mesh, values will be
  * set for cachedBox, b1, v1 and v2 and they need to be
@@ -397,6 +410,7 @@ function PhongToToon(materialIn) {
 }
 
 exports.getBoundingBox = getBoundingBox;
+exports.createNewURL = createNewURL;
 exports.resolveURL = resolveURL;
 exports.loadExternalFile = loadExternalFile;
 exports.loadExternalFiles = loadExternalFiles;

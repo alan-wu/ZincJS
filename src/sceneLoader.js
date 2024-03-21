@@ -1,21 +1,10 @@
 const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
+const createNewURL = require('./utilities').createNewURL;
+
 const STLLoader = require('./loaders/STLLoader').STLLoader;
 const OBJLoader = require('./loaders/OBJLoader').OBJLoader;
 const PrimitivesLoader = require('./loaders/primitivesLoader').PrimitivesLoader;
-
-const createNewURL = (target, reference) => {
-  let newURL = (new URL(target, reference)).href;
-  //Make sure the target url does not contain parameters
-  if (target && target.split("?").length < 2) {
-    const paramsStrings = reference.split("?");
-    //There are parameters, add them to the target
-    if (paramsStrings.length === 2) {
-      newURL = newURL + "?" + paramsStrings[1];
-    }
-  }
-  return newURL;
-}
 
 /**
  * A helper class to help with reading / importing primitives and
@@ -463,12 +452,19 @@ exports.SceneLoader = function (sceneIn) {
     }
   }
 
-  const loadTexture = (region, textureData, groupName, finishCallback, options) => {
+  const loadTexture = (region, referenceURL, textureData, groupName, finishCallback, options) => {
     let isInline  = (options && options.isInline) ? options.isInline : undefined;
     let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
     let renderOrder = (options && options.renderOrder) ? options.renderOrder : undefined;
     let newTexture = undefined;
     if (textureData) {
+      if (referenceURL && textureData.images && textureData.images.source) {
+        const source = textureData.images.source;
+        for (let i = 0; i < source.length; i++) {
+          const newURL = createNewURL(source[i], referenceURL);
+          textureData.images.source[i] = newURL;
+        }
+      }
       if (textureData.type === "slides") {
         newTexture = new (require('./primitives/textureSlides').TextureSlides)();
       }
@@ -494,7 +490,7 @@ exports.SceneLoader = function (sceneIn) {
     return () => {
       if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
         const textureData = JSON.parse(xmlhttp.responseText);
-        loadTexture(region, textureData, groupName, finishCallback, options);
+        loadTexture(region, xmlhttp.responseURL, textureData, groupName, finishCallback, options);
       }
     };
   };
@@ -509,7 +505,7 @@ exports.SceneLoader = function (sceneIn) {
   this.loadTextureURL = (region, url, groupName, finishCallback, options) => {
     const isInline = (options && options.isInline) ? options.isInline : false;
     if (isInline) {
-      loadTexture(region, url, groupName, finishCallback, options);
+      loadTexture(region, undefined, url, groupName, finishCallback, options);
     } else {
       const xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = onLoadTextureReady(region, xmlhttp,
