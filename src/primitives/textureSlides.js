@@ -176,7 +176,7 @@ const TextureSlides = function (textureIn) {
       }
       const index = textureSettings.findIndex(item => item.id === id);
       if (index > -1) {
-        textureSettings.splice(index);
+        textureSettings.splice(index, 1);
       }
     }
   }
