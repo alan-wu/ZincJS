@@ -64,6 +64,7 @@ const Lines = function () {
         geometry.colorsNeedUpdate = true;
         this.createLineSegment(geometry, material, options);
       }
+      if (this.region) this.region.pickableUpdateRequired = true;
     }
 	}
 }

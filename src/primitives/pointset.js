@@ -1,6 +1,7 @@
 const THREE = require('three');
 const Points = require('../three/Points').Points;
 const toBufferGeometry = require('../utilities').toBufferGeometry;
+const getCircularTexture = require('../utilities').getCircularTexture;
 
 /**
  * Provides an object which stores points and provides method which controls its position.
@@ -14,16 +15,6 @@ const toBufferGeometry = require('../utilities').toBufferGeometry;
 const Pointset = function () {
   (require('./zincObject').ZincObject).call(this);
   this.isPointset = true;
-
-  /** Shape of the points is created using the function below */
-  const getCircularTexture = () => {
-    var image = new Image();
-    image.src = require("../assets/disc.png");
-    const texture = new THREE.Texture();
-    texture.image = image;
-    texture.needsUpdate = true;
-    return texture;
-  }
 
   /**
    * Create the pointsets using geometry and material.
@@ -66,6 +57,7 @@ const Pointset = function () {
         geometry.colorsNeedUpdate = true;
         this.createMesh(geometry, material, options);
       }
+      if (this.region) this.region.pickableUpdateRequired = true;
     }
   }
 

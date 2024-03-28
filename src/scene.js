@@ -2,7 +2,8 @@ const THREE = require('three');
 const SceneLoader = require('./sceneLoader').SceneLoader;
 const SceneExporter = require('./sceneExporter').SceneExporter;
 const Viewport = require('./controls').Viewport;
-
+const createBufferGeometry = require('./utilities').createBufferGeometry;
+const getCircularTexture = require('./utilities').getCircularTexture;
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -40,7 +41,8 @@ exports.Scene = function (containerIn, rendererIn) {
   const scene = new THREE.Scene();
   const rootRegion = new (require('./region').Region)(undefined, this);
   scene.add(rootRegion.getGroup());
-  
+  const tempGroup = new THREE.Group();
+  scene.add(tempGroup);
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
    */
@@ -869,6 +871,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * Update pickable objects list
    */
   this.updatePickableThreeJSObjects = () => {
+
     pickableObjectsList.splice(0, pickableObjectsList.length);
     rootRegion.getPickableThreeJSObjects(pickableObjectsList, true);
     this.forcePickableObjectsUpdate = false;
@@ -1116,6 +1119,36 @@ exports.Scene = function (containerIn, rendererIn) {
       }
     }
   }
+
+  this.addTemporaryPoints = (coords, colour) => {
+    const geometry = createBufferGeometry(coords.length, coords);
+    let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 15,
+      color: colour, sizeAttenuation: false });
+    const texture = getCircularTexture();
+    material.map = texture;
+    let point = new (require('./three/Points').Points)(geometry, material);
+    tempGroup.add(point);
+    return point;
+  }
+
+  this.addTemporaryLines = (coords, colour) => {
+    const geometry = createBufferGeometry(coords.length, coords);
+    const material = new THREE.LineBasicMaterial({color:colour});
+    const line = new (require("./three/line/LineSegments").LineSegments)(geometry, material);
+    tempGroup.add(line);
+    return line;
+  }
+
+  this.clearTemporaryPrimitives = () => {
+    const children = tempGroup.children;
+    children.forEach(child => {
+      child.geometry.dispose();
+      child.material.dispose();
+    });
+    tempGroup.clear();
+  }
+
+
 }
 
 

@@ -1,4 +1,5 @@
 const THREE = require('three');
+const createBufferGeometry = require('../utilities').createBufferGeometry;
 
 let uniqueiId = 0;
 
@@ -663,17 +664,8 @@ ZincObject.prototype.addVertices = function(coords) {
   let mesh = this.getMorph();
   let geometry = undefined;
   if (!mesh) {
-    geometry = new THREE.BufferGeometry()
-    const vertices = new Float32Array((coords.length + 500) * 3);
-    let i = 0;
-    coords.forEach(coord => {
-      vertices[i++] = coord[0];
-      vertices[i++] = coord[1];
-      vertices[i++] = coord[2];
-    });
-    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    geometry = createBufferGeometry((coords.length + 500), coords);
     this.drawRange = coords.length;
-    geometry.setDrawRange(0, this.drawRange);
   } else {
     if (this.drawRange > -1) {
       const positionAttribute = mesh.geometry.getAttribute( 'position' );
