@@ -1120,6 +1120,10 @@ exports.Scene = function (containerIn, rendererIn) {
     }
   }
 
+  /*
+	 * Add temporary points to the scene which can be removed
+   * with clearTemporaryPrimitives method.
+	 */
   this.addTemporaryPoints = (coords, colour) => {
     const geometry = createBufferGeometry(coords.length, coords);
     let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 15,
@@ -1131,6 +1135,10 @@ exports.Scene = function (containerIn, rendererIn) {
     return point;
   }
 
+  /*
+	 * Add temporary lines to the scene which can be removed
+   * with clearTemporaryPrimitives method.
+	 */
   this.addTemporaryLines = (coords, colour) => {
     const geometry = createBufferGeometry(coords.length, coords);
     const material = new THREE.LineBasicMaterial({color:colour});
@@ -1139,6 +1147,9 @@ exports.Scene = function (containerIn, rendererIn) {
     return line;
   }
 
+  /*
+	 * Remove all temporary primitives.
+	 */
   this.clearTemporaryPrimitives = () => {
     const children = tempGroup.children;
     children.forEach(child => {
@@ -1147,8 +1158,6 @@ exports.Scene = function (containerIn, rendererIn) {
     });
     tempGroup.clear();
   }
-
-
 }
 
 
