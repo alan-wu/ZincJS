@@ -2,7 +2,7 @@ const { Group, Matrix4 } = require('three');
 
 const Pointset = require('./primitives/pointset').Pointset;
 const Lines = require('./primitives/lines').Lines;
-
+const Lines2 = require('./primitives/lines2').Lines2;
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -784,7 +784,7 @@ let Region = function (parentIn, sceneIn) {
     let isNew = false;
     const zincObjects = this.findObjectsWithGroupName(groupName, false);
     const index = zincObjects.findIndex((zincObject) => zincObject.isLines);
-    const lines = index > -1 ? zincObjects[index] : new Lines();
+    const lines = index > -1 ? zincObjects[index] : new Lines2();
     lines.addLines(coords, colour);
     if (index === -1) {
       lines.setName(groupName);

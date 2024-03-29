@@ -31,7 +31,7 @@ const Lines = function () {
 			if (options.localMorphColour && geometry.morphAttributes[ "color" ])
 				materialIn.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
       let line = new (require("../three/line/LineSegments").LineSegments)(geometry, materialIn);
-			this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
+      this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
 		}
 	}
 
