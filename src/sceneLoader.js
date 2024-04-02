@@ -756,9 +756,9 @@ exports.SceneLoader = function (sceneIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the glyphset is succssfully load in.
    */
-  this.loadGLTF = (region, url, finishCallback, options) => {
+  this.loadGLTF = (region, url, finishCallback, allCompletedCallback, options) => {
     const GLTFToZincJSLoader = new (require('./loaders/GLTFToZincJSLoader').GLTFToZincJSLoader)();
-    GLTFToZincJSLoader.load(scene, region, url, finishCallback, options);
+    GLTFToZincJSLoader.load(scene, region, url, finishCallback, allCompletedCallback, options);
   }
 
   let loadRegions = (currentRegion, referenceURL, regions, callback) => {

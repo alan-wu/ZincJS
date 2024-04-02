@@ -500,8 +500,8 @@ exports.Scene = function (containerIn, rendererIn) {
   /**
    * Load GLTF into this scene object.
    */
-  this.loadGLTF = (url, finishCallback, options) => {
-    sceneLoader.loadGLTF(rootRegion, url, finishCallback, options);
+  this.loadGLTF = (url, finishCallback, allCompletedCallback, options) => {
+    sceneLoader.loadGLTF(rootRegion, url, finishCallback, allCompletedCallback, options);
   }
 
   //Update the directional light for this scene.
