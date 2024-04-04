@@ -3,6 +3,8 @@ const { Group, Matrix4 } = require('three');
 const Pointset = require('./primitives/pointset').Pointset;
 const Lines = require('./primitives/lines').Lines;
 const Lines2 = require('./primitives/lines2').Lines2;
+const Geometry = require('./primitives/geometry').Geometry;
+const THREE = require('three');
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -794,6 +796,35 @@ let Region = function (parentIn, sceneIn) {
       this.pickableUpdateRequired = true;
     }
     return { zincObject: lines, isNew };
+  }
+
+  /**
+   * Add a new geometry
+   */
+  this.createGeometryFromThreeJSGeometry = (
+    groupName, geometry, colour, opacity, visibility, renderOrder) => {
+    const zincGeometry = new Geometry();
+    const material = new THREE.MeshPhongMaterial({
+      color : colour,
+      morphTargets : false,
+      morphNormals : false,
+      transparent : true,
+      opacity : opacity,
+      side : THREE.DoubleSide
+    });
+    zincGeometry.createMesh(
+      geometry,
+      material,
+      {localTimeEnabled: false, localMorphColour: false,},
+    );
+    if (zincGeometry.getMorph()) {
+      zincGeometry.setVisibility(false);
+      zincGeometry.setName(groupName);
+      zincGeometry.setRenderOrder(renderOrder);
+      this.addZincObject(zincGeometry);
+      return zincGeometry;
+    }
+    return undefined;
   }
 }
 

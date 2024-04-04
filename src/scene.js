@@ -1148,6 +1148,15 @@ exports.Scene = function (containerIn, rendererIn) {
   }
 
   /*
+	 * Remove object from temporary objects list
+	 */
+  this.removeTemporaryPrimitive = (object) => {
+    tempGroup.remove(object);
+    object.geometry.dispose();
+    object.material.dispose();
+  }
+
+  /*
 	 * Remove all temporary primitives.
 	 */
   this.clearTemporaryPrimitives = () => {
@@ -1157,6 +1166,26 @@ exports.Scene = function (containerIn, rendererIn) {
       child.material.dispose();
     });
     tempGroup.clear();
+  }
+
+  /*
+	 * Create primitive based on the bounding box of scene and
+   * add to specify region and group name.
+	 */
+  this.addBoundingBoxPrimitive = (regionPath, group, colour, opacity,
+    visibility, boundingBox = undefined) => {
+    let region = rootRegion.findChildFromPath(regionPath);
+    if (region === undefined) {
+      region = rootRegion.createChildFromPath(regionPath);
+    }
+    const box = boundingBox ? boundingBox : this.getBoundingBox();
+    const dim = new THREE.Vector3().subVectors(box.max, box.min);
+    const boxGeo = new THREE.BoxGeometry(dim.x, dim.y, dim.z);
+    dim.addVectors(box.min, box.max).multiplyScalar( 0.5 );
+    const primitive = region.createGeometryFromThreeJSGeometry(
+      group, boxGeo, colour, opacity, visibility, 10000);
+    primitive.setPosition(dim.x, dim.y, dim.z);
+    return primitive;
   }
 }
 
