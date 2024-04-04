@@ -23,7 +23,6 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   this.id = idIn;
   let label = undefined;
   let labelString = undefined;
-  const group = new THREE.Group();
   this.isGlyph = true;
 
   /**
@@ -36,7 +35,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
     if (meshIn && meshIn.isMesh) {
       this.morph = meshIn.clone();
       this.morph.userData = this;
-      group.add(this.morph);
+      this.group.add(this.morph);
       return true;
     }
     return false;
@@ -77,7 +76,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   this.showLabel = (colour) => {
     if (label) {
       position = label.getPosition();
-      group.remove(label.getSprite());
+      this.group.remove(label.getSprite());
       label.dispose();
       label = undefined;
     }
@@ -85,16 +84,8 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
       let position = [0, 0, 0];
       label = new (require('./label').Label)(labelString, colour);
       label.setPosition(position[0], position[1], position[2]);
-      group.add(label.getSprite());
+      this.group.add(label.getSprite());
     }
-  }
-
-  /**
-   * Get the group containing the label and mesh.
-   * @return {THREE.Group}
-   */
-  this.getGroup = () => {
-    return group;
   }
 
   /**

@@ -683,4 +683,33 @@ ZincObject.prototype.addVertices = function(coords) {
   return geometry;
 }
 
+/**
+ * Set the objects position.
+ * 
+ * @return {THREE.Box3}.
+ */
+ZincObject.prototype.setPosition = function(x, y, z) {
+  const group = this.getGroup();
+  if (group) {
+    group.position.set(x, y, z);
+    group.updateMatrix();
+    this.boundingBoxUpdateRequired = true;
+  }
+}
+
+/**
+ * Set the objects scale.
+ * 
+ * @return {THREE.Box3}.
+ */
+ZincObject.prototype.setScaleAll = function(scale) {
+  const group = this.getGroup();
+  if (group) {
+    group.scale.set(scale, scale, scale);
+    group.updateMatrix();
+    this.boundingBoxUpdateRequired = true;
+  }
+}
+
+
 exports.ZincObject = ZincObject;
