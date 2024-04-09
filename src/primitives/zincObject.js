@@ -678,6 +678,7 @@ ZincObject.prototype.addVertices = function(coords) {
       mesh.geometry.computeBoundingBox();
       mesh.geometry.computeBoundingSphere();
       geometry = mesh.geoemtry;
+      this.boundingBoxUpdateRequired = true;
     }
   }
   return geometry;

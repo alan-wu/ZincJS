@@ -70,19 +70,71 @@ const Lines2 = function () {
         positions[index++] = coord[2];
         this.drawRange++;
       });
-      while (index < 300) {
-        positions[index++] = coords[0][0];
-        positions[index++] = coords[0][1];
-        positions[index++] = coords[0][2];
+      if (!mesh) {
+        while (index < 300) {
+          positions[index++] = coords[0][0];
+          positions[index++] = coords[0][1];
+          positions[index++] = coords[0][2];
+        }
       }
 
       if (mesh) {
         mesh.geometry.setPositions(positions);
         mesh.computeLineDistances();
+        this.boundingBoxUpdateRequired = true;
       }
     }
     return positions;
   }
+
+  /**
+   * Get the vertices by face index
+   */
+  this.getVerticesByFaceIndex = function(faceIndex) {
+    let vIndex = faceIndex * 2;
+    const mesh = this.getMorph();
+    if (mesh && this.drawRange > vIndex) {
+      const position = mesh.geometry.getAttribute( 'instanceStart' );
+      return [
+        [
+          position.data.array[vIndex],
+          position.data.array[++vIndex],
+          position.data.array[++vIndex],
+        ],
+        [
+          position.data.array[++vIndex],
+          position.data.array[++vIndex],
+          position.data.array[++vIndex],
+        ],
+      ];
+    }
+    return [];
+  }
+
+  /**
+   * Edit Vertice in index.
+   */
+  this.editVertice = function(coords, i) {
+    if (coords && coords.length) {
+      let mesh = this.getMorph();
+      const maxIndex = i + coords.length - 1;
+      if (!mesh || 0 > i || maxIndex >= this.drawRange) {
+        return;
+      } else {
+        let index = i * 3;
+        coords.forEach(coord => {
+          positions[index++] = coord[0];
+          positions[index++] = coord[1];
+          positions[index++] = coord[2];
+        });
+        mesh.geometry.setPositions(positions);
+        mesh.computeLineDistances();
+        this.boundingBoxUpdateRequired = true;
+      }
+    }
+    return positions;
+  }
+
 
   /**
    * Add new lines to existing lines if it exists, otherwise
