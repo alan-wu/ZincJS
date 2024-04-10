@@ -55,7 +55,7 @@ const Lines2 = function () {
 	}
 
   /**
-   * Add lod from an url into the lod object.
+   * Add new vertices into the array
    */
   this.addVertices = function(coords) {
     if (coords && coords.length) {
@@ -70,6 +70,7 @@ const Lines2 = function () {
         positions[index++] = coord[2];
         this.drawRange++;
       });
+      //fill the rest of the array.
       if (!mesh) {
         while (index < 300) {
           positions[index++] = coords[0][0];
@@ -127,6 +128,12 @@ const Lines2 = function () {
           positions[index++] = coord[1];
           positions[index++] = coord[2];
         });
+        index = this.drawRange * 3;
+        while (index < 300) {
+          positions[index++] = coords[0][0];
+          positions[index++] = coords[0][1];
+          positions[index++] = coords[0][2];
+        }
         mesh.geometry.setPositions(positions);
         mesh.computeLineDistances();
         this.boundingBoxUpdateRequired = true;
