@@ -122,6 +122,7 @@ const TextureSlides = function (textureIn) {
         setUniformSlideSettingsOfMesh(mesh, slideSettings);
         idTextureMap[mesh.id] = mesh;
         this.morph.add(mesh);
+        this.boundingBoxUpdateRequired = true;
         return slideSettings;
       }
     }
@@ -195,6 +196,35 @@ const TextureSlides = function (textureIn) {
     this.boundingBoxUpdateRequired = true;
   }
 
+  //Expand the boundingbox with slide settings
+  const expandBoxWithSettings = (box, settings, vector) => {
+    switch (settings.direction.value) {
+      case 1:
+        vector.copy(settings.slide.value);
+        box.expandByPoint(vector);
+        vector.setY(1.0);
+        vector.setZ(1.0);
+        box.expandByPoint(vector);
+        break;
+      case 2:
+        vector.copy(settings.slide.value);
+        box.expandByPoint(vector);
+        vector.setX(1.0);
+        vector.setZ(1.0);
+        box.expandByPoint(vector);
+        break;
+      case 3:
+        vector.copy(settings.slide.value);
+        box.expandByPoint(vector);
+        vector.setX(1.0);
+        vector.setY(1.0);
+        box.expandByPoint(vector);
+        break;
+      default:
+        break;
+    }
+  }
+
   /**
    * Get the bounding box of this slides.
    * It uses the max and min of the slides position and the
@@ -206,11 +236,12 @@ const TextureSlides = function (textureIn) {
     if (this.morph && this.morph.children && this.morph.visible &&
       this.boundingBoxUpdateRequired) {
       this.cachedBoundingBox.makeEmpty();
+      const vector = new THREE.Vector3(0, 0, 0);
       this.morph.children.forEach(slide => {
-        const value = slide.material.uniforms.slide.value;
-        this.cachedBoundingBox.expandByPoint(value);
+        expandBoxWithSettings(this.cachedBoundingBox, slide.material.uniforms,
+          vector);
       });
-      this.morph.updateWorldMatrix(true, true);
+      this.morph.updateMatrixWorld (true, true);
       this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
       this.boundingBoxUpdateRequired = false;
     }
@@ -242,6 +273,7 @@ const TextureSlides = function (textureIn) {
     this.morph.quaternion.copy( quaternion );
     this.morph.scale.set(...scale);
     this.morph.updateMatrix();
+    this.boundingBoxUpdateRequired = true;
   }
 
   this.initialise = (textureData, finishCallback) => {
