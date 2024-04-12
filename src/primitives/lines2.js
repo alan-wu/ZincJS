@@ -92,9 +92,9 @@ const Lines2 = function () {
    * Get the vertices by face index
    */
   this.getVerticesByFaceIndex = function(faceIndex) {
-    let vIndex = faceIndex * 2;
+    let vIndex = faceIndex * 2 * 3;
     const mesh = this.getMorph();
-    if (mesh && this.drawRange > vIndex) {
+    if (mesh && (this.drawRange * 3) > vIndex) {
       const position = mesh.geometry.getAttribute( 'instanceStart' );
       return [
         [
