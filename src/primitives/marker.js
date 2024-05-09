@@ -27,7 +27,6 @@ const Marker = function(zincObject) {
   let enabled = false;
   let vector = new THREE.Vector3();
 
-
 	let initialise = () => {
     spriteMaterial = new THREE.SpriteMaterial({
       map: texture,

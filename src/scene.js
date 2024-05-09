@@ -2,7 +2,8 @@ const THREE = require('three');
 const SceneLoader = require('./sceneLoader').SceneLoader;
 const SceneExporter = require('./sceneExporter').SceneExporter;
 const Viewport = require('./controls').Viewport;
-
+const createBufferGeometry = require('./utilities').createBufferGeometry;
+const getCircularTexture = require('./utilities').getCircularTexture;
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -35,9 +36,13 @@ exports.Scene = function (containerIn, rendererIn) {
   let videoHandler = undefined;
   let sceneLoader = new SceneLoader(this);
   let minimap = undefined;
+  let zincObjectAddedCallbacks = {};
+  let zincObjectAddedCallbacks_id = 0;
   const scene = new THREE.Scene();
-  const rootRegion = new (require('./region').Region)();
+  const rootRegion = new (require('./region').Region)(undefined, this);
   scene.add(rootRegion.getGroup());
+  const tempGroup = new THREE.Group();
+  scene.add(tempGroup);
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
    */
@@ -495,8 +500,8 @@ exports.Scene = function (containerIn, rendererIn) {
   /**
    * Load GLTF into this scene object.
    */
-  this.loadGLTF = (url, finishCallback, options) => {
-    sceneLoader.loadGLTF(rootRegion, url, finishCallback, options);
+  this.loadGLTF = (url, finishCallback, allCompletedCallback, options) => {
+    sceneLoader.loadGLTF(rootRegion, url, finishCallback, allCompletedCallback, options);
   }
 
   //Update the directional light for this scene.
@@ -866,6 +871,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * Update pickable objects list
    */
   this.updatePickableThreeJSObjects = () => {
+
     pickableObjectsList.splice(0, pickableObjectsList.length);
     rootRegion.getPickableThreeJSObjects(pickableObjectsList, true);
     this.forcePickableObjectsUpdate = false;
@@ -927,6 +933,7 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.clearAll = () => {
     rootRegion.clear(true);
+    this.clearZincObjectAddedCallbacks();
     sceneLoader.toBeDwonloaded = 0;
     if (zincCameraControls)
       zincCameraControls.calculateMaxAllowedDistance(this);
@@ -1047,4 +1054,139 @@ exports.Scene = function (containerIn, rendererIn) {
   this.getRootRegion = () => {
     return rootRegion;
   }
+
+  /**
+   * Create points in region specified in the path 
+   *
+   */
+  this.createLines = ( regionPath, groupName, coords, colour ) => {
+    let region = rootRegion.findChildFromPath(regionPath);
+    if (region === undefined) {
+      region = rootRegion.createChildFromPath(regionPath);
+    }
+    return region.createLines(groupName, coords, colour);
+  }
+
+  /**
+   * Create points in region specified in the path 
+   *
+   */
+  this.createPoints = ( regionPath, groupName, coords, labels, colour ) => {
+    let region = rootRegion.findChildFromPath(regionPath);
+    if (region === undefined) {
+      region = rootRegion.createChildFromPath(regionPath);
+    }
+    return region.createPoints(groupName, coords, labels, colour);
+  }
+
+	/**
+	 * Add a callback function which will be called everytime zinc object is added.
+	 * @param {Function} callbackFunction - callbackFunction to be added.
+	 * 
+	 * @return {Number}
+	 */
+	this.addZincObjectAddedCallbacks = callbackFunction => {
+		zincObjectAddedCallbacks_id = zincObjectAddedCallbacks_id + 1;
+		zincObjectAddedCallbacks[zincObjectAddedCallbacks_id] = callbackFunction;
+		return zincObjectAddedCallbacks_id;
+	}
+	
+	/**
+	 * Remove a callback function that is previously added to the scene.
+	 * @param {Number} id - identifier of the previously added callback function.
+	 */
+	this.removeZincObjectAddedCallbacks = id => {
+		if (id in zincObjectAddedCallbacks_id) {
+   			delete zincObjectAddedCallbacks[id];
+		}
+	}
+
+  /**
+	 * Clear all zinc object callback function
+	 */
+	this.clearZincObjectAddedCallbacks = () => {
+		zincObjectAddedCallbacks = {};
+    zincObjectAddedCallbacks_id = 0;
+	}
+
+  /**
+	 * Used to trigger zinc object added callback
+	 */
+  this.triggerObjectAddedCallback = (zincObject) => {
+    for (let key in zincObjectAddedCallbacks) {
+      if (zincObjectAddedCallbacks.hasOwnProperty(key)) {
+        zincObjectAddedCallbacks[key](zincObject);
+      }
+    }
+  }
+
+  /*
+	 * Add temporary points to the scene which can be removed
+   * with clearTemporaryPrimitives method.
+	 */
+  this.addTemporaryPoints = (coords, colour) => {
+    const geometry = createBufferGeometry(coords.length, coords);
+    let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 15,
+      color: colour, sizeAttenuation: false });
+    const texture = getCircularTexture();
+    material.map = texture;
+    let point = new (require('./three/Points').Points)(geometry, material);
+    tempGroup.add(point);
+    return point;
+  }
+
+  /*
+	 * Add temporary lines to the scene which can be removed
+   * with clearTemporaryPrimitives method.
+	 */
+  this.addTemporaryLines = (coords, colour) => {
+    const geometry = createBufferGeometry(coords.length, coords);
+    const material = new THREE.LineBasicMaterial({color:colour});
+    const line = new (require("./three/line/LineSegments").LineSegments)(geometry, material);
+    tempGroup.add(line);
+    return line;
+  }
+
+  /*
+	 * Remove object from temporary objects list
+	 */
+  this.removeTemporaryPrimitive = (object) => {
+    tempGroup.remove(object);
+    object.geometry.dispose();
+    object.material.dispose();
+  }
+
+  /*
+	 * Remove all temporary primitives.
+	 */
+  this.clearTemporaryPrimitives = () => {
+    const children = tempGroup.children;
+    children.forEach(child => {
+      child.geometry.dispose();
+      child.material.dispose();
+    });
+    tempGroup.clear();
+  }
+
+  /*
+	 * Create primitive based on the bounding box of scene and
+   * add to specify region and group name.
+	 */
+  this.addBoundingBoxPrimitive = (regionPath, group, colour, opacity,
+    visibility, boundingBox = undefined) => {
+    let region = rootRegion.findChildFromPath(regionPath);
+    if (region === undefined) {
+      region = rootRegion.createChildFromPath(regionPath);
+    }
+    const box = boundingBox ? boundingBox : this.getBoundingBox();
+    const dim = new THREE.Vector3().subVectors(box.max, box.min);
+    const boxGeo = new THREE.BoxGeometry(dim.x, dim.y, dim.z);
+    dim.addVectors(box.min, box.max).multiplyScalar( 0.5 );
+    const primitive = region.createGeometryFromThreeJSGeometry(
+      group, boxGeo, colour, opacity, visibility, 10000);
+    primitive.setPosition(dim.x, dim.y, dim.z);
+    return primitive;
+  }
 }
+
+

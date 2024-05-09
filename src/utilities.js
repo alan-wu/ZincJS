@@ -17,6 +17,19 @@ function resolveURL(url) {
 	return actualURL;
 }
 
+function createNewURL(target, reference) {
+  let newURL = (new URL(target, reference)).href;
+  //Make sure the target url does not contain parameters
+  if (target && target.split("?").length < 2) {
+    const paramsStrings = reference.split("?");
+    //There are parameters, add them to the target
+    if (paramsStrings.length === 2) {
+      newURL = newURL + "?" + paramsStrings[1];
+    }
+  }
+  return newURL;
+}
+
 /*
  * Calculate the bounding box of a mesh, values will be
  * set for cachedBox, b1, v1 and v2 and they need to be
@@ -396,7 +409,41 @@ function PhongToToon(materialIn) {
 	return materialIn;
 }
 
+/**
+ * Create and return a new buffer geometry with the size of length,
+ * and initial coords.
+ */
+function createBufferGeometry(length, coords) {
+  if (coords && (length >= coords.length)) {
+    const geometry = new THREE.BufferGeometry()
+    const vertices = new Float32Array(length * 3);
+    let i = 0;
+    coords.forEach(coord => {
+      vertices[i++] = coord[0];
+      vertices[i++] = coord[1];
+      vertices[i++] = coord[2];
+    });
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    geometry.setDrawRange(0, coords.length);
+    return geometry;
+  }
+  return undefined;
+};
+
+function getCircularTexture() {
+  const image = new Image();
+  image.src = require("./assets/disc.png");
+  const texture = new THREE.Texture();
+  texture.image = image;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+
 exports.getBoundingBox = getBoundingBox;
+exports.createNewURL = createNewURL;
+exports.createBufferGeometry = createBufferGeometry;
+exports.getCircularTexture = getCircularTexture;
 exports.resolveURL = resolveURL;
 exports.loadExternalFile = loadExternalFile;
 exports.loadExternalFiles = loadExternalFiles;

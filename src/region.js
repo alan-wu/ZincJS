@@ -1,5 +1,10 @@
 const { Group, Matrix4 } = require('three');
 
+const Pointset = require('./primitives/pointset').Pointset;
+const Lines = require('./primitives/lines').Lines;
+const Lines2 = require('./primitives/lines2').Lines2;
+const Geometry = require('./primitives/geometry').Geometry;
+const THREE = require('three');
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -14,7 +19,7 @@ const getUniqueId = function () {
  * @author Alan Wu
  * @return {Region}
  */
-let Region = function (parentIn) {
+let Region = function (parentIn, sceneIn) {
   let parent = parentIn;
   let group = new Group();
   group.matrixAutoUpdate = false;
@@ -22,6 +27,7 @@ let Region = function (parentIn) {
   let children = [];
   let name = "";
   let zincObjects = [];
+  let scene = sceneIn;
   const tMatrix = new Matrix4();
   let duration = 3000;
   tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
@@ -165,7 +171,7 @@ let Region = function (parentIn) {
    * @return {Region}
    */
   this.createChild = (nameIn) => {
-    let childRegion = new Region(this);
+    let childRegion = new Region(this, scene);
     childRegion.setName(nameIn);
     children.push(childRegion);
     group.add(childRegion.getGroup());
@@ -295,10 +301,12 @@ let Region = function (parentIn) {
   this.addZincObject = zincObject => {
     if (zincObject) {
       zincObject.setRegion(this);
-      //group.add(zincObject.getMorph());
       group.add(zincObject.getGroup());
       zincObjects.push(zincObject);
       this.pickableUpdateRequired = true;
+      if (scene) {
+        scene.triggerObjectAddedCallback(zincObject);
+      }
     }
   }
 
@@ -750,6 +758,73 @@ let Region = function (parentIn) {
         });
       }
     }
+  }
+
+  /**
+   * Update geometries and glyphsets based on the calculated time.
+   */
+  this.createPoints = ( groupName, coords, labels, colour ) => {
+    let isNew = false;
+    const zincObjects = this.findObjectsWithGroupName(groupName, false);
+    const index = zincObjects.findIndex((zincObject) => zincObject.isPointset);
+    const pointset = index > -1 ? zincObjects[index] : new Pointset();
+    pointset.addPoints(coords, labels, colour);
+    if (index === -1) {
+      pointset.setName(groupName);
+      this.addZincObject(pointset);
+      isNew = true;
+    } else {
+      this.pickableUpdateRequired = true;
+    }
+    return { zincObject: pointset, isNew };
+  }
+
+  /**
+   * Update geometries and glyphsets based on the calculated time.
+   */
+  this.createLines = ( groupName, coords, colour ) => {
+    let isNew = false;
+    const zincObjects = this.findObjectsWithGroupName(groupName, false);
+    const index = zincObjects.findIndex((zincObject) => zincObject.isLines);
+    const lines = index > -1 ? zincObjects[index] : new Lines2();
+    lines.addLines(coords, colour);
+    if (index === -1) {
+      lines.setName(groupName);
+      this.addZincObject(lines);
+      isNew = true;
+    } else {
+      this.pickableUpdateRequired = true;
+    }
+    return { zincObject: lines, isNew };
+  }
+
+  /**
+   * Add a new geometry
+   */
+  this.createGeometryFromThreeJSGeometry = (
+    groupName, geometry, colour, opacity, visibility, renderOrder) => {
+    const zincGeometry = new Geometry();
+    const material = new THREE.MeshPhongMaterial({
+      color : colour,
+      morphTargets : false,
+      morphNormals : false,
+      transparent : true,
+      opacity : opacity,
+      side : THREE.DoubleSide
+    });
+    zincGeometry.createMesh(
+      geometry,
+      material,
+      {localTimeEnabled: false, localMorphColour: false,},
+    );
+    if (zincGeometry.getMorph()) {
+      zincGeometry.setVisibility(false);
+      zincGeometry.setName(groupName);
+      zincGeometry.setRenderOrder(renderOrder);
+      this.addZincObject(zincGeometry);
+      return zincGeometry;
+    }
+    return undefined;
   }
 }
 

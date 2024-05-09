@@ -1,6 +1,7 @@
 const THREE = require('three');
 const Points = require('../three/Points').Points;
 const toBufferGeometry = require('../utilities').toBufferGeometry;
+const getCircularTexture = require('../utilities').getCircularTexture;
 
 /**
  * Provides an object which stores points and provides method which controls its position.
@@ -14,16 +15,6 @@ const toBufferGeometry = require('../utilities').toBufferGeometry;
 const Pointset = function () {
   (require('./zincObject').ZincObject).call(this);
   this.isPointset = true;
-
-  /** Shape of the points is created using the function below */
-  const getCircularTexture = () => {
-    var image = new Image();
-    image.src = require("../assets/disc.png");
-    const texture = new THREE.Texture();
-    texture.image = image;
-    texture.needsUpdate = true;
-    return texture;
-  }
 
   /**
    * Create the pointsets using geometry and material.
@@ -42,7 +33,31 @@ const Pointset = function () {
       const texture = getCircularTexture();
       materialIn.map = texture;
       let point = new Points(geometry, materialIn);
-      this.setMesh(point, options.localTimeEnabled, options.localMorphColour);
+      this.setMesh(point, options.localTimeEnabled, 
+        options.localMorphColour);
+    }
+  }
+
+  /**
+   * Add points to existing mesh if it exists, otherwise
+   * create a new one and add to it.
+   * @param {Array} coords  -An array of three components coordinates.
+   * @param {Array} labels - An array of strings, these are only added
+   * if the number of coords equals to the number labels provided.
+   * @param {Number} colour - A hex value of the colour for the points
+   */
+  this.addPoints = (coords, labels, colour) => {
+    if (coords && coords.length > 0) {
+      const geometry = this.addVertices(coords);
+      let mesh = this.getMorph();
+      if (!mesh) {
+        let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 10,
+          color: colour, sizeAttenuation: false });
+        const options = { localTimeEnabled: false, localMorphColour: false};
+        geometry.colorsNeedUpdate = true;
+        this.createMesh(geometry, material, options);
+      }
+      if (this.region) this.region.pickableUpdateRequired = true;
     }
   }
 
