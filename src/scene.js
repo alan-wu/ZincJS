@@ -1,4 +1,5 @@
 const THREE = require('three');
+const MarkerCluster = require('./primitives/markerCluster').MarkerCluster;
 const SceneLoader = require('./sceneLoader').SceneLoader;
 const SceneExporter = require('./sceneExporter').SceneExporter;
 const Viewport = require('./controls').Viewport;
@@ -74,6 +75,8 @@ exports.Scene = function (containerIn, rendererIn) {
   let pickableObjectsList = [];
   this.forcePickableObjectsUpdate = false;
   this.uuid = getUniqueId();
+  let markerCluster = new MarkerCluster();
+  scene.add(markerCluster.group);
 
   const getDrawingWidth = () => {
     if (container)
@@ -84,7 +87,6 @@ exports.Scene = function (containerIn, rendererIn) {
     return 0;
   }
   
-
   const getDrawingHeight = () => {
     if (container)
       if (typeof container.clientHeight !== "undefined")
@@ -571,8 +573,11 @@ exports.Scene = function (containerIn, rendererIn) {
     // Let video dictates the progress if one is present
     let options = {};
     options.camera = zincCameraControls;
+    //Global markers flag, marker can be set at individual zinc object level
+    //overriding this flag.
     options.displayMarkers =  this.displayMarkers;
-    options.markerDepths = [];
+    options.markerCluster = markerCluster;
+    options.markersList = markerCluster.markers;
 	  if (videoHandler) {
 		  if (videoHandler.isReadyToPlay()) {
 			  if (playAnimation) {
@@ -601,6 +606,14 @@ exports.Scene = function (containerIn, rendererIn) {
 		  } else {
 			  zincCameraControls.update(0);
 		  }
+    }
+  }
+
+  this.enableMarkerCluster = (flag) => {
+    if (flag) {
+      markerCluster.enable();
+    } else {
+      markerCluster.disable();
     }
   }
 
@@ -932,6 +945,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * This does not remove obejcts that are added using the addObject APIs.
    */
   this.clearAll = () => {
+    markerCluster.clear();
     rootRegion.clear(true);
     this.clearZincObjectAddedCallbacks();
     sceneLoader.toBeDwonloaded = 0;

@@ -537,20 +537,26 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
           this.markerUpdateRequired = false;
         }
       }
-      if (options && options.camera && options.markerDepths) {
-        options.markerDepths.push(
-          this.marker.updateNDC(options.camera.cameraObject));
-      }
       if (!this.marker.isEnabled()) {
+        if (options.markersList &&
+          (!(this.marker.uuid in options.markersList))) {     
+          options.markersList[this.marker.uuid] = this.marker;
+        }
         this.marker.enable();
         this.group.add(this.marker.morph);
-        //this._lod.toggleMarker(this.marker.morph, true);
+      }
+      if (options && options.camera) {
+        this.marker.updateNDC(options.camera.cameraObject);
       }
     }
   } else {
     if (this.marker && this.marker.isEnabled()) {
       this.marker.disable();
       this.group.remove(this.marker.morph);
+      if (options.markersList &&
+        (this.marker.uuid in options.markersList)) {
+         delete options.markersList[this.marker.uuid];
+      }
       //this._lod.toggleMarker(this.marker.morph, false);
     }
     this.markerUpdateRequired = true;

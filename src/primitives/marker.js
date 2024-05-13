@@ -4,7 +4,15 @@ markerImage.src = require("../assets/mapMarker.svg");
 const texture = new THREE.Texture();
 texture.image = markerImage;
 texture.needsUpdate = true;
-const size = [0.015, 0.02, 1];
+const size = [0.02, 0.025, 1];
+const spriteMaterial = new THREE.SpriteMaterial({
+  map: texture,
+  alphaTest: 0.5,
+  transparent: true,
+  depthTest: false,
+  depthWrite: false,
+  sizeAttenuation: false
+}); 
 
 /**
  * A special graphics type with a tear drop shape.
@@ -18,24 +26,15 @@ const size = [0.015, 0.02, 1];
 const Marker = function(zincObject) {
   (require('./zincObject').ZincObject).call(this);
   this.texture = texture;
-  let spriteMaterial = undefined;
   let sprite = undefined;
   this.morph = new THREE.Group();
   this.group = this.morph;
   this.parent = zincObject;
   this.isMarker = true;
   let enabled = false;
-  let vector = new THREE.Vector3();
+  this.ndc = new THREE.Vector3();
 
-	let initialise = () => {
-    spriteMaterial = new THREE.SpriteMaterial({
-      map: texture,
-      alphaTest: 0.5,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-      sizeAttenuation: false
-    });              
+	let initialise = () => {             
     sprite = new THREE.Sprite(spriteMaterial);
     sprite.center.set(0.5, 0);
     this.morph.add(sprite);
@@ -47,22 +46,19 @@ const Marker = function(zincObject) {
 
   this.updateVisual = (min, max) => {
     let scale = 1;
-    let opacity = 1;
     let porportion = 0;
     if (min !== max) {
-      porportion = (1 - (vector.z - min) / (max - min));
-      scale = 0.5 +  porportion * 0.5;
-      opacity = 0.6 +  porportion * 0.4;
+      porportion = (1 - (this.ndc.z - min) / (max - min));
+      scale = 0.6 +  porportion * 0.4;
     }
-    sprite.material.opacity = opacity;
     this.setSpriteSize(scale);
   }
 
   this.updateNDC = camera => {
-    vector.copy(this.morph.position);
-    vector.project(camera);
-    vector.z = Math.min(Math.max(vector.z, 0), 1);
-    return vector.z;
+    this.ndc.copy(this.morph.position);
+    this.ndc.project(camera);
+    this.ndc.z = Math.min(Math.max(this.ndc.z, 0), 1);
+    return this.ndc;
   }
 
   /**
@@ -76,7 +72,7 @@ const Marker = function(zincObject) {
     this.morph.position.set(x, y, z);
   }
 
-   /**
+  /**
    * Set the size of the marker.
    * 
    * @param {Number} size - size to be set.
@@ -92,9 +88,6 @@ const Marker = function(zincObject) {
   this.dispose = () => {
     if (this.morph) {
       this.morph.clear();
-    }
-    if (spriteMaterial) {
-      spriteMaterial.dispose();
     }
     if (sprite) {
       sprite.clear();
@@ -122,7 +115,6 @@ const Marker = function(zincObject) {
     this.morph.visible = false;
   }
 
-	//this should be handle by scene... check the sync at 
 	initialise();
 
 }
