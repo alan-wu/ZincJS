@@ -1,11 +1,34 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 18.0.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 365 560" enable-background="new 0 0 365 560" xml:space="preserve">
-<g>
-	<path fill="#FFA500" d="M182.9,551.7c0,0.1,0.2,0.3,0.2,0.3S358.3,283,358.3,194.6c0-130.1-88.8-186.7-175.4-186.9
-		C96.3,7.9,7.5,64.5,7.5,194.6c0,88.4,175.3,357.4,175.3,357.4S182.9,551.7,182.9,551.7z M122.2,187.2c0-33.6,27.2-60.8,60.8-60.8
-		c33.6,0,60.8,27.2,60.8,60.8S216.5,248,182.9,248C149.4,248,122.2,220.8,122.2,187.2z"/>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1" width="365" height="560" viewBox="0 0 365 560" xml:space="preserve">
+<desc>Created with Fabric.js 5.2.4</desc>
+<defs>
+</defs>
+<rect x="0" y="0" width="100%" height="100%" fill="transparent"></rect>
+<g transform="matrix(0 0 0 0 0 0)" id="808ed283-2524-440f-88ae-3bdb47bb5749"  >
+</g>
+<g transform="matrix(1 0 0 1 182.5 280)" id="db30413d-5bff-4b98-ab59-464497ee199e"  >
+<rect style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1; visibility: hidden;" vector-effect="non-scaling-stroke"  x="-182.5" y="-280" rx="0" ry="0" width="365" height="560" />
+</g>
+<g transform="matrix(0 0 0 0 0 97.5)"  >
+<g style=""   >
+</g>
+</g>
+<g transform="matrix(0 0 0 0 0 97.5)"  >
+<g style=""   >
+</g>
+</g>
+<g transform="matrix(0.99 0 0 0.99 182.5 280)"  >
+<g style="" vector-effect="non-scaling-stroke"   >
+		<g transform="matrix(1 0 0 1 0 0)"  >
+<rect style="stroke: none; stroke-width: 1; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1; visibility: hidden;" vector-effect="non-scaling-stroke"  x="-540" y="-540" rx="0" ry="0" width="1080" height="1080" />
+</g>
+		<g transform="matrix(1 0 0 1 0 0)"  >
+<path style="stroke: rgb(0,0,0); stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,165,0); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  transform=" translate(-182.9, -279.85)" d="M 182.9 551.7 C 182.9 551.8000000000001 183.1 552 183.1 552 C 183.1 552 358.3 283 358.3 194.6 C 358.3 64.5 269.5 7.900000000000006 182.9 7.699999999999989 C 96.3 7.9 7.5 64.5 7.5 194.6 C 7.5 283 182.8 552 182.8 552 C 182.8 552 182.9 551.7 182.9 551.7 z M 122.2 187.2 C 122.2 153.6 149.4 126.39999999999999 183 126.39999999999999 C 216.6 126.39999999999999 243.8 153.6 243.8 187.2 C 243.8 220.79999999999998 216.5 248 182.9 248 C 149.4 248 122.2 220.8 122.2 187.2 z" stroke-linecap="round" />
+</g>
+		<g transform="matrix(3.82 0 0 3.82 0 -100.77)"  >
+<circle style="stroke: rgb(0,0,0); stroke-width: 0; stroke-dasharray: none; stroke-linecap: butt; stroke-dashoffset: 0; stroke-linejoin: miter; stroke-miterlimit: 4; fill: rgb(255,255,255); fill-rule: nonzero; opacity: 1;" vector-effect="non-scaling-stroke"  cx="0" cy="0" r="35" />
+</g>
+</g>
 </g>
 </svg>

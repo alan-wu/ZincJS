@@ -4,7 +4,7 @@ markerImage.src = require("../assets/mapMarker.svg");
 const texture = new THREE.Texture();
 texture.image = markerImage;
 texture.needsUpdate = true;
-const size = [0.02, 0.025, 1];
+const size = [0.017, 0.025, 1];
 const spriteMaterial = new THREE.SpriteMaterial({
   map: texture,
   alphaTest: 0.5,

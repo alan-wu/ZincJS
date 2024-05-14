@@ -1,10 +1,11 @@
 const THREE = require('three');
+const SpriteText = require('three-spritetext').default;
 const markerImage = new Image(128, 128);
 markerImage.src = require("../assets/mapMarkerOrange.svg");
 const texture = new THREE.Texture();
 texture.image = markerImage;
 texture.needsUpdate = true;
-const size = [0.03, 0.04, 1];
+const size = [0.017, 0.025, 1];
 const spriteMaterial = new THREE.SpriteMaterial({
   map: texture,
   alphaTest: 0.5,
@@ -13,6 +14,19 @@ const spriteMaterial = new THREE.SpriteMaterial({
   depthWrite: false,
   sizeAttenuation: false
 });
+
+const createNewLabel = (text, height, colour) => {
+  const sprite = new SpriteText(text, height, colour);
+  sprite.material.sizeAttenuation = false;
+  sprite.material.alphaTest = 0.5;
+  sprite.material.transparent = true;
+  sprite.material.depthWrite = false;
+  sprite.material.depthTest = false;
+  sprite.center.set(0.5, -1.5);
+  sprite.renderOrder = 10000;
+  return sprite;
+}
+
 
 /**
  * A special graphics type with a tear drop shape.
@@ -35,6 +49,7 @@ const MarkerCluster = function(zincObject) {
   let _v21 = new THREE.Vector2();
   let _v22 = new THREE.Vector2();
   let _radius = 0.1;
+  let start = Date.now();
 
   /**
    * Set the size of the marker.
@@ -73,7 +88,29 @@ const MarkerCluster = function(zincObject) {
     sprite.userData = this;
     localGroup.add(sprite);
     this.group.add(localGroup);
-    return localGroup;
+    return {
+      "group": localGroup,
+      "marker": sprite,
+      "label": undefined,
+      "length": 0,
+    };
+  }
+
+  const activateSpriteForCluster = (sprite, cluster, length) => {
+    sprite.group.visible = true;
+    sprite.group.position.set(
+      cluster.coords[0], cluster.coords[1], cluster.coords[2]
+    );
+    if (sprite.label === undefined || (length !== sprite.length)) {
+      if (sprite.label) {
+        sprite.group.remove(sprite.label);
+        sprite.label.material.map.dispose();
+        sprite.label.material.dispose();
+      }
+      sprite.label = createNewLabel(length, 0.008, "black", "Asap", 50, 300);
+      sprite.length = length;
+      sprite.group.add(sprite.label);
+    }
   }
 
   const drawClusters = (clusters) => {
@@ -89,15 +126,12 @@ const MarkerCluster = function(zincObject) {
         if (!sprites[currentIndex]) {
           sprites.push(createNewSprite());
         }
-        sprites[currentIndex].visible = true;
-        sprites[currentIndex].position.set(
-          cluster.coords[0], cluster.coords[1], cluster.coords[2]
-        );
+        activateSpriteForCluster(sprites[currentIndex], cluster, length);
         currentIndex++;
       }
     });
     for (currentIndex; currentIndex < sprites.length; currentIndex++) {
-      sprites[currentIndex].visible = false;
+      sprites[currentIndex].group.visible = false;
     }
   }
 
@@ -109,9 +143,14 @@ const MarkerCluster = function(zincObject) {
     for (let prop in markersObj) {
       if (first) {
         _v21.set(markersObj[prop].ndc.x, markersObj[prop].ndc.y);
-        this._b1.setFromPoints([markersObj[prop].morph.position]);
+        //this._b1.setFromPoints([markersObj[prop].morph.position]);
         first = false;
         newCluster.members.push(markersObj[prop]);
+        newCluster.coords = [
+          markersObj[prop].morph.position.x,
+          markersObj[prop].morph.position.y,
+          markersObj[prop].morph.position.z,
+        ]
         clusters.push(newCluster);
         delete markersObj[prop];
       } else {
@@ -119,13 +158,13 @@ const MarkerCluster = function(zincObject) {
         dist = _v21.distanceTo(_v22);
         if (_radius > dist) {
           newCluster.members.push(markersObj[prop]);
-          this._b1.expandByPoint(markersObj[prop].morph.position);
+          //this._b1.expandByPoint(markersObj[prop].morph.position);
           delete markersObj[prop];
         }
       }
     }
-    this._b1.getCenter(this._v2);
-    newCluster.coords = [this._v2.x, this._v2.y, this._v2.z];
+    //this._b1.getCenter(this._v2);
+    //newCluster.coords = [this._v2.x, this._v2.y, this._v2.z];
     //The following will not be called if there is object left and
     //thus finishing clustering
     if (first !== true) {
@@ -134,9 +173,13 @@ const MarkerCluster = function(zincObject) {
   }
 
   this.calculate = () => {
-    let clusters = [];
-    getCluster({...this.markers}, clusters);
-    drawClusters(clusters)
+    const current = Date.now();
+    if ((current - start) > 500) {
+      let clusters = [];
+      getCluster({...this.markers}, clusters);
+      drawClusters(clusters);
+      start = Date.now();
+    }
   }
 
   this.isEnabled = () => {
