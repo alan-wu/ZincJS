@@ -218,6 +218,8 @@ const LOD = function (parent) {
       }
       const geometry = toBufferGeometry(geometryIn, options);
       const mesh = new THREE.Mesh(geometry, material);
+      mesh.userData = this._parent;
+      mesh.renderOrder = this._renderOrder;
       geometryIn.dispose();
       this.levelLoaded(mesh, distance);
     };
