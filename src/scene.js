@@ -884,8 +884,7 @@ exports.Scene = function (containerIn, rendererIn) {
    * Update pickable objects list
    */
   this.updatePickableThreeJSObjects = () => {
-
-    pickableObjectsList.splice(0, pickableObjectsList.length);
+    pickableObjectsList.length = 0;
     rootRegion.getPickableThreeJSObjects(pickableObjectsList, true);
     this.forcePickableObjectsUpdate = false;
   }

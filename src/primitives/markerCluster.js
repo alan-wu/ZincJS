@@ -5,7 +5,7 @@ markerImage.src = require("../assets/mapMarkerOrange.svg");
 const texture = new THREE.Texture();
 texture.image = markerImage;
 texture.needsUpdate = true;
-const size = [0.017, 0.025, 1];
+const size = [0.02, 0.03, 1];
 const spriteMaterial = new THREE.SpriteMaterial({
   map: texture,
   alphaTest: 0.5,
@@ -15,18 +15,17 @@ const spriteMaterial = new THREE.SpriteMaterial({
   sizeAttenuation: false
 });
 
-const createNewLabel = (text, height, colour) => {
-  const sprite = new SpriteText(text, height, colour);
+const createNewLabel = (text, height, colour, font, pixel, weight) => {
+  const sprite = new SpriteText(text, height, colour, font, pixel, weight);
   sprite.material.sizeAttenuation = false;
   sprite.material.alphaTest = 0.5;
   sprite.material.transparent = true;
   sprite.material.depthWrite = false;
   sprite.material.depthTest = false;
-  sprite.center.set(0.5, -1.5);
+  sprite.center.set(0.5, -1.2);
   sprite.renderOrder = 10000;
   return sprite;
 }
-
 
 /**
  * A special graphics type with a tear drop shape.
@@ -36,7 +35,7 @@ const createNewLabel = (text, height, colour) => {
  * @author Alan Wu
  * @return {Marker}
  */
-const MarkerCluster = function(zincObject) {
+const MarkerCluster = function() {
   (require('./zincObject').ZincObject).call(this);
   this.texture = texture;
   let sprite = undefined;
@@ -107,7 +106,7 @@ const MarkerCluster = function(zincObject) {
         sprite.label.material.map.dispose();
         sprite.label.material.dispose();
       }
-      sprite.label = createNewLabel(length, 0.008, "black", "Asap", 50, 300);
+      sprite.label = createNewLabel(length, 0.012, "black", "Asap", 50, 500);
       sprite.length = length;
       sprite.group.add(sprite.label);
     }

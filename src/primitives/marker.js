@@ -100,11 +100,25 @@ const Marker = function(zincObject) {
   }
 
   /**
+   * Set the visibility of this Geometry.
+   * 
+   * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
+   */
+  this.setVisibility = function(visible) {
+    if (visible !== this.visible) {
+      this.visible = visible;
+      this.group.visible = visible;
+      if (this.parent.region) this.parent.region.pickableUpdateRequired = true;
+    }
+  }
+
+  /**
    * Enable and visualise the marker.
    */  
   this.enable = () => {
     enabled = true;
     this.morph.visible = true;
+    this.visible = true;
   }
 
   /**
@@ -113,6 +127,7 @@ const Marker = function(zincObject) {
   this.disable = () => {
     enabled = false;
     this.morph.visible = false;
+    this.visible = false;
   }
 
 	initialise();

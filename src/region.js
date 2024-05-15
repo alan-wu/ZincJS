@@ -759,8 +759,8 @@ let Region = function (parentIn, sceneIn) {
         allObjects.forEach(zincObject => {
           zincObject.processMarkerVisual(min, max);
         });
-        options.markerCluster.calculate();
       }
+      options.markerCluster.calculate();
     }
   }
 

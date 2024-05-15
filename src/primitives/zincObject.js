@@ -510,9 +510,10 @@ ZincObject.prototype.dispose = function() {
  * 
  * @return {Boolean} 
  */
-ZincObject.prototype.markerIsEnabled = function(options) {
-  if (this.markerMode === "on" || (options && options.displayMarkers &&
-    (this.markerMode === "inherited"))) {
+ZincObject.prototype.markerIsRequired = function(options) {
+  if (this.visible && 
+    (this.markerMode === "on" || (options && options.displayMarkers &&
+    (this.markerMode === "inherited")))) {
       return true;
   }
   return false;
@@ -523,8 +524,9 @@ ZincObject.prototype.markerIsEnabled = function(options) {
  */
 ZincObject.prototype.updateMarker = function(playAnimation, options) {
   if ((playAnimation == false) &&
-    (this.markerIsEnabled(options)))
+    (this.markerIsRequired(options)))
   {
+
     if (this.groupName) {
       if (!this.marker) {
         this.marker = new (require("./marker").Marker)(this);
@@ -557,7 +559,6 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
         (this.marker.uuid in options.markersList)) {
          delete options.markersList[this.marker.uuid];
       }
-      //this._lod.toggleMarker(this.marker.morph, false);
     }
     this.markerUpdateRequired = true;
   }
