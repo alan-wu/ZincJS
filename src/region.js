@@ -1,5 +1,4 @@
 const { Group, Matrix4 } = require('three');
-
 const Pointset = require('./primitives/pointset').Pointset;
 const Lines = require('./primitives/lines').Lines;
 const Lines2 = require('./primitives/lines2').Lines2;
@@ -750,7 +749,8 @@ let Region = function (parentIn, sceneIn) {
     });
     //process markers visibility and size, as long as there are more than
     //one entry in markersList is greater than 1, markers have been enabled.
-    if (options && (playAnimation === false)) {
+    if (options && (playAnimation === false) &&
+      options.markerCluster.markerUpdateRequired) {
       const markerDepths = Object.values(options.markersList)
         .map((marker) => marker.ndc.z);
       if (markerDepths.length > 1) {

@@ -526,7 +526,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
   if ((playAnimation == false) &&
     (this.markerIsRequired(options)))
   {
-
+    let ndcToBeUpdated = options.ndcToBeUpdated;
     if (this.groupName) {
       if (!this.marker) {
         this.marker = new (require("./marker").Marker)(this);
@@ -541,14 +541,17 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
       }
       if (!this.marker.isEnabled()) {
         if (options.markersList &&
-          (!(this.marker.uuid in options.markersList))) {     
+          (!(this.marker.uuid in options.markersList))) {    
+            ndcToBeUpdated = true;
           options.markersList[this.marker.uuid] = this.marker;
         }
         this.marker.enable();
         this.group.add(this.marker.morph);
       }
-      if (options && options.camera) {
+      if (options && options.camera && (ndcToBeUpdated ||
+        options.markerCluster.markerUpdateRequired)) {
         this.marker.updateNDC(options.camera.cameraObject);
+        options.markerCluster.markerUpdateRequired = true;
       }
     }
   } else {
@@ -557,7 +560,8 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
       this.group.remove(this.marker.morph);
       if (options.markersList &&
         (this.marker.uuid in options.markersList)) {
-         delete options.markersList[this.marker.uuid];
+        options.markerCluster.markerUpdateRequired = true;
+        delete options.markersList[this.marker.uuid];
       }
     }
     this.markerUpdateRequired = true;

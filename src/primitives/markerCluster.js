@@ -178,6 +178,7 @@ const MarkerCluster = function() {
       getCluster({...this.markers}, clusters);
       drawClusters(clusters);
       start = Date.now();
+      this.markerUpdateRequired = false;
     }
   }
 

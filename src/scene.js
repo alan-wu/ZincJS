@@ -578,6 +578,12 @@ exports.Scene = function (containerIn, rendererIn) {
     options.displayMarkers =  this.displayMarkers;
     options.markerCluster = markerCluster;
     options.markersList = markerCluster.markers;
+    options.ndcToBeUpdated = false;
+    //Always set marker cluster update required when playAnimation is true
+    //to make sure it is updated when it stops
+    if (playAnimation) {
+      options.markerCluster.markerUpdateRequired = true;
+    }
 	  if (videoHandler) {
 		  if (videoHandler.isReadyToPlay()) {
 			  if (playAnimation) {
@@ -589,9 +595,9 @@ exports.Scene = function (containerIn, rendererIn) {
           videoHandler.getVideoDuration() * duration;
 			  if (0 == sceneLoader.toBeDownloaded) {
 				  zincCameraControls.setTime(currentTime);
-				  zincCameraControls.update(0);
+				  options.ndcToBeUpdated = zincCameraControls.update(0);
           rootRegion.setMorphTime(currentTime, true);
-          rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, undefined, true);
+          rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, options, true);
 			  } else {
 				  zincCameraControls.update(0);
 			  }
@@ -601,7 +607,7 @@ exports.Scene = function (containerIn, rendererIn) {
 		  }
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded) {
-        zincCameraControls.update(delta);
+        options.ndcToBeUpdated = zincCameraControls.update(delta);
         rootRegion.renderGeometries(playRate, delta, playAnimation, zincCameraControls, options, true);
 		  } else {
 			  zincCameraControls.update(0);

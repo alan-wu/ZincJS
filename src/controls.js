@@ -935,6 +935,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.update = timeChanged => {
 		const delta = timeChanged * playRate;
 		let controlEnabled = enabled;
+		let updated = true;
 		if (currentMode === MODE.PATH) {
 			updatePath(delta);
 		} else if (currentMode === MODE.SMOOTH_CAMERA_TRANSITION && smoothCameraTransitionObject) {
@@ -956,8 +957,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		} else if (currentMode === MODE.SYNC_CONTROL && ndcControl) {
       handleSyncControl();
       controlEnabled = false;
-    }
+    } else {
+			updated = false;
+		}
 		if (controlEnabled) {
+			if (this._state !== STATE.NONE) {
+				updated = true;
+			}
 			if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
 				tumble();
 			} else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
@@ -974,12 +980,14 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 				this._state = STATE.NONE;
 		}
 		if (deviceOrientationControl) {
+			updated = true;
 			deviceOrientationControl.update();
 			//this.directionalLight.target.position.set(this.cameraObject.target.x, 
 			//	this.cameraObject.target.y, this.cameraObject.target.z);
 		} else {
 			this.cameraObject.lookAt( this.cameraObject.target );
 		}
+		return updated;
 	};
 	
   /**
