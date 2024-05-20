@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: utilities.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: utilities.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const THREE = require('three');
+const THREEGeometry = require('./three/Geometry').Geometry;
+
+function resolveURL(url) {
+	let actualURL = url;
+	const prefix = (require("./zinc").modelPrefix);
+	
+	if (prefix) {
+		if (prefix[prefix.length -1] != '/')
+			prefix = prefix + '/';
+		const r = new RegExp('^(?:[a-z]+:)?//', 'i');
+		if (!r.test(url)) {
+			actualURL =  prefix + url;
+		}
+	}
+	
+	return actualURL;
+}
+
+function createNewURL(target, reference) {
+  let newURL = (new URL(target, reference)).href;
+  //Make sure the target url does not contain parameters
+  if (target &amp;&amp; target.split("?").length &lt; 2) {
+    const paramsStrings = reference.split("?");
+    //There are parameters, add them to the target
+    if (paramsStrings.length === 2) {
+      newURL = newURL + "?" + paramsStrings[1];
+    }
+  }
+  return newURL;
+}
+
+/*
+ * Calculate the bounding box of a mesh, values will be
+ * set for cachedBox, b1, v1 and v2 and they need to be
+ * defined. 
+ */
+function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
+  let influences = mesh.morphTargetInfluences;
+  let attributes = undefined;
+  if (mesh.geometry)
+    attributes = mesh.geometry.morphAttributes;
+  let found = false;
+  if (influences &amp;&amp; attributes &amp;&amp; attributes.position) {
+    v1.set(0.0, 0.0, 0.0);
+    v2.set(0.0, 0.0, 0.0);
+    for (let i = 0; i &lt; influences.length; i++) {
+      if (influences[i] > 0) {
+        found = true;
+        b1.setFromArray(attributes.position[i].array);
+        v1.add(b1.min.multiplyScalar(influences[i]));
+        v2.add(b1.max.multiplyScalar(influences[i]));
+      }
+    }
+    if (found) {
+      cachedBox.set(v1, v2);
+    }
+  }
+  if (!found) {
+    cachedBox.setFromBufferAttribute(
+      mesh.geometry.attributes.position);
+  }
+  mesh.updateWorldMatrix(true, true);
+  cachedBox.applyMatrix4(mesh.matrixWorld);
+}
+
+
+//Convenient function
+function loadExternalFile(url, data, callback, errorCallback) {
+    // Set up an asynchronous request
+    const request = new XMLHttpRequest();
+    request.open('GET', resolveURL(url), true);
+
+    // Hook the event that gets called as the request progresses
+    request.onreadystatechange = () => {
+        // If the request is "DONE" (completed or failed)
+        if (request.readyState == 4) {
+            // If we got HTTP status 200 (OK)
+            if (request.status == 200) {
+                callback(request.responseText, data)
+            } else { // Failed
+                errorCallback(url);
+            }
+        }
+    };
+
+    request.send(null);    
+}
+
+function loadExternalFiles(urls, callback, errorCallback) {
+    const numUrls = urls.length;
+    let numComplete = 0;
+    const result = [];
+
+    // Callback for a single file
+    function partialCallback(text, urlIndex) {
+        result[urlIndex] = text;
+        numComplete++;
+
+        // When all files have downloaded
+        if (numComplete == numUrls) {
+            callback(result);
+        }
+    }
+
+    for (let i = 0; i &lt; numUrls; i++) {
+    	loadExternalFile(urls[i], i, partialCallback, errorCallback);
+    }
+}
+
+
+//Get the colours at index
+exports.getColorsRGB = (colors, index) => {
+    const index_in_colors = Math.floor(index/3);
+    const remainder = index%3;
+    let hex_value = 0;
+    if (remainder == 0)
+    {
+        hex_value = colors[index_in_colors].r;
+    }
+    else if (remainder == 1)
+    {
+        hex_value = colors[index_in_colors].g;
+    }
+    else if (remainder == 2)
+    {
+        hex_value = colors[index_in_colors].b;
+    }
+    const mycolor = new THREE.Color(hex_value);
+    return [mycolor.r, mycolor.g, mycolor.b];
+}
+
+exports.updateMorphColorAttribute = function(targetGeometry, morph) {
+  if (morph &amp;&amp; targetGeometry &amp;&amp; targetGeometry.morphAttributes &amp;&amp;
+    targetGeometry.morphAttributes[ "color" ]) {
+    const morphColors = targetGeometry.morphAttributes[ "color" ];
+    const influences = morph.morphTargetInfluences;
+    const length = influences.length;
+    targetGeometry.deleteAttribute( 'morphColor0' );
+    targetGeometry.deleteAttribute( 'morphColor1' );
+    let bound = 0;
+    let morphArray = [];
+    for (let i = 0; (1 > bound) || (i &lt; length); i++) {
+      if (influences[i] > 0) {
+        bound++;
+        morphArray.push([i, influences[i]]);
+      }
+    }
+    if (morphArray.length == 2) {
+      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
+      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
+    } else if (morphArray.length == 1) {
+      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
+      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
+    }
+  }
+}
+
+
+exports.toBufferGeometry = (geometryIn, options) => {
+  let geometry = undefined;
+  if (geometryIn instanceof THREEGeometry) {
+    if (options.localTimeEnabled &amp;&amp; !geometryIn.morphNormalsReady &amp;&amp; 
+      (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
+      geometryIn.computeMorphNormals();
+    geometry = geometryIn.toIndexedBufferGeometry();
+    if (options.localMorphColour) {
+      copyMorphColorsToIndexedBufferGeometry(geometryIn, geometry);
+    }
+  } else if (geometryIn instanceof THREE.BufferGeometry) {
+    geometry = geometryIn.clone();
+  }
+  geometry.colorsNeedUpdate = true;
+  geometry.computeBoundingBox();
+  geometry.computeBoundingSphere();
+  if (geometryIn._video)
+    geometry._video = geometryIn._video;
+  return geometry;
+}
+
+exports.copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
+  if (geometry &amp;&amp; geometry.morphColors &amp;&amp; geometry.morphColors.length > 0 ) {
+    let array = [];
+    let morphColors = geometry.morphColors;
+    const getColorsRGB = require("./utilities").getColorsRGB;
+    for ( var i = 0, l = morphColors.length; i &lt; l; i ++ ) {
+      let morphColor = morphColors[ i ];
+      let colorArray = [];
+      for ( var j = 0; j &lt; geometry.faces.length; j ++ ) {
+        let face = geometry.faces[j];
+        let color = getColorsRGB(morphColor.colors, face.a);
+        colorArray.push(color[0], color[1], color[2]);
+        color = getColorsRGB(morphColor.colors, face.b);
+        colorArray.push(color[0], color[1], color[2]);
+        color = getColorsRGB(morphColor.colors, face.c);
+        colorArray.push(color[0], color[1], color[2]);
+      }
+      var attribute = new THREE.Float32BufferAttribute( geometry.faces.length * 3 * 3, 3 );
+      attribute.name = morphColor.name;
+      array.push( attribute.copyArray( colorArray ) );
+    }
+    bufferGeometry.morphAttributes[ "color" ] = array; 
+  }
+}
+
+
+const copyMorphColorsToIndexedBufferGeometry = (geometry, bufferGeometry) => {
+  if (geometry &amp;&amp; geometry.morphColors &amp;&amp; geometry.morphColors.length > 0 ) {
+    let array = [];
+    let morphColors = geometry.morphColors;
+    const getColorsRGB = require("./utilities").getColorsRGB;
+    for ( let i = 0, l = morphColors.length; i &lt; l; i ++ ) {
+      const morphColor = morphColors[ i ];
+      const colorArray = [];
+      for ( let j = 0; j &lt; morphColor.colors.length * 3; j ++ ) {
+        let color = getColorsRGB(morphColor.colors, j);
+        colorArray.push(color[0], color[1], color[2]);
+      }
+      const attribute = new THREE.Float32BufferAttribute( colorArray, 3 );
+      attribute.name = morphColor.name;
+      array.push( attribute );
+    }
+    bufferGeometry.morphAttributes[ "color" ] = array; 
+  }
+}
+
+exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
+
+  tolerance = Math.max( tolerance, Number.EPSILON );
+
+  // Generate an index buffer if the geometry doesn't have one, or optimize it
+  // if it's already available.
+  var hashToIndex = {};
+  var indices = geometry.getIndex();
+  var positions = geometry.getAttribute( 'position' );
+  var vertexCount = indices ? indices.count : positions.count;
+
+  // next value for triangle indices
+  var nextIndex = 0;
+
+  // attributes and new attribute arrays
+  var attributeNames = Object.keys( geometry.attributes );
+  var attrArrays = {};
+  var morphAttrsArrays = {};
+  var newIndices = [];
+  var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
+
+  // initialize the arrays
+  for ( var i = 0, l = attributeNames.length; i &lt; l; i ++ ) {
+      var name = attributeNames[ i ];
+
+      attrArrays[ name ] = [];
+
+      var morphAttr = geometry.morphAttributes[ name ];
+      if ( morphAttr ) {
+
+          morphAttrsArrays[ name ] = new Array( morphAttr.length ).fill().map( () => [] );
+
+      }
+
+  }
+
+  // convert the error tolerance to an amount of decimal places to truncate to
+  var decimalShift = Math.log10( 1 / tolerance );
+  var shiftMultiplier = Math.pow( 10, decimalShift );
+  for ( var i = 0; i &lt; vertexCount; i ++ ) {
+
+      var index = indices ? indices.getX( i ) : i;
+
+      // Generate a hash for the vertex attributes at the current index 'i'
+      var hash = '';
+      for ( var j = 0, l = attributeNames.length; j &lt; l; j ++ ) {
+
+          var name = attributeNames[ j ];
+          var attribute = geometry.getAttribute( name );
+          var itemSize = attribute.itemSize;
+
+          for ( var k = 0; k &lt; itemSize; k ++ ) {
+
+              // double tilde truncates the decimal value
+              hash += `${ ~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier ) },`;
+
+          }
+
+      }
+
+      // Add another reference to the vertex if it's already
+      // used by another index
+      if ( hash in hashToIndex ) {
+
+          newIndices.push( hashToIndex[ hash ] );
+
+      } else {
+
+          // copy data to the new index in the attribute arrays
+          for ( var j = 0, l = attributeNames.length; j &lt; l; j ++ ) {
+
+              var name = attributeNames[ j ];
+              var attribute = geometry.getAttribute( name );
+              var morphAttr = geometry.morphAttributes[ name ];
+              var itemSize = attribute.itemSize;
+              var newarray = attrArrays[ name ];
+              var newMorphArrays = morphAttrsArrays[ name ];
+
+              for ( var k = 0; k &lt; itemSize; k ++ ) {
+
+                  var getterFunc = getters[ k ];
+                  newarray.push( attribute[ getterFunc ]( index ) );
+
+                  if ( morphAttr ) {
+
+                      for ( var m = 0, ml = morphAttr.length; m &lt; ml; m ++ ) {
+
+                          newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
+
+                      }
+
+                  }
+
+              }
+
+          }
+
+          hashToIndex[ hash ] = nextIndex;
+          newIndices.push( nextIndex );
+          nextIndex ++;
+
+      }
+
+  }
+
+  // Generate typed arrays from new attribute arrays and update
+  // the attributeBuffers
+  const result = geometry.clone();
+  for ( var i = 0, l = attributeNames.length; i &lt; l; i ++ ) {
+
+      var name = attributeNames[ i ];
+      var oldAttribute = geometry.getAttribute( name );
+      var attribute;
+
+      var buffer = new oldAttribute.array.constructor( attrArrays[ name ] );
+      if ( oldAttribute.isInterleavedBufferAttribute ) {
+
+          attribute = new THREE.BufferAttribute( buffer, oldAttribute.itemSize, oldAttribute.itemSize );
+
+      } else {
+
+          attribute = geometry.getAttribute( name ).clone();
+          attribute.setArray( buffer );
+
+      }
+
+      result.setAttribute( name, attribute );
+
+      // Update the attribute arrays
+      if ( name in morphAttrsArrays ) {
+
+          for ( var j = 0; j &lt; morphAttrsArrays[ name ].length; j ++ ) {
+
+              var morphAttribute = geometry.morphAttributes[ name ][ j ].clone();
+              morphAttribute.setArray( new morphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] ) );
+              result.morphAttributes[ name ][ j ] = morphAttribute;
+
+          }
+
+      }
+
+  }
+
+  // Generate an index buffer typed array
+  var cons = Uint8Array;
+  if ( newIndices.length >= Math.pow( 2, 8 ) ) cons = Uint16Array;
+  if ( newIndices.length >= Math.pow( 2, 16 ) ) cons = Uint32Array;
+
+  var newIndexBuffer = new cons( newIndices );
+  var newIndices = null;
+  if ( indices === null ) {
+
+      newIndices = new THREE.BufferAttribute( newIndexBuffer, 1 );
+
+  } else {
+
+      newIndices = geometry.getIndex().clone();
+      newIndices.setArray( newIndexBuffer );
+
+  }
+
+  result.setIndex( newIndices );
+
+  return result;
+}
+
+function PhongToToon(materialIn) {
+	if (materialIn.isMeshPhongMaterial) {
+		let material = new THREE.MeshToonMaterial({
+			color : materialIn.color.clone(),
+			morphTargets : materialIn.morphTargets,
+			morphNormals : materialIn.morphNormals,
+			vertexColors : materialIn.vertexColors,
+			transparent : materialIn.transparent,
+			opacity : materialIn.opacity,
+			side : materialIn.side
+		});
+		if (materialIn.map)
+			material.map = materialIn.map;
+		return material;
+	}
+
+	return materialIn;
+}
+
+/**
+ * Create and return a new buffer geometry with the size of length,
+ * and initial coords.
+ */
+function createBufferGeometry(length, coords) {
+  if (coords &amp;&amp; (length >= coords.length)) {
+    const geometry = new THREE.BufferGeometry()
+    const vertices = new Float32Array(length * 3);
+    let i = 0;
+    coords.forEach(coord => {
+      vertices[i++] = coord[0];
+      vertices[i++] = coord[1];
+      vertices[i++] = coord[2];
+    });
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    geometry.setDrawRange(0, coords.length);
+    return geometry;
+  }
+  return undefined;
+};
+
+function getCircularTexture() {
+  const image = new Image();
+  image.src = require("./assets/disc.png");
+  const texture = new THREE.Texture();
+  texture.image = image;
+  texture.needsUpdate = true;
+  return texture;
+}
+
+
+exports.getBoundingBox = getBoundingBox;
+exports.createNewURL = createNewURL;
+exports.createBufferGeometry = createBufferGeometry;
+exports.getCircularTexture = getCircularTexture;
+exports.resolveURL = resolveURL;
+exports.loadExternalFile = loadExternalFile;
+exports.loadExternalFiles = loadExternalFiles;
+exports.PhongToToon = PhongToToon;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue May 21 2024 09:38:36 GMT+1200 (New Zealand Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

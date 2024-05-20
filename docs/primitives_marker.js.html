@@ -32,7 +32,15 @@ markerImage.src = require("../assets/mapMarker.svg");
 const texture = new THREE.Texture();
 texture.image = markerImage;
 texture.needsUpdate = true;
-const size = [0.015, 0.02, 1];
+const size = [0.017, 0.025, 1];
+const spriteMaterial = new THREE.SpriteMaterial({
+  map: texture,
+  alphaTest: 0.5,
+  transparent: true,
+  depthTest: false,
+  depthWrite: false,
+  sizeAttenuation: false
+}); 
 
 /**
  * A special graphics type with a tear drop shape.
@@ -46,25 +54,15 @@ const size = [0.015, 0.02, 1];
 const Marker = function(zincObject) {
   (require('./zincObject').ZincObject).call(this);
   this.texture = texture;
-  let spriteMaterial = undefined;
   let sprite = undefined;
   this.morph = new THREE.Group();
   this.group = this.morph;
   this.parent = zincObject;
   this.isMarker = true;
   let enabled = false;
-  let vector = new THREE.Vector3();
+  this.ndc = new THREE.Vector3();
 
-
-	let initialise = () => {
-    spriteMaterial = new THREE.SpriteMaterial({
-      map: texture,
-      alphaTest: 0.5,
-      transparent: true,
-      depthTest: false,
-      depthWrite: false,
-      sizeAttenuation: false
-    });              
+	let initialise = () => {             
     sprite = new THREE.Sprite(spriteMaterial);
     sprite.center.set(0.5, 0);
     this.morph.add(sprite);
@@ -76,22 +74,19 @@ const Marker = function(zincObject) {
 
   this.updateVisual = (min, max) => {
     let scale = 1;
-    let opacity = 1;
     let porportion = 0;
     if (min !== max) {
-      porportion = (1 - (vector.z - min) / (max - min));
-      scale = 0.5 +  porportion * 0.5;
-      opacity = 0.6 +  porportion * 0.4;
+      porportion = (1 - (this.ndc.z - min) / (max - min));
+      scale = 0.6 +  porportion * 0.4;
     }
-    sprite.material.opacity = opacity;
     this.setSpriteSize(scale);
   }
 
   this.updateNDC = camera => {
-    vector.copy(this.morph.position);
-    vector.project(camera);
-    vector.z = Math.min(Math.max(vector.z, 0), 1);
-    return vector.z;
+    this.ndc.copy(this.morph.position);
+    this.ndc.project(camera);
+    this.ndc.z = Math.min(Math.max(this.ndc.z, 0), 1);
+    return this.ndc;
   }
 
   /**
@@ -105,7 +100,7 @@ const Marker = function(zincObject) {
     this.morph.position.set(x, y, z);
   }
 
-   /**
+  /**
    * Set the size of the marker.
    * 
    * @param {Number} size - size to be set.
@@ -122,9 +117,6 @@ const Marker = function(zincObject) {
     if (this.morph) {
       this.morph.clear();
     }
-    if (spriteMaterial) {
-      spriteMaterial.dispose();
-    }
     if (sprite) {
       sprite.clear();
       sprite = undefined;
@@ -136,11 +128,25 @@ const Marker = function(zincObject) {
   }
 
   /**
+   * Set the visibility of this Geometry.
+   * 
+   * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
+   */
+  this.setVisibility = function(visible) {
+    if (visible !== this.visible) {
+      this.visible = visible;
+      this.group.visible = visible;
+      if (this.parent.region) this.parent.region.pickableUpdateRequired = true;
+    }
+  }
+
+  /**
    * Enable and visualise the marker.
    */  
   this.enable = () => {
     enabled = true;
     this.morph.visible = true;
+    this.visible = true;
   }
 
   /**
@@ -149,9 +155,9 @@ const Marker = function(zincObject) {
   this.disable = () => {
     enabled = false;
     this.morph.visible = false;
+    this.visible = false;
   }
 
-	//this should be handle by scene... check the sync at 
 	initialise();
 
 }
@@ -168,13 +174,13 @@ exports.Marker = Marker;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Mar 21 2024 14:14:53 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue May 21 2024 09:38:36 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>
