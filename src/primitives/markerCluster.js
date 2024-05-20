@@ -35,10 +35,11 @@ const createNewLabel = (text, height, colour, font, pixel, weight) => {
  * @author Alan Wu
  * @return {Marker}
  */
-const MarkerCluster = function() {
+const MarkerCluster = function(sceneIn) {
   (require('./zincObject').ZincObject).call(this);
   this.texture = texture;
   let sprite = undefined;
+  let scene = sceneIn;
   this.morph = new THREE.Group();
   this.group = this.morph;
   this.isMarkerCluster = true;
@@ -75,11 +76,12 @@ const MarkerCluster = function() {
     }
   }
 
-  const createNewSprite = () => {
+  const createNewSprite = (index) => {
     //Group is needed to set the position after scaling
     //the sprite
     const localGroup = new THREE.Group();
     const sprite = new THREE.Sprite(spriteMaterial);
+    sprite.clusterIndex = index;
     sprite.center.set(0.5, 0);
     sprite.position.set(0, 0, 0);
     sprite.renderOrder = 10000;
@@ -92,6 +94,8 @@ const MarkerCluster = function() {
       "marker": sprite,
       "label": undefined,
       "length": 0,
+      "min": [0, 0, 0],
+      "max": [1, 1, 1],
     };
   }
 
@@ -110,6 +114,8 @@ const MarkerCluster = function() {
       sprite.length = length;
       sprite.group.add(sprite.label);
     }
+    sprite.min = cluster.min;
+    sprite.max = cluster.max;
   }
 
   const drawClusters = (clusters) => {
@@ -123,7 +129,7 @@ const MarkerCluster = function() {
           marker.setVisibility(false);
         });
         if (!sprites[currentIndex]) {
-          sprites.push(createNewSprite());
+          sprites.push(createNewSprite(currentIndex));
         }
         activateSpriteForCluster(sprites[currentIndex], cluster, length);
         currentIndex++;
@@ -137,12 +143,12 @@ const MarkerCluster = function() {
   //Get clusters based on the ndc coordinate for each cluster.
   const getCluster = (markersObj, clusters) => {
     let first = true;
-    let newCluster = {members: [], coords: [0,0,0]};
-    let dist = 0;
+    let newCluster = {members: [], coords: [0,0,0], min: [0, 0, 0], max: [1, 1, 1]};
+    let dist = 0
     for (let prop in markersObj) {
       if (first) {
         _v21.set(markersObj[prop].ndc.x, markersObj[prop].ndc.y);
-        //this._b1.setFromPoints([markersObj[prop].morph.position]);
+        this._b1.setFromPoints([markersObj[prop].morph.position]);
         first = false;
         newCluster.members.push(markersObj[prop]);
         newCluster.coords = [
@@ -157,11 +163,13 @@ const MarkerCluster = function() {
         dist = _v21.distanceTo(_v22);
         if (_radius > dist) {
           newCluster.members.push(markersObj[prop]);
-          //this._b1.expandByPoint(markersObj[prop].morph.position);
+          this._b1.expandByPoint(markersObj[prop].morph.position);
           delete markersObj[prop];
         }
       }
     }
+    newCluster.min = [this._b1.min.x, this._b1.min.y, this._b1.min.z];
+    newCluster.max = [this._b1.max.x, this._b1.max.y, this._b1.max.z];
     //this._b1.getCenter(this._v2);
     //newCluster.coords = [this._v2.x, this._v2.y, this._v2.z];
     //The following will not be called if there is object left and
@@ -202,6 +210,15 @@ const MarkerCluster = function() {
     this.morph.visible = false;
   }
 
+  this.zoomToCluster = (index) => {
+    if (index !== undefined && index > -1) {
+      this._v1.set(...sprites[index].min);
+      this._v2.set(...sprites[index].max);
+      this._b1.set(this._v1, this._v2);
+      scene.translateBoundingBoxToCameraView(this._b1, 3, 300);
+      this.markerUpdateRequired = true;
+    }
+  }
 }
 
 MarkerCluster.prototype = Object.create((require('./zincObject').ZincObject).prototype);

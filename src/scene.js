@@ -75,7 +75,7 @@ exports.Scene = function (containerIn, rendererIn) {
   let pickableObjectsList = [];
   this.forcePickableObjectsUpdate = false;
   this.uuid = getUniqueId();
-  let markerCluster = new MarkerCluster();
+  let markerCluster = new MarkerCluster(this);
   scene.add(markerCluster.group);
 
   const getDrawingWidth = () => {
@@ -191,15 +191,9 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.viewAllWithBoundingBox = boundingBox => {
     if (boundingBox) {
-      // enlarge radius to keep image within edge of window
-      const radius = boundingBox.min.distanceTo(boundingBox.max) / 2.0;
-      const centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
-      const centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
-      const centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
-      const clip_factor = 4.0;
-      const viewport = zincCameraControls.getViewportFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor);
-
+      const viewport = zincCameraControls.getViewportFromBoundingBox(boundingBox, 1.0);
       zincCameraControls.setCurrentCameraSettings(viewport);
+      markerCluster.markerUpdateRequired = true;
     }
   }
 
@@ -209,6 +203,7 @@ exports.Scene = function (containerIn, rendererIn) {
   this.viewAll = () => {
     const boundingBox = this.getBoundingBox();
     this.viewAllWithBoundingBox(boundingBox);
+    markerCluster.markerUpdateRequired = true;
   }
 
   /**
@@ -789,7 +784,7 @@ exports.Scene = function (containerIn, rendererIn) {
   }
 
   /**
-   * Transition the camera view to view the entirety of the 
+   * Rotate the camera view to view the entirety of the 
    * bounding box with a smooth transition within the providied
    * transitionTime.
    * 
@@ -805,8 +800,6 @@ exports.Scene = function (containerIn, rendererIn) {
         viewport.targetPosition[1], viewport.targetPosition[2]);
       const eyePosition = new THREE.Vector3(viewport.eyePosition[0],
         viewport.eyePosition[1], viewport.eyePosition[2]);
-      const upVector = new THREE.Vector3(viewport.upVector[0],
-        viewport.upVector[1], viewport.upVector[2]);
       const newVec1 = new THREE.Vector3();
       const newVec2 = new THREE.Vector3();
       newVec1.subVectors(target, eyePosition).normalize();
@@ -821,6 +814,29 @@ exports.Scene = function (containerIn, rendererIn) {
       } else {
         this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
       }
+      markerCluster.markerUpdateRequired = true;
+    }
+  }
+
+
+  /**
+   * Translate the camera view to the center of the 
+   * bounding box with a smooth transition within the providied
+   * transitionTime.
+   * 
+   * @param {THREE.Box3} boundingBox - the bounding box to target
+   * @param {Number} transitionTime - Duration to perform the transition.
+   */
+  this.translateBoundingBoxToCameraView = (boundingBox, scaleRadius, transitionTime) => {
+    if (boundingBox) {
+      const oldViewport = this.getZincCameraControls().getCurrentViewport();
+      const viewport = this.getZincCameraControls().getViewportFromBoundingBox(boundingBox, scaleRadius);
+      if (transitionTime > 0) {
+        this.getZincCameraControls().cameraTransition(oldViewport,
+          viewport, transitionTime);
+        this.getZincCameraControls().enableCameraTransition();
+      }
+      markerCluster.markerUpdateRequired = true;
     }
   }
 
@@ -864,6 +880,7 @@ exports.Scene = function (containerIn, rendererIn) {
       viewport.targetPosition[1] = center.y;
       viewport.targetPosition[2] = center.z;
       this.getZincCameraControls().setCurrentCameraSettings(viewport);
+      markerCluster.markerUpdateRequired = true;
     }
   }
 
@@ -882,8 +899,10 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.removeZincObject = zincObject => {
     rootRegion.removeZincObject(zincObject);
-    if (zincCameraControls)
+    if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
+    }
+    markerCluster.markerUpdateRequired = true;
   }
 
   /**
@@ -891,6 +910,7 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.updatePickableThreeJSObjects = () => {
     pickableObjectsList.length = 0;
+    pickableObjectsList.push(markerCluster.group);
     rootRegion.getPickableThreeJSObjects(pickableObjectsList, true);
     this.forcePickableObjectsUpdate = false;
   }
@@ -954,8 +974,10 @@ exports.Scene = function (containerIn, rendererIn) {
     rootRegion.clear(true);
     this.clearZincObjectAddedCallbacks();
     sceneLoader.toBeDwonloaded = 0;
-    if (zincCameraControls)
+    if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
+    }
+    markerCluster.markerUpdateRequired = true;
   }
 
   /**
