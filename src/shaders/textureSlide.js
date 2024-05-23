@@ -29,6 +29,7 @@ out vec3 vUw;
 uniform float depth;
 uniform vec3 slide;
 uniform int direction;
+uniform bool flipY;
 
 void main() {
 
@@ -43,6 +44,9 @@ void main() {
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4( slidePos, 1.0 );
 
+  if (flipY)
+  slidePos.y = 1.0 - slidePos.y;
+
   vUw.xyz = vec3(slidePos.x, slidePos.y, slidePos.z * depth);
 
 }
@@ -54,6 +58,7 @@ const getUniforms = function() {
     depth: { value: 1 },
     slide: { value: new THREE.Vector3( 0, 0, 1 ) },
     direction: {value: 1},
+    flipY: { value: true},
   };
 }
 

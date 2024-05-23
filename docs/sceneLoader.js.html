@@ -28,22 +28,11 @@
         <article>
             <pre class="prettyprint source linenums"><code>const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
+const createNewURL = require('./utilities').createNewURL;
+
 const STLLoader = require('./loaders/STLLoader').STLLoader;
 const OBJLoader = require('./loaders/OBJLoader').OBJLoader;
 const PrimitivesLoader = require('./loaders/primitivesLoader').PrimitivesLoader;
-
-const createNewURL = (target, reference) => {
-  let newURL = (new URL(target, reference)).href;
-  //Make sure the target url does not contain parameters
-  if (target &amp;&amp; target.split("?").length &lt; 2) {
-    const paramsStrings = reference.split("?");
-    //There are parameters, add them to the target
-    if (paramsStrings.length === 2) {
-      newURL = newURL + "?" + paramsStrings[1];
-    }
-  }
-  return newURL;
-}
 
 /**
  * A helper class to help with reading / importing primitives and
@@ -491,12 +480,19 @@ exports.SceneLoader = function (sceneIn) {
     }
   }
 
-  const loadTexture = (region, textureData, groupName, finishCallback, options) => {
+  const loadTexture = (region, referenceURL, textureData, groupName, finishCallback, options) => {
     let isInline  = (options &amp;&amp; options.isInline) ? options.isInline : undefined;
     let anatomicalId = (options &amp;&amp; options.anatomicalId) ? options.anatomicalId : undefined;
     let renderOrder = (options &amp;&amp; options.renderOrder) ? options.renderOrder : undefined;
     let newTexture = undefined;
     if (textureData) {
+      if (referenceURL &amp;&amp; textureData.images &amp;&amp; textureData.images.source) {
+        const source = textureData.images.source;
+        for (let i = 0; i &lt; source.length; i++) {
+          const newURL = createNewURL(source[i], referenceURL);
+          textureData.images.source[i] = newURL;
+        }
+      }
       if (textureData.type === "slides") {
         newTexture = new (require('./primitives/textureSlides').TextureSlides)();
       }
@@ -522,7 +518,7 @@ exports.SceneLoader = function (sceneIn) {
     return () => {
       if (xmlhttp.readyState == 4 &amp;&amp; xmlhttp.status == 200) {
         const textureData = JSON.parse(xmlhttp.responseText);
-        loadTexture(region, textureData, groupName, finishCallback, options);
+        loadTexture(region, xmlhttp.responseURL, textureData, groupName, finishCallback, options);
       }
     };
   };
@@ -537,7 +533,7 @@ exports.SceneLoader = function (sceneIn) {
   this.loadTextureURL = (region, url, groupName, finishCallback, options) => {
     const isInline = (options &amp;&amp; options.isInline) ? options.isInline : false;
     if (isInline) {
-      loadTexture(region, url, groupName, finishCallback, options);
+      loadTexture(region, undefined, url, groupName, finishCallback, options);
     } else {
       const xmlhttp = new XMLHttpRequest();
       xmlhttp.onreadystatechange = onLoadTextureReady(region, xmlhttp,
@@ -788,9 +784,9 @@ exports.SceneLoader = function (sceneIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * once the glyphset is succssfully load in.
    */
-  this.loadGLTF = (region, url, finishCallback, options) => {
+  this.loadGLTF = (region, url, finishCallback, allCompletedCallback, options) => {
     const GLTFToZincJSLoader = new (require('./loaders/GLTFToZincJSLoader').GLTFToZincJSLoader)();
-    GLTFToZincJSLoader.load(scene, region, url, finishCallback, options);
+    GLTFToZincJSLoader.load(scene, region, url, finishCallback, allCompletedCallback, options);
   }
 
   let loadRegions = (currentRegion, referenceURL, regions, callback) => {
@@ -933,13 +929,13 @@ exports.SceneLoader = function (sceneIn) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 15:07:56 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue May 21 2024 09:38:36 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

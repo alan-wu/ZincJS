@@ -133,6 +133,30 @@ const Geometry = function () {
 	this.setWireframe = wireframe => {
 		this.morph.material.wireframe = wireframe;
 	}
+
+  /**
+   * Edit Vertice in index.
+   */
+  this.editVertices = function(coords, i) {
+    if (coords && coords.length) {
+      let mesh = this.getMorph();
+      const attribute = mesh.geometry.getAttribute("position");
+      if (!mesh || 0 > i) {
+        return;
+      } else {
+        let index = i * 3;
+        coords.forEach(coord => {
+          attribute.array[index++] = coord[0];
+          attribute.array[index++] = coord[1];
+          attribute.array[index++] = coord[2];
+        });
+        attribute.needsUpdate = true;
+        mesh.geometry.computeBoundingBox();
+        mesh.geometry.computeBoundingSphere();
+        this.boundingBoxUpdateRequired = true;
+      }
+    }
+  }
 	
 
 }

@@ -54,6 +54,7 @@ const TextureArray = function () {
         depth: d
       };
       this.isLoading = false;
+      this.impl.needsUpdate = true;
     }
   }
 

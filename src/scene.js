@@ -1,8 +1,10 @@
 const THREE = require('three');
+const MarkerCluster = require('./primitives/markerCluster').MarkerCluster;
 const SceneLoader = require('./sceneLoader').SceneLoader;
 const SceneExporter = require('./sceneExporter').SceneExporter;
 const Viewport = require('./controls').Viewport;
-
+const createBufferGeometry = require('./utilities').createBufferGeometry;
+const getCircularTexture = require('./utilities').getCircularTexture;
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -35,9 +37,13 @@ exports.Scene = function (containerIn, rendererIn) {
   let videoHandler = undefined;
   let sceneLoader = new SceneLoader(this);
   let minimap = undefined;
+  let zincObjectAddedCallbacks = {};
+  let zincObjectAddedCallbacks_id = 0;
   const scene = new THREE.Scene();
-  const rootRegion = new (require('./region').Region)();
+  const rootRegion = new (require('./region').Region)(undefined, this);
   scene.add(rootRegion.getGroup());
+  const tempGroup = new THREE.Group();
+  scene.add(tempGroup);
   /**
    * A {@link THREE.DirectionalLight} object for controlling lighting of this scene.
    */
@@ -69,6 +75,9 @@ exports.Scene = function (containerIn, rendererIn) {
   let pickableObjectsList = [];
   this.forcePickableObjectsUpdate = false;
   this.uuid = getUniqueId();
+  let markerCluster = new MarkerCluster(this);
+  markerCluster.disable();
+  scene.add(markerCluster.group);
 
   const getDrawingWidth = () => {
     if (container)
@@ -79,7 +88,6 @@ exports.Scene = function (containerIn, rendererIn) {
     return 0;
   }
   
-
   const getDrawingHeight = () => {
     if (container)
       if (typeof container.clientHeight !== "undefined")
@@ -184,15 +192,9 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.viewAllWithBoundingBox = boundingBox => {
     if (boundingBox) {
-      // enlarge radius to keep image within edge of window
-      const radius = boundingBox.min.distanceTo(boundingBox.max) / 2.0;
-      const centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
-      const centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
-      const centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
-      const clip_factor = 4.0;
-      const viewport = zincCameraControls.getViewportFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor);
-
+      const viewport = zincCameraControls.getViewportFromBoundingBox(boundingBox, 1.0);
       zincCameraControls.setCurrentCameraSettings(viewport);
+      markerCluster.markerUpdateRequired = true;
     }
   }
 
@@ -202,6 +204,7 @@ exports.Scene = function (containerIn, rendererIn) {
   this.viewAll = () => {
     const boundingBox = this.getBoundingBox();
     this.viewAllWithBoundingBox(boundingBox);
+    markerCluster.markerUpdateRequired = true;
   }
 
   /**
@@ -495,8 +498,8 @@ exports.Scene = function (containerIn, rendererIn) {
   /**
    * Load GLTF into this scene object.
    */
-  this.loadGLTF = (url, finishCallback, options) => {
-    sceneLoader.loadGLTF(rootRegion, url, finishCallback, options);
+  this.loadGLTF = (url, finishCallback, allCompletedCallback, options) => {
+    sceneLoader.loadGLTF(rootRegion, url, finishCallback, allCompletedCallback, options);
   }
 
   //Update the directional light for this scene.
@@ -566,8 +569,17 @@ exports.Scene = function (containerIn, rendererIn) {
     // Let video dictates the progress if one is present
     let options = {};
     options.camera = zincCameraControls;
+    //Global markers flag, marker can be set at individual zinc object level
+    //overriding this flag.
     options.displayMarkers =  this.displayMarkers;
-    options.markerDepths = [];
+    options.markerCluster = markerCluster;
+    options.markersList = markerCluster.markers;
+    options.ndcToBeUpdated = false;
+    //Always set marker cluster update required when playAnimation is true
+    //to make sure it is updated when it stops
+    if (playAnimation) {
+      options.markerCluster.markerUpdateRequired = true;
+    }
 	  if (videoHandler) {
 		  if (videoHandler.isReadyToPlay()) {
 			  if (playAnimation) {
@@ -579,9 +591,9 @@ exports.Scene = function (containerIn, rendererIn) {
           videoHandler.getVideoDuration() * duration;
 			  if (0 == sceneLoader.toBeDownloaded) {
 				  zincCameraControls.setTime(currentTime);
-				  zincCameraControls.update(0);
+				  options.ndcToBeUpdated = zincCameraControls.update(0);
           rootRegion.setMorphTime(currentTime, true);
-          rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, undefined, true);
+          rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, options, true);
 			  } else {
 				  zincCameraControls.update(0);
 			  }
@@ -591,7 +603,7 @@ exports.Scene = function (containerIn, rendererIn) {
 		  }
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded) {
-        zincCameraControls.update(delta);
+        options.ndcToBeUpdated = zincCameraControls.update(delta);
         rootRegion.renderGeometries(playRate, delta, playAnimation, zincCameraControls, options, true);
 		  } else {
 			  zincCameraControls.update(0);
@@ -765,7 +777,7 @@ exports.Scene = function (containerIn, rendererIn) {
   }
 
   /**
-   * Transition the camera view to view the entirety of the 
+   * Rotate the camera view to view the entirety of the 
    * bounding box with a smooth transition within the providied
    * transitionTime.
    * 
@@ -781,8 +793,6 @@ exports.Scene = function (containerIn, rendererIn) {
         viewport.targetPosition[1], viewport.targetPosition[2]);
       const eyePosition = new THREE.Vector3(viewport.eyePosition[0],
         viewport.eyePosition[1], viewport.eyePosition[2]);
-      const upVector = new THREE.Vector3(viewport.upVector[0],
-        viewport.upVector[1], viewport.upVector[2]);
       const newVec1 = new THREE.Vector3();
       const newVec2 = new THREE.Vector3();
       newVec1.subVectors(target, eyePosition).normalize();
@@ -797,6 +807,29 @@ exports.Scene = function (containerIn, rendererIn) {
       } else {
         this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
       }
+      markerCluster.markerUpdateRequired = true;
+    }
+  }
+
+
+  /**
+   * Translate the camera view to the center of the 
+   * bounding box with a smooth transition within the providied
+   * transitionTime.
+   * 
+   * @param {THREE.Box3} boundingBox - the bounding box to target
+   * @param {Number} transitionTime - Duration to perform the transition.
+   */
+  this.translateBoundingBoxToCameraView = (boundingBox, scaleRadius, transitionTime) => {
+    if (boundingBox) {
+      const oldViewport = this.getZincCameraControls().getCurrentViewport();
+      const viewport = this.getZincCameraControls().getViewportFromBoundingBox(boundingBox, scaleRadius);
+      if (transitionTime > 0) {
+        this.getZincCameraControls().cameraTransition(oldViewport,
+          viewport, transitionTime);
+        this.getZincCameraControls().enableCameraTransition();
+      }
+      markerCluster.markerUpdateRequired = true;
     }
   }
 
@@ -840,6 +873,7 @@ exports.Scene = function (containerIn, rendererIn) {
       viewport.targetPosition[1] = center.y;
       viewport.targetPosition[2] = center.z;
       this.getZincCameraControls().setCurrentCameraSettings(viewport);
+      markerCluster.markerUpdateRequired = true;
     }
   }
 
@@ -858,15 +892,20 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.removeZincObject = zincObject => {
     rootRegion.removeZincObject(zincObject);
-    if (zincCameraControls)
+    if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
+    }
+    markerCluster.markerUpdateRequired = true;
   }
 
   /**
    * Update pickable objects list
    */
   this.updatePickableThreeJSObjects = () => {
-    pickableObjectsList.splice(0, pickableObjectsList.length);
+    pickableObjectsList.length = 0;
+    if (markerCluster.isEnabled) {
+      pickableObjectsList.push(markerCluster.group);
+    }
     rootRegion.getPickableThreeJSObjects(pickableObjectsList, true);
     this.forcePickableObjectsUpdate = false;
   }
@@ -926,10 +965,14 @@ exports.Scene = function (containerIn, rendererIn) {
    * This does not remove obejcts that are added using the addObject APIs.
    */
   this.clearAll = () => {
+    markerCluster.clear();
     rootRegion.clear(true);
+    this.clearZincObjectAddedCallbacks();
     sceneLoader.toBeDwonloaded = 0;
-    if (zincCameraControls)
+    if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
+    }
+    markerCluster.markerUpdateRequired = true;
   }
 
   /**
@@ -1047,4 +1090,153 @@ exports.Scene = function (containerIn, rendererIn) {
   this.getRootRegion = () => {
     return rootRegion;
   }
+
+  /**
+   * Create points in region specified in the path 
+   *
+   */
+  this.createLines = ( regionPath, groupName, coords, colour ) => {
+    let region = rootRegion.findChildFromPath(regionPath);
+    if (region === undefined) {
+      region = rootRegion.createChildFromPath(regionPath);
+    }
+    return region.createLines(groupName, coords, colour);
+  }
+
+  /**
+   * Create points in region specified in the path 
+   *
+   */
+  this.createPoints = ( regionPath, groupName, coords, labels, colour ) => {
+    let region = rootRegion.findChildFromPath(regionPath);
+    if (region === undefined) {
+      region = rootRegion.createChildFromPath(regionPath);
+    }
+    return region.createPoints(groupName, coords, labels, colour);
+  }
+
+	/**
+	 * Add a callback function which will be called everytime zinc object is added.
+	 * @param {Function} callbackFunction - callbackFunction to be added.
+	 * 
+	 * @return {Number}
+	 */
+	this.addZincObjectAddedCallbacks = callbackFunction => {
+		zincObjectAddedCallbacks_id = zincObjectAddedCallbacks_id + 1;
+		zincObjectAddedCallbacks[zincObjectAddedCallbacks_id] = callbackFunction;
+		return zincObjectAddedCallbacks_id;
+	}
+	
+	/**
+	 * Remove a callback function that is previously added to the scene.
+	 * @param {Number} id - identifier of the previously added callback function.
+	 */
+	this.removeZincObjectAddedCallbacks = id => {
+		if (id in zincObjectAddedCallbacks_id) {
+   			delete zincObjectAddedCallbacks[id];
+		}
+	}
+
+  /**
+	 * Clear all zinc object callback function
+	 */
+	this.clearZincObjectAddedCallbacks = () => {
+		zincObjectAddedCallbacks = {};
+    zincObjectAddedCallbacks_id = 0;
+	}
+
+  /**
+	 * Used to trigger zinc object added callback
+	 */
+  this.triggerObjectAddedCallback = (zincObject) => {
+    for (let key in zincObjectAddedCallbacks) {
+      if (zincObjectAddedCallbacks.hasOwnProperty(key)) {
+        zincObjectAddedCallbacks[key](zincObject);
+      }
+    }
+  }
+
+  /*
+	 * Add temporary points to the scene which can be removed
+   * with clearTemporaryPrimitives method.
+	 */
+  this.addTemporaryPoints = (coords, colour) => {
+    const geometry = createBufferGeometry(coords.length, coords);
+    let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 15,
+      color: colour, sizeAttenuation: false });
+    const texture = getCircularTexture();
+    material.map = texture;
+    let point = new (require('./three/Points').Points)(geometry, material);
+    tempGroup.add(point);
+    return point;
+  }
+
+  /*
+	 * Add temporary lines to the scene which can be removed
+   * with clearTemporaryPrimitives method.
+	 */
+  this.addTemporaryLines = (coords, colour) => {
+    const geometry = createBufferGeometry(coords.length, coords);
+    const material = new THREE.LineBasicMaterial({color:colour});
+    const line = new (require("./three/line/LineSegments").LineSegments)(geometry, material);
+    tempGroup.add(line);
+    return line;
+  }
+
+  /*
+	 * Remove object from temporary objects list
+	 */
+  this.removeTemporaryPrimitive = (object) => {
+    tempGroup.remove(object);
+    object.geometry.dispose();
+    object.material.dispose();
+  }
+
+  /*
+	 * Remove all temporary primitives.
+	 */
+  this.clearTemporaryPrimitives = () => {
+    const children = tempGroup.children;
+    children.forEach(child => {
+      child.geometry.dispose();
+      child.material.dispose();
+    });
+    tempGroup.clear();
+  }
+
+  /*
+	 * Create primitive based on the bounding box of scene and
+   * add to specify region and group name.
+	 */
+  this.addBoundingBoxPrimitive = (regionPath, group, colour, opacity,
+    visibility, boundingBox = undefined) => {
+    let region = rootRegion.findChildFromPath(regionPath);
+    if (region === undefined) {
+      region = rootRegion.createChildFromPath(regionPath);
+    }
+    const box = boundingBox ? boundingBox : this.getBoundingBox();
+    const dim = new THREE.Vector3().subVectors(box.max, box.min);
+    const boxGeo = new THREE.BoxGeometry(dim.x, dim.y, dim.z);
+    dim.addVectors(box.min, box.max).multiplyScalar( 0.5 );
+    const primitive = region.createGeometryFromThreeJSGeometry(
+      group, boxGeo, colour, opacity, visibility, 10000);
+    primitive.setPosition(dim.x, dim.y, dim.z);
+    return primitive;
+  }
+
+  /*
+	 * Enable marker cluster to work with markers
+	 */
+  this.enableMarkerCluster = (flag) => {
+    if (flag) {
+      markerCluster.markerUpdateRequired = true;
+      markerCluster.enable();
+    } else {
+      markerCluster.markerUpdateRequired = false;
+      markerCluster.disable();
+    }
+    this.forcePickableObjectsUpdate = true;
+  }
 }
+
+

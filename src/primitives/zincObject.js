@@ -1,4 +1,5 @@
 const THREE = require('three');
+const createBufferGeometry = require('../utilities').createBufferGeometry;
 
 let uniqueiId = 0;
 
@@ -55,6 +56,9 @@ const ZincObject = function() {
   this.center = new THREE.Vector3();
   this.radius = 0;
   this.visible = true;
+  //Draw range is only used by primitives added
+  //programatically with addVertices function
+  this.drawRange = -1;
 }
 
 /**
@@ -404,7 +408,7 @@ ZincObject.prototype.setMaterial = function(material) {
 ZincObject.prototype.getClosestVertexIndex = function() {
   let closestIndex = -1;
   const morph = this.getMorph();
-  if (morph) {
+  if (morph && morph.geoemtry) {
     let position = morph.geometry.attributes.position;
     this._b1.setFromBufferAttribute(position);
     this._b1.getCenter(this._v1);
@@ -436,9 +440,10 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
   if (this.closestVertexIndex == -1) {
     this.closestVertexIndex = this.getClosestVertexIndex();
   }
-  if (this.closestVertexIndex >= 0) {
-    let influences = this.morph.morphTargetInfluences;
-    let attributes = this.morph.geometry.morphAttributes;
+  const morph = this.getMorph();
+  if (morph && morph.geometry && this.closestVertexIndex >= 0) {
+    let influences = morph.morphTargetInfluences;
+    let attributes = morph.geometry.morphAttributes;
     if (influences && attributes && attributes.position) {
       let found = false;
       for (let i = 0; i < influences.length; i++) {
@@ -450,12 +455,12 @@ ZincObject.prototype.getClosestVertex = function(applyMatrixWorld) {
         }
       }
       if (found) {
-        return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
+        return applyMatrixWorld ? position.applyMatrix4(morph.matrixWorld) : position;
       }
     } else {
-      position.fromArray(this.morph.geometry.attributes.position.array,
+      position.fromArray(morph.geometry.attributes.position.array,
         this.closestVertexIndex * 3);
-      return applyMatrixWorld ? position.applyMatrix4(this.morph.matrixWorld) : position;
+      return applyMatrixWorld ? position.applyMatrix4(morph.matrixWorld) : position;
     }
   }
   this.getBoundingBox();
@@ -505,10 +510,10 @@ ZincObject.prototype.dispose = function() {
  * 
  * @return {Boolean} 
  */
-ZincObject.prototype.markerIsEnabled = function(options) {
-  if (this.markerMode === "on" || (options && options.displayMarkers &&
-    (this.markerMode === "inherited"))) {
-      
+ZincObject.prototype.markerIsRequired = function(options) {
+  if (this.visible && 
+    (this.markerMode === "on" || (options && options.displayMarkers &&
+    (this.markerMode === "inherited")))) {
       return true;
   }
   return false;
@@ -519,8 +524,9 @@ ZincObject.prototype.markerIsEnabled = function(options) {
  */
 ZincObject.prototype.updateMarker = function(playAnimation, options) {
   if ((playAnimation == false) &&
-    (this.markerIsEnabled(options)))
+    (this.markerIsRequired(options)))
   {
+    let ndcToBeUpdated = options.ndcToBeUpdated;
     if (this.groupName) {
       if (!this.marker) {
         this.marker = new (require("./marker").Marker)(this);
@@ -533,21 +539,30 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
           this.markerUpdateRequired = false;
         }
       }
-      if (options && options.camera && options.markerDepths) {
-        options.markerDepths.push(
-          this.marker.updateNDC(options.camera.cameraObject));
-      }
       if (!this.marker.isEnabled()) {
+        if (options.markersList &&
+          (!(this.marker.uuid in options.markersList))) {    
+            ndcToBeUpdated = true;
+          options.markersList[this.marker.uuid] = this.marker;
+        }
         this.marker.enable();
         this.group.add(this.marker.morph);
-        //this._lod.toggleMarker(this.marker.morph, true);
+      }
+      if (options && options.camera && (ndcToBeUpdated ||
+        options.markerCluster.markerUpdateRequired)) {
+        this.marker.updateNDC(options.camera.cameraObject);
+        options.markerCluster.markerUpdateRequired = true;
       }
     }
   } else {
     if (this.marker && this.marker.isEnabled()) {
       this.marker.disable();
       this.group.remove(this.marker.morph);
-      //this._lod.toggleMarker(this.marker.morph, false);
+      if (options.markersList &&
+        (this.marker.uuid in options.markersList)) {
+        options.markerCluster.markerUpdateRequired = true;
+        delete options.markersList[this.marker.uuid];
+      }
     }
     this.markerUpdateRequired = true;
   }
@@ -652,5 +667,61 @@ ZincObject.prototype.render = function(delta, playAnimation,
 ZincObject.prototype.addLOD = function(loader, level, url, preload) {
   this._lod.addLevelFromURL(loader, level, url, preload);
 }
+
+/**
+ * Add lod from an url into the lod object.
+ */
+ZincObject.prototype.addVertices = function(coords) {
+  let mesh = this.getMorph();
+  let geometry = undefined;
+  if (!mesh) {
+    geometry = createBufferGeometry((coords.length + 500), coords);
+    this.drawRange = coords.length;
+  } else {
+    if (this.drawRange > -1) {
+      const positionAttribute = mesh.geometry.getAttribute( 'position' );
+      coords.forEach(coord => {
+        positionAttribute.setXYZ(this.drawRange, coord[0], coord[1], coord[2])
+        ++this.drawRange;
+      });
+      positionAttribute.needsUpdate = true;
+      mesh.geometry.setDrawRange(0, this.drawRange);
+      mesh.geometry.computeBoundingBox();
+      mesh.geometry.computeBoundingSphere();
+      geometry = mesh.geoemtry;
+      this.boundingBoxUpdateRequired = true;
+    }
+  }
+  return geometry;
+}
+
+/**
+ * Set the objects position.
+ * 
+ * @return {THREE.Box3}.
+ */
+ZincObject.prototype.setPosition = function(x, y, z) {
+  const group = this.getGroup();
+  if (group) {
+    group.position.set(x, y, z);
+    group.updateMatrix();
+    this.boundingBoxUpdateRequired = true;
+  }
+}
+
+/**
+ * Set the objects scale.
+ * 
+ * @return {THREE.Box3}.
+ */
+ZincObject.prototype.setScaleAll = function(scale) {
+  const group = this.getGroup();
+  if (group) {
+    group.scale.set(scale, scale, scale);
+    group.updateMatrix();
+    this.boundingBoxUpdateRequired = true;
+  }
+}
+
 
 exports.ZincObject = ZincObject;

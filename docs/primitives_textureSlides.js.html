@@ -47,7 +47,7 @@ const TextureSlides = function (textureIn) {
   this.morph = new THREE.Group();
   this.group = this.morph;
   this.morph.userData = this;
-  const alpha = 1.0;
+   let flipY = true;
 
   /**
     @typedef SLIDE_SETTINGS
@@ -128,6 +128,8 @@ const TextureSlides = function (textureIn) {
         const uniforms = shader.getUniforms();
         uniforms.diffuse.value = this.texture.impl;
         uniforms.depth.value = this.texture.size.depth;
+        uniforms.flipY.value = flipY;
+        
         const options = {
           fs: shader.fs,
           vs: shader.vs,
@@ -148,6 +150,7 @@ const TextureSlides = function (textureIn) {
         setUniformSlideSettingsOfMesh(mesh, slideSettings);
         idTextureMap[mesh.id] = mesh;
         this.morph.add(mesh);
+        this.boundingBoxUpdateRequired = true;
         return slideSettings;
       }
     }
@@ -202,7 +205,7 @@ const TextureSlides = function (textureIn) {
       }
       const index = textureSettings.findIndex(item => item.id === id);
       if (index > -1) {
-        textureSettings.splice(index);
+        textureSettings.splice(index, 1);
       }
     }
   }
@@ -221,6 +224,35 @@ const TextureSlides = function (textureIn) {
     this.boundingBoxUpdateRequired = true;
   }
 
+  //Expand the boundingbox with slide settings
+  const expandBoxWithSettings = (box, settings, vector) => {
+    switch (settings.direction.value) {
+      case 1:
+        vector.copy(settings.slide.value);
+        box.expandByPoint(vector);
+        vector.setY(1.0);
+        vector.setZ(1.0);
+        box.expandByPoint(vector);
+        break;
+      case 2:
+        vector.copy(settings.slide.value);
+        box.expandByPoint(vector);
+        vector.setX(1.0);
+        vector.setZ(1.0);
+        box.expandByPoint(vector);
+        break;
+      case 3:
+        vector.copy(settings.slide.value);
+        box.expandByPoint(vector);
+        vector.setX(1.0);
+        vector.setY(1.0);
+        box.expandByPoint(vector);
+        break;
+      default:
+        break;
+    }
+  }
+
   /**
    * Get the bounding box of this slides.
    * It uses the max and min of the slides position and the
@@ -232,11 +264,12 @@ const TextureSlides = function (textureIn) {
     if (this.morph &amp;&amp; this.morph.children &amp;&amp; this.morph.visible &amp;&amp;
       this.boundingBoxUpdateRequired) {
       this.cachedBoundingBox.makeEmpty();
+      const vector = new THREE.Vector3(0, 0, 0);
       this.morph.children.forEach(slide => {
-        const value = slide.material.uniforms.slide.value;
-        this.cachedBoundingBox.expandByPoint(value);
+        expandBoxWithSettings(this.cachedBoundingBox, slide.material.uniforms,
+          vector);
       });
-      this.morph.updateWorldMatrix(true, true);
+      this.morph.updateMatrixWorld (true, true);
       this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
       this.boundingBoxUpdateRequired = false;
     }
@@ -268,16 +301,21 @@ const TextureSlides = function (textureIn) {
     this.morph.quaternion.copy( quaternion );
     this.morph.scale.set(...scale);
     this.morph.updateMatrix();
+    this.boundingBoxUpdateRequired = true;
   }
 
   this.initialise = (textureData, finishCallback) => {
     if (textureData) {
-      this.createSlides(textureData.settings.slides);
+
       const locations = textureData.locations;
       if (locations &amp;&amp; locations.length > 0) {
         this.applyTransformation(locations[0].orientation,
           locations[0].position, locations[0].scale);
+        if ("flipY" in locations[0]) {
+          flipY = locations[0].flipY;
+        }
       }
+      this.createSlides(textureData.settings.slides);
       if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function')) {
         finishCallback(this);
       }
@@ -298,13 +336,13 @@ exports.TextureSlides = TextureSlides;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 15:07:56 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue May 21 2024 09:38:36 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

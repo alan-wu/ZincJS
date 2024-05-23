@@ -1,7 +1,5 @@
 const THREE = require('three');
 const resolveURL = require('../utilities').resolveURL;
-
-
 /**
  * Provides a base class object which stores textures and rendering object.
  * 
@@ -27,6 +25,7 @@ const TexturePrimitive = function (textureIn) {
         const texture = new (require('../texture/textureArray').TextureArray)();
         const imgArray = [];
         textureData.images.source.forEach(img => {
+          console.log(resolveURL(img))
           imgArray.push(resolveURL(img));
         });
         const _this = this;

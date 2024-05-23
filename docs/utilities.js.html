@@ -1,4 +1,32 @@
-const THREE = require('three');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: utilities.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: utilities.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>const THREE = require('three');
 const THREEGeometry = require('./three/Geometry').Geometry;
 
 function resolveURL(url) {
@@ -20,7 +48,7 @@ function resolveURL(url) {
 function createNewURL(target, reference) {
   let newURL = (new URL(target, reference)).href;
   //Make sure the target url does not contain parameters
-  if (target && target.split("?").length < 2) {
+  if (target &amp;&amp; target.split("?").length &lt; 2) {
     const paramsStrings = reference.split("?");
     //There are parameters, add them to the target
     if (paramsStrings.length === 2) {
@@ -41,10 +69,10 @@ function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
   if (mesh.geometry)
     attributes = mesh.geometry.morphAttributes;
   let found = false;
-  if (influences && attributes && attributes.position) {
+  if (influences &amp;&amp; attributes &amp;&amp; attributes.position) {
     v1.set(0.0, 0.0, 0.0);
     v2.set(0.0, 0.0, 0.0);
-    for (let i = 0; i < influences.length; i++) {
+    for (let i = 0; i &lt; influences.length; i++) {
       if (influences[i] > 0) {
         found = true;
         b1.setFromArray(attributes.position[i].array);
@@ -103,7 +131,7 @@ function loadExternalFiles(urls, callback, errorCallback) {
         }
     }
 
-    for (let i = 0; i < numUrls; i++) {
+    for (let i = 0; i &lt; numUrls; i++) {
     	loadExternalFile(urls[i], i, partialCallback, errorCallback);
     }
 }
@@ -131,7 +159,7 @@ exports.getColorsRGB = (colors, index) => {
 }
 
 exports.updateMorphColorAttribute = function(targetGeometry, morph) {
-  if (morph && targetGeometry && targetGeometry.morphAttributes &&
+  if (morph &amp;&amp; targetGeometry &amp;&amp; targetGeometry.morphAttributes &amp;&amp;
     targetGeometry.morphAttributes[ "color" ]) {
     const morphColors = targetGeometry.morphAttributes[ "color" ];
     const influences = morph.morphTargetInfluences;
@@ -140,7 +168,7 @@ exports.updateMorphColorAttribute = function(targetGeometry, morph) {
     targetGeometry.deleteAttribute( 'morphColor1' );
     let bound = 0;
     let morphArray = [];
-    for (let i = 0; (1 > bound) || (i < length); i++) {
+    for (let i = 0; (1 > bound) || (i &lt; length); i++) {
       if (influences[i] > 0) {
         bound++;
         morphArray.push([i, influences[i]]);
@@ -160,7 +188,7 @@ exports.updateMorphColorAttribute = function(targetGeometry, morph) {
 exports.toBufferGeometry = (geometryIn, options) => {
   let geometry = undefined;
   if (geometryIn instanceof THREEGeometry) {
-    if (options.localTimeEnabled && !geometryIn.morphNormalsReady && 
+    if (options.localTimeEnabled &amp;&amp; !geometryIn.morphNormalsReady &amp;&amp; 
       (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
       geometryIn.computeMorphNormals();
     geometry = geometryIn.toIndexedBufferGeometry();
@@ -179,14 +207,14 @@ exports.toBufferGeometry = (geometryIn, options) => {
 }
 
 exports.copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
-  if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
+  if (geometry &amp;&amp; geometry.morphColors &amp;&amp; geometry.morphColors.length > 0 ) {
     let array = [];
     let morphColors = geometry.morphColors;
     const getColorsRGB = require("./utilities").getColorsRGB;
-    for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
+    for ( var i = 0, l = morphColors.length; i &lt; l; i ++ ) {
       let morphColor = morphColors[ i ];
       let colorArray = [];
-      for ( var j = 0; j < geometry.faces.length; j ++ ) {
+      for ( var j = 0; j &lt; geometry.faces.length; j ++ ) {
         let face = geometry.faces[j];
         let color = getColorsRGB(morphColor.colors, face.a);
         colorArray.push(color[0], color[1], color[2]);
@@ -205,14 +233,14 @@ exports.copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
 
 
 const copyMorphColorsToIndexedBufferGeometry = (geometry, bufferGeometry) => {
-  if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
+  if (geometry &amp;&amp; geometry.morphColors &amp;&amp; geometry.morphColors.length > 0 ) {
     let array = [];
     let morphColors = geometry.morphColors;
     const getColorsRGB = require("./utilities").getColorsRGB;
-    for ( let i = 0, l = morphColors.length; i < l; i ++ ) {
+    for ( let i = 0, l = morphColors.length; i &lt; l; i ++ ) {
       const morphColor = morphColors[ i ];
       const colorArray = [];
-      for ( let j = 0; j < morphColor.colors.length * 3; j ++ ) {
+      for ( let j = 0; j &lt; morphColor.colors.length * 3; j ++ ) {
         let color = getColorsRGB(morphColor.colors, j);
         colorArray.push(color[0], color[1], color[2]);
       }
@@ -246,7 +274,7 @@ exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
   var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
 
   // initialize the arrays
-  for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
+  for ( var i = 0, l = attributeNames.length; i &lt; l; i ++ ) {
       var name = attributeNames[ i ];
 
       attrArrays[ name ] = [];
@@ -263,19 +291,19 @@ exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
   // convert the error tolerance to an amount of decimal places to truncate to
   var decimalShift = Math.log10( 1 / tolerance );
   var shiftMultiplier = Math.pow( 10, decimalShift );
-  for ( var i = 0; i < vertexCount; i ++ ) {
+  for ( var i = 0; i &lt; vertexCount; i ++ ) {
 
       var index = indices ? indices.getX( i ) : i;
 
       // Generate a hash for the vertex attributes at the current index 'i'
       var hash = '';
-      for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+      for ( var j = 0, l = attributeNames.length; j &lt; l; j ++ ) {
 
           var name = attributeNames[ j ];
           var attribute = geometry.getAttribute( name );
           var itemSize = attribute.itemSize;
 
-          for ( var k = 0; k < itemSize; k ++ ) {
+          for ( var k = 0; k &lt; itemSize; k ++ ) {
 
               // double tilde truncates the decimal value
               hash += `${ ~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier ) },`;
@@ -293,7 +321,7 @@ exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
       } else {
 
           // copy data to the new index in the attribute arrays
-          for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+          for ( var j = 0, l = attributeNames.length; j &lt; l; j ++ ) {
 
               var name = attributeNames[ j ];
               var attribute = geometry.getAttribute( name );
@@ -302,14 +330,14 @@ exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
               var newarray = attrArrays[ name ];
               var newMorphArrays = morphAttrsArrays[ name ];
 
-              for ( var k = 0; k < itemSize; k ++ ) {
+              for ( var k = 0; k &lt; itemSize; k ++ ) {
 
                   var getterFunc = getters[ k ];
                   newarray.push( attribute[ getterFunc ]( index ) );
 
                   if ( morphAttr ) {
 
-                      for ( var m = 0, ml = morphAttr.length; m < ml; m ++ ) {
+                      for ( var m = 0, ml = morphAttr.length; m &lt; ml; m ++ ) {
 
                           newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
 
@@ -332,7 +360,7 @@ exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
   // Generate typed arrays from new attribute arrays and update
   // the attributeBuffers
   const result = geometry.clone();
-  for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
+  for ( var i = 0, l = attributeNames.length; i &lt; l; i ++ ) {
 
       var name = attributeNames[ i ];
       var oldAttribute = geometry.getAttribute( name );
@@ -355,7 +383,7 @@ exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
       // Update the attribute arrays
       if ( name in morphAttrsArrays ) {
 
-          for ( var j = 0; j < morphAttrsArrays[ name ].length; j ++ ) {
+          for ( var j = 0; j &lt; morphAttrsArrays[ name ].length; j ++ ) {
 
               var morphAttribute = geometry.morphAttributes[ name ][ j ].clone();
               morphAttribute.setArray( new morphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] ) );
@@ -414,7 +442,7 @@ function PhongToToon(materialIn) {
  * and initial coords.
  */
 function createBufferGeometry(length, coords) {
-  if (coords && (length >= coords.length)) {
+  if (coords &amp;&amp; (length >= coords.length)) {
     const geometry = new THREE.BufferGeometry()
     const vertices = new Float32Array(length * 3);
     let i = 0;
@@ -448,3 +476,26 @@ exports.resolveURL = resolveURL;
 exports.loadExternalFile = loadExternalFile;
 exports.loadExternalFiles = loadExternalFiles;
 exports.PhongToToon = PhongToToon;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue May 21 2024 09:38:36 GMT+1200 (New Zealand Standard Time)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

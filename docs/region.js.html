@@ -27,7 +27,11 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>const { Group, Matrix4 } = require('three');
-
+const Pointset = require('./primitives/pointset').Pointset;
+const Lines = require('./primitives/lines').Lines;
+const Lines2 = require('./primitives/lines2').Lines2;
+const Geometry = require('./primitives/geometry').Geometry;
+const THREE = require('three');
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -42,7 +46,7 @@ const getUniqueId = function () {
  * @author Alan Wu
  * @return {Region}
  */
-let Region = function (parentIn) {
+let Region = function (parentIn, sceneIn) {
   let parent = parentIn;
   let group = new Group();
   group.matrixAutoUpdate = false;
@@ -50,6 +54,7 @@ let Region = function (parentIn) {
   let children = [];
   let name = "";
   let zincObjects = [];
+  let scene = sceneIn;
   const tMatrix = new Matrix4();
   let duration = 3000;
   tMatrix.set(1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
@@ -193,7 +198,7 @@ let Region = function (parentIn) {
    * @return {Region}
    */
   this.createChild = (nameIn) => {
-    let childRegion = new Region(this);
+    let childRegion = new Region(this, scene);
     childRegion.setName(nameIn);
     children.push(childRegion);
     group.add(childRegion.getGroup());
@@ -323,10 +328,12 @@ let Region = function (parentIn) {
   this.addZincObject = zincObject => {
     if (zincObject) {
       zincObject.setRegion(this);
-      //group.add(zincObject.getMorph());
       group.add(zincObject.getGroup());
       zincObjects.push(zincObject);
       this.pickableUpdateRequired = true;
+      if (scene) {
+        scene.triggerObjectAddedCallback(zincObject);
+      }
     }
   }
 
@@ -768,16 +775,88 @@ let Region = function (parentIn) {
     allObjects.forEach(zincObject => {
       zincObject.render(playRate * delta, playAnimation, cameraControls, options);
     });
-    //process markers visibility and size
-    if (options &amp;&amp; options.displayMarkers &amp;&amp; (playAnimation === false)) {
-      if (options.markerDepths.length > 0) {
-        const min = Math.min(...options.markerDepths);
-        const max = Math.max(...options.markerDepths);
+    //process markers visibility and size, as long as there are more than
+    //one entry in markersList is greater than 1, markers have been enabled.
+    if (options &amp;&amp; (playAnimation === false) &amp;&amp;
+      options.markerCluster.markerUpdateRequired) {
+      const markerDepths = Object.values(options.markersList)
+        .map((marker) => marker.ndc.z);
+      if (markerDepths.length > 1) {
+        const min = Math.min(...markerDepths);
+        const max = Math.max(...markerDepths);
         allObjects.forEach(zincObject => {
-          zincObject.processMarkerVisual(min, max, options);
+          zincObject.processMarkerVisual(min, max);
         });
       }
+      options.markerCluster.calculate();
     }
+  }
+
+  /**
+   * Update geometries and glyphsets based on the calculated time.
+   */
+  this.createPoints = ( groupName, coords, labels, colour ) => {
+    let isNew = false;
+    const zincObjects = this.findObjectsWithGroupName(groupName, false);
+    const index = zincObjects.findIndex((zincObject) => zincObject.isPointset);
+    const pointset = index > -1 ? zincObjects[index] : new Pointset();
+    pointset.addPoints(coords, labels, colour);
+    if (index === -1) {
+      pointset.setName(groupName);
+      this.addZincObject(pointset);
+      isNew = true;
+    } else {
+      this.pickableUpdateRequired = true;
+    }
+    return { zincObject: pointset, isNew };
+  }
+
+  /**
+   * Update geometries and glyphsets based on the calculated time.
+   */
+  this.createLines = ( groupName, coords, colour ) => {
+    let isNew = false;
+    const zincObjects = this.findObjectsWithGroupName(groupName, false);
+    const index = zincObjects.findIndex((zincObject) => zincObject.isLines);
+    const lines = index > -1 ? zincObjects[index] : new Lines2();
+    lines.addLines(coords, colour);
+    if (index === -1) {
+      lines.setName(groupName);
+      this.addZincObject(lines);
+      isNew = true;
+    } else {
+      this.pickableUpdateRequired = true;
+    }
+    return { zincObject: lines, isNew };
+  }
+
+  /**
+   * Add a new geometry
+   */
+  this.createGeometryFromThreeJSGeometry = (
+    groupName, geometry, colour, opacity, visibility, renderOrder) => {
+    const zincGeometry = new Geometry();
+    const material = new THREE.MeshPhongMaterial({
+      color : colour,
+      morphTargets : false,
+      morphNormals : false,
+      transparent : true,
+      opacity : opacity,
+      side : THREE.DoubleSide
+    });
+    zincGeometry.createMesh(
+      geometry,
+      material,
+      {localTimeEnabled: false, localMorphColour: false,},
+    );
+    if (zincGeometry.getMorph()) {
+      zincGeometry.setVisibility(false);
+      zincGeometry.setName(groupName);
+      zincGeometry.setRenderOrder(renderOrder);
+      this.addZincObject(zincGeometry);
+      return zincGeometry;
+    }
+    return undefined;
   }
 }
 
@@ -792,13 +871,13 @@ exports.Region = Region;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Fri Mar 08 2024 15:07:56 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue May 21 2024 09:38:36 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>
