@@ -750,7 +750,7 @@ let Region = function (parentIn, sceneIn) {
     //process markers visibility and size, as long as there are more than
     //one entry in markersList is greater than 1, markers have been enabled.
     if (options && (playAnimation === false) &&
-      options.markerCluster.markerUpdateRequired) {
+      options?.markerCluster?.markerUpdateRequired) {
       const markerDepths = Object.values(options.markersList)
         .map((marker) => marker.ndc.z);
       if (markerDepths.length > 1) {
