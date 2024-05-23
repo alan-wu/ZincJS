@@ -611,14 +611,6 @@ exports.Scene = function (containerIn, rendererIn) {
     }
   }
 
-  this.enableMarkerCluster = (flag) => {
-    if (flag) {
-      markerCluster.enable();
-    } else {
-      markerCluster.disable();
-    }
-  }
-
   /**
    * Return the internal {THREE.Scene}.
    * @return {THREE.Scene}
