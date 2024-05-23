@@ -217,7 +217,12 @@ const LOD = function (parent) {
         localMorphColour: this._parent.morphColour,
       }
       const geometry = toBufferGeometry(geometryIn, options);
-      const mesh = new THREE.Mesh(geometry, material);
+      let mesh = undefined;
+      if (this._parent.isGeometry) {
+        mesh = new THREE.Mesh(geometry, material);
+      } else if (this._parent.isLines) {
+        mesh = new (require("../three/line/LineSegments").LineSegments)(geometry, material);
+      }
       mesh.userData = this._parent;
       mesh.renderOrder = this._renderOrder;
       geometryIn.dispose();
