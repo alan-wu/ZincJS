@@ -910,7 +910,9 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.updatePickableThreeJSObjects = () => {
     pickableObjectsList.length = 0;
-    pickableObjectsList.push(markerCluster.group);
+    if (markerCluster.isEnabled) {
+      pickableObjectsList.push(markerCluster.group);
+    }
     rootRegion.getPickableThreeJSObjects(pickableObjectsList, true);
     this.forcePickableObjectsUpdate = false;
   }
@@ -1227,6 +1229,20 @@ exports.Scene = function (containerIn, rendererIn) {
       group, boxGeo, colour, opacity, visibility, 10000);
     primitive.setPosition(dim.x, dim.y, dim.z);
     return primitive;
+  }
+
+  /*
+	 * Enable marker cluster to work with markers
+	 */
+  this.enableMarkerCluster = (flag) => {
+    if (flag) {
+      markerCluster.markerUpdateRequired = true;
+      markerCluster.enable();
+    } else {
+      markerCluster.markerUpdateRequired = false;
+      markerCluster.disable();
+    }
+    this.forcePickableObjectsUpdate = true;
   }
 }
 

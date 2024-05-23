@@ -180,13 +180,15 @@ const MarkerCluster = function(sceneIn) {
   }
 
   this.calculate = () => {
-    const current = Date.now();
-    if ((current - start) > 500) {
-      let clusters = [];
-      getCluster({...this.markers}, clusters);
-      drawClusters(clusters);
-      start = Date.now();
-      this.markerUpdateRequired = false;
+    if (enabled) {
+      const current = Date.now();
+      if ((current - start) > 500) {
+        let clusters = [];
+        getCluster({...this.markers}, clusters);
+        drawClusters(clusters);
+        start = Date.now();
+        this.markerUpdateRequired = false;
+      }
     }
   }
 
@@ -208,6 +210,13 @@ const MarkerCluster = function(sceneIn) {
   this.disable = () => {
     enabled = false;
     this.morph.visible = false;
+    //turn all markers back on
+    for (let prop in this.markers) {
+      if (this.markers[prop]?.isMarker &&
+        this.markers[prop].isEnabled()) {
+        this.markers[prop].setVisibility(true);
+      }
+    }
   }
 
   this.zoomToCluster = (index) => {
