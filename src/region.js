@@ -1,5 +1,4 @@
 const { Group, Matrix4 } = require('three');
-
 const Pointset = require('./primitives/pointset').Pointset;
 const Lines = require('./primitives/lines').Lines;
 const Lines2 = require('./primitives/lines2').Lines2;
@@ -748,15 +747,20 @@ let Region = function (parentIn, sceneIn) {
     allObjects.forEach(zincObject => {
       zincObject.render(playRate * delta, playAnimation, cameraControls, options);
     });
-    //process markers visibility and size
-    if (options && options.displayMarkers && (playAnimation === false)) {
-      if (options.markerDepths.length > 0) {
-        const min = Math.min(...options.markerDepths);
-        const max = Math.max(...options.markerDepths);
+    //process markers visibility and size, as long as there are more than
+    //one entry in markersList is greater than 1, markers have been enabled.
+    if (options && (playAnimation === false) &&
+      options?.markerCluster?.markerUpdateRequired) {
+      const markerDepths = Object.values(options.markersList)
+        .map((marker) => marker.ndc.z);
+      if (markerDepths.length > 1) {
+        const min = Math.min(...markerDepths);
+        const max = Math.max(...markerDepths);
         allObjects.forEach(zincObject => {
-          zincObject.processMarkerVisual(min, max, options);
+          zincObject.processMarkerVisual(min, max);
         });
       }
+      options.markerCluster.calculate();
     }
   }
 

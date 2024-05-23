@@ -1,4 +1,5 @@
 const THREE = require('three');
+const MarkerCluster = require('./primitives/markerCluster').MarkerCluster;
 const SceneLoader = require('./sceneLoader').SceneLoader;
 const SceneExporter = require('./sceneExporter').SceneExporter;
 const Viewport = require('./controls').Viewport;
@@ -74,6 +75,9 @@ exports.Scene = function (containerIn, rendererIn) {
   let pickableObjectsList = [];
   this.forcePickableObjectsUpdate = false;
   this.uuid = getUniqueId();
+  let markerCluster = new MarkerCluster(this);
+  markerCluster.disable();
+  scene.add(markerCluster.group);
 
   const getDrawingWidth = () => {
     if (container)
@@ -84,7 +88,6 @@ exports.Scene = function (containerIn, rendererIn) {
     return 0;
   }
   
-
   const getDrawingHeight = () => {
     if (container)
       if (typeof container.clientHeight !== "undefined")
@@ -189,15 +192,9 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.viewAllWithBoundingBox = boundingBox => {
     if (boundingBox) {
-      // enlarge radius to keep image within edge of window
-      const radius = boundingBox.min.distanceTo(boundingBox.max) / 2.0;
-      const centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
-      const centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
-      const centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
-      const clip_factor = 4.0;
-      const viewport = zincCameraControls.getViewportFromCentreAndRadius(centreX, centreY, centreZ, radius, 40, radius * clip_factor);
-
+      const viewport = zincCameraControls.getViewportFromBoundingBox(boundingBox, 1.0);
       zincCameraControls.setCurrentCameraSettings(viewport);
+      markerCluster.markerUpdateRequired = true;
     }
   }
 
@@ -207,6 +204,7 @@ exports.Scene = function (containerIn, rendererIn) {
   this.viewAll = () => {
     const boundingBox = this.getBoundingBox();
     this.viewAllWithBoundingBox(boundingBox);
+    markerCluster.markerUpdateRequired = true;
   }
 
   /**
@@ -571,8 +569,17 @@ exports.Scene = function (containerIn, rendererIn) {
     // Let video dictates the progress if one is present
     let options = {};
     options.camera = zincCameraControls;
+    //Global markers flag, marker can be set at individual zinc object level
+    //overriding this flag.
     options.displayMarkers =  this.displayMarkers;
-    options.markerDepths = [];
+    options.markerCluster = markerCluster;
+    options.markersList = markerCluster.markers;
+    options.ndcToBeUpdated = false;
+    //Always set marker cluster update required when playAnimation is true
+    //to make sure it is updated when it stops
+    if (playAnimation) {
+      options.markerCluster.markerUpdateRequired = true;
+    }
 	  if (videoHandler) {
 		  if (videoHandler.isReadyToPlay()) {
 			  if (playAnimation) {
@@ -584,9 +591,9 @@ exports.Scene = function (containerIn, rendererIn) {
           videoHandler.getVideoDuration() * duration;
 			  if (0 == sceneLoader.toBeDownloaded) {
 				  zincCameraControls.setTime(currentTime);
-				  zincCameraControls.update(0);
+				  options.ndcToBeUpdated = zincCameraControls.update(0);
           rootRegion.setMorphTime(currentTime, true);
-          rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, undefined, true);
+          rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, options, true);
 			  } else {
 				  zincCameraControls.update(0);
 			  }
@@ -596,7 +603,7 @@ exports.Scene = function (containerIn, rendererIn) {
 		  }
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded) {
-        zincCameraControls.update(delta);
+        options.ndcToBeUpdated = zincCameraControls.update(delta);
         rootRegion.renderGeometries(playRate, delta, playAnimation, zincCameraControls, options, true);
 		  } else {
 			  zincCameraControls.update(0);
@@ -770,7 +777,7 @@ exports.Scene = function (containerIn, rendererIn) {
   }
 
   /**
-   * Transition the camera view to view the entirety of the 
+   * Rotate the camera view to view the entirety of the 
    * bounding box with a smooth transition within the providied
    * transitionTime.
    * 
@@ -786,8 +793,6 @@ exports.Scene = function (containerIn, rendererIn) {
         viewport.targetPosition[1], viewport.targetPosition[2]);
       const eyePosition = new THREE.Vector3(viewport.eyePosition[0],
         viewport.eyePosition[1], viewport.eyePosition[2]);
-      const upVector = new THREE.Vector3(viewport.upVector[0],
-        viewport.upVector[1], viewport.upVector[2]);
       const newVec1 = new THREE.Vector3();
       const newVec2 = new THREE.Vector3();
       newVec1.subVectors(target, eyePosition).normalize();
@@ -802,6 +807,29 @@ exports.Scene = function (containerIn, rendererIn) {
       } else {
         this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
       }
+      markerCluster.markerUpdateRequired = true;
+    }
+  }
+
+
+  /**
+   * Translate the camera view to the center of the 
+   * bounding box with a smooth transition within the providied
+   * transitionTime.
+   * 
+   * @param {THREE.Box3} boundingBox - the bounding box to target
+   * @param {Number} transitionTime - Duration to perform the transition.
+   */
+  this.translateBoundingBoxToCameraView = (boundingBox, scaleRadius, transitionTime) => {
+    if (boundingBox) {
+      const oldViewport = this.getZincCameraControls().getCurrentViewport();
+      const viewport = this.getZincCameraControls().getViewportFromBoundingBox(boundingBox, scaleRadius);
+      if (transitionTime > 0) {
+        this.getZincCameraControls().cameraTransition(oldViewport,
+          viewport, transitionTime);
+        this.getZincCameraControls().enableCameraTransition();
+      }
+      markerCluster.markerUpdateRequired = true;
     }
   }
 
@@ -845,6 +873,7 @@ exports.Scene = function (containerIn, rendererIn) {
       viewport.targetPosition[1] = center.y;
       viewport.targetPosition[2] = center.z;
       this.getZincCameraControls().setCurrentCameraSettings(viewport);
+      markerCluster.markerUpdateRequired = true;
     }
   }
 
@@ -863,16 +892,20 @@ exports.Scene = function (containerIn, rendererIn) {
    */
   this.removeZincObject = zincObject => {
     rootRegion.removeZincObject(zincObject);
-    if (zincCameraControls)
+    if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
+    }
+    markerCluster.markerUpdateRequired = true;
   }
 
   /**
    * Update pickable objects list
    */
   this.updatePickableThreeJSObjects = () => {
-
-    pickableObjectsList.splice(0, pickableObjectsList.length);
+    pickableObjectsList.length = 0;
+    if (markerCluster.isEnabled) {
+      pickableObjectsList.push(markerCluster.group);
+    }
     rootRegion.getPickableThreeJSObjects(pickableObjectsList, true);
     this.forcePickableObjectsUpdate = false;
   }
@@ -932,11 +965,14 @@ exports.Scene = function (containerIn, rendererIn) {
    * This does not remove obejcts that are added using the addObject APIs.
    */
   this.clearAll = () => {
+    markerCluster.clear();
     rootRegion.clear(true);
     this.clearZincObjectAddedCallbacks();
     sceneLoader.toBeDwonloaded = 0;
-    if (zincCameraControls)
+    if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
+    }
+    markerCluster.markerUpdateRequired = true;
   }
 
   /**
@@ -1186,6 +1222,20 @@ exports.Scene = function (containerIn, rendererIn) {
       group, boxGeo, colour, opacity, visibility, 10000);
     primitive.setPosition(dim.x, dim.y, dim.z);
     return primitive;
+  }
+
+  /*
+	 * Enable marker cluster to work with markers
+	 */
+  this.enableMarkerCluster = (flag) => {
+    if (flag) {
+      markerCluster.markerUpdateRequired = true;
+      markerCluster.enable();
+    } else {
+      markerCluster.markerUpdateRequired = false;
+      markerCluster.disable();
+    }
+    this.forcePickableObjectsUpdate = true;
   }
 }
 

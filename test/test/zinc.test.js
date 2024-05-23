@@ -101,7 +101,7 @@ function checkControls(scene) {
         assert.isTrue(controls.isPlayingPath(), 'Playing path');
       });
       it('update', function(){
-        assert.isUndefined(controls.update(1), 'update is successfully called');
+        assert.isTrue(controls.update(1), 'update is successfully called');
         assert.equal(controls.getCurrentTimeFrame()[0], 4923, 'getCurrentTimeFrame returns the correct value');
       });
       it('stopPath', function(){
@@ -836,11 +836,7 @@ function checkRegion(scene) {
       });
       it ('renderGeometries', function() {
         rootRegion.renderGeometries(
-          1, 0.1, false, 
-          { 
-            markerDepths: [ 1, 2, 3, 4, 5, 6],
-            displayMarkers: true 
-          }, true);
+          1, 0.1, false, undefined);
       });
       it('setVisibility', function(){
         assert.isTrue(rootRegion.getVisibility(), 'Visibility should be true')

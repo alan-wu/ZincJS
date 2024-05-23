@@ -935,6 +935,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.update = timeChanged => {
 		const delta = timeChanged * playRate;
 		let controlEnabled = enabled;
+		let updated = true;
 		if (currentMode === MODE.PATH) {
 			updatePath(delta);
 		} else if (currentMode === MODE.SMOOTH_CAMERA_TRANSITION && smoothCameraTransitionObject) {
@@ -956,8 +957,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		} else if (currentMode === MODE.SYNC_CONTROL && ndcControl) {
       handleSyncControl();
       controlEnabled = false;
-    }
+    } else {
+			updated = false;
+		}
 		if (controlEnabled) {
+			if (this._state !== STATE.NONE) {
+				updated = true;
+			}
 			if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
 				tumble();
 			} else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
@@ -974,12 +980,14 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 				this._state = STATE.NONE;
 		}
 		if (deviceOrientationControl) {
+			updated = true;
 			deviceOrientationControl.update();
 			//this.directionalLight.target.position.set(this.cameraObject.target.x, 
 			//	this.cameraObject.target.y, this.cameraObject.target.z);
 		} else {
 			this.cameraObject.lookAt( this.cameraObject.target );
 		}
+		return updated;
 	};
 	
   /**
@@ -1129,6 +1137,23 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		                        this.cameraObject.up.z];
 		
 		return newViewport;
+	}
+
+	  /**
+   * Get the viewport for the boudning box
+   * 
+   * @param {Number} boundingBox - y coordinate of the centre.
+   * @return {Viewport}
+   */	
+	this.getViewportFromBoundingBox = (boundingBox, radiusScale) => {
+		const radius = boundingBox.min.distanceTo(boundingBox.max) / 2.0 * radiusScale;
+		const centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
+		const centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
+		const centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
+		const clip_factor = 4.0;
+		const viewport = this.getViewportFromCentreAndRadius(
+			centreX, centreY, centreZ, radius, 40, radius * clip_factor);
+		return viewport;
 	}
 
   /**
@@ -1484,6 +1509,14 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	this.pick = (zincCamera, x, y) => { 
 		if (enabled && renderer && scene && zincCamera && callbackFunction) {
 			getIntersectsObject(zincCamera, x, y);
+			const length = pickedObjects.length;
+			for (let i = 0; i < length; i++) {
+				let zincObject = pickedObjects[i].object ? pickedObjects[i].object.userData : undefined;
+				if (zincObject && zincObject.isMarkerCluster && zincObject.visible) {
+					zincObject.zoomToCluster(pickedObjects[i].object.clusterIndex);
+					return;
+				}
+			}
 			callbackFunction(pickedObjects, x, y);
 		}
   }

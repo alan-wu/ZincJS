@@ -963,6 +963,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.update = timeChanged => {
 		const delta = timeChanged * playRate;
 		let controlEnabled = enabled;
+		let updated = true;
 		if (currentMode === MODE.PATH) {
 			updatePath(delta);
 		} else if (currentMode === MODE.SMOOTH_CAMERA_TRANSITION &amp;&amp; smoothCameraTransitionObject) {
@@ -984,8 +985,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		} else if (currentMode === MODE.SYNC_CONTROL &amp;&amp; ndcControl) {
       handleSyncControl();
       controlEnabled = false;
-    }
+    } else {
+			updated = false;
+		}
 		if (controlEnabled) {
+			if (this._state !== STATE.NONE) {
+				updated = true;
+			}
 			if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
 				tumble();
 			} else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
@@ -1002,12 +1008,14 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 				this._state = STATE.NONE;
 		}
 		if (deviceOrientationControl) {
+			updated = true;
 			deviceOrientationControl.update();
 			//this.directionalLight.target.position.set(this.cameraObject.target.x, 
 			//	this.cameraObject.target.y, this.cameraObject.target.z);
 		} else {
 			this.cameraObject.lookAt( this.cameraObject.target );
 		}
+		return updated;
 	};
 	
   /**
@@ -1157,6 +1165,23 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		                        this.cameraObject.up.z];
 		
 		return newViewport;
+	}
+
+	  /**
+   * Get the viewport for the boudning box
+   * 
+   * @param {Number} boundingBox - y coordinate of the centre.
+   * @return {Viewport}
+   */	
+	this.getViewportFromBoundingBox = (boundingBox, radiusScale) => {
+		const radius = boundingBox.min.distanceTo(boundingBox.max) / 2.0 * radiusScale;
+		const centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
+		const centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
+		const centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
+		const clip_factor = 4.0;
+		const viewport = this.getViewportFromCentreAndRadius(
+			centreX, centreY, centreZ, radius, 40, radius * clip_factor);
+		return viewport;
 	}
 
   /**
@@ -1512,6 +1537,14 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	this.pick = (zincCamera, x, y) => { 
 		if (enabled &amp;&amp; renderer &amp;&amp; scene &amp;&amp; zincCamera &amp;&amp; callbackFunction) {
 			getIntersectsObject(zincCamera, x, y);
+			const length = pickedObjects.length;
+			for (let i = 0; i &lt; length; i++) {
+				let zincObject = pickedObjects[i].object ? pickedObjects[i].object.userData : undefined;
+				if (zincObject &amp;&amp; zincObject.isMarkerCluster &amp;&amp; zincObject.visible) {
+					zincObject.zoomToCluster(pickedObjects[i].object.clusterIndex);
+					return;
+				}
+			}
 			callbackFunction(pickedObjects, x, y);
 		}
   }
@@ -1961,13 +1994,13 @@ exports.NDCCameraControl = NDCCameraControl
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Mar 21 2024 14:14:53 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue May 21 2024 09:38:36 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

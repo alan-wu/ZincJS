@@ -510,9 +510,10 @@ ZincObject.prototype.dispose = function() {
  * 
  * @return {Boolean} 
  */
-ZincObject.prototype.markerIsEnabled = function(options) {
-  if (this.markerMode === "on" || (options && options.displayMarkers &&
-    (this.markerMode === "inherited"))) {
+ZincObject.prototype.markerIsRequired = function(options) {
+  if (this.visible && 
+    (this.markerMode === "on" || (options && options.displayMarkers &&
+    (this.markerMode === "inherited")))) {
       return true;
   }
   return false;
@@ -523,8 +524,9 @@ ZincObject.prototype.markerIsEnabled = function(options) {
  */
 ZincObject.prototype.updateMarker = function(playAnimation, options) {
   if ((playAnimation == false) &&
-    (this.markerIsEnabled(options)))
+    (this.markerIsRequired(options)))
   {
+    let ndcToBeUpdated = options.ndcToBeUpdated;
     if (this.groupName) {
       if (!this.marker) {
         this.marker = new (require("./marker").Marker)(this);
@@ -537,21 +539,30 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
           this.markerUpdateRequired = false;
         }
       }
-      if (options && options.camera && options.markerDepths) {
-        options.markerDepths.push(
-          this.marker.updateNDC(options.camera.cameraObject));
-      }
       if (!this.marker.isEnabled()) {
+        if (options.markersList &&
+          (!(this.marker.uuid in options.markersList))) {    
+            ndcToBeUpdated = true;
+          options.markersList[this.marker.uuid] = this.marker;
+        }
         this.marker.enable();
         this.group.add(this.marker.morph);
-        //this._lod.toggleMarker(this.marker.morph, true);
+      }
+      if (options && options.camera && (ndcToBeUpdated ||
+        options.markerCluster.markerUpdateRequired)) {
+        this.marker.updateNDC(options.camera.cameraObject);
+        options.markerCluster.markerUpdateRequired = true;
       }
     }
   } else {
     if (this.marker && this.marker.isEnabled()) {
       this.marker.disable();
       this.group.remove(this.marker.morph);
-      //this._lod.toggleMarker(this.marker.morph, false);
+      if (options.markersList &&
+        (this.marker.uuid in options.markersList)) {
+        options.markerCluster.markerUpdateRequired = true;
+        delete options.markersList[this.marker.uuid];
+      }
     }
     this.markerUpdateRequired = true;
   }

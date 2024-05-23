@@ -27,6 +27,7 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>const THREE = require('three');
+const createBufferGeometry = require('../utilities').createBufferGeometry;
 
 let uniqueiId = 0;
 
@@ -537,9 +538,10 @@ ZincObject.prototype.dispose = function() {
  * 
  * @return {Boolean} 
  */
-ZincObject.prototype.markerIsEnabled = function(options) {
-  if (this.markerMode === "on" || (options &amp;&amp; options.displayMarkers &amp;&amp;
-    (this.markerMode === "inherited"))) {
+ZincObject.prototype.markerIsRequired = function(options) {
+  if (this.visible &amp;&amp; 
+    (this.markerMode === "on" || (options &amp;&amp; options.displayMarkers &amp;&amp;
+    (this.markerMode === "inherited")))) {
       return true;
   }
   return false;
@@ -550,8 +552,9 @@ ZincObject.prototype.markerIsEnabled = function(options) {
  */
 ZincObject.prototype.updateMarker = function(playAnimation, options) {
   if ((playAnimation == false) &amp;&amp;
-    (this.markerIsEnabled(options)))
+    (this.markerIsRequired(options)))
   {
+    let ndcToBeUpdated = options.ndcToBeUpdated;
     if (this.groupName) {
       if (!this.marker) {
         this.marker = new (require("./marker").Marker)(this);
@@ -564,21 +567,30 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
           this.markerUpdateRequired = false;
         }
       }
-      if (options &amp;&amp; options.camera &amp;&amp; options.markerDepths) {
-        options.markerDepths.push(
-          this.marker.updateNDC(options.camera.cameraObject));
-      }
       if (!this.marker.isEnabled()) {
+        if (options.markersList &amp;&amp;
+          (!(this.marker.uuid in options.markersList))) {    
+            ndcToBeUpdated = true;
+          options.markersList[this.marker.uuid] = this.marker;
+        }
         this.marker.enable();
         this.group.add(this.marker.morph);
-        //this._lod.toggleMarker(this.marker.morph, true);
+      }
+      if (options &amp;&amp; options.camera &amp;&amp; (ndcToBeUpdated ||
+        options.markerCluster.markerUpdateRequired)) {
+        this.marker.updateNDC(options.camera.cameraObject);
+        options.markerCluster.markerUpdateRequired = true;
       }
     }
   } else {
     if (this.marker &amp;&amp; this.marker.isEnabled()) {
       this.marker.disable();
       this.group.remove(this.marker.morph);
-      //this._lod.toggleMarker(this.marker.morph, false);
+      if (options.markersList &amp;&amp;
+        (this.marker.uuid in options.markersList)) {
+        options.markerCluster.markerUpdateRequired = true;
+        delete options.markersList[this.marker.uuid];
+      }
     }
     this.markerUpdateRequired = true;
   }
@@ -691,17 +703,8 @@ ZincObject.prototype.addVertices = function(coords) {
   let mesh = this.getMorph();
   let geometry = undefined;
   if (!mesh) {
-    geometry = new THREE.BufferGeometry()
-    const vertices = new Float32Array((coords.length + 500) * 3);
-    let i = 0;
-    coords.forEach(coord => {
-      vertices[i++] = coord[0];
-      vertices[i++] = coord[1];
-      vertices[i++] = coord[2];
-    });
-    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    geometry = createBufferGeometry((coords.length + 500), coords);
     this.drawRange = coords.length;
-    geometry.setDrawRange(0, this.drawRange);
   } else {
     if (this.drawRange > -1) {
       const positionAttribute = mesh.geometry.getAttribute( 'position' );
@@ -714,10 +717,40 @@ ZincObject.prototype.addVertices = function(coords) {
       mesh.geometry.computeBoundingBox();
       mesh.geometry.computeBoundingSphere();
       geometry = mesh.geoemtry;
+      this.boundingBoxUpdateRequired = true;
     }
   }
   return geometry;
 }
+
+/**
+ * Set the objects position.
+ * 
+ * @return {THREE.Box3}.
+ */
+ZincObject.prototype.setPosition = function(x, y, z) {
+  const group = this.getGroup();
+  if (group) {
+    group.position.set(x, y, z);
+    group.updateMatrix();
+    this.boundingBoxUpdateRequired = true;
+  }
+}
+
+/**
+ * Set the objects scale.
+ * 
+ * @return {THREE.Box3}.
+ */
+ZincObject.prototype.setScaleAll = function(scale) {
+  const group = this.getGroup();
+  if (group) {
+    group.scale.set(scale, scale, scale);
+    group.updateMatrix();
+    this.boundingBoxUpdateRequired = true;
+  }
+}
+
 
 exports.ZincObject = ZincObject;
 </code></pre>
@@ -730,13 +763,13 @@ exports.ZincObject = ZincObject;
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Marker.html">Marker</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Thu Mar 21 2024 14:14:53 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Tue May 21 2024 09:38:36 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>
