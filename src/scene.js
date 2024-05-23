@@ -76,6 +76,7 @@ exports.Scene = function (containerIn, rendererIn) {
   this.forcePickableObjectsUpdate = false;
   this.uuid = getUniqueId();
   let markerCluster = new MarkerCluster(this);
+  markerCluster.disable();
   scene.add(markerCluster.group);
 
   const getDrawingWidth = () => {
