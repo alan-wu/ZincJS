@@ -182,7 +182,7 @@ exports.SceneLoader = function (sceneIn) {
   }
 
   //Internal loader for a regular zinc geometry.
-  const linesloader = (region, localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, finishCallback) => {
+  const linesloader = (region, localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, lod, finishCallback) => {
     return (geometry, materials) => {
       const newLines = new (require('./primitives/lines').Lines)();
       let material = undefined;
@@ -203,9 +203,14 @@ exports.SceneLoader = function (sceneIn) {
         newLines.createLineSegment(geometry, material, options);
         newLines.setName(groupName);
         newLines.anatomicalId = anatomicalId;
-        newLines.setRenderOrder = renderOrder;
+        newLines.setRenderOrder(renderOrder);
         region.addZincObject(newLines);
         newLines.setDuration(scene.getDuration());
+        if (lod && lod.levels) {
+          for (const [key, value] of Object.entries(lod.levels)) {
+            newLines.addLOD(primitivesLoader, key, value.URL, lod.preload);
+          }
+        }
       }
       --this.toBeDownloaded;
       geometry.dispose();
@@ -237,10 +242,10 @@ exports.SceneLoader = function (sceneIn) {
     if (isInline) {
       var object = primitivesLoader.parse( url );
       (linesloader(region, localTimeEnabled, localMorphColour, groupName, anatomicalId,
-        renderOrder, finishCallback))( object.geometry, object.materials );
+        renderOrder, options.lod, finishCallback))( object.geometry, object.materials );
     } else {
       primitivesLoader.load(url, linesloader(region, localTimeEnabled, localMorphColour, groupName, 
-        anatomicalId, renderOrder, finishCallback), this.onProgress(url), this.onError(finishCallback));
+        anatomicalId, renderOrder, options.lod, finishCallback), this.onProgress(url), this.onError(finishCallback));
     }
   }
 
