@@ -3,7 +3,7 @@ var path = require('path');
 const NodePolyfillPlugin = require("node-polyfill-webpack-plugin")
 
 module.exports = {
-  mode: 'none',
+  mode: 'development',
   resolve: {
     modules: [path.resolve('../src'), "node_modules"],
     extensions: ['.ts', '.js'],
