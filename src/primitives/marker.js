@@ -4,7 +4,7 @@ markerImage.src = require("../assets/mapMarker.svg");
 const texture = new THREE.Texture();
 texture.image = markerImage;
 texture.needsUpdate = true;
-const size = [0.017, 0.025, 1];
+const size = [0.02, 0.03, 1];
 const spriteMaterial = new THREE.SpriteMaterial({
   map: texture,
   alphaTest: 0.5,
@@ -12,7 +12,8 @@ const spriteMaterial = new THREE.SpriteMaterial({
   depthTest: false,
   depthWrite: false,
   sizeAttenuation: false
-}); 
+});
+const createNewSpriteText = require('../utilities').createNewSpriteText;
 
 /**
  * A special graphics type with a tear drop shape.
@@ -33,6 +34,8 @@ const Marker = function(zincObject) {
   this.isMarker = true;
   let enabled = false;
   this.ndc = new THREE.Vector3();
+  let number = undefined;
+  let label = undefined;
 
 	let initialise = () => {             
     sprite = new THREE.Sprite(spriteMaterial);
@@ -93,10 +96,36 @@ const Marker = function(zincObject) {
       sprite.clear();
       sprite = undefined;
     }
+    if (label) {
+      label.material.map.dispose();
+      label.material.dispose();
+      label = undefined;
+    }
   }
 
   this.isEnabled = () => {
     return enabled;
+  }
+
+  this.setNumber = (numberIn) => {
+    if (!numberIn || (number != numberIn)) {
+      //remove label
+      if (label) {
+        this.morph.remove(label);
+        label.material.map.dispose();
+        label.material.dispose();
+        label = undefined;
+      }
+    }
+    if (!label && numberIn) {
+      label = createNewSpriteText(numberIn, 0.012, "black", "Asap", 50, 500);
+      this.morph.add(label);
+    }
+    number = numberIn;
+  }
+
+  this.getNumber = () => {
+    return number ? number : 1;
   }
 
   /**

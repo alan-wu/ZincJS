@@ -41,6 +41,7 @@ const ZincObject = function() {
   this.userData = {};
   this.videoHandler = undefined;
   this.marker = undefined;
+  this.markerNumber = undefined;
   this.markerUpdateRequired = true;
   this.closestVertexIndex = -1;
   this.boundingBoxUpdateRequired = true;
@@ -251,7 +252,6 @@ ZincObject.prototype.setMorphTime = function(time) {
   }
   if (timeChanged) {
     this.boundingBoxUpdateRequired = true;
-    const morph = this._lod.getCurrentMorph();
     this._lod.updateMorphColorAttribute(true);
     if (this.timeEnabled)
       this.markerUpdateRequired = true;
@@ -548,6 +548,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
         this.marker.enable();
         this.group.add(this.marker.morph);
       }
+      this.marker.setNumber(this.markerNumber);
       if (options && options.camera && (ndcToBeUpdated ||
         options.markerCluster.markerUpdateRequired)) {
         this.marker.updateNDC(options.camera.cameraObject);
@@ -619,7 +620,7 @@ ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
  * 
  * @return {Boolean} 
  */
- ZincObject.prototype.setMarkerMode = function(mode) {
+ ZincObject.prototype.setMarkerMode = function(mode, options) {
   if (mode !== this.markerMode) {
     if (mode === "on" || mode === "off") {
       this.markerMode = mode;
@@ -629,6 +630,9 @@ ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
     if (this.region) {
       this.region.pickableUpdateRequired = true;
     }
+  }
+  if (options) {
+    this.markerNumber = options.number;
   }
 }
 

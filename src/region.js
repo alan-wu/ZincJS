@@ -751,15 +751,17 @@ let Region = function (parentIn, sceneIn) {
     //one entry in markersList is greater than 1, markers have been enabled.
     if (options && (playAnimation === false) &&
       options.markerCluster?.markerUpdateRequired) {
-      const markerDepths = Object.values(options.markersList)
-        .map((marker) => marker.ndc.z);
-      if (markerDepths.length > 1) {
-        const min = Math.min(...markerDepths);
-        const max = Math.max(...markerDepths);
-        allObjects.forEach(zincObject => {
-          zincObject.processMarkerVisual(min, max);
-        });
-      }
+      /** 
+        const markerDepths = Object.values(options.markersList)
+          .map((marker) => marker.ndc.z);
+        if (markerDepths.length > 1) {
+          const min = Math.min(...markerDepths);
+          const max = Math.max(...markerDepths);
+          allObjects.forEach(zincObject => {
+            zincObject.processMarkerVisual(min, max);
+          });
+        }
+      */
       options.markerCluster.calculate();
     }
   }

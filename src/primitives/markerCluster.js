@@ -1,5 +1,4 @@
 const THREE = require('three');
-const SpriteText = require('three-spritetext').default;
 const markerImage = new Image(128, 128);
 markerImage.src = require("../assets/mapMarkerOrange.svg");
 const texture = new THREE.Texture();
@@ -14,18 +13,7 @@ const spriteMaterial = new THREE.SpriteMaterial({
   depthWrite: false,
   sizeAttenuation: false
 });
-
-const createNewLabel = (text, height, colour, font, pixel, weight) => {
-  const sprite = new SpriteText(text, height, colour, font, pixel, weight);
-  sprite.material.sizeAttenuation = false;
-  sprite.material.alphaTest = 0.5;
-  sprite.material.transparent = true;
-  sprite.material.depthWrite = false;
-  sprite.material.depthTest = false;
-  sprite.center.set(0.5, -1.2);
-  sprite.renderOrder = 10000;
-  return sprite;
-}
+const createNewSpriteText = require('../utilities').createNewSpriteText;
 
 /**
  * A special graphics type with a tear drop shape.
@@ -93,25 +81,25 @@ const MarkerCluster = function(sceneIn) {
       "group": localGroup,
       "marker": sprite,
       "label": undefined,
-      "length": 0,
+      "number": 0,
       "min": [0, 0, 0],
       "max": [1, 1, 1],
     };
   }
 
-  const activateSpriteForCluster = (sprite, cluster, length) => {
+  const activateSpriteForCluster = (sprite, cluster, number) => {
     sprite.group.visible = true;
     sprite.group.position.set(
       cluster.coords[0], cluster.coords[1], cluster.coords[2]
     );
-    if (sprite.label === undefined || (length !== sprite.length)) {
+    if (sprite.label === undefined || (number !== sprite.number)) {
       if (sprite.label) {
         sprite.group.remove(sprite.label);
         sprite.label.material.map.dispose();
         sprite.label.material.dispose();
       }
-      sprite.label = createNewLabel(length, 0.012, "black", "Asap", 50, 500);
-      sprite.length = length;
+      sprite.label = createNewSpriteText(number, 0.012, "black", "Asap", 50, 500);
+      sprite.number = number;
       sprite.group.add(sprite.label);
     }
     sprite.min = cluster.min;
@@ -122,16 +110,18 @@ const MarkerCluster = function(sceneIn) {
     let currentIndex = 0;
     clusters.forEach((cluster) => {
       const length = cluster.members.length;
+      let number = 0;
       if (length === 1) {
         cluster.members[0].setVisibility(true);
       } else {
         cluster.members.forEach((marker) => {
+          number += marker.getNumber();
           marker.setVisibility(false);
         });
         if (!sprites[currentIndex]) {
           sprites.push(createNewSprite(currentIndex));
         }
-        activateSpriteForCluster(sprites[currentIndex], cluster, length);
+        activateSpriteForCluster(sprites[currentIndex], cluster, number);
         currentIndex++;
       }
     });

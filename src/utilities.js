@@ -1,5 +1,6 @@
 const THREE = require('three');
 const THREEGeometry = require('./three/Geometry').Geometry;
+const SpriteText = require('three-spritetext').default;
 
 function resolveURL(url) {
 	let actualURL = url;
@@ -439,6 +440,17 @@ function getCircularTexture() {
   return texture;
 }
 
+function createNewSpriteText(text, height, colour, font, pixel, weight) {
+  const sprite = new SpriteText(text, height, colour, font, pixel, weight);
+  sprite.material.sizeAttenuation = false;
+  sprite.material.alphaTest = 0.5;
+  sprite.material.transparent = true;
+  sprite.material.depthWrite = false;
+  sprite.material.depthTest = false;
+  sprite.center.set(0.5, -1.2);
+  sprite.renderOrder = 10000;
+  return sprite;
+}
 
 exports.getBoundingBox = getBoundingBox;
 exports.createNewURL = createNewURL;
@@ -448,3 +460,4 @@ exports.resolveURL = resolveURL;
 exports.loadExternalFile = loadExternalFile;
 exports.loadExternalFiles = loadExternalFiles;
 exports.PhongToToon = PhongToToon;
+exports.createNewSpriteText = createNewSpriteText;
