@@ -422,6 +422,7 @@ exports.SceneLoader = function (sceneIn) {
           scene.viewAll();
         if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function'))
           allCompletedCallback();
+        
       }
     };
   };

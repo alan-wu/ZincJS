@@ -70,6 +70,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.touchZoomDistanceEnd = 0;
 	this.directionalLight = 0;
 	this.scrollRate = 50;
+	this.pixelHeight = 1;
 	let duration = 6000;
   let enabled = true;
 	let inbuildTime = 0;
@@ -222,6 +223,25 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     if (ndcControl)
       ndcControl.setCurrentCameraSettings(this.cameraObject,
         viewports[defaultViewport]);
+	}
+
+	this.getVisibleHeightAtZDepth = ( depth ) => {
+		// compensate for cameras not positioned at z=0
+		const cameraOffset = this.cameraObject.position.z;
+		if ( depth < cameraOffset ) depth -= cameraOffset;
+		else depth += cameraOffset;
+	
+		// vertical fov in radians
+		const vFOV = this.cameraObject.fov * Math.PI / 180; 
+	
+		// Math.abs to ensure the result is always positive
+		return 2 * Math.tan( vFOV / 2 ) * Math.abs( depth );
+	};
+
+	this.calculateHeightPerPixelAtZeroDepth = ( wHeight ) => {
+		const height = this.getVisibleHeightAtZDepth(0);
+		this.pixelHeight = height / wHeight;
+		return this.pixelHeight;
 	}
 
   /**
@@ -987,6 +1007,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		} else {
 			this.cameraObject.lookAt( this.cameraObject.target );
 		}
+
 		return updated;
 	};
 	
@@ -1476,7 +1497,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	const enabled = true;
 	const raycaster = new THREE.Raycaster();
 	raycaster.params.Line.threshold = 0.1;
-	raycaster.params.Points.threshold = 0.1;
+	raycaster.params.Points.threshold = 1;
   const mouse = new THREE.Vector2();
   let awaiting = false;
   let lastHoveredDate = new Date();

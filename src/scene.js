@@ -111,10 +111,12 @@ exports.Scene = function (containerIn, rendererIn) {
 
   //called from Renderer when panel has been resized
   this.onWindowResize = () => {
-    this.camera.aspect = getDrawingWidth() / getDrawingHeight();
+    const wHeight = getDrawingHeight();
+    this.camera.aspect = getDrawingWidth() / wHeight;
     this.camera.updateProjectionMatrix();
     this.minimapScissor.updateRequired = true;
     zincCameraControls.onResize();
+    zincCameraControls.calculateHeightPerPixelAtZeroDepth(wHeight);
   }
 
   /**
@@ -196,6 +198,7 @@ exports.Scene = function (containerIn, rendererIn) {
     if (boundingBox) {
       const viewport = zincCameraControls.getViewportFromBoundingBox(boundingBox, 1.0);
       zincCameraControls.setCurrentCameraSettings(viewport);
+      zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
       markerCluster.markerUpdateRequired = true;
     }
   }
@@ -594,6 +597,9 @@ exports.Scene = function (containerIn, rendererIn) {
 			  if (0 == sceneLoader.toBeDownloaded) {
 				  zincCameraControls.setTime(currentTime);
 				  options.ndcToBeUpdated = zincCameraControls.update(0);
+          if (options.ndcToBeUpdated) {
+            zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
+          }
           rootRegion.setMorphTime(currentTime, true);
           rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, options, true);
 			  } else {
@@ -606,6 +612,9 @@ exports.Scene = function (containerIn, rendererIn) {
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded) {
         options.ndcToBeUpdated = zincCameraControls.update(delta);
+        if (options.ndcToBeUpdated) {
+          zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
+        }
         rootRegion.renderGeometries(playRate, delta, playAnimation, zincCameraControls, options, true);
 		  } else {
 			  zincCameraControls.update(0);

@@ -85,6 +85,19 @@ const Pointset = function () {
       this.morph.material.needsUpdate = true;
     }
   }
+
+    /**
+   * Turn size attenuation on/off based on the flag.
+   * 
+   * @param {Boolean} flag - Determin either size attenuation
+   * should be on or off.
+   */
+    this.render = (delta, playAnimation, cameraControls, options) => {
+      if (this.morph) {
+        this.morph.sizePerPixel = cameraControls.pixelHeight;
+      }
+      Pointset.prototype.render.call(this, delta, playAnimation, cameraControls, options);
+    }
 }
 
 Pointset.prototype = Object.create((require('./zincObject').ZincObject).prototype);

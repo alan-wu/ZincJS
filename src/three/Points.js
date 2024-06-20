@@ -26,6 +26,7 @@ class Points extends Object3D {
 
 		this.geometry = geometry;
 		this.material = material;
+		this.sizePerPixel = 1;
 
 		this.updateMorphTargets();
 
@@ -64,7 +65,7 @@ class Points extends Object3D {
 		_inverseMatrix.copy( matrixWorld ).invert();
 		_ray.copy( raycaster.ray ).applyMatrix4( _inverseMatrix );
 
-		const localThreshold = threshold / ( ( this.scale.x + this.scale.y + this.scale.z ) / 3 );
+		const localThreshold = threshold / ( ( this.scale.x + this.scale.y + this.scale.z ) / 3 ) * this.material.size * this.sizePerPixel;
 		const localThresholdSq = localThreshold * localThreshold;
 
 		if ( geometry.isBufferGeometry ) {
