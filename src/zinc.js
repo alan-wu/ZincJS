@@ -18,6 +18,7 @@ const Zinc = function() {
   this.Glyph = require('./primitives/glyph').Glyph;
   this.Glyphset = require('./primitives/glyphset').Glyphset;
   this.Pointset = require('./primitives/pointset').Pointset;
+  this.Label = require('./primitives/label').Label;
   this.Lines = require('./primitives/lines').Lines;
   this.TextureArray = require('./texture/textureArray').TextureArray;
   this.TextureSlides = require('./primitives/textureSlides').TextureSlides;
