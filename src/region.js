@@ -321,7 +321,11 @@ let Region = function (parentIn, sceneIn) {
       if (zincObject === zincObjects[i]) {
         group.remove(zincObject.getGroup());
         zincObjects.splice(i, 1);
+        if (scene) {
+          scene.triggerObjectRemovedCallback(zincObject);
+        }
         zincObject.dispose();
+        this.pickableUpdateRequired = true;
         return;
       }
     }

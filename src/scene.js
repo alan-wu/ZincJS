@@ -39,6 +39,8 @@ exports.Scene = function (containerIn, rendererIn) {
   let minimap = undefined;
   let zincObjectAddedCallbacks = {};
   let zincObjectAddedCallbacks_id = 0;
+  let zincObjectRemovedCallbacks = {};
+  let zincObjectRemovedCallbacks_id = 0;
   const scene = new THREE.Scene();
   const rootRegion = new (require('./region').Region)(undefined, this);
   scene.add(rootRegion.getGroup());
@@ -968,6 +970,7 @@ exports.Scene = function (containerIn, rendererIn) {
     markerCluster.clear();
     rootRegion.clear(true);
     this.clearZincObjectAddedCallbacks();
+    this.clearZincObjectRemovedCallbacks();
     sceneLoader.toBeDwonloaded = 0;
     if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
@@ -1126,6 +1129,18 @@ exports.Scene = function (containerIn, rendererIn) {
 		zincObjectAddedCallbacks[zincObjectAddedCallbacks_id] = callbackFunction;
 		return zincObjectAddedCallbacks_id;
 	}
+
+	/**
+	 * Add a callback function which will be called everytime zinc object is removed.
+	 * @param {Function} callbackFunction - callbackFunction to be added.
+	 * 
+	 * @return {Number}
+	 */
+	this.addZincObjectRemovedCallbacks = callbackFunction => {
+		zincObjectRemovedCallbacks_id = zincObjectRemovedCallbacks_id + 1;
+		zincObjectRemovedCallbacks[zincObjectRemovedCallbacks_id] = callbackFunction;
+		return zincObjectRemovedCallbacks_id;
+	}
 	
 	/**
 	 * Remove a callback function that is previously added to the scene.
@@ -1134,6 +1149,16 @@ exports.Scene = function (containerIn, rendererIn) {
 	this.removeZincObjectAddedCallbacks = id => {
 		if (id in zincObjectAddedCallbacks_id) {
    			delete zincObjectAddedCallbacks[id];
+		}
+	}
+
+	/**
+	 * Remove a callback function that is previously added to the scene.
+	 * @param {Number} id - identifier of the previously added callback function.
+	 */
+	this.removeZincObjectRemovedCallbacks = id => {
+		if (id in zincObjectRemovedCallbacks_id) {
+   			delete zincObjectRemovedCallbacks[id];
 		}
 	}
 
@@ -1146,12 +1171,31 @@ exports.Scene = function (containerIn, rendererIn) {
 	}
 
   /**
+	 * Clear all zinc object callback function
+	 */
+	this.clearZincObjectRemovedCallbacks = () => {
+		zincObjectRemovedCallbacks = {};
+    zincObjectRemovedCallbacks_id = 0;
+	}
+
+  /**
 	 * Used to trigger zinc object added callback
 	 */
   this.triggerObjectAddedCallback = (zincObject) => {
     for (let key in zincObjectAddedCallbacks) {
       if (zincObjectAddedCallbacks.hasOwnProperty(key)) {
         zincObjectAddedCallbacks[key](zincObject);
+      }
+    }
+  }
+
+  /**
+	 * Used to trigger zinc object removed callback
+	 */
+  this.triggerObjectRemovedCallback= (zincObject) => {
+    for (let key in zincObjectRemovedCallbacks) {
+      if (zincObjectRemovedCallbacks.hasOwnProperty(key)) {
+        zincObjectRemovedCallbacks[key](zincObject);
       }
     }
   }
