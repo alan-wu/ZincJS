@@ -349,20 +349,22 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 
 	const onDocumentMouseMove = event => {
     updateRect(false);
-		this.pointer_x = event.clientX - rect.left;
-		this.pointer_y = event.clientY - rect.top;
-    if (currentMode === MODE.MINIMAP) {
-      let minimapCoordinates = this.scene.getNormalisedMinimapCoordinates(this.renderer, event);
-      if (minimapCoordinates) {
-        let translation = this.scene.getMinimapDiffFromNormalised(
-          minimapCoordinates.x, minimapCoordinates.y);
-        translateViewport(translation);
-      }
-    } else {
-      if ((this._state === STATE.NONE) && (zincRayCaster !== undefined)) {
-        zincRayCaster.move(this, event.clientX, event.clientY, this.renderer);
-      }
-    }
+		if (rect) {
+			this.pointer_x = event.clientX - rect.left;
+			this.pointer_y = event.clientY - rect.top;
+			if (currentMode === MODE.MINIMAP) {
+				let minimapCoordinates = this.scene.getNormalisedMinimapCoordinates(this.renderer, event);
+				if (minimapCoordinates) {
+					let translation = this.scene.getMinimapDiffFromNormalised(
+						minimapCoordinates.x, minimapCoordinates.y);
+					translateViewport(translation);
+				}
+			} else {
+				if ((this._state === STATE.NONE) && (zincRayCaster !== undefined)) {
+					zincRayCaster.move(this, event.clientX, event.clientY, this.renderer);
+				}
+			}
+		}
 	}
 	
 	const onDocumentMouseUp = event => {
