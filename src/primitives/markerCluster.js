@@ -218,6 +218,15 @@ const MarkerCluster = function(sceneIn) {
       this.markerUpdateRequired = true;
     }
   }
+
+  this.clusterIsVisible = (index) => {
+    if (index !== undefined && index > -1) {
+      if (sprites[index]) {
+        return sprites[index].group?.visible;
+      }
+    }
+    return false;
+  }
 }
 
 MarkerCluster.prototype = Object.create((require('./zincObject').ZincObject).prototype);

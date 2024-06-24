@@ -1535,7 +1535,8 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 			const length = pickedObjects.length;
 			for (let i = 0; i < length; i++) {
 				let zincObject = pickedObjects[i].object ? pickedObjects[i].object.userData : undefined;
-				if (zincObject && zincObject.isMarkerCluster && zincObject.visible) {
+				if (zincObject && zincObject.isMarkerCluster && zincObject.visible
+					&& zincObject.clusterIsVisible(pickedObjects[i].object.clusterIndex)) {
 					zincObject.zoomToCluster(pickedObjects[i].object.clusterIndex);
 					return;
 				}
