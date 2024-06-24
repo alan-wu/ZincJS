@@ -227,7 +227,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 
 	this.getVisibleHeightAtZDepth = ( depth ) => {
 		// compensate for cameras not positioned at z=0
-		const cameraOffset = this.cameraObject.position.z;
+		
+		const cameraOffset = this.cameraObject.position.distanceTo(this.cameraObject.target);
 		if ( depth < cameraOffset ) depth -= cameraOffset;
 		else depth += cameraOffset;
 	
