@@ -182,7 +182,8 @@ exports.SceneLoader = function (sceneIn) {
   }
 
   //Internal loader for a regular zinc geometry.
-  const linesloader = (region, localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, lod, finishCallback) => {
+  const linesloader = (region, localTimeEnabled, localMorphColour, groupName,
+    anatomicalId, renderOrder, lod, finishCallback) => {
     return (geometry, materials) => {
       const newLines = new (require('./primitives/lines').Lines)();
       let material = undefined;
@@ -660,9 +661,10 @@ exports.SceneLoader = function (sceneIn) {
       let newURL = undefined;
       let isInline = false;
       if (item.URL) {
+        //Convert it into an array
         newURL = item.URL;
         if (referenceURL)
-          newURL = createNewURL(item.URL, referenceURL);
+          newURL = createNewURL(newURL, referenceURL);
       } else if (item.Inline) {
         newURL = item.Inline.URL;
         isInline = true;

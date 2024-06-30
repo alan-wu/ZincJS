@@ -1,5 +1,6 @@
 const THREE = require('three');
 const createBufferGeometry = require('../utilities').createBufferGeometry;
+const resolveURL = require('../utilities').resolveURL;
 
 let uniqueiId = 0;
 
@@ -711,6 +712,13 @@ ZincObject.prototype.setPosition = function(x, y, z) {
     group.updateMatrix();
     this.boundingBoxUpdateRequired = true;
   }
+}
+
+ZincObject.prototype.loadAdditionalSources = function(primitivesLoader, sources) {
+
+  primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
+    undefined, undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
+
 }
 
 /**
