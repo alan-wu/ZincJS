@@ -1270,11 +1270,65 @@ exports.Scene = function (containerIn, rendererIn) {
     const box = boundingBox ? boundingBox : this.getBoundingBox();
     const dim = new THREE.Vector3().subVectors(box.max, box.min);
     const boxGeo = new THREE.BoxGeometry(dim.x, dim.y, dim.z);
-    dim.addVectors(box.min, box.max).multiplyScalar( 0.5 );
     const primitive = region.createGeometryFromThreeJSGeometry(
       group, boxGeo, colour, opacity, visibility, 10000);
+    dim.addVectors(box.min, box.max).multiplyScalar( 0.5 );
     primitive.setPosition(dim.x, dim.y, dim.z);
     return primitive;
+  }
+
+  /*
+	 * Create primitive based on the bounding box of scene and
+   * add to specify region and group name.
+	 */
+  this.addSlicesPrimitive = (regionPath, groups, colours, opacity,
+    visibility, boundingBox = undefined) => {
+    if (groups && groups.length >= 3 &&
+      colours && colours.length >= 3) {
+      let region = rootRegion.findChildFromPath(regionPath);
+      if (region === undefined) {
+        region = rootRegion.createChildFromPath(regionPath);
+      }
+      const box = boundingBox ? boundingBox : this.getBoundingBox();
+      const dim = new THREE.Vector3().subVectors(box.max, box.min);
+      const directions = ["x", "y", "z"];
+      const primitives = [];
+      let index = 0;
+      directions.forEach((direction) => {
+        let planeGeo = undefined;
+        switch(direction) {
+          //YZ plane
+          case "x":
+            planeGeo = new THREE.PlaneGeometry(dim.z, dim.y);
+            planeGeo.rotateY(Math.PI / 2);
+            // code block
+            break;
+          //XZ plane
+          case "y":
+            planeGeo = new THREE.PlaneGeometry(dim.x, dim.z);
+            planeGeo.rotateX(Math.PI / 2);
+            // code block
+            break;
+          //XY plane
+          case "z":
+            planeGeo = new THREE.PlaneGeometry(dim.x, dim.y);
+              // code block
+            break;
+          default:
+            break;
+        }
+        const primitive = region.createGeometryFromThreeJSGeometry(
+          groups[index], planeGeo, colours[index], opacity, visibility, 10001);
+        primitives.push(primitive);
+        index++;
+      });
+
+      dim.addVectors(box.min, box.max).multiplyScalar( 0.5 );
+      primitives.forEach((primitive) => {
+        primitive.setPosition(dim.x, dim.y, dim.z);
+      });
+      return primitives;
+    }
   }
 
   /*
