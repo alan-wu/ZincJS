@@ -19,7 +19,7 @@ const TextureSlides = function (textureIn) {
   this.morph = new THREE.Group();
   this.group = this.morph;
   this.morph.userData = this;
-   let flipY = true;
+  let flipY = true;
 
   /**
     @typedef SLIDE_SETTINGS
@@ -125,6 +125,7 @@ const TextureSlides = function (textureIn) {
         const material = this.texture.getMaterial(options);
         material.needsUpdate = true;
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.name = this.groupName;
         mesh.userData = this;
         const slideSettings = {
           value: settings.value,
