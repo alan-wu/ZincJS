@@ -145,10 +145,23 @@ const TextureSlides = function (textureIn) {
   /**
    * Return a copy of texture settings used by this object.
    *
-   * @return {SLIDE_SETTINGS} - Returned the list of settings..
+   * @return {SLIDE_SETTINGS} - Returned the list of settings.
    */
   this.getTextureSettings = () => {
     return [...textureSettings];
+  }
+
+  /**
+   * Return a copy of texture settings with corresponding id used by this object.
+   *
+   * @return {SLIDE_SETTINGS} - Returned a copy of settings with corresponding id.
+   */
+  this.getTextureSettingsWithId = (id) => {
+    for (let i = 0; i < textureSettings.length; i++) {
+      if (id === textureSettings[i].id) {
+        return {...textureSettings[i]};
+      }
+    }
   }
 
   /**
