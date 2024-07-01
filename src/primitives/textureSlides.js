@@ -51,18 +51,30 @@ const TextureSlides = function (textureIn) {
   const setUniformSlideSettingsOfMesh = (mesh, settings) => {
     const material = mesh.material;
     const uniforms = material.uniforms;
+    mesh.rotation.x = 0;
+    mesh.rotation.y = 0;
+    mesh.rotation.z = 0;
+    mesh.position.x = 0;
+    mesh.position.y = 0;
+    mesh.position.z = 0;
     switch (settings.direction) {
       case "x":
+        const rotation = flipY ? -Math.PI / 2 : Math.PI / 2;
+        mesh.rotation.y = rotation;
         uniforms.direction.value = 1;
         uniforms.slide.value.set(settings.value, 0, 0);
+        mesh.position.x = settings.value;
         break;
       case "y":
+        mesh.rotation.x = Math.PI / 2;
         uniforms.direction.value = 2;
         uniforms.slide.value.set(0, settings.value, 0);
+        mesh.position.y = settings.value;
         break;
       case "z":
         uniforms.direction.value = 3;
         uniforms.slide.value.set(0, 0, settings.value);
+        mesh.position.z = settings.value;
         break;
       default:
         break;
@@ -113,6 +125,7 @@ const TextureSlides = function (textureIn) {
         const material = this.texture.getMaterial(options);
         material.needsUpdate = true;
         const mesh = new THREE.Mesh(geometry, material);
+        mesh.userData = this;
         const slideSettings = {
           value: settings.value,
           direction: settings.direction,
