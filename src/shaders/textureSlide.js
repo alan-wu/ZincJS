@@ -34,18 +34,17 @@ uniform bool flipY;
 void main() {
 
   vec3 slidePos = position.xyz;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4( position.xyz, 1.0 );
 
   if (direction == 1)
-    slidePos = vec3(slide.x, position.x, position.y);
+    slidePos = vec3(slide.x, position.y, position.x);
   if (direction == 2)
     slidePos = vec3(position.x, slide.y, position.y);
   if (direction == 3)
     slidePos = vec3(position.x, position.y, slide.z);
 
-  gl_Position = projectionMatrix * modelViewMatrix * vec4( slidePos, 1.0 );
-
-  if (flipY)
-  slidePos.y = 1.0 - slidePos.y;
+  if (flipY) 
+    slidePos.y = 1.0 - slidePos.y;
 
   vUw.xyz = vec3(slidePos.x, slidePos.y, slidePos.z * depth);
 
