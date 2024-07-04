@@ -34,6 +34,7 @@ const MultiSourcesHandler = function(numberIn, onLoadCallback) {
       const geometries = allData.map((data) => data[0]);
       //All geometries will be merged into the first one
       const geometry = mergeGeometries(geometries);
+
       for (let i = 1; i < number; i++) {
         allData[index][0].dispose();
         allData[index][1].forEach((material) => material.dispose());
@@ -42,7 +43,6 @@ const MultiSourcesHandler = function(numberIn, onLoadCallback) {
     }
   }
 }
-
 
 exports.PrimitivesLoader = function () {
   let concurrentDownloads = 0;
