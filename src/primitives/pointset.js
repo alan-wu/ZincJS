@@ -93,7 +93,7 @@ const Pointset = function () {
    * should be on or off.
    */
     this.render = (delta, playAnimation, cameraControls, options) => {
-      if (this.morph) {
+      if (this.morph && cameraControls) {
         this.morph.sizePerPixel = cameraControls.pixelHeight;
       }
       Pointset.prototype.render.call(this, delta, playAnimation, cameraControls, options);
