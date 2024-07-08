@@ -1,5 +1,4 @@
 const THREE = require('three');
-const createBufferGeometry = require('../utilities').createBufferGeometry;
 const toBufferGeometry = require('../utilities').toBufferGeometry;
 const LineSegments2 = require("../three/line/LineSegments2").LineSegments2;
 const LineMaterial = require("../three/line/LineMaterial").LineMaterial;
@@ -115,7 +114,7 @@ const Lines2 = function () {
   /**
    * Edit Vertice in index.
    */
-  this.editVertice = function(coords, i) {
+  this.editVertices = function(coords, i) {
     if (coords && coords.length) {
       let mesh = this.getMorph();
       const maxIndex = i + coords.length - 1;
@@ -141,7 +140,6 @@ const Lines2 = function () {
     }
     return positions;
   }
-
 
   /**
    * Add new lines to existing lines if it exists, otherwise
