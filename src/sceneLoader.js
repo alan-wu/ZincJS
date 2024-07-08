@@ -209,7 +209,7 @@ exports.SceneLoader = function (sceneIn) {
         newLines.setDuration(scene.getDuration());
         if (lod && lod.levels) {
           for (const [key, value] of Object.entries(lod.levels)) {
-            newLines.addLOD(primitivesLoader, key, value.URL, lod.preload);
+            newLines.addLOD(primitivesLoader, key, value.URL, value.index, lod.preload);
           }
         }
       }
@@ -241,12 +241,13 @@ exports.SceneLoader = function (sceneIn) {
 	  if (morphColour != undefined)
 		  localMorphColour = morphColour ? true : false;
     if (isInline) {
-      var object = primitivesLoader.parse( url );
+      let object = primitivesLoader.parse( url );
       (linesloader(region, localTimeEnabled, localMorphColour, groupName, anatomicalId,
         renderOrder, options.lod, finishCallback))( object.geometry, object.materials );
     } else {
       primitivesLoader.load(url, linesloader(region, localTimeEnabled, localMorphColour, groupName, 
-        anatomicalId, renderOrder, options.lod, finishCallback), this.onProgress(url), this.onError(finishCallback));
+        anatomicalId, renderOrder, options.lod, finishCallback), this.onProgress(url), this.onError(finishCallback),
+        options.loaderOptions);
     }
   }
 
@@ -390,7 +391,8 @@ exports.SceneLoader = function (sceneIn) {
         loader = new OBJLoader();
         loader.crossOrigin = "Anonymous";
         loader.load(url, objloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(url), this.onError);
+          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(url), this.onError,
+          options.loaderOptions);
         return;
       }
     }
@@ -401,7 +403,8 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       loader.crossOrigin = "Anonymous";
       primitivesLoader.load(url, meshloader(region, colour, opacity, localTimeEnabled,
-        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback), this.onProgress(url), this.onError(finishCallback));
+        localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback),
+        this.onProgress(url), this.onError(finishCallback), options.loaderOptions);
     }
   };
 
@@ -455,7 +458,7 @@ exports.SceneLoader = function (sceneIn) {
     } else {
       primitivesLoader.load(url, pointsetloader(region, localTimeEnabled, localMorphColour,
         groupName, anatomicalId, renderOrder, finishCallback),
-        this.onProgress(url), this.onError(finishCallback));
+        this.onProgress(url), this.onError(finishCallback), options.loaderOptions);
     }
   }
 
@@ -614,7 +617,7 @@ exports.SceneLoader = function (sceneIn) {
       zincGeometry.setRenderOrder(renderOrder);
       if (options.lod && options.lod.levels) {
         for (const [key, value] of Object.entries(options.lod.levels)) {
-          zincGeometry.addLOD(primitivesLoader, key, value.URL, options.lod.preload);
+          zincGeometry.addLOD(primitivesLoader, key, value.URL, value, index, options.lod.preload);
         }
       }
       --this.toBeDownloaded;
@@ -684,6 +687,9 @@ exports.SceneLoader = function (sceneIn) {
       }
 
       let options = {
+        loaderOptions: {
+          index: item.index,
+        },
         isInline: isInline,
         fileFormat: item.FileFormat,
         anatomicalId: item.AnatomicalId,

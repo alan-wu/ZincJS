@@ -1,4 +1,6 @@
 const JSONLoader = require('./JSONLoader').JSONLoader;
+const THREE = require('three');
+const FileLoader = THREE.FileLoader;
 
 const mergeGeometries = (geometries) => {
 
@@ -17,31 +19,105 @@ const mergeGeometries = (geometries) => {
   return undefined;
 }
 
+const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback) {
+  const allData = [];
+  const loader = new FileLoader();
+  const jsonLoader = new JSONLoader();
+  loader.crossOrigin = crossOrigin;
+  const url = urlIn;
+  const onDownloaded = onDownloadedCallback;
+  let data = undefined;
+  let downloading = false;
+  let finished = false;
+  let error = undefined;
+  const items = [];
+
+
+  const processItemDownloaded = (item) => {
+    if (Array.isArray(data)) {
+
+
+
+    }
+
+  }
+
+  this.downloadCompleted = (args) => {
+    data = JSON.parse(args[0]);
+    if (Array.isArray(data)) {
+
+
+      
+    }
+    downloading = false;
+    finished = true;
+    items.forEach(item => processItemDownloaded(item));
+  }
+
+  const errorHandling = () => {
+    return xhr => {
+      error = xhr;
+      downloading = false;
+    }
+  }
+
+  const progressHandling = () => {
+    return xhr => {
+      items.forEach((item) => {
+        if (item.onProgress) {
+          item.onProgress(xhr);
+        }
+      });
+    }
+  }
+
+  this.load = (index, onLoad, onProgress, onError) => {
+    if (finished) {
+      if (data) {
+        let object = primitivesLoader.parse( url );
+        (linesloader(region, localTimeEnabled, localMorphColour, groupName, anatomicalId,
+          renderOrder, options.lod, finishCallback))( object.geometry, object.materials );
+      } else {
+        onError(error);
+        //error
+      }
+    } else if (downloading) {
+      //quene it up
+      items.push({
+        index,
+        onLoad,
+        onProgress,
+        onError,
+      });
+    } else {
+      downloading = true;
+      loader.load(url, onDownloaded, progressHandling, errorHandling);
+    }
+  }
+}
+
 const MultiSourcesHandler = function(numberIn, onLoadCallback) {
   const allData = [];
   const number = numberIn;
-  const callback = callback;
   const onLoad = onLoadCallback;
-  const onProgress = onProgress;
-  const onError  = onError;
   let totalDownloaded = 0;
 
-  this.itemDownloaded = (index, args) => {
-    allData[index]= args;
+  this.itemDownloaded = (order, args) => {
+    allData[order]= args;
     totalDownloaded++;
     if (totalDownloaded == number) {
       const materials = allData[0][1];
       const geometries = allData.map((data) => data[0]);
       //All geometries will be merged into the first one
       const geometry = mergeGeometries(geometries);
-
       for (let i = 1; i < number; i++) {
-        allData[index][0].dispose();
-        allData[index][1].forEach((material) => material.dispose());
+        allData[order][0].dispose();
+        allData[order][1].forEach((material) => material.dispose());
       }
       onLoad(geometry, materials);
     }
   }
+
 }
 
 exports.PrimitivesLoader = function () {
@@ -50,28 +126,49 @@ exports.PrimitivesLoader = function () {
   this.crossOrigin = "Anonymous";
   const loader = new JSONLoader();
   const waitingList = [];
+  //URL to loader pair
+  const indexedLoaders = {};
 
   //Load the first file then the rest will be handled separately
   const loadFromMultipleSources = (urls, onLoad, onProgress, onError, options) => {
     const number = urls.length;
-    const msHandler = new MultiSourcesHandler(number, onLoad, onProgress, onError);
-    let index = 0;
+    const msHandler = new MultiSourcesHandler(number, onLoad);
+    //The order here will give us hint on the sequence on merging the primitives
+    let order = 0;
     urls.forEach((url) => {
       const newOptions = options ? {...options} : {};
       newOptions.msHandler = msHandler;
-      newOptions.index = index;
-      index++;
+      newOptions.order = order;
+      order++;
       loadFromSingleSource(url, onLoad, onProgress, onError, newOptions);
     });
   }
 
+  const handleIndexedSource = (url, onLoad, onProgress, onError, options) => {
+    const newOptions = options ? {...options} : {};
+    let indexedLoader = indexedLoaders[url];
+    if (!indexedLoader) {
+      const onLoadCallback = new onFinally(undefined, this, newOptions);
+      ++concurrentDownloads;
+      indexedLoader = new IndexedSourcesHandler(url, this.crossOrigin, onLoadCallback);
+      indexedLoaders[url] = indexedLoader;
+    }
+    newOptions.isHandler = indexedLoader;
+    indexedLoader.load(options.index, onLoad, onProgress, onError);
+  }
+
   const loadFromSingleSource = (url, onLoad, onProgress, onError, options) => {
     if (MAX_DOWNLOAD > concurrentDownloads) {
-      ++concurrentDownloads;
-      loader.crossOrigin = this.crossOrigin;
-      const onLoadCallback = new onFinally(onLoad, this, options);
-      const onErrorCallback = new onFinally(onError, this, options);
-      loader.load(url, onLoadCallback, onProgress, onErrorCallback);
+      if (options && options.index) {
+        handleIndexedSource(url, onLoad, onProgress, onError, options);
+      } else {
+        //Standard loading
+        ++concurrentDownloads;
+        const onLoadCallback = new onFinally(onLoad, this, options);
+        const onErrorCallback = new onFinally(onError, this, options);
+        loader.crossOrigin = this.crossOrigin;
+        loader.load(url, onLoadCallback, onProgress, onErrorCallback);
+      }
     } else {
       waitingList.push({
         url,
@@ -98,21 +195,13 @@ exports.PrimitivesLoader = function () {
     }
   }
 
-  const onMultiFilesFinish = function(callback, loader, options) {
-    return (...args) => {
-      --concurrentDownloads;
-      if (callback) {
-        callback(...args, options);
-      }
-      loader.loadFromWaitingList();
-    }
-  }
-
   const onFinally = function(callback, loader, options) {
     return (...args) => {
       --concurrentDownloads;
       if (options?.msHandler) {
-        options.msHandler.itemDownloaded(options.index, args);
+        options.msHandler.itemDownloaded(options.order, args);
+      } else if (options?.isHandler) {
+        options.isHandler.downloadCompleted(args);
       } else {
         if (callback) {
           callback(...args);

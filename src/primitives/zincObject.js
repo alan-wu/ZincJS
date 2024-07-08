@@ -665,12 +665,11 @@ ZincObject.prototype.render = function(delta, playAnimation,
   this.updateMarker(playAnimation, options);
 }
 
-
 /**
  * Add lod from an url into the lod object.
  */
-ZincObject.prototype.addLOD = function(loader, level, url, preload) {
-  this._lod.addLevelFromURL(loader, level, url, preload);
+ZincObject.prototype.addLOD = function(loader, level, url, index, preload) {
+  this._lod.addLevelFromURL(loader, level, url, index, preload);
 }
 
 /**
@@ -680,7 +679,7 @@ ZincObject.prototype.addVertices = function(coords) {
   let mesh = this.getMorph();
   let geometry = undefined;
   if (!mesh) {
-    geometry = createBufferGeometry((coords.length + 500), coords);
+    geometry = createBufferGeometry(500, coords);
     this.drawRange = coords.length;
   } else {
     if (this.drawRange > -1) {
@@ -715,10 +714,8 @@ ZincObject.prototype.setPosition = function(x, y, z) {
 }
 
 ZincObject.prototype.loadAdditionalSources = function(primitivesLoader, sources) {
-
   primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
     undefined, undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
-
 }
 
 /**

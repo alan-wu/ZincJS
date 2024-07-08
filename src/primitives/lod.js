@@ -71,7 +71,7 @@ const LOD = function (parent) {
     }
   }
 
-  this.addLevelFromURL = (loader, level, url, preload) => {
+  this.addLevelFromURL = (loader, level, url, index, preload) => {
     this._loader = loader;
     const distance = this.calculateDistance(level);
     const levelObject = {
@@ -80,6 +80,7 @@ const LOD = function (parent) {
       loaded: false,
       loading: false,
       url: url,
+      index: index,
     };
     let l;
     for (l = 0; l < this.levels.length; l++) {
@@ -100,7 +101,7 @@ const LOD = function (parent) {
       !level.loading) {
       level.loading = true;
       this._loader.load(level.url, this.lodLoader(level.distance),
-        undefined, undefined);
+        undefined, undefined, {index: level.index});
     }
     return (level.morph === undefined);
   }
