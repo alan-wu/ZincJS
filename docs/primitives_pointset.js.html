@@ -30,6 +30,7 @@
 const Points = require('../three/Points').Points;
 const toBufferGeometry = require('../utilities').toBufferGeometry;
 const getCircularTexture = require('../utilities').getCircularTexture;
+const Label = require('./label').Label;
 
 /**
  * Provides an object which stores points and provides method which controls its position.
@@ -43,6 +44,7 @@ const getCircularTexture = require('../utilities').getCircularTexture;
 const Pointset = function () {
   (require('./zincObject').ZincObject).call(this);
   this.isPointset = true;
+  const labelSets = [];
 
   /**
    * Create the pointsets using geometry and material.
@@ -66,16 +68,33 @@ const Pointset = function () {
     }
   }
 
+  const addLabel = (index, coord, labelText, colourHex) => {
+    if (labelText) {
+      const colour = new THREE.Color(colourHex);
+      const label = new Label(labelText, colour);
+      label.setPosition(coord[0], coord[1], coord[2]);
+      const sprite  = label.getSprite();
+      sprite.material.sizeAttenuation = false;
+      sprite.material.alphaTest = 0.5;
+      sprite.material.transparent = true;
+      sprite.material.depthWrite = false;
+      sprite.material.depthTest = false;
+      this.group.add(sprite);
+      labelSets[index] = label;
+    }
+  }
+
   /**
    * Add points to existing mesh if it exists, otherwise
    * create a new one and add to it.
    * @param {Array} coords  -An array of three components coordinates.
-   * @param {Array} labels - An array of strings, these are only added
+   * @param {Array|String} labels - An array of strings, these are only added
    * if the number of coords equals to the number labels provided.
    * @param {Number} colour - A hex value of the colour for the points
    */
   this.addPoints = (coords, labels, colour) => {
     if (coords &amp;&amp; coords.length > 0) {
+      let current = this.drawRange - 1;
       const geometry = this.addVertices(coords);
       let mesh = this.getMorph();
       if (!mesh) {
@@ -84,6 +103,16 @@ const Pointset = function () {
         const options = { localTimeEnabled: false, localMorphColour: false};
         geometry.colorsNeedUpdate = true;
         this.createMesh(geometry, material, options);
+      }
+      let end = current + coords.length;
+      let index = 0;
+      if ((Array.isArray(labels) &amp;&amp; labels.length === coords.length) || 
+        (typeof labels === "string")) {
+        for (current; current + index &lt; end;) {
+          const labelText = typeof labels === "string" ? labels : labels[index];
+          addLabel(index, coords[index], labelText, colour);
+          index++;
+        }
       }
       if (this.region) this.region.pickableUpdateRequired = true;
     }
@@ -114,18 +143,59 @@ const Pointset = function () {
     }
   }
 
-    /**
-   * Turn size attenuation on/off based on the flag.
-   * 
-   * @param {Boolean} flag - Determin either size attenuation
-   * should be on or off.
+  /**
+   * Get vertices at index
    */
-    this.render = (delta, playAnimation, cameraControls, options) => {
-      if (this.morph) {
-        this.morph.sizePerPixel = cameraControls.pixelHeight;
-      }
-      Pointset.prototype.render.call(this, delta, playAnimation, cameraControls, options);
+  this.getVerticesByIndex = function(index) {
+    if (index >= 0 &amp;&amp; this.drawRange > index) {
+      const positionAttribute = this.getMorph().geometry.getAttribute( 'position' );
+      return [ 
+        positionAttribute.getX(index),
+        positionAttribute.getY(index),
+        positionAttribute.getZ(index)
+      ];
     }
+    return undefined;
+  }
+
+  /**
+   * Edit Vertice in index.
+   */
+  this.editVertices = function(coords, i) {
+    if (coords &amp;&amp; coords.length) {
+      let mesh = this.getMorph();
+      const maxIndex = i + coords.length - 1;
+      if (!mesh || 0 > i || maxIndex >= this.drawRange) {
+        return;
+      } else {
+        const positionAttribute = mesh.geometry.getAttribute( 'position' );
+        let index = i;
+        coords.forEach(coord => {
+          const label = labelSets[index];
+          if (label) {
+            label.setPosition(coord[0], coord[1], coord[2]);
+          }
+          positionAttribute.setXYZ(index++, coord[0], coord[1], coord[2]);
+          
+        });
+        positionAttribute.needsUpdate = true;
+        this.boundingBoxUpdateRequired = true;
+      }
+    }
+  }
+
+  /**
+ * Turn size attenuation on/off based on the flag.
+ * 
+ * @param {Boolean} flag - Determin either size attenuation
+ * should be on or off.
+ */
+  this.render = (delta, playAnimation, cameraControls, options) => {
+    if (this.morph &amp;&amp; cameraControls) {
+      this.morph.sizePerPixel = cameraControls.pixelHeight;
+    }
+    Pointset.prototype.render.call(this, delta, playAnimation, cameraControls, options);
+  }
 }
 
 Pointset.prototype = Object.create((require('./zincObject').ZincObject).prototype);
@@ -146,7 +216,7 @@ exports.Pointset = Pointset;
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Wed Jul 03 2024 14:31:45 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.2</a> on Mon Jul 08 2024 13:32:45 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>
