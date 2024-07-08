@@ -42,8 +42,9 @@ exports.Label = function (textIn, colour) {
    * @param {Number} z - z coordinate to be set.
    */
   this.setPosition = (x, y, z) => {
-    if (sprite)
+    if (sprite) {
       sprite.position.set(x, y, z);
+    }
   }
 
   /**
