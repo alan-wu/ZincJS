@@ -1508,6 +1508,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
   let timeDiff = 0;
   let pickedObjects = new Array();
   let lastPosition = { zincCamera: undefined, x: -1 ,y: -1};
+	let pickableObjects = undefined;
 
 	this.enable = () => {
 		enable = true;
@@ -1522,10 +1523,23 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
       const threejsScene = scene.getThreeJSScene();
       renderer.render(threejsScene, zincCamera.cameraObject);
     }
-    let objects = scene.getPickableThreeJSObjects();
+    let objects = pickableObjects ? pickableObjects : scene.getPickableThreeJSObjects();
     //Reset pickedObjects array 
     pickedObjects.length = 0;
 		return raycaster.intersectObjects( objects, true, pickedObjects );
+	}
+
+	this.setPickableObjects = (zincObjects) => {
+		if (zincObjects === undefined) {
+			pickableObjects = undefined;
+		} else {
+			pickableObjects = [];
+			zincObjects.forEach(zincObject => {
+				if (zincObject.getGroup() && zincObject.getGroup().visible) {
+					pickableObjects.push(zincObject.getGroup());
+				}
+			});
+		}
 	}
 
 	this.getIntersectsObjectWithOrigin = (zincCamera, origin, direction) => {
@@ -1533,7 +1547,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 		return this.getIntersectsObject(zincCamera);
 	}
 
-	const getIntersectsObjectWithCamera = (zincCamera, x, y) => {
+	this.getIntersectsObjectWithCamera = (zincCamera, x, y) => {
     zincCamera.getNDCFromDocumentCoords(x, y, mouse);
 		raycaster.setFromCamera(mouse, zincCamera.cameraObject);
 		return this.getIntersectsObject(zincCamera);
@@ -1541,7 +1555,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	
 	this.pick = (zincCamera, x, y) => { 
 		if (enabled && renderer && scene && zincCamera && callbackFunction) {
-			getIntersectsObjectWithCamera(zincCamera, x, y);
+			this.getIntersectsObjectWithCamera(zincCamera, x, y);
 			const length = pickedObjects.length;
 			for (let i = 0; i < length; i++) {
 				let zincObject = pickedObjects[i].object ? pickedObjects[i].object.userData : undefined;
@@ -1557,7 +1571,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
   
   let hovered = (zincCamera, x, y) => {
     if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
-      getIntersectsObjectWithCamera(zincCamera, x, y);
+      this.getIntersectsObjectWithCamera(zincCamera, x, y);
       lastHoveredDate.setTime(Date.now());
       if (pickedObjects.length === 0) {
         //skip hovered callback if the previous one is empty
