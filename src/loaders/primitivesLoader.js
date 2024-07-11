@@ -3,7 +3,6 @@ const THREE = require('three');
 const FileLoader = THREE.FileLoader;
 
 const mergeGeometries = (geometries) => {
-
   const merge = (geometry1, geometry2) => {
     geometry1.merge(geometry2);
   }
@@ -13,7 +12,6 @@ const mergeGeometries = (geometries) => {
       const geometry2 = geometries.splice(1,1);
       merge(geometries[0], geometry2[0]);
     }
-    //geometries[0].computeFaceNormals();
     return geometries[0];
   }
   return undefined;
@@ -32,32 +30,41 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback)
   let error = undefined;
   const items = [];
 
-
   const processItemDownloaded = (item) => {
-    if (Array.isArray(data)) {
-
-
-
+    const modelData = data[item.index];
+    if (modelData) {
+      let obj = jsonLoader.parse( modelData );
+      item.onLoad(obj.geometry, obj.materials);
+    } else {
+      processItemError(item);
     }
+  }
 
+  const processItemError = (item) => {
+    if (item.onError) {
+      item.onError(error);
+    }
   }
 
   this.downloadCompleted = (args) => {
     data = JSON.parse(args[0]);
-    if (Array.isArray(data)) {
-
-
-      
-    }
     downloading = false;
     finished = true;
-    items.forEach(item => processItemDownloaded(item));
+    if (Array.isArray(data)) {
+      items.forEach(item => processItemDownloaded(item));
+    } else {
+      items.forEach(item => processItemError(item));
+    }   
   }
 
   const errorHandling = () => {
     return xhr => {
       error = xhr;
+      finished = true;
       downloading = false;
+      items.forEach((item) => {
+        processItemError(item);
+      });
     }
   }
 
@@ -72,24 +79,23 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback)
   }
 
   this.load = (index, onLoad, onProgress, onError) => {
+    const item = {
+      index,
+      onLoad,
+      onProgress,
+      onError,
+    };
     if (finished) {
       if (data) {
-        let object = primitivesLoader.parse( url );
-        (linesloader(region, localTimeEnabled, localMorphColour, groupName, anatomicalId,
-          renderOrder, options.lod, finishCallback))( object.geometry, object.materials );
+        processItemDownloaded(item);
       } else {
-        onError(error);
-        //error
+        processItemError(error);
       }
     } else if (downloading) {
       //quene it up
-      items.push({
-        index,
-        onLoad,
-        onProgress,
-        onError,
-      });
+      items.push(item);
     } else {
+      items.push(item);
       downloading = true;
       loader.load(url, onDownloaded, progressHandling, errorHandling);
     }
@@ -159,7 +165,7 @@ exports.PrimitivesLoader = function () {
 
   const loadFromSingleSource = (url, onLoad, onProgress, onError, options) => {
     if (MAX_DOWNLOAD > concurrentDownloads) {
-      if (options && options.index) {
+      if (options && (options.index !== undefined) ) {
         handleIndexedSource(url, onLoad, onProgress, onError, options);
       } else {
         //Standard loading
@@ -192,6 +198,12 @@ exports.PrimitivesLoader = function () {
     const item = waitingList.shift();
     if (item) {
       this.load(item.url, item.onLoad, item.onProgress, item.onError, item.options);
+    } else {
+      for (let key in indexedLoaders) {
+        if (indexedLoaders.hasOwnProperty(key)) {
+          delete indexedLoaders[key];
+        }
+      }
     }
   }
 

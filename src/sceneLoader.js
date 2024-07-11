@@ -199,7 +199,6 @@ exports.SceneLoader = function (sceneIn) {
       let options = {};
       options.localTimeEnabled = localTimeEnabled;
       options.localMorphColour = localMorphColour;
-
       if (newLines) {
         newLines.createLineSegment(geometry, material, options);
         newLines.setName(groupName);
@@ -207,9 +206,11 @@ exports.SceneLoader = function (sceneIn) {
         newLines.setRenderOrder(renderOrder);
         region.addZincObject(newLines);
         newLines.setDuration(scene.getDuration());
+        console.log(lod)
         if (lod && lod.levels) {
           for (const [key, value] of Object.entries(lod.levels)) {
-            newLines.addLOD(primitivesLoader, key, value.URL, value.index, lod.preload);
+            
+            newLines.addLOD(primitivesLoader, key, value.URL, value.Index, lod.preload);
           }
         }
       }
@@ -617,7 +618,7 @@ exports.SceneLoader = function (sceneIn) {
       zincGeometry.setRenderOrder(renderOrder);
       if (options.lod && options.lod.levels) {
         for (const [key, value] of Object.entries(options.lod.levels)) {
-          zincGeometry.addLOD(primitivesLoader, key, value.URL, value, index, options.lod.preload);
+          zincGeometry.addLOD(primitivesLoader, key, value.URL, value.Index, options.lod.preload);
         }
       }
       --this.toBeDownloaded;
@@ -679,6 +680,7 @@ exports.SceneLoader = function (sceneIn) {
         for (const [key, value] of Object.entries(item.LOD.Levels)) {
           lod.levels[key] = {};
           lod.levels[key]["URL"] = createNewURL(value.URL, referenceURL);
+          lod.levels[key]["Index"] = value.Index;
         }
       }
       let groupName = item.GroupName;
@@ -688,7 +690,7 @@ exports.SceneLoader = function (sceneIn) {
 
       let options = {
         loaderOptions: {
-          index: item.index,
+          index: item.Index,
         },
         isInline: isInline,
         fileFormat: item.FileFormat,
