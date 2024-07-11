@@ -20,16 +20,20 @@ function resolveURL(url) {
 
 function createNewURL(target, reference) {
   const getNewURL = (target, reference) => {
-    let newURL = (new URL(target, reference)).href;
-    //Make sure the target url does not contain parameters
-    if (target && target.split("?").length < 2) {
-      const paramsStrings = reference.split("?");
-      //There are parameters, add them to the target
-      if (paramsStrings.length === 2) {
-        newURL = newURL + "?" + paramsStrings[1];
+    try {
+      let newURL = (new URL(target, reference)).href;
+      //Make sure the target url does not contain parameters
+      if (target && target.split("?").length < 2) {
+        const paramsStrings = reference.split("?");
+        //There are parameters, add them to the target
+        if (paramsStrings.length === 2) {
+          newURL = newURL + "?" + paramsStrings[1];
+        }
       }
+      return newURL;
+    } catch {
+      console.error(`There is an issue creting the url link with: ${target}.` );
     }
-    return newURL;
   }
   if (!Array.isArray(target)) {
     return getNewURL(target, reference);

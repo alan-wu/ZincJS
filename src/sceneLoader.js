@@ -59,6 +59,7 @@ exports.SceneLoader = function (sceneIn) {
     return xhr => {
       this.toBeDownloaded = this.toBeDownloaded - 1;
       errorDownload = true;
+      console.error(`There is an issue with one of the external resource: ${xhr?.responseURL}.`);
       if (finishCallback) {
         finishCallback();
       }

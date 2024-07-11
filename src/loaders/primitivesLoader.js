@@ -36,25 +36,32 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback)
       let obj = jsonLoader.parse( modelData );
       item.onLoad(obj.geometry, obj.materials);
     } else {
-      processItemError(item);
+      processItemError(item, {responseURL: url});
     }
   }
 
   const processItemError = (item) => {
     if (item.onError) {
+      if (!error) {
+        error = {responseURL: url};
+      }
       item.onError(error);
     }
   }
 
   this.downloadCompleted = (args) => {
-    data = JSON.parse(args[0]);
-    downloading = false;
-    finished = true;
-    if (Array.isArray(data)) {
-      items.forEach(item => processItemDownloaded(item));
-    } else {
+    try {
+      data = JSON.parse(args[0]);
+      downloading = false;
+      finished = true;
+      if (Array.isArray(data)) {
+        items.forEach(item => processItemDownloaded(item));
+      } else {
+        items.forEach(item => processItemError(item));
+      }
+    } catch {
       items.forEach(item => processItemError(item));
-    }   
+    }
   }
 
   const errorHandling = () => {
