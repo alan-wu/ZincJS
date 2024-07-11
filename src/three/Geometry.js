@@ -17,6 +17,7 @@ import {
 const _m1 = new Matrix4();
 const _obj = new Object3D();
 const _offset = new Vector3();
+const _temp = new Vector3();
 
 function Geometry() {
 
@@ -648,6 +649,71 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 	},
 
+	mergeMorph: function ( geometry, matrix ) {
+
+		const m = this.morphTargets.length,
+			morphTargets1 = this.morphTargets,
+			morphTargets2 = geometry.morphTargets,
+			n = this.morphColors.length,
+			morphColors1 = this.morphColors,
+			morphColors2 = geometry.morphColors;
+
+    if ( m > 0 && m == morphTargets2.length) {
+
+			for ( let i = 0, l = morphTargets1.length; i < l; i ++ ) {
+
+				const morphTarget1 = morphTargets1[ i ];
+				const morphTarget2 = morphTargets2[ i ];
+
+				for ( let k = 0, kl = morphTarget2.vertices.length; k < kl; k ++ ) {
+
+					const vertex = morphTarget2.vertices[ k ];
+		
+					const vertexCopy = vertex.clone();
+		
+					if ( matrix !== undefined ) vertexCopy.applyMatrix4( matrix );
+		
+					morphTarget1.vertices.push( vertexCopy );
+		
+				}
+
+				if ( morphTarget1.normals && morphTarget2.normals ) {
+					
+					for ( let k = 0; k < morphTarget2.normals.length; k = k + 3) {
+
+						_temp.set(morphTarget2.normals2[k], morphTarget2.normals2[k + 1], morphTarget2.normals2[k + 2]);
+			
+						if ( matrix !== undefined ) _temp.applyMatrix4( matrix );
+			
+						morphTarget1.normals.push(_temp.x, _temp.y, _temp.z);
+			
+					}
+
+				}
+
+			}
+
+		}
+
+		if ( n > 0 && n == morphColors2.length) {
+
+			for ( let i = 0, l = morphColors1.length; i < l; i ++ ) {
+
+				const morphColor1 = morphColors1[ i ];
+				const morphColor2 = morphColors2[ i ];
+
+				for ( let k = 0, kl = morphColor2.colors; k < kl; k ++ ) {
+
+					morphColor1.colors.push( morphColor2.colors[ k ].clone() );
+		
+				}
+
+			}
+
+		}
+
+	},
+
 	merge: function ( geometry, matrix, materialIndexOffset = 0 ) {
 
 		if ( ! ( geometry && geometry.isGeometry ) ) {
@@ -661,6 +727,7 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		const vertexOffset = this.vertices.length,
 			vertices1 = this.vertices,
 			vertices2 = geometry.vertices,
+			normals2 = geometry.normals,
 			faces1 = this.faces,
 			faces2 = geometry.faces,
 			colors1 = this.colors,
@@ -683,6 +750,16 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 			if ( matrix !== undefined ) vertexCopy.applyMatrix4( matrix );
 
 			vertices1.push( vertexCopy );
+
+		}
+
+		for ( let i = 0; i < normals2.length; i = i + 3) {
+
+			_temp.set(normals2[i], normals2[i + 1], normals2[i + 2]);
+
+			if ( matrix !== undefined ) _temp.applyMatrix4( matrix );
+
+			this.normals.push(_temp.x, _temp.y, _temp.z);
 
 		}
 
@@ -764,6 +841,8 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 			}
 
 		}
+
+		this.mergeMorph( geometry, matrix );
 
 	},
 
