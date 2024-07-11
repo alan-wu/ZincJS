@@ -213,10 +213,14 @@ const MarkerCluster = function(sceneIn) {
     if (index !== undefined && index > -1) {
       this._v1.set(...sprites[index].min);
       this._v2.set(...sprites[index].max);
-      this._b1.set(this._v1, this._v2);
-      scene.translateBoundingBoxToCameraView(this._b1, 3, 300);
-      this.markerUpdateRequired = true;
+      if (Math.abs(this._v1.distanceTo(this._v2) > 0.0)) {
+        this._b1.set(this._v1, this._v2);
+        scene.translateBoundingBoxToCameraView(this._b1, 3, 300);
+        this.markerUpdateRequired = true;
+        return true;
+      }
     }
+    return false;
   }
 
   this.clusterIsVisible = (index) => {

@@ -1561,8 +1561,10 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 				let zincObject = pickedObjects[i].object ? pickedObjects[i].object.userData : undefined;
 				if (zincObject && zincObject.isMarkerCluster && zincObject.visible
 					&& zincObject.clusterIsVisible(pickedObjects[i].object.clusterIndex)) {
-					zincObject.zoomToCluster(pickedObjects[i].object.clusterIndex);
-					return;
+					//Can zoom into cluster
+					if (zincObject.zoomToCluster(pickedObjects[i].object.clusterIndex)) {
+						return;
+					}
 				}
 			}
 			callbackFunction(pickedObjects, x, y);
