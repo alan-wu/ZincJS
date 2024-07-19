@@ -766,9 +766,11 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		// colors
 
 		for ( let i = 0, il = colors2.length; i < il; i ++ ) {
-
-			colors1.push( colors2[ i ].clone() );
-
+			if ((typeof colors2[ i ] === "number")) {
+				colors1.push( colors2[ i ] );
+			} else {
+				colors1.push( colors2[ i ].clone() );
+			}
 		}
 
 		// faces
