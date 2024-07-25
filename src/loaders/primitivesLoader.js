@@ -230,8 +230,8 @@ exports.PrimitivesLoader = function () {
         }
       }
     }
-
   }
+
   const onFinally = function(callback, loader, options) {
     return (...args) => {
       --concurrentDownloads;
