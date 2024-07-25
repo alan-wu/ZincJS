@@ -18,7 +18,6 @@ const mergeGeometries = (geometries) => {
 }
 
 const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback) {
-  const allData = [];
   const loader = new FileLoader();
   const jsonLoader = new JSONLoader();
   loader.crossOrigin = crossOrigin;
@@ -130,7 +129,6 @@ const MultiSourcesHandler = function(numberIn, onLoadCallback) {
       onLoad(geometry, materials);
     }
   }
-
 }
 
 exports.PrimitivesLoader = function () {
@@ -161,35 +159,47 @@ exports.PrimitivesLoader = function () {
     const newOptions = options ? {...options} : {};
     let indexedLoader = indexedLoaders[url];
     if (!indexedLoader) {
-      const onLoadCallback = new onFinally(undefined, this, newOptions);
-      ++concurrentDownloads;
-      indexedLoader = new IndexedSourcesHandler(url, this.crossOrigin, onLoadCallback);
-      indexedLoaders[url] = indexedLoader;
+      if (MAX_DOWNLOAD > concurrentDownloads) {
+        const onLoadCallback = new onFinally(undefined, this, newOptions);
+        ++concurrentDownloads;
+        indexedLoader = new IndexedSourcesHandler(url, this.crossOrigin, onLoadCallback);
+        indexedLoaders[url] = indexedLoader;
+      } else {
+        waitingList.push({
+          url,
+          onLoad,
+          onProgress,
+          onError,
+          options,
+        });
+      }
     }
-    newOptions.isHandler = indexedLoader;
-    indexedLoader.load(options.index, onLoad, onProgress, onError);
+    if (indexedLoader) {
+      newOptions.isHandler = indexedLoader;
+      indexedLoader.load(options.index, onLoad, onProgress, onError);
+    }
   }
 
   const loadFromSingleSource = (url, onLoad, onProgress, onError, options) => {
-    if (MAX_DOWNLOAD > concurrentDownloads) {
-      if (options && (options.index !== undefined) ) {
-        handleIndexedSource(url, onLoad, onProgress, onError, options);
-      } else {
-        //Standard loading
+    if (options && (options.index !== undefined) ) {
+      handleIndexedSource(url, onLoad, onProgress, onError, options);
+    } else {
+      //Standard loading
+      if (MAX_DOWNLOAD > concurrentDownloads) {
         ++concurrentDownloads;
         const onLoadCallback = new onFinally(onLoad, this, options);
         const onErrorCallback = new onFinally(onError, this, options);
         loader.crossOrigin = this.crossOrigin;
         loader.load(url, onLoadCallback, onProgress, onErrorCallback);
+      } else {
+        waitingList.push({
+          url,
+          onLoad,
+          onProgress,
+          onError,
+          options,
+        });
       }
-    } else {
-      waitingList.push({
-        url,
-        onLoad,
-        onProgress,
-        onError,
-        options,
-      });
     }
   }
 
@@ -202,18 +212,26 @@ exports.PrimitivesLoader = function () {
   }
 
   this.loadFromWaitingList = () => {
-    const item = waitingList.shift();
-    if (item) {
-      this.load(item.url, item.onLoad, item.onProgress, item.onError, item.options);
-    } else {
+    while (MAX_DOWNLOAD > concurrentDownloads) {
+      const item = waitingList.shift();
+      if (item) {
+        this.load(item.url, item.onLoad, item.onProgress, item.onError, item.options);
+      } else {
+        return;
+      }
+    }
+  }
+
+  this.itemRemainingCheck = () => {
+    if (waitingList.length === 0 && concurrentDownloads === 0) {
       for (let key in indexedLoaders) {
         if (indexedLoaders.hasOwnProperty(key)) {
           delete indexedLoaders[key];
         }
       }
     }
-  }
 
+  }
   const onFinally = function(callback, loader, options) {
     return (...args) => {
       --concurrentDownloads;
@@ -227,6 +245,7 @@ exports.PrimitivesLoader = function () {
         }
       }
       loader.loadFromWaitingList();
+      loader.itemRemainingCheck();
     }
   }
 
