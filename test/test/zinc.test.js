@@ -854,6 +854,76 @@ function checkRegion(scene) {
   });
 }
 
+function checkCreateAPIs(scene) {
+  describe('Methods()', function() {
+    const rootRegion = scene.getRootRegion();
+    it('createPoints', function() {
+      let object = scene.createPoints(
+        '__create', 'createdPoints', [[1.0, 1.0, 1.0]], undefined, 0x0022ee,
+      );
+      assert.isObject(object, "Object is not defined");
+      let objects = rootRegion.findPointsetsWithGroupName('createdPoints', false);
+      assert.equal(objects.length, 0, 'Should not be found in root region');
+      objects = rootRegion.findPointsetsWithGroupName('createdPoints', true);
+      assert.equal(objects.length, 1, 'Should be found in sub region');
+      assert.isTrue(objects[0].isPointset, "Object is a pointsets");
+    });
+    it('createLines', function() {
+      let object = scene.createLines(
+        '__create', 'createdLines', [[0.0, 0,0, 0.0], [1.0, 1.0, 1.0]], 0x0022ee,
+      );
+      assert.isObject(object, "Object is not defined");
+      let objects = rootRegion.findLinesWithGroupName('createdLines', false);
+      assert.equal(objects.length, 0, 'Should not be found in root region');
+      objects = rootRegion.findLinesWithGroupName('createdLines', true);
+      assert.equal(objects.length, 1, 'Should be found in sub region');
+      assert.isTrue(objects[0].isLines, "Object is a lines");
+    });
+    it('addBoundingBoxes', function() {
+      let object = scene.addBoundingBoxPrimitive(
+        "_helper", "boundingBox", 0x40E0D0, 0.15
+      );
+      assert.isObject(object, "Object is not defined");
+      let objects = rootRegion.findGeometriesWithGroupName('boundingBox', false);
+      assert.equal(objects.length, 0, 'Should not be found in root region');
+      objects = rootRegion.findGeometriesWithGroupName('boundingBox', true);
+      assert.equal(objects.length, 1, 'Should be found in sub region');
+      assert.isTrue(objects[0].isGeometry, "Object should be a geometry");
+
+    });
+    it('addSlicesPrimitive', function() {
+      let object = scene.addSlicesPrimitive(
+        "_helper", ["x-plane", "y-plane", "z-plane"],
+        [0xFF5555, 0x55FF55, 0x5555FF], 0.15
+      );
+      assert.equal(object.length, 3, "Object is not defined");
+      let objects = rootRegion.findGeometriesWithGroupName('x-plane', false);
+      assert.equal(objects.length, 0, 'Should not be found in root region');
+      objects = rootRegion.findGeometriesWithGroupName('x-plane', true);
+      assert.equal(objects.length, 1, 'Should be found in sub region');
+      assert.isTrue(objects[0].isGeometry, "Object should be a geometry");
+
+    });
+    it('addTemporaryPoints', function() {
+      let object = scene.addTemporaryPoints(
+        [0.0, 0,0, 0.0], 0xFF5555
+      );
+      assert.isObject(object, "Object is not defined");
+    });
+    it('addTemporaryLines', function() {
+      let object = scene.addTemporaryLines(
+        [[0.0, 0,0, 0.0], [1.0, 1.0, 1.0]], 0xFF5555
+      );
+      assert.isObject(object, "Object is not defined");
+    });
+    it('clearTemporaryPrimitives', function() {
+      let number = scene.clearTemporaryPrimitives();
+      assert.equal(number, 2, "Number of removal should be 2");
+    });
+
+  });
+}
+
 function checkIndexedAndMergedFormat(scene) {
   describe('IndexedAndMergedFormat()', function(){
     const rootRegion = scene.getRootRegion();
@@ -1012,6 +1082,7 @@ function checkRenderer() {
   //checkTextureSlides(testScene);
   var regionScene = testRenderer.createScene("regionScene");
   checkRegion(regionScene);
+  checkCreateAPIs(testScene);
   //checkCleanup(testScene);
 }
 
