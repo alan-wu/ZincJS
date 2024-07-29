@@ -395,11 +395,10 @@ function checkPoints(points) {
   });
 }
 
-
 function checkTextureSlides(scene) {
+  const rootRegion = scene.getRootRegion();
   describe('TextureSlides()', function(){
-    let textureSlides = undefined;
-    before('Setup Mock response', function() {
+    before('Setup Mock response', function(done) {
       var scope = nock('https://www.mytestserver.com')
         .persist()
         .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
@@ -407,69 +406,15 @@ function checkTextureSlides(scene) {
           return uri;
         })
         .reply(200, (uri, requestBody, cb) => {fs.readFile("." + uri, cb)});
+
+      scene.loadMetadataURL("https://www.mytestserver.com/models/test_ts_metadata.json", undefined, done);
     });
-    before('New Zinc Texture Array', async function(done) {
-      const texture = new Zinc.Texture();
-      const imgArray = ['https://www.mytestserver.com/models/test.jpg'];
-      await texture.loadFromImages(imgArray);
-      assert.isTrue(texture.isReady(), 'Texture is ready');
-      
-      textureSlides = new Zinc.TextureSlides(texture);
-      textureSlides.createSlides([
-        {
-          direction: "y",
-          value: 0.1
-        },
-        {
-          direction: "y",
-          value: 0.3
-        },
-        {
-          direction: "y",
-          value: 0.5
-        },
-        {
-          direction: "y",
-          value: 0.7
-        },
-        {
-          direction: "y",
-          value: 0.9
-        },
-        {
-          direction: "x",
-          value: 0.5
-        },
-        {
-          direction: "z",
-          value: 0.5
-        },
-      ]);
-      textureSlides.setName("texture slides");
-      scene.addZincObject(textureSlides);
-      done();
-    });
-    describe('Local Variables()', function(done){
-      it('texture array', function(){
-        assert.isObject(textureSlides.getMorph(), 'textureSlides is an object');
-      });
-      it('groupName', function(){
-        assert.equal(textureSlides.groupName, "texture slides", 'groupName is correct');
-      });
-    });
-    describe('Methods()', function(done){
-      it('getBoundingBox', function() {
-        var boundingBox = textureSlides.getBoundingBox();
-        assert.isObject(boundingBox, 'boundingBox is successfully called');
-        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
-        assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
-      });
-      it('setName', function() {
-        assert.isUndefined(textureSlides.setName("texture slides2"), 'setName is successfully called');
-        assert.equal(textureSlides.groupName, 'texture slides2', 'name is correctly set');
-      });
-      it('setVisibility', function() {
-        assert.isUndefined(textureSlides.setVisibility(false), 'setVisibility is successfully called');
+
+    describe('Methods()', function(){
+      it('findObjectsWithGroupName', function() {
+        let objects = rootRegion.findObjectsWithGroupName('textureSlides', false);
+        assert.equal(objects.length, 1, 'Should be found in root region');
+        assert.isTrue(objects[0].isTextureSlides, "Object should be a textureSlides");
       });
     });
   });
@@ -869,15 +814,15 @@ function checkCreateAPIs(scene) {
       assert.isTrue(objects[0].isPointset, "Object is a pointsets");
     });
     it('createLines', function() {
-      let object = scene.createLines(
-        '__create', 'createdLines', [[0.0, 0,0, 0.0], [1.0, 1.0, 1.0]], 0x0022ee,
+      let lines2 = scene.createLines(
+        '__create', 'createdLines', [[0.0, 1,0, 2.0], [3.0, 4.0, 5.0]], 0x0022ee,
       );
-      assert.isObject(object, "Object is not defined");
+      assert.isObject(lines2, "Object is not defined");
       let objects = rootRegion.findLinesWithGroupName('createdLines', false);
       assert.equal(objects.length, 0, 'Should not be found in root region');
       objects = rootRegion.findLinesWithGroupName('createdLines', true);
       assert.equal(objects.length, 1, 'Should be found in sub region');
-      assert.isTrue(objects[0].isLines, "Object is a lines");
+      assert.isTrue(objects[0].isLines2, "Object is a lines");
     });
     it('addBoundingBoxes', function() {
       let object = scene.addBoundingBoxPrimitive(
@@ -889,7 +834,6 @@ function checkCreateAPIs(scene) {
       objects = rootRegion.findGeometriesWithGroupName('boundingBox', true);
       assert.equal(objects.length, 1, 'Should be found in sub region');
       assert.isTrue(objects[0].isGeometry, "Object should be a geometry");
-
     });
     it('addSlicesPrimitive', function() {
       let object = scene.addSlicesPrimitive(
@@ -1076,13 +1020,14 @@ function checkRenderer() {
   })
   var testScene = checkScene(testRenderer);
   checkGeometry(testScene);
+  
   checkControls(testScene);
   var indexedScene = testRenderer.createScene("indexedScene");
   checkIndexedAndMergedFormat(indexedScene);
-  //checkTextureSlides(testScene);
   var regionScene = testRenderer.createScene("regionScene");
   checkRegion(regionScene);
   checkCreateAPIs(testScene);
+  checkTextureSlides(testScene)
   //checkCleanup(testScene);
 }
 

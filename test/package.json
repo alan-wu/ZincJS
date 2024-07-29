@@ -6,7 +6,7 @@
     "README.md"
   ],
   "scripts": {
-    "test": "mochapack --webpack-config ./webpack.config-test.js --glob *.test.{js,ts} --require prepare/setup.js --watch ",
+    "test": "mochapack --webpack-config ./webpack.config-test.js --glob *.test.{js,ts} --require prepare/setup.js --watch",
     "test-ci": "mochapack  --webpack-config ./webpack.config-test.js --glob *.test.{js,ts} --require prepare/setup.js --reporter mocha-junit-reporter",
     "test-standard": "mochapack --webpack-config ./webpack.config-test.js --glob *.test.{js,ts} --require prepare/setup.js",
     "cover": "cross-env NODE_ENV=coverage nyc --cwd=../ --reporter=lcov --reporter=text npm run test-ci"
