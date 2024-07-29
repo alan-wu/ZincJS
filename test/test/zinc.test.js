@@ -668,6 +668,7 @@ function checkScene(renderer) {
   return testScene;
 }
 
+
 function checkRegion(scene) {
   describe('Region()', function(){
     const rootRegion = scene.getRootRegion();
@@ -853,6 +854,45 @@ function checkRegion(scene) {
   });
 }
 
+function checkIndexedAndMergedFormat(scene) {
+  describe('IndexedAndMergedFormat()', function(){
+    const rootRegion = scene.getRootRegion();
+    before('Setup Mock response', function(done) {
+      var scope = nock('https://www.mytestserver.com')
+        .persist()
+        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
+        .get(function(uri) {
+          return uri;
+        })
+        .reply(200, (uri, requestBody, cb) => {fs.readFile("." + uri, cb)}, {'Content-Type': 'application/json'});
+        scene.loadMetadataURL("https://www.mytestserver.com/models/test_indexed_metadata.json", undefined, 
+          done);
+    });
+
+    describe('Methods()', function(){
+      it('findGeometriesWithGroupName', function() {
+        let objects = rootRegion.findGeometriesWithGroupName('indexed geometry', false);
+        assert.equal(objects.length, 1, 'Should be found in root region');
+        assert.isTrue(objects[0].isGeometry, "Object is not geometry");
+      });
+      it('findPointsetsWithGroupName', function() {
+        let objects = rootRegion.findPointsetsWithGroupName('indexed points', false);
+        assert.equal(objects.length, 1, 'Should be found in root region');
+        assert.isTrue(objects[0].isPointset, "Object is not pointsets");
+      });
+      it('findMergedWithGroupName', function() {
+        let objects = rootRegion.findGeometriesWithGroupName('merged surfaces', false);
+        assert.equal(objects.length, 1, 'Should be found in root region');
+        assert.isTrue(objects[0].isGeometry, "Object is not pointsets");
+      });
+      it ('renderGeometries', function() {
+        rootRegion.renderGeometries(
+          1, 0.1, false, undefined);
+      });
+    });
+  });
+}
+
 function checkRenderer() {
   var testRenderer;
   describe('Renderer()', function(){
@@ -967,6 +1007,8 @@ function checkRenderer() {
   var testScene = checkScene(testRenderer);
   checkGeometry(testScene);
   checkControls(testScene);
+  var indexedScene = testRenderer.createScene("indexedScene");
+  checkIndexedAndMergedFormat(indexedScene);
   //checkTextureSlides(testScene);
   var regionScene = testRenderer.createScene("regionScene");
   checkRegion(regionScene);
