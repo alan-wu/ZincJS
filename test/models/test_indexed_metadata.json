@@ -1,0 +1,32 @@
+[
+  {
+    "Index": 0,
+    "GroupName" : "indexed geometry",
+    "MorphColours" : false,
+    "MorphNormals" : false,
+    "MorphVertices" : false,
+    "Type" : "Surfaces",
+    "URL" : "test_indexed.json"
+  },
+  {
+    "Index": 1,
+    "GroupName" : "indexed points",
+    "MorphColours" : false,
+    "MorphNormals" : false,
+    "MorphVertices" : false,
+    "Type" : "Points",
+    "URL" : "test_indexed.json"
+  },
+  {
+    "GroupName" : "merged surfaces",
+    "MorphColours" : false,
+    "MorphNormals" : false,
+    "MorphVertices" : false,
+    "Type" : "Surfaces",
+    "URL" : ["test_geometry.json", "test_texture.json"]
+  },
+  {
+     "Type" : "View",
+     "URL" : "test_view.json"
+  }
+]

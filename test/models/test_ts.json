@@ -1,0 +1,35 @@
+{
+  "id": "mesh-location-orientation",
+  "locations": [
+      {
+          "identifier": 1,
+          "label": "original",
+          "orientation": [0.0, 0.0, 1.0, 0.0, 1.0, 0.0, -1.0, 0.0, 0.0],
+          "position": [0, -1.0, 0.95],
+          "scale": [1.6, 1.6, 1.6],
+          "reference_point": "corner"
+      }
+  ],
+  "images": {
+     "source": [
+    ],
+    "format": "jpeg"
+  },
+  "settings": {
+    "slides":[
+      {
+        "direction": "x",
+        "value": 0.5
+      },
+      {
+        "direction": "y",
+        "value": 0.5
+      },
+      {
+        "direction": "z",
+        "value": 0.5
+      }
+    ]
+  },
+  "type": "slides"
+}

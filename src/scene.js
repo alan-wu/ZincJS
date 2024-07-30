@@ -1247,14 +1247,18 @@ exports.Scene = function (containerIn, rendererIn) {
 
   /*
 	 * Remove all temporary primitives.
+   * Return number of primitives removed;
 	 */
   this.clearTemporaryPrimitives = () => {
+    let i = 0;
     const children = tempGroup.children;
     children.forEach(child => {
       child.geometry.dispose();
       child.material.dispose();
+      i++;
     });
     tempGroup.clear();
+    return i;
   }
 
   /*
