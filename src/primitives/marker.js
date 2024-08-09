@@ -90,7 +90,18 @@ const Marker = function(zincObject) {
     sprite.scale.multiplyScalar(size);
   }
 
-  this.setUserSprite = (image, size) => {
+  this.setUserSprite = () => {
+    if (defaultDisplay && userSprite) {
+      this.morph.add(userSprite);
+      this.morph.remove(sprite);
+      if (label) {
+        this.morph.remove(label);
+      }
+      defaultDisplay = false;
+    }
+  }
+
+  this.setImageForUserSprite = (image, size) => {
     if (userSprite) {
       this.morph.remove(userSprite);
       userSprite.dispose();
@@ -115,9 +126,7 @@ const Marker = function(zincObject) {
     userSprite.center.set(0.5, 0);
     userSprite.scale.set(size[0], size[1], size[2]);
     userSprite.userData = this;
-    this.morph.add(userSprite);
-    this.morph.remove(sprite);
-    defaultDisplay = false;
+    this.setUserSprite();
   }
 
   this.setDefaultSprite = () => {
@@ -125,18 +134,23 @@ const Marker = function(zincObject) {
       defaultDisplay = true;
       this.morph.add(sprite);
       if (userSprite) this.morph.remove(userSprite);
+      if (label) this.morph.add(label);
     }
   }
 
   this.loadUserSprite = (url, size) => {
-    if (url && url !== userUrl) {
-      userUrl = url;
-      const userImage = new Image(128, 128);
-      userImage.crossOrigin = "anonymous"
-      userImage.onload = () => {
-        this.setUserSprite(userImage, size);
-      };
-      userImage.src = url;
+    if (url) {
+      if (url !== userUrl) {
+        userUrl = url;
+        const userImage = new Image(128, 128);
+        userImage.crossOrigin = "anonymous"
+        userImage.onload = () => {
+          this.setImageForUserSprite(userImage, size);
+        };
+        userImage.src = url;
+      } else {
+        this.setUserSprite();
+      }
     }
   }
 

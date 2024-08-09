@@ -550,6 +550,11 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
         this.group.add(this.marker.morph);
       }
       this.marker.setNumber(this.markerNumber);
+      if (this.markerImgURL) {
+        this.marker.loadUserSprite(this.markerImgURL);
+      } else {
+        this.marker.setDefaultSprite();
+      }
       if (options && options.camera && (ndcToBeUpdated ||
         options.markerCluster.markerUpdateRequired)) {
         this.marker.updateNDC(options.camera.cameraObject);
@@ -634,6 +639,7 @@ ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
   }
   if (options) {
     this.markerNumber = options.number;
+    this.markerImgURL = options.imgURL;
   }
 }
 
