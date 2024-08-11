@@ -100,6 +100,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   const _rel_eye = new THREE.Vector3();
   const sceneSphere = new THREE.Sphere();
   const _tempEye = new THREE.Vector3();
+  let hasUpdated = false;
   let ndcControl = undefined;
   let maxDist = 0;
   const viewports = {
@@ -629,7 +630,6 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   this.changeZoomByValue = delta_y => {
 		if (typeof this.cameraObject !== "undefined")
 		{
-			const width = rect.width;
       const height = rect.height;
 
 			const a = this.cameraObject.position.clone();
@@ -670,6 +670,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
             }
             this.near_plane_fly_debt += dy*dist;
           }
+          hasUpdated = true;
         }
 			}
 		}
@@ -1011,6 +1012,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.cameraObject.lookAt( this.cameraObject.target );
 		}
 
+		updated = updated || hasUpdated;
+		hasUpdated = false;
+
 		return updated;
 	};
 	
@@ -1113,6 +1117,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 					newViewport.upVector[2]);
 		this.cameraObject.updateProjectionMatrix();
 		this.updateDirectionalLight();
+		hasUpdated = true;
 	}
 
   /**
