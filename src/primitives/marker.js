@@ -104,7 +104,7 @@ const Marker = function(zincObject) {
   this.setImageForUserSprite = (image, size) => {
     if (userSprite) {
       this.morph.remove(userSprite);
-      userSprite.dispose();
+      userSprite = undefined;
     }
     if (userTexture) userTexture.dispose();
     if (userMaterial) userMaterial.dispose();
