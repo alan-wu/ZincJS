@@ -91,13 +91,15 @@ const Marker = function(zincObject) {
   }
 
   this.setUserSprite = () => {
-    if (defaultDisplay && userSprite) {
+    if (userSprite) {
       this.morph.add(userSprite);
-      this.morph.remove(sprite);
-      if (label) {
-        this.morph.remove(label);
+      if (defaultDisplay) {
+        this.morph.remove(sprite);
+        if (label) {
+          this.morph.remove(label);
+        }
+        defaultDisplay = false;
       }
-      defaultDisplay = false;
     }
   }
 
