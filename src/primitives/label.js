@@ -18,6 +18,9 @@ exports.Label = function (textIn, colour) {
     sprite = new SpriteText(text, 0.015, colour.getStyle());
   else
     sprite = new SpriteText(text, 0.015);
+  sprite.fontFace = "Asap";
+  sprite.fontWeight = 700;
+  sprite.material.map.generateMipmaps = false;
   sprite.material.sizeAttenuation = false;
   sprite.center.x = -0.05;
   sprite.center.y = 0;

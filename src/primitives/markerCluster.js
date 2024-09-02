@@ -98,7 +98,7 @@ const MarkerCluster = function(sceneIn) {
         sprite.label.material.map.dispose();
         sprite.label.material.dispose();
       }
-      sprite.label = createNewSpriteText(number, 0.012, "black", "Asap", 50, 500);
+      sprite.label = createNewSpriteText(number, 0.012, "black", "Asap", 120, 700);
       sprite.number = number;
       sprite.group.add(sprite.label);
     }

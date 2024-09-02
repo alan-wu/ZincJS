@@ -189,7 +189,7 @@ const Marker = function(zincObject) {
       }
     }
     if (!label && numberIn) {
-      label = createNewSpriteText(numberIn, 0.012, "black", "Asap", 50, 500);
+      label = createNewSpriteText(numberIn, 0.012, "black", "Asap", 120, 700);
       this.morph.add(label);
     }
     number = numberIn;
