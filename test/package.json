@@ -37,7 +37,7 @@
     "cross-env": "*",
     "file-system": "^2.2.2",
     "gl": "^6.0.2",
-    "happy-dom": "^13.6.0",
+    "happy-dom": "^15.10.2",
     "mocha": "^10.3.0",
     "mocha-junit-reporter": "^1.23.1",
     "mochapack": "^2.1.4",
