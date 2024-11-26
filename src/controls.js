@@ -294,6 +294,16 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		CLICK_ACTION[buttonName] = STATE[actionName];
   }
 
+	/**
+	 * 
+	 * @param {HTML} element 
+	 * @param {Number} index 
+	 */
+	const setCanvasTabindex = (element, index) => {
+		if (element instanceof HTMLCanvasElement)
+			element.tabIndex = index
+	}
+
   //Make sure the camera does not travel beyond limit
   const checkTravelDistance = () => {
     if (maxDist > 0) {
@@ -711,6 +721,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.enable = function () {
 		enabled = true;
 		if (this.domElement && this.domElement.addEventListener) {
+			setCanvasTabindex(this.domElement, 1)
 			this.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
 			this.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
 			this.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
@@ -740,6 +751,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.removeEventListener( 'wheel', onDocumentWheelEvent, false);
       this.domElement.removeEventListener( 'mouseenter', onDocumentEnter, false );
 			this.domElement.removeEventListener( 'contextmenu', event => { event.preventDefault(); }, false );
+			setCanvasTabindex(this.domElement, -1)
 	    }
 	}
 
