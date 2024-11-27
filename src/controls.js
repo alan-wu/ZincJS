@@ -44,8 +44,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * Available states are NONE, ROTATE, ZOOM, PAN, TOUCH_ROTATE, TOUCH_ZOOM, TOUCH_PAN and SCROLL.
    * @property {Object} 
    */
-	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6 };
+	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6, KEYBOARD_ZOOM: 7, KEYBOARD_ROTATE: 8, KEYBOARD_PAN: 9 };
   const ROTATE_DIRECTION = { NONE: -1, FREE: 1, HORIZONTAL: 2, VERTICAL: 3 };
+	const KEYBOARD = { ARROWLEFT: 37, ARROWUP: 38, ARROWRIGHT: 39, ARROWDOWN: 40, EQUAL: 187, MINUS: 189 };
   /** 
    * Available click actions are MAIN, AUXILIARY and SECONARY.
    * @property {Object} 
@@ -69,7 +70,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.touchZoomDistanceStart = 0;
 	this.touchZoomDistanceEnd = 0;
 	this.directionalLight = 0;
-	this.scrollRate = 50;
+	this.zoomRate = 50;
 	this.pixelHeight = 1;
 	let duration = 6000;
   let enabled = true;
@@ -84,7 +85,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	let smoothCameraTransitionObject = undefined;
 	let rotateCameraTransitionObject = undefined;
 	let cameraAutoTumbleObject = undefined;
-	let mouseScroll = 0;
+	let zoomSize = 0;
   let rotateMode = ROTATE_DIRECTION.FREE;
 	this._state = STATE.NONE;
 	let zincRayCaster = undefined;
@@ -482,13 +483,39 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		this._state = STATE.SCROLL;
 		let changes = 0;
 		if (event.deltaY > 0)
-			changes = this.scrollRate;
+			changes = this.zoomRate;
 		else if (event.deltaY < 0)
-			changes = this.scrollRate * -1;
-		mouseScroll = mouseScroll + changes;
+			changes = this.zoomRate * -1;
+		zoomSize = zoomSize + changes;
 		event.preventDefault(); 
 		event.stopImmediatePropagation();  
 	}	
+
+	const onDocumentKeydownEvent = event => {
+		updateRect(false);
+		if (
+			(event.keyCode === KEYBOARD.EQUAL) ||
+			(event.keyCode === KEYBOARD.MINUS)
+		) {
+			this._state = STATE.KEYBOARD_ZOOM
+			let unit = 1;
+			let changes = 0;
+			if (event.shiftKey) {
+				unit = unit * 2
+			}
+			if (event.keyCode === KEYBOARD.EQUAL) {
+				changes = this.zoomRate * unit * -1;
+			} else {
+				changes = this.zoomRate * unit;
+			}
+			zoomSize = zoomSize + changes;
+			event.preventDefault();
+		}
+	}
+
+	const onDocumentKeyupEvent = event => {
+		this._state = STATE.NONE;
+	}
 
 	const translate = () => {
 		if (typeof this.cameraObject !== "undefined")
@@ -623,8 +650,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		if (this._state === STATE.ZOOM)
 		{
 			delta = this.previous_pointer_y-this.pointer_y;
-		} else if (this._state === STATE.SCROLL) {
-			delta = mouseScroll;
+		} else if ((this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)) {
+			delta = zoomSize;
 		} else {
 			delta = -1.0 * (this.touchZoomDistanceEnd - this.touchZoomDistanceStart);
 			this.touchZoomDistanceStart = this.touchZoomDistanceEnd;
@@ -633,7 +660,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   }
 
   this.changeZoomByScrollRateUnit = unit => {
-    const delta_y = unit * this.scrollRate;
+    const delta_y = unit * this.zoomRate;
     this.changeZoomByValue(delta_y);
   }
 
@@ -694,8 +721,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.previous_pointer_x = this.pointer_x;
 			this.previous_pointer_y = this.pointer_y;
 		}
-		if (this._state === STATE.SCROLL) {
-			mouseScroll = 0;
+		if ((this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)) {
+			zoomSize = 0;
       this._state = STATE.NONE;
 		}
 	}
@@ -730,8 +757,10 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.addEventListener( 'touchmove', onDocumentTouchMove, false);
 			this.domElement.addEventListener( 'touchend', onDocumentTouchEnd, false);
 			this.domElement.addEventListener( 'wheel', onDocumentWheelEvent, false);
+			this.domElement.addEventListener( 'mouseenter', onDocumentEnter, false );
 			this.domElement.addEventListener( 'contextmenu', event => { event.preventDefault(); }, false );
-      this.domElement.addEventListener( 'mouseenter', onDocumentEnter, false );
+			this.domElement.addEventListener( 'keydown', onDocumentKeydownEvent, false );
+			this.domElement.addEventListener( 'keyup', onDocumentKeyupEvent, false );
 	  }
 	}
 
@@ -749,8 +778,10 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.removeEventListener( 'touchmove', onDocumentTouchMove, false);
 			this.domElement.removeEventListener( 'touchend', onDocumentTouchEnd, false);
 			this.domElement.removeEventListener( 'wheel', onDocumentWheelEvent, false);
-      this.domElement.removeEventListener( 'mouseenter', onDocumentEnter, false );
+			this.domElement.removeEventListener( 'mouseenter', onDocumentEnter, false );
 			this.domElement.removeEventListener( 'contextmenu', event => { event.preventDefault(); }, false );
+			this.domElement.removeEventListener( 'keydown', onDocumentKeydownEvent, false );
+			this.domElement.removeEventListener( 'keyup', onDocumentKeyupEvent, false );
 			setCanvasTabindex(this.domElement, -1)
 	    }
 	}
@@ -951,14 +982,14 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     } else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
       translate();
       ndcControl.triggerCallback();
-    } else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL)){
+    } else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)){
       ndcControl.zoom(calculateZoomDelta());
       this.previous_pointer_x = this.pointer_x;
       this.previous_pointer_y = this.pointer_y;
-      if (this._state === STATE.SCROLL) {
+      if ((this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)) {
         this._state = STATE.NONE;
       }
-      mouseScroll = 0;
+      zoomSize = 0;
       ndcControl.triggerCallback();
     }
   }
@@ -1004,7 +1035,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 				tumble();
 			} else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
 				translate();
-			} else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL)){
+			} else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)){
 				flyZoom();
 			}
 			if (this._state !== STATE.NONE) {
