@@ -402,8 +402,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		const len = event.touches.length;
 		if (len == 1) {
 			this._state = STATE.TOUCH_ROTATE;
-			this.pointer_x = event.touches[0].clientX - rect.left;
-			this.pointer_y = event.touches[0].clientY - rect.top;
+			this.pointer_x = event.touches[0].clientX - rect?.left;
+			this.pointer_y = event.touches[0].clientY - rect?.top;
 			this.pointer_x_start = this.pointer_x;
 			this.pointer_y_start = this.pointer_y;
 			this.previous_pointer_x = this.pointer_x;
@@ -416,8 +416,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		} else if (len == 3) {
 			this._state = STATE.TOUCH_PAN;
 			this.targetTouchId = event.touches[0].identifier;
-			this.pointer_x = event.touches[0].clientX - rect.left;
-			this.pointer_y = event.touches[0].clientY - rect.top;
+			this.pointer_x = event.touches[0].clientX - rect?.left;
+			this.pointer_y = event.touches[0].clientY - rect?.top;
 			this.previous_pointer_x = this.pointer_x;
 			this.previous_pointer_y= this.pointer_y;			
 		}
@@ -495,13 +495,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 
 	const onDocumentKeydownEvent = event => {
 		updateRect(false);
+		let changes = 0;
 		if (
 			(event.keyCode === KEYBOARD.EQUAL) ||
 			(event.keyCode === KEYBOARD.MINUS)
 		) {
 			this._state = STATE.KEYBOARD_ZOOM
 			let unit = 1;
-			let changes = 0;
 			if (event.shiftKey) {
 				unit = unit * 2
 			}
@@ -511,14 +511,12 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 				changes = this.zoomRate * unit;
 			}
 			zoomSize = zoomSize + changes;
-			event.preventDefault();
 		} else if (
 			(event.keyCode === KEYBOARD.ARROWLEFT) ||
 			(event.keyCode === KEYBOARD.ARROWUP) ||
 			(event.keyCode === KEYBOARD.ARROWRIGHT) ||
 			(event.keyCode === KEYBOARD.ARROWDOWN)
 		) {
-			let changes = 0;
 			if (event.shiftKey) {
 				this._state = STATE.KEYBOARD_ROTATE
 				this.pointer_x_start = this.pointer_x;
@@ -626,8 +624,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	const tumble = () => {
 		if (typeof this.cameraObject !== "undefined")
 		{
-			const width = rect.width;
-			const height = rect.height;
+			const width = rect?.width;
+			const height = rect?.height;
 			if ((0<width)&&(0<height))
 			{
 				const radius=0.25*(width+height);
