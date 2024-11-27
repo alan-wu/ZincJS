@@ -71,6 +71,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.touchZoomDistanceEnd = 0;
 	this.directionalLight = 0;
 	this.zoomRate = 50;
+	this.rotateRate = 50;
 	this.panRate = 100;
 	this.pixelHeight = 1;
 	let duration = 6000;
@@ -517,17 +518,26 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			(event.keyCode === KEYBOARD.ARROWRIGHT) ||
 			(event.keyCode === KEYBOARD.ARROWDOWN)
 		) {
-			this._state = STATE.KEYBOARD_PAN
+			let changes = 0;
+			if (event.shiftKey) {
+				this._state = STATE.KEYBOARD_ROTATE
+				this.pointer_x_start = this.pointer_x;
+				this.pointer_y_start = this.pointer_y;
+				changes = this.rotateRate
+			} else {
+				this._state = STATE.KEYBOARD_PAN
+				changes = this.panRate
+			}
 			this.previous_pointer_x = this.pointer_x;
 			this.previous_pointer_y = this.pointer_y;
 			if (event.keyCode === KEYBOARD.ARROWLEFT) {
-				this.pointer_x = this.pointer_x + this.panRate - rect.left;
+				this.pointer_x = this.pointer_x + changes - rect.left;
 			} else if (event.keyCode === KEYBOARD.ARROWUP) {
-				this.pointer_y = this.pointer_y + this.panRate - rect.left;
+				this.pointer_y = this.pointer_y + changes - rect.left;
 			} else if (event.keyCode === KEYBOARD.ARROWRIGHT) {
-				this.pointer_x = this.pointer_x - this.panRate - rect.top;
+				this.pointer_x = this.pointer_x - changes - rect.top;
 			} else if (event.keyCode === KEYBOARD.ARROWDOWN) {
-				this.pointer_y = this.pointer_y - this.panRate - rect.top;
+				this.pointer_y = this.pointer_y - changes - rect.top;
 			}
 		}
 	}
@@ -995,7 +1005,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 
   // handle synchronised control based on information in the idc
   const handleSyncControl = () => {
-    if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
+    if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE) || (this._state === STATE.KEYBOARD_ROTATE)){
       //rotateion does not trigger callback
       tumble();
     } else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN) || (this._state === STATE.KEYBOARD_PAN)){
@@ -1050,7 +1060,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			if (this._state !== STATE.NONE) {
 				updated = true;
 			}
-			if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
+			if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE) || (this._state === STATE.KEYBOARD_ROTATE)){
 				tumble();
 			} else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN) || (this._state === STATE.KEYBOARD_PAN)){
 				translate();
