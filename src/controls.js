@@ -71,6 +71,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.touchZoomDistanceEnd = 0;
 	this.directionalLight = 0;
 	this.zoomRate = 50;
+	this.panRate = 100;
 	this.pixelHeight = 1;
 	let duration = 6000;
   let enabled = true;
@@ -510,6 +511,24 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			}
 			zoomSize = zoomSize + changes;
 			event.preventDefault();
+		} else if (
+			(event.keyCode === KEYBOARD.ARROWLEFT) ||
+			(event.keyCode === KEYBOARD.ARROWUP) ||
+			(event.keyCode === KEYBOARD.ARROWRIGHT) ||
+			(event.keyCode === KEYBOARD.ARROWDOWN)
+		) {
+			this._state = STATE.KEYBOARD_PAN
+			this.previous_pointer_x = this.pointer_x;
+			this.previous_pointer_y = this.pointer_y;
+			if (event.keyCode === KEYBOARD.ARROWLEFT) {
+				this.pointer_x = this.pointer_x + this.panRate - rect.left;
+			} else if (event.keyCode === KEYBOARD.ARROWUP) {
+				this.pointer_y = this.pointer_y + this.panRate - rect.left;
+			} else if (event.keyCode === KEYBOARD.ARROWRIGHT) {
+				this.pointer_x = this.pointer_x - this.panRate - rect.top;
+			} else if (event.keyCode === KEYBOARD.ARROWDOWN) {
+				this.pointer_y = this.pointer_y - this.panRate - rect.top;
+			}
 		}
 	}
 
@@ -979,7 +998,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
       //rotateion does not trigger callback
       tumble();
-    } else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
+    } else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN) || (this._state === STATE.KEYBOARD_PAN)){
       translate();
       ndcControl.triggerCallback();
     } else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)){
@@ -1033,7 +1052,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			}
 			if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE)){
 				tumble();
-			} else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN)){
+			} else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN) || (this._state === STATE.KEYBOARD_PAN)){
 				translate();
 			} else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)){
 				flyZoom();
