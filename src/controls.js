@@ -537,13 +537,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.previous_pointer_x = this.pointer_x;
 			this.previous_pointer_y = this.pointer_y;
 			if (event.keyCode === KEYBOARD.ARROWLEFT) {
-				this.pointer_x = this.pointer_x + changes - rect.left;
+				this.pointer_x = this.pointer_x - changes - rect.left;
 			} else if (event.keyCode === KEYBOARD.ARROWUP) {
-				this.pointer_y = this.pointer_y + changes - rect.left;
+				this.pointer_y = this.pointer_y - changes - rect.left;
 			} else if (event.keyCode === KEYBOARD.ARROWRIGHT) {
-				this.pointer_x = this.pointer_x - changes - rect.top;
+				this.pointer_x = this.pointer_x + changes - rect.top;
 			} else if (event.keyCode === KEYBOARD.ARROWDOWN) {
-				this.pointer_y = this.pointer_y - changes - rect.top;
+				this.pointer_y = this.pointer_y + changes - rect.top;
 			}
 		}
 	}
