@@ -46,7 +46,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    */
 	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6, KEYBOARD_ZOOM: 7, KEYBOARD_ROTATE: 8, KEYBOARD_PAN: 9 };
   const ROTATE_DIRECTION = { NONE: -1, FREE: 1, HORIZONTAL: 2, VERTICAL: 3 };
-	const KEYBOARD = { ARROWLEFT: 37, ARROWUP: 38, ARROWRIGHT: 39, ARROWDOWN: 40, EQUAL: 187, MINUS: 189 };
+	const KEYBOARD = { ARROWLEFT: 37, ARROWUP: 38, ARROWRIGHT: 39, ARROWDOWN: 40, NUMPADADD: 107, NUMPADSUBTRACT: 109, EQUAL: 187, MINUS: 189 };
   /** 
    * Available click actions are MAIN, AUXILIARY and SECONARY.
    * @property {Object} 
@@ -498,16 +498,24 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		let changes = 0;
 		if (
 			(event.keyCode === KEYBOARD.EQUAL) ||
-			(event.keyCode === KEYBOARD.MINUS)
+			(event.keyCode === KEYBOARD.MINUS) ||
+			(event.keyCode === KEYBOARD.NUMPADADD) ||
+			(event.keyCode === KEYBOARD.NUMPADSUBTRACT)
 		) {
 			this._state = STATE.KEYBOARD_ZOOM
 			let unit = 1;
 			if (event.shiftKey) {
 				unit = unit * 2
 			}
-			if (event.keyCode === KEYBOARD.EQUAL) {
+			if (
+				(event.keyCode === KEYBOARD.EQUAL) ||
+				(event.keyCode === KEYBOARD.NUMPADADD)
+			) {
 				changes = this.zoomRate * unit * -1;
-			} else {
+			} else if (
+				(event.keyCode === KEYBOARD.MINUS) ||
+				(event.keyCode === KEYBOARD.NUMPADSUBTRACT)
+			) {
 				changes = this.zoomRate * unit;
 			}
 			zoomSize = zoomSize + changes;
