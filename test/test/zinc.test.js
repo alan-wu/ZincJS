@@ -47,8 +47,14 @@ function checkControls(scene) {
       it('tumble_rate', function(){
         assert.equal(controls.tumble_rate, 1.5, 'tumble_rate is correct');
       });
-      it('scrollRate', function(){
-        assert.equal(controls.scrollRate, 50, 'scrollRate is correct');
+      it('zoomRate', function(){
+        assert.equal(controls.zoomRate, 50, 'zoomRate is correct');
+      });
+      it('rotateRate', function(){
+        assert.equal(controls.rotateRate, 50, 'rotateRate is correct');
+      });
+      it('panRate', function(){
+        assert.equal(controls.panRate, 100, 'panRate is correct');
       });
     });
     describe('Methods()', function(){
