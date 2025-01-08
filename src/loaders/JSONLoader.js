@@ -61,7 +61,17 @@ Object.assign( JSONLoader.prototype, {
 		loader.setWithCredentials( this.withCredentials );
 		loader.load( url, function ( text ) {
 
-			var json = JSON.parse( text );
+			var json = undefined;
+			try {
+        json = JSON.parse(text);
+			} catch (e) {
+				console.error("The loader has encountered an error while parsing the content of a resource.");
+				if (onError) {
+					onError({responseURL: url});
+					return;
+				}
+			}
+
 			var metadata = json.metadata;
 
 			if ( metadata !== undefined ) {
