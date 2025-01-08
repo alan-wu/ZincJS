@@ -32,7 +32,7 @@ function createNewURL(target, reference) {
       }
       return newURL;
     } catch {
-      console.error(`There is an issue creting the url link with: ${target}.` );
+      console.error(`There is an issue creating the url link with: ${target}.` );
     }
   }
   if (!Array.isArray(target)) {
