@@ -783,7 +783,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.enable = function () {
 		enabled = true;
 		if (this.domElement && this.domElement.addEventListener) {
-			setCanvasTabindex(this.domElement, 1)
+			setCanvasTabindex(this.domElement, 0)
 			this.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
 			this.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
 			this.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
