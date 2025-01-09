@@ -132,7 +132,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
       if (this.cameraObject) {
         currentDist = this.cameraObject.position.distanceTo(sceneSphere.center);
       }
-      maxDist = currentDist > maxDist ? currentDist : maxDist;
+      maxDist = currentDist > maxDist ? currentDist * 1.5: maxDist;
     } else {
       maxDist = 0;
     }
