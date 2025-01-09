@@ -211,10 +211,8 @@ exports.SceneLoader = function (sceneIn) {
         newLines.setRenderOrder(renderOrder);
         region.addZincObject(newLines);
         newLines.setDuration(scene.getDuration());
-        console.log(lod)
         if (lod && lod.levels) {
           for (const [key, value] of Object.entries(lod.levels)) {
-            
             newLines.addLOD(primitivesLoader, key, value.URL, value.Index, lod.preload);
           }
         }
@@ -422,17 +420,17 @@ exports.SceneLoader = function (sceneIn) {
       downloadedItem = downloadedItem + 1;
       if (zincObject && (finishCallback != undefined) && (typeof finishCallback == 'function')) {
         finishCallback(zincObject);
-        let zincCameraControls = scene.getZincCameraControls();
-        if (zincCameraControls) {
-          zincCameraControls.calculateMaxAllowedDistance(scene);
-        }
       }
       if (downloadedItem == numberOfDownloaded) {
         if (viewLoaded === false)
           scene.viewAll();
-        if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function'))
+        if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function')) {
           allCompletedCallback();
-        
+          let zincCameraControls = scene.getZincCameraControls();
+          if (zincCameraControls) {
+            zincCameraControls.calculateMaxAllowedDistance(scene);
+          }
+        }        
       }
     };
   };
@@ -628,8 +626,9 @@ exports.SceneLoader = function (sceneIn) {
       }
       --this.toBeDownloaded;
       geometry.dispose();
-      if (finishCallback != undefined && (typeof finishCallback == 'function'))
+      if (finishCallback != undefined && (typeof finishCallback == 'function')) {
         finishCallback(zincGeometry);
+      }
     };
   }
 
