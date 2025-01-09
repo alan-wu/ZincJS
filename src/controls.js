@@ -537,13 +537,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.previous_pointer_x = this.pointer_x;
 			this.previous_pointer_y = this.pointer_y;
 			if (event.keyCode === KEYBOARD.ARROWLEFT) {
-				this.pointer_x = this.pointer_x - changes - rect.left;
+				this.pointer_x = this.pointer_x - changes;
 			} else if (event.keyCode === KEYBOARD.ARROWUP) {
-				this.pointer_y = this.pointer_y - changes - rect.left;
+				this.pointer_y = this.pointer_y - changes;
 			} else if (event.keyCode === KEYBOARD.ARROWRIGHT) {
-				this.pointer_x = this.pointer_x + changes - rect.top;
+				this.pointer_x = this.pointer_x + changes;
 			} else if (event.keyCode === KEYBOARD.ARROWDOWN) {
-				this.pointer_y = this.pointer_y + changes - rect.top;
+				this.pointer_y = this.pointer_y + changes;
 			}
 		}
 	}
@@ -783,7 +783,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.enable = function () {
 		enabled = true;
 		if (this.domElement && this.domElement.addEventListener) {
-			setCanvasTabindex(this.domElement, 1)
+			setCanvasTabindex(this.domElement, 0)
 			this.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
 			this.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
 			this.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
