@@ -297,6 +297,16 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		CLICK_ACTION[buttonName] = STATE[actionName];
   }
 
+	/**
+	 * 
+	 * @param {HTML} element 
+	 * @param {Number} index 
+	 */
+	const setCanvasTabindex = (element, index) => {
+		if (element instanceof HTMLCanvasElement)
+			element.tabIndex = index
+	}
+
   //Make sure the camera does not travel beyond limit
   const checkTravelDistance = () => {
     if (maxDist > 0) {
@@ -773,6 +783,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	this.enable = function () {
 		enabled = true;
 		if (this.domElement && this.domElement.addEventListener) {
+			setCanvasTabindex(this.domElement, 1)
 			this.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
 			this.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
 			this.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
@@ -783,8 +794,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.addEventListener( 'wheel', onDocumentWheelEvent, false);
 			this.domElement.addEventListener( 'mouseenter', onDocumentEnter, false );
 			this.domElement.addEventListener( 'contextmenu', event => { event.preventDefault(); }, false );
-			window.addEventListener( 'keydown', onDocumentKeydownEvent, false );
-			window.addEventListener( 'keyup', onDocumentKeyupEvent, false );
+			this.domElement.addEventListener( 'keydown', onDocumentKeydownEvent, false );
+			this.domElement.addEventListener( 'keyup', onDocumentKeyupEvent, false );
 	  }
 	}
 
@@ -804,8 +815,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.domElement.removeEventListener( 'wheel', onDocumentWheelEvent, false);
 			this.domElement.removeEventListener( 'mouseenter', onDocumentEnter, false );
 			this.domElement.removeEventListener( 'contextmenu', event => { event.preventDefault(); }, false );
-			window.removeEventListener( 'keydown', onDocumentKeydownEvent, false );
-			window.removeEventListener( 'keyup', onDocumentKeyupEvent, false );
+			this.domElement.removeEventListener( 'keydown', onDocumentKeydownEvent, false );
+			this.domElement.removeEventListener( 'keyup', onDocumentKeyupEvent, false );
+			setCanvasTabindex(this.domElement, -1)
 	    }
 	}
 
