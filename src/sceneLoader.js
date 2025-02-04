@@ -1,6 +1,7 @@
 const THREE = require('three');
 const resolveURL = require('./utilities').resolveURL;
 const createNewURL = require('./utilities').createNewURL;
+const isRegionGroup = require('./utilities').isRegionGroup;
 
 const STLLoader = require('./loaders/STLLoader').STLLoader;
 const OBJLoader = require('./loaders/OBJLoader').OBJLoader;
@@ -803,6 +804,48 @@ exports.SceneLoader = function (sceneIn) {
     }
   }
 
+  let filterPrimitivesArray = (array, options) => {
+    let newArray = array;
+    const include = options?.enabled?.include;
+    const exclude = options?.enabled?.exclude;
+    if (include?.length || exclude?.length) {
+      if (include) {
+        newArray = array.filter((item) => {
+          if (item.Type === "View") {
+            return true;
+          }
+          for (let i = 0; i < include.length; i++) {
+            if (isRegionGroup(item.RegionPath, item.GroupName, include[i])) {
+              return true;
+            }
+          }
+          return false;
+        });
+      }
+      if (exclude) {
+        newArray = newArray.filter((item) => {
+          if (item.Type === "View") {
+            return true;
+          }
+          for (let i = 0; i < exclude.length; i++) {
+            if (isRegionGroup(item.RegionPath, item.GroupName, exclude[i])) {
+              return false;
+            }
+          }
+          return true;
+        });
+      }
+    }
+    return newArray;
+  }
+
+  let filterMetadataInArray = (metadata, options) => {
+    if (Array.isArray(metadata)) {
+      return filterPrimitivesArray(metadata, options);
+    }
+    return metadata;
+  }
+
   let getNumberOfDownloadsInArray = (array, includeViews) => {
     if (Array.isArray(array)) {
       let count = 0;
@@ -853,15 +896,16 @@ exports.SceneLoader = function (sceneIn) {
     readPrimitivesItem(targetRegion, referenceURL, item, order * 2, callback);
   }
 
-  let loadVersionOne = (targetRegion, metadata, referenceURL, finishCallback, allCompletedCallback) => {
-    let numberOfObjects = getNumberOfObjects(metadata);
+  let loadVersionOne = (targetRegion, metadata, referenceURL, finishCallback, allCompletedCallback, options) => {
+    const filteredMetada = filterMetadataInArray(metadata, options);
+    let numberOfObjects = getNumberOfObjects(filteredMetada);
     // view file does not receive callback
     let callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
     // Prioritise the view file and settings before loading anything else
     for (let i = 0; i < metadata.length; i++)
-      readViewAndSettingsItem(referenceURL, metadata[i], callback);
+      readViewAndSettingsItem(referenceURL, filteredMetada[i], callback);
     for (let i = 0; i < metadata.length; i++) {
-      readVersionOneRegionPath(targetRegion, referenceURL, metadata[i], i, callback);
+      readVersionOneRegionPath(targetRegion, referenceURL, filteredMetada[i], i, callback);
     }
   }
 
@@ -881,11 +925,13 @@ exports.SceneLoader = function (sceneIn) {
     * Load a metadata file from the provided URL into this scene. Once
     * succssful scene proceeds to read each items into scene for visualisations.
     * 
-    * @param {String} url - Location of the metafile
+    * @param {String} url - Location of the metadata file
     * @param {Function} finishCallback - Callback function which will be called
+    * @param {options} Optional settings, it can be used to ignore some regions/groups
+    * in the metadata file. Only supports version 1 at this moment.
     * for each glyphset and geometry that has been written in.
     */
-  this.loadMetadataURL = (targetRegion, url, finishCallback, allCompletedCallback) => {
+  this.loadMetadataURL = (targetRegion, url, finishCallback, allCompletedCallback, options) => {
     const xmlhttp = new XMLHttpRequest();
     const requestURL = resolveURL(url);
     xmlhttp.onreadystatechange = () => {
@@ -898,7 +944,7 @@ exports.SceneLoader = function (sceneIn) {
           referenceURL = (new URL(requestURL)).href;
         const metadata = JSON.parse(xmlhttp.responseText);
         if (Array.isArray(metadata)) {
-          loadVersionOne(targetRegion, metadata, referenceURL, finishCallback, allCompletedCallback);
+          loadVersionOne(targetRegion, metadata, referenceURL, finishCallback, allCompletedCallback, options);
         } else if (typeof metadata === "object" && metadata !== null) {
           if (metadata.Version == "2.0") {
             loadVersionTwo(targetRegion, metadata, referenceURL, finishCallback, allCompletedCallback);

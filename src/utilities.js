@@ -472,6 +472,40 @@ function createNewSpriteText(text, height, colour, font, pixel, weight) {
   return sprite;
 }
 
+/*
+ * Check if the compare path match with the region or/and group.
+ * comparePath should be in the form of regionPath/Group.
+ * * can be used as wildcard.
+ * comparePath will be used to compare both region and group if it
+ * is a single string without /
+ */
+function isRegionGroup(regionPath, groupName, comparePath) {
+  if (comparePath) {
+    const region = regionPath ? regionPath : "";
+    const group = groupName ? groupName : "";
+    const n = comparePath.lastIndexOf('/');
+    if (n > -1) {
+      let r = undefined;
+      let g = undefined;
+      r = comparePath.substring(0, n);
+      g = comparePath.substring(n + 1);
+      if (r === "*" || r === "**" || r.toLowerCase() === region.toLowerCase()) {
+        if (g === "*" || g === "**" || g.toLowerCase() === group.toLowerCase()) {
+          return true;
+        }
+      }
+    } else {
+      //one single value if one of the region / group matches
+      if (region.toLowerCase() === comparePath.toLowerCase() ||
+        group.toLowerCase() === comparePath.toLowerCase()) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 exports.getBoundingBox = getBoundingBox;
 exports.createNewURL = createNewURL;
 exports.createBufferGeometry = createBufferGeometry;
@@ -481,3 +515,4 @@ exports.loadExternalFile = loadExternalFile;
 exports.loadExternalFiles = loadExternalFiles;
 exports.PhongToToon = PhongToToon;
 exports.createNewSpriteText = createNewSpriteText;
+exports.isRegionGroup = isRegionGroup;

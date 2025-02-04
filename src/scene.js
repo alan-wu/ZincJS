@@ -465,9 +465,11 @@ exports.Scene = function (containerIn, rendererIn) {
    * @param {String} url - Location of the metafile
    * @param {Function} finishCallback - Callback function which will be called
    * for each glyphset and geometry that has been written in.
+   * @param {options} Optional settings, it can be used to ignore some regions/groups
+    * in the metadata file. Only supports version 1 at this moment.
    */
-  this.loadMetadataURL = (url, finishCallback, allCompletedCallback) => {
-    sceneLoader.loadMetadataURL(rootRegion, url, finishCallback, allCompletedCallback);
+  this.loadMetadataURL = (url, finishCallback, allCompletedCallback, options) => {
+    sceneLoader.loadMetadataURL(rootRegion, url, finishCallback, allCompletedCallback, options);
   }
 
   /**

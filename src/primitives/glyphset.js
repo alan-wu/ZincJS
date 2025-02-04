@@ -45,6 +45,7 @@ const Glyphset = function () {
   const _current_scales = [];
   const _current_colors = [];
   const _glyph_axis_array = [];
+  this.globalScale = 1;
   for (let i = 0; i < 8; i++) {
     _points[i] = new THREE.Vector3();
   }
@@ -113,7 +114,7 @@ const Glyphset = function () {
       const mirrored_point = [0.0, 0.0, 0.0];
       for (var j = 0; j < 3; j++) {
         var sign = (scale[j] < 0.0) ? -1.0 : 1.0;
-        axis_scale[j] = sign * baseSize[j] + scale[j] * scaleFactors[j];
+        axis_scale[j] = (sign * baseSize[j] + scale[j] * scaleFactors[j]) * this.globalScale;
       }
       for (var j = 0; j < 3; j++) {
         final_axis1[j] = axis1[j] * axis_scale[0];
@@ -168,7 +169,7 @@ const Glyphset = function () {
       let final_point = [0.0, 0.0, 0.0];
       for (var j = 0; j < 3; j++) {
         var sign = (scale[j] < 0.0) ? -1.0 : 1.0;
-        axis_scale[j] = sign * baseSize[0] + scale[j] * scaleFactors[0];
+        axis_scale[j] = (sign * baseSize[0] + scale[j] * scaleFactors[0]) * this.globalScale;
       }
       for (var j = 0; j < 3; j++) {
         final_point[j] = point[j]
@@ -196,7 +197,7 @@ const Glyphset = function () {
           use_axis1 = axis3;
           use_axis2 = axis1;
         }
-        const final_scale1 = baseSize[0] + use_scale * scaleFactors[0];
+        const final_scale1 = (baseSize[0] + use_scale * scaleFactors[0]) * this.globalScale;
         final_axis1[0] = use_axis1[0] * final_scale1;
         final_axis1[1] = use_axis1[1] * final_scale1;
         final_axis1[2] = use_axis1[2] * final_scale1;
@@ -205,7 +206,7 @@ const Glyphset = function () {
         final_axis3[2] = final_axis1[0] * use_axis2[1] - final_axis1[1] * use_axis2[0];
         let magnitude = Math.sqrt(final_axis3[0] * final_axis3[0] + final_axis3[1] * final_axis3[1] + final_axis3[2] * final_axis3[2]);
         if (0.0 < magnitude) {
-          let scaling = (baseSize[2] + use_scale * scaleFactors[2]) / magnitude;
+          let scaling = (baseSize[2] + use_scale * scaleFactors[2]) * this.globalScale / magnitude;
           if ((repeat_mode == "AXES_2D") && (k > 0)) {
             scaling *= -1.0;
           }
@@ -219,7 +220,7 @@ const Glyphset = function () {
         final_axis2[2] = final_axis3[0] * final_axis1[1] - final_axis3[1] * final_axis1[0];
         magnitude = Math.sqrt(final_axis2[0] * final_axis2[0] + final_axis2[1] * final_axis2[1] + final_axis2[2] * final_axis2[2]);
         if (0.0 < magnitude) {
-          var scaling = (baseSize[1] + use_scale * scaleFactors[1]) / magnitude;
+          var scaling = (baseSize[1] + use_scale * scaleFactors[1]) * this.globalScale / magnitude;
           final_axis2[0] *= scaling;
           final_axis2[1] *= scaling;
           final_axis2[2] *= scaling;
@@ -282,9 +283,10 @@ const Glyphset = function () {
           _transformMatrix.elements[15] = 1.0;
           this.morph.setMatrixAt(current_glyph_index, _transformMatrix);
           const glyph = glyphList[current_glyph_index];
-          if (glyph)
+          if (glyph) {
             glyph.setTransformation(arrays[j][0], arrays[j][1],
               arrays[j][2], arrays[j][3]);
+          }
           current_glyph_index++;
         }
       }
@@ -323,12 +325,12 @@ const Glyphset = function () {
    * the internal time has been updated.
    */
   const updateMorphGlyphsets = () => {
-    const current_positions = _current_positions;
-    const current_axis1s = _current_axis1s;
-    const current_axis2s = _current_axis2s;
-    const current_axis3s = _current_axis3s;
-    const current_scales = _current_scales;
-    const current_colors = _current_colors;
+    let current_positions = _current_positions;
+    let current_axis1s = _current_axis1s;
+    let current_axis2s = _current_axis2s;
+    let current_axis3s = _current_axis3s;
+    let current_scales = _current_scales;
+    let current_colors = _current_colors;
 
     const current_time = this.inbuildTime / this.duration * (numberOfTimeSteps - 1);
     const bottom_frame = Math.floor(current_time);
@@ -403,26 +405,35 @@ const Glyphset = function () {
   }
 
   /**
+   * Hide label with the choosen colour.
+   */
+    this.hideLabel = () => {
+      for (let i = 0; i < glyphList.length; i++) {
+        glyphList[i].hideLabel();
+      }
+    }
+
+  /**
    * Create the glyphs in the glyphset.
    * 
    * @param {Boolean} displayLabels -Flag to determine either the labels should be display or not.
    */
   const createGlyphs = (displayLabels) => {
-    if ((labels != undefined) && displayLabels) {
-      for (let i = 0; i < numberOfVertices; i++) {
-        const glyph = new (require('./glyph').Glyph)(undefined, undefined, i, this);
-        if (labels != undefined && labels[i] != undefined) {
-          glyph.setLabel(labels[i]);
-        }
-        if (numberOfTimeSteps > 0) {
-          glyph.setFrustumCulled(false);
-        }
-        glyphList[i] = glyph;
-        this.morph.add(glyph.getGroup());
+    for (let i = 0; i < numberOfVertices; i++) {
+      const glyph = new (require('./glyph').Glyph)(undefined, undefined, i, this);
+      let label = labels ? labels[i] : undefined;
+      label = label ? label : this.groupName;
+      if (label) {
+        glyph.setLabel(label);
       }
+      if (numberOfTimeSteps > 0) {
+        glyph.setFrustumCulled(false);
+      }
+      glyphList[i] = glyph;
+      this.morph.add(glyph.getGroup());
     }
-    if ((labels != undefined) && displayLabels) {
-      this.showLabel(this.morph.material ? this.morph.material.color : undefined);
+    if (displayLabels) {
+      this.showLabel();
     }
     //Update the transformation of the glyphs.
     updateGlyphsetTransformation(positions["0"], axis1s["0"],
@@ -624,6 +635,15 @@ const Glyphset = function () {
     return this.inbuildTime;
   }
 
+  /**
+   * Set the objects scale.
+   * 
+   * @return {THREE.Box3}.
+   */
+  this.setScaleAll = function(scale) {
+    this.globalScale = scale;
+    updateMorphGlyphsets();
+  }
 
   /**
    * Clear this glyphset and its list of glyphs which will release them from the memory.

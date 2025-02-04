@@ -707,8 +707,6 @@ ZincObject.prototype.addVertices = function(coords) {
 
 /**
  * Set the objects position.
- * 
- * @return {THREE.Box3}.
  */
 ZincObject.prototype.setPosition = function(x, y, z) {
   const group = this.getGroup();
@@ -726,8 +724,6 @@ ZincObject.prototype.loadAdditionalSources = function(primitivesLoader, sources)
 
 /**
  * Set the objects scale.
- * 
- * @return {THREE.Box3}.
  */
 ZincObject.prototype.setScaleAll = function(scale) {
   const group = this.getGroup();
