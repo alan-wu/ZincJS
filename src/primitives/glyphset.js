@@ -283,9 +283,10 @@ const Glyphset = function () {
           _transformMatrix.elements[15] = 1.0;
           this.morph.setMatrixAt(current_glyph_index, _transformMatrix);
           const glyph = glyphList[current_glyph_index];
-          if (glyph)
+          if (glyph) {
             glyph.setTransformation(arrays[j][0], arrays[j][1],
               arrays[j][2], arrays[j][3]);
+          }
           current_glyph_index++;
         }
       }
@@ -404,28 +405,35 @@ const Glyphset = function () {
   }
 
   /**
+   * Hide label with the choosen colour.
+   */
+    this.hideLabel = () => {
+      for (let i = 0; i < glyphList.length; i++) {
+        glyphList[i].hideLabel();
+      }
+    }
+
+  /**
    * Create the glyphs in the glyphset.
    * 
    * @param {Boolean} displayLabels -Flag to determine either the labels should be display or not.
    */
   const createGlyphs = (displayLabels) => {
-    if ((labels != undefined) && displayLabels) {
-      for (let i = 0; i < numberOfVertices; i++) {
-        const glyph = new (require('./glyph').Glyph)(undefined, undefined, i, this);
-        let label = labels ? labels[i] : undefined;
-        label = label ? label : this.groupName;
-        if (label) {
-          glyph.setLabel(label);
-        }
-        if (numberOfTimeSteps > 0) {
-          glyph.setFrustumCulled(false);
-        }
-        glyphList[i] = glyph;
-        this.morph.add(glyph.getGroup());
+    for (let i = 0; i < numberOfVertices; i++) {
+      const glyph = new (require('./glyph').Glyph)(undefined, undefined, i, this);
+      let label = labels ? labels[i] : undefined;
+      label = label ? label : this.groupName;
+      if (label) {
+        glyph.setLabel(label);
       }
+      if (numberOfTimeSteps > 0) {
+        glyph.setFrustumCulled(false);
+      }
+      glyphList[i] = glyph;
+      this.morph.add(glyph.getGroup());
     }
-    if ((labels != undefined) && displayLabels) {
-      this.showLabel(this.morph.material ? this.morph.material.color : undefined);
+    if (displayLabels) {
+      this.showLabel();
     }
     //Update the transformation of the glyphs.
     updateGlyphsetTransformation(positions["0"], axis1s["0"],
