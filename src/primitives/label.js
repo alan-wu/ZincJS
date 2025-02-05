@@ -73,7 +73,7 @@ exports.Label = function (textIn, colour) {
    * Free up the memory
    */
   this.dispose = () => {
-    sprite.dispose();
+    //sprite.dispose();
   }
 
   /**
