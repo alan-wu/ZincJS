@@ -546,7 +546,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 				this.pointer_y = this.pointer_y + changes;
 			}
 		}
-		event.preventDefault();
+		if (Object.values(KEYBOARD).includes(event.keyCode)) {
+			event.preventDefault();
+		}
 	}
 
 	const onDocumentKeyupEvent = event => {
