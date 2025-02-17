@@ -619,6 +619,21 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	    return {position: _v, up: _a};
 	}
 	
+	this.alignCameraWithAxis = (axis) => {
+		if (axis.length() > 0) {
+			_a.copy(axis).normalize();
+			_v.copy(this.cameraObject.position).sub(this.cameraObject.target);
+			const mag = _v.length();
+			_v.x = this.cameraObject.target.x + mag * _a.x;
+			_v.y = this.cameraObject.target.y + mag * _a.y;
+			_v.z = this.cameraObject.target.z + mag * _a.z;
+			this.cameraObject.position.copy(_v);
+			this.updateDirectionalLight();
+			console.log(_a)
+			this.cameraObject.updateProjectionMatrix();
+		}
+}
+	
   /**
    * Rotate around the axis with the amount specified by angle.
    * 
