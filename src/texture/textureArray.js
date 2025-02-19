@@ -78,8 +78,9 @@ const TextureArray = function () {
       if (options) {
         if (options.vs && options.fs) {
           let transparent = true;
-          if (options.transparent)
+          if ("transparent" in options) {
             transparent = options.transparent;
+          }
           let side = THREE.FrontSide;
           if (options.side)
             side = options.side;

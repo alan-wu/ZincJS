@@ -19,6 +19,7 @@ const TextureSlides = function (textureIn) {
   this.morph = new THREE.Group();
   this.group = this.morph;
   this.morph.userData = this;
+  let edgesLine = undefined;
   let flipY = true;
 
   /**
@@ -59,7 +60,7 @@ const TextureSlides = function (textureIn) {
     mesh.position.z = 0;
     switch (settings.direction) {
       case "x":
-        const rotation = flipY ? -Math.PI / 2 : Math.PI / 2;
+        const rotation = -Math.PI / 2;
         mesh.rotation.y = rotation;
         uniforms.direction.value = 1;
         uniforms.slide.value.set(settings.value, 0, 0);
@@ -303,9 +304,13 @@ const TextureSlides = function (textureIn) {
     this.boundingBoxUpdateRequired = true;
   }
 
+  this.setRenderOrder = (order) => {
+    //multiilayers
+    this.morph.renderOrder = order;
+  }
+
   this.initialise = (textureData, finishCallback) => {
     if (textureData) {
-
       const locations = textureData.locations;
       if (locations && locations.length > 0) {
         this.applyTransformation(locations[0].orientation,
@@ -318,6 +323,25 @@ const TextureSlides = function (textureIn) {
       if (finishCallback != undefined && (typeof finishCallback == 'function')) {
         finishCallback(this);
       }
+    }
+  }
+
+  this.showEdges = (color) => {
+    if (!edgesLine) {
+      const geometry = new THREE.BoxGeometry( 1, 1, 1 ); 
+      geometry.translate(0.5, 0.5, 0.5);
+      const edges = new THREE.EdgesGeometry( geometry ); 
+      edgesLine = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color } ) );
+      this.group.add( edgesLine );
+    } else {
+      edgesLine.material.color = color;
+    }
+    edgesLine.visible = true;
+  }
+
+  this.hideEdges = () => {
+    if (edgesLine) {
+      edgesLine.visible = false;
     }
   }
 }
