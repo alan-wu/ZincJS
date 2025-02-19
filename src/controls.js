@@ -639,8 +639,27 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.updateDirectionalLight();
 			this.cameraObject.updateProjectionMatrix();
 		}
-}
-	
+	}
+
+	/**
+	 * @returns - Plane axis that used to align Camera
+	 */
+	this.getPlaneAxis = () => {
+		const quaternion = this.cameraObject.quaternion;
+		const front = new THREE.Vector3(0, 0, 1).applyQuaternion(quaternion);
+		const right = new THREE.Vector3(1, 0, 0).applyQuaternion(quaternion);
+		const up = new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion);
+		const planeAxis = {
+			front: front,
+			back: front.clone().negate(),
+			left: right.clone().negate(),
+			right: right,
+			up: up,
+			down: up.clone().negate()
+		}
+		return planeAxis
+	}
+
   /**
    * Rotate around the axis with the amount specified by angle.
    * 
