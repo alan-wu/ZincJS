@@ -619,9 +619,17 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	    return {position: _v, up: _a};
 	}
 	
+	/**
+	 * 
+	 * @param {*} axis - Either THREE.Vector3 object or three component array
+	 */
 	this.alignCameraWithAxis = (axis) => {
-		if (axis.length() > 0) {
-			_a.copy(axis).normalize();
+		if (axis instanceof THREE.Vector3 || Array.isArray(axis)) {
+			if (axis instanceof THREE.Vector3 && axis.length() > 0) {
+				_a.copy(axis).normalize();
+			} else if (Array.isArray(axis) && axis.length === 3) {
+				_a.fromArray(axis).normalize();
+			}
 			_v.copy(this.cameraObject.position).sub(this.cameraObject.target);
 			const mag = _v.length();
 			_v.x = this.cameraObject.target.x + mag * _a.x;
@@ -629,7 +637,6 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			_v.z = this.cameraObject.target.z + mag * _a.z;
 			this.cameraObject.position.copy(_v);
 			this.updateDirectionalLight();
-			console.log(_a)
 			this.cameraObject.updateProjectionMatrix();
 		}
 }
