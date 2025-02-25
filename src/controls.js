@@ -106,7 +106,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   let hasUpdated = false;
   let ndcControl = undefined;
   let maxDist = 0;
-  let planeAxis = undefined
+  let viewportPlaneAxes = undefined
   const viewports = {
     "default" : new Viewport()
   };
@@ -619,33 +619,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
             axis.z*upa+_new_b.z*upb+_new_c.z*upc);
 	    return {position: _v, up: _a};
 	}
-	
-	/**
-	 * 
-	 * @param {*} axis - THREE.Vector3 object, three component array or specified plane string
-	 */
+
 	this.alignCameraWithAxis = (axis) => {
-		if (axis instanceof THREE.Vector3 || Array.isArray(axis) || typeof axis === "string") {
+		if (axis instanceof THREE.Vector3 || Array.isArray(axis)) {
 			if (axis instanceof THREE.Vector3 && axis.length() > 0) {
 				_a.copy(axis).normalize();
 			} else if (Array.isArray(axis) && axis.length === 3) {
 				_a.fromArray(axis).normalize();
-			} else if (typeof axis === "string" && axis.trim().length > 0) {
-				if (!this.planeAxis) {
-					const quaternion = this.cameraObject.quaternion;
-					const front = new THREE.Vector3(0, 0, 1).applyQuaternion(quaternion);
-					const right = new THREE.Vector3(1, 0, 0).applyQuaternion(quaternion);
-					const up = new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion);
-					this.planeAxis = {
-						front: front,
-						back: front.clone().negate(),
-						left: right.clone().negate(),
-						right: right,
-						up: up,
-						down: up.clone().negate()
-					}
-				}
-				_a.copy(this.planeAxis[axis]).normalize();
 			}
 			_v.copy(this.cameraObject.position).sub(this.cameraObject.target);
 			const mag = _v.length();
@@ -656,6 +636,33 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 			this.updateDirectionalLight();
 			this.cameraObject.updateProjectionMatrix();
 		}
+	}
+
+	this.alignCameraWithDirection = (direction) => {
+		if (typeof direction === "string" && direction.trim().length > 0) {
+			if (!viewportPlaneAxes) {
+				this.getViewportPlaneAxes();
+			}
+			this.alignCameraWithAxis(viewportPlaneAxes[direction]);
+		}
+	}
+
+	this.getViewportPlaneAxes = () => {
+		if (!viewportPlaneAxes) {			
+			const quaternion = this.cameraObject.quaternion;
+			const front = new THREE.Vector3(0, 0, 1).applyQuaternion(quaternion);
+			const right = new THREE.Vector3(1, 0, 0).applyQuaternion(quaternion);
+			const up = new THREE.Vector3(0, 1, 0).applyQuaternion(quaternion);
+			viewportPlaneAxes = {
+				front: front,
+				back: front.clone().negate(),
+				left: right.clone().negate(),
+				right: right,
+				up: up,
+				down: up.clone().negate()
+			}
+		}
+		return viewportPlaneAxes
 	}
 
   /**
