@@ -34,7 +34,6 @@ const Zinc = function() {
   this.StereoEffect = require('./controls').StereoEffect;
   this.loadExternalFile = require('./utilities').loadExternalFile;
   this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.readNIFTIFromURL = require('./loaders/niftiReader').readNIFTIFromURL;
   this.THREE = require('three');
 };
 
