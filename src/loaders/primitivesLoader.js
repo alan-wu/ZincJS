@@ -9,12 +9,15 @@ const mergeGlyphData = (glyphData) => {
       glyphData1.labels.push(...glyphData1.labels);
     }
     const fields = ['axis1', 'axis2', 'axis3', 'colors', 'positions', 'scale'];
-      fields.forEach(field => {
-        if (field in glyphData1) {
-          Object.keys(glyphData1[field]).forEach((step) => {
-            glyphData1[field][step].push(...glyphData2[field][step]);
-          });
-        }
+    fields.forEach(field => {
+      if (field in glyphData1) {
+        Object.keys(glyphData1[field]).forEach((step) => {
+          const len = glyphData2[field][step].length;
+          for (let i = 0; i < len; i++) {
+            glyphData1[field][step].push(glyphData2[field][step][i]);
+          }
+        });
+      }
     });
   }
 

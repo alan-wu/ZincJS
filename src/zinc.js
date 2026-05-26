@@ -4,7 +4,7 @@ const version = PACKAGE.version;
 
 /**
  * Provides a global namespace for the Zinc javascript library and some default parameters for it.
- * 
+ *
  * @namespace
  * @author Alan Wu
  */
@@ -34,8 +34,7 @@ const Zinc = function() {
   this.StereoEffect = require('./controls').StereoEffect;
   this.loadExternalFile = require('./utilities').loadExternalFile;
   this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.THREE = require('three'); 
-  
+  this.THREE = require('three');
 };
 
 module.exports = new Zinc();
