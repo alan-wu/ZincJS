@@ -26,6 +26,7 @@ const TextureSlides = function (textureIn) {
   let discardAlpha = true;
   let lt0 = 0;
   let lt1 = 0;
+  let prevTime = -0.1;
 
   /**
     @typedef SLIDE_SETTINGS
@@ -409,29 +410,46 @@ const TextureSlides = function (textureIn) {
   this.updateTimeTexture = () => {
     const maxIndex = this.textureList.length - 1;
     const normalisedTime = this.inbuildTime / this.duration;
-    if (this.timeEnabled && num > 0) {
-      if (normalisedTime == 0.0) {
-        const iTime = normalisedTime * maxIndex;
-        const t0 = Math.floor(iTime);
-        const t1 = Math.ceil(iTime);
-        const ratio = iTime - t0;
-        this.morph.children.forEach((mesh) => {
-          const material = mesh.material;
-          if (material.type === "ShaderMaterial") {
-            const uniforms = material.uniforms;
-            if (lt0 !== t0) {
-              uniforms.diffuse0.value = this.textureList[t0].impl;
-              lt0 = t0;
-            }
-            if (lt1 !== t1) {
-              uniforms.diffuse1.value = this.textureList[t1].impl;
-              lt1 = t1;
-            }
-            uniforms.time.value = ratio;
-            material.needsUpdate = true;
+    if (this.timeEnabled && maxIndex > 0 && prevTime !== normalisedTime) {
+      const iTime = normalisedTime * maxIndex;
+      const t0 = Math.floor(iTime);
+      const t1 = Math.ceil(iTime);
+      const ratio = iTime - t0;
+      console.log("update", t0, t1, ratio)
+      this.morph.children.forEach((mesh) => {
+        const material = mesh.material;
+        if (material.type === "ShaderMaterial") {
+          const uniforms = material.uniforms;
+          if (lt0 !== t0) {
+            uniforms.diffuse0.value = this.textureList[t0].impl;
           }
-        });
-      }
+          if (lt1 !== t1) {
+            uniforms.diffuse1.value = this.textureList[t1].impl;
+          }
+          uniforms.time.value = ratio;
+          material.needsUpdate = true;
+        }
+      });
+      lt0 = t0;
+      lt1 = t1;
+      prevTime = normalisedTime;
+    }
+  }
+
+  /**
+   * Update the glyphsets if required the render.
+   */
+  this.setMorphTime = (time) => {
+    let newTime = time;
+    if (time > this.duration)
+      newTime = this.duration;
+    else if (0 > time)
+      newTime = 0;
+    else
+      newTime = time;
+    if (newTime != this.inbuildTime) {
+      this.inbuildTime = newTime;
+      this.updateTimeTexture();
     }
   }
 
@@ -439,6 +457,7 @@ const TextureSlides = function (textureIn) {
    * Update the glyphsets if required the render.
    */
   this.render = (delta, playAnimation, options) => {
+   //console.log("render", delta, playAnimation, this.textureList)
     if (playAnimation == true && this.timeEnabled &&
         this.textureList.length > 1) {
       let targetTime = this.inbuildTime + delta;

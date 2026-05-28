@@ -43,6 +43,16 @@ const TexturePrimitive = function (textureIn) {
     }
   }
 
+  this.addTextureArray = (tArray) => {
+    if (this.textureList.length === 0 && this.texture) {
+      this.textureList.push(this.texture);
+    }
+    console.log("addTextureArray", tArray)
+    if (tArray && tArray.isTextureArray) {
+      this.textureList.push(tArray);
+    }
+  }
+
   /**
    * Initialise a texture based on the provided textureData, this should be used
    * internally only.

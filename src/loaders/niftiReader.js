@@ -33,6 +33,14 @@ const defaultTextureSettings = {
   "type": "slides"
 };
 
+const defaultOptions = {
+  hideWhitePixel: false,
+  hideBlackPixel: true,
+  keepScalePosition: true,
+  filterByValue: true,
+  timeEnabled: false,
+};
+
 
 /*
 const exampleSettings = {
@@ -313,12 +321,7 @@ function createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSet
 }
 
 async function getImagesFromURL(url, maskURL, optionsIn) {
-  const options = {
-    hideWhitePixel: false,
-    hideBlackPixel: true,
-    keepScalePosition: true,
-    filterByValue: true,
-  };
+  const options = {...defaultOptions};
   if (optionsIn) {
     Object.assign(options, optionsIn);
   }
@@ -340,13 +343,35 @@ async function getImagesFromURL(url, maskURL, optionsIn) {
   return {sources, niftiHeader};
 }
 
+
 async function createPrimitivesFromNIFTI(url, useHeaderInfo, maskURL, textureSettings, optionsIn) {
-  const {sources, niftiHeader} = await getImagesFromURL(url, maskURL, optionsIn);
-  return createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSettings, optionsIn);
+  let timeEnabled = false;
+  let textureP = undefined;
+  let firstURL = url;
+  if (Array.isArray(url)) {
+    firstURL = url[0];
+    if (url.length > 1 && optionsIn?.timeEnabled) {
+      timeEnabled = true;
+    }
+  }
+  if (typeof firstURL === 'string') {
+    const {sources, niftiHeader} = await getImagesFromURL(firstURL, maskURL, optionsIn);
+    textureP = createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSettings, optionsIn);
+  }
+  if (timeEnabled && textureP) {
+    for (let i = 1; i < url.length; i++) {
+      console.log(i, url[i])
+      const tArray = await createTextureFromNIFTI(url[i], maskURL, optionsIn);
+      console.log(tArray)
+      textureP.addTextureArray(tArray);
+    }
+    textureP.timeEnabled = true;
+  }
+  return textureP;
 }
 
 async function createTextureFromNIFTI(url, maskURL, optionsIn) {
-  const {sources} = await getImagesFromURL(url, useHeaderInfo, maskURL, textureSettings, optionsIn);
+  const {sources} = await getImagesFromURL(url, maskURL, optionsIn);
   return createTextureArray(sources);
 }
 
