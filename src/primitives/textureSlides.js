@@ -24,6 +24,8 @@ const TextureSlides = function (textureIn) {
   let brightness = 0.0;
   let contrast = 1.0;
   let discardAlpha = true;
+  let lt0 = 0;
+  let lt1 = 0;
 
   /**
     @typedef SLIDE_SETTINGS
@@ -116,11 +118,11 @@ const TextureSlides = function (textureIn) {
         const uniforms = shader.getUniforms();
         uniforms.brightness.value = brightness;
         uniforms.contrast.value = contrast;
-        uniforms.diffuse.value = this.texture.impl;
+        uniforms.diffuse0.value = this.texture.impl;
+        uniforms.diffuse1.value = this.texture.impl;
         uniforms.discardAlpha.value = discardAlpha;
         uniforms.depth.value = this.texture.size.depth;
         uniforms.flipY.value = flipY;
-
         const options = {
           fs: shader.fs,
           vs: shader.vs,
@@ -144,6 +146,7 @@ const TextureSlides = function (textureIn) {
         idTextureMap[mesh.id] = mesh;
         this.morph.add(mesh);
         this.boundingBoxUpdateRequired = true;
+        this.updateTimeTexture();
         return slideSettings;
       }
     }
@@ -402,6 +405,50 @@ const TextureSlides = function (textureIn) {
       edgesLine.visible = false;
     }
   }
+
+  this.updateTimeTexture = () => {
+    const maxIndex = this.textureList.length - 1;
+    const normalisedTime = this.inbuildTime / this.duration;
+    if (this.timeEnabled && num > 0) {
+      if (normalisedTime == 0.0) {
+        const iTime = normalisedTime * maxIndex;
+        const t0 = Math.floor(iTime);
+        const t1 = Math.ceil(iTime);
+        const ratio = iTime - t0;
+        this.morph.children.forEach((mesh) => {
+          const material = mesh.material;
+          if (material.type === "ShaderMaterial") {
+            const uniforms = material.uniforms;
+            if (lt0 !== t0) {
+              uniforms.diffuse0.value = this.textureList[t0].impl;
+              lt0 = t0;
+            }
+            if (lt1 !== t1) {
+              uniforms.diffuse1.value = this.textureList[t1].impl;
+              lt1 = t1;
+            }
+            uniforms.time.value = ratio;
+            material.needsUpdate = true;
+          }
+        });
+      }
+    }
+  }
+
+  /**
+   * Update the glyphsets if required the render.
+   */
+  this.render = (delta, playAnimation, options) => {
+    if (playAnimation == true && this.timeEnabled &&
+        this.textureList.length > 1) {
+      let targetTime = this.inbuildTime + delta;
+      if (targetTime > this.duration)
+        targetTime = targetTime - this.duration;
+      this.inbuildTime = targetTime;
+      this.updateTimeTexture();
+    }
+  }
+
 }
 
 TextureSlides.prototype = Object.create((require('./texturePrimitive').TexturePrimitive).prototype);

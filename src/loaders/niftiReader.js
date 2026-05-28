@@ -251,9 +251,8 @@ function getTransformationFromHeader(header, options) {
   return {position: undefined, scale: undefined}
 }
 
-function createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSettings, options) {
+function createTextureArray(sources) {
   if (sources?.data) {
-    const newTexture = new (require('../primitives/textureSlides').TextureSlides)();;
     const tArray = new (require('../texture/textureArray').TextureArray)();
     tArray.impl = new THREE.DataTexture2DArray(
       sources.data, sources.width, sources.height, sources.depth);
@@ -264,45 +263,56 @@ function createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSet
       depth: sources.depth,
     };
     tArray.isLoading = false;
-    tArray.impl.needsUpdate = true
-    newTexture.groupName = "Images";
-    newTexture.morph.renderOrder = 1;
-    newTexture.texture = tArray;
-    const settings = structuredClone(defaultTextureSettings);
-    Object.assign(settings, textureSettings);
-    //The following will allow the dimension and upset to be
-    //set using the information from the header
-    if (useHeaderInfo && niftiHeader) {
-      const {position, scale} = getTransformationFromHeader(niftiHeader, options);
-      if (position && scale) {
-        settings.locations[0].scale = scale;
-        settings.locations[0].position = position;
-      }
-/*
-      if (niftiHeader.qoffset_x) {
-        settings.locations[0].position[0] = niftiHeader.qoffset_x;
-      }
-      if (niftiHeader.qoffset_y) {
-        settings.locations[0].position[1] = niftiHeader.qoffset_y;
-      }
-      if (niftiHeader.qoffset_y) {
-        settings.locations[0].position[2] = niftiHeader.qoffset_z;
-      }
-      if (niftiHeader.dims) {
-        settings.locations[0].scale[0] = niftiHeader.dims[1];
-        settings.locations[0].scale[1] = niftiHeader.dims[2];
-        settings.locations[0].scale[2] = niftiHeader.dims[3];
-      }
-      */
-    }
-    newTexture.initialise(settings, undefined);
-    newTexture.showEdges(0x999999);
-    return newTexture;
+    tArray.impl.needsUpdate = true;
+    return tArray;
   }
   return undefined;
 }
 
-async function readNIFTIFromURL(url, useHeaderInfo, maskURL, textureSettings, optionsIn) {
+function createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSettings, options) {
+  if (sources?.data) {
+    const newTexture = new (require('../primitives/textureSlides').TextureSlides)();;
+    const tArray = createTextureArray(sources);
+    if (tArray) {
+      newTexture.groupName = "Images";
+      newTexture.morph.renderOrder = 1;
+      newTexture.texture = tArray;
+      const settings = structuredClone(defaultTextureSettings);
+      Object.assign(settings, textureSettings);
+      //The following will allow the dimension and upset to be
+      //set using the information from the header
+      if (useHeaderInfo && niftiHeader) {
+        const {position, scale} = getTransformationFromHeader(niftiHeader, options);
+        if (position && scale) {
+          settings.locations[0].scale = scale;
+          settings.locations[0].position = position;
+        }
+  /*
+        if (niftiHeader.qoffset_x) {
+          settings.locations[0].position[0] = niftiHeader.qoffset_x;
+        }
+        if (niftiHeader.qoffset_y) {
+          settings.locations[0].position[1] = niftiHeader.qoffset_y;
+        }
+        if (niftiHeader.qoffset_y) {
+          settings.locations[0].position[2] = niftiHeader.qoffset_z;
+        }
+        if (niftiHeader.dims) {
+          settings.locations[0].scale[0] = niftiHeader.dims[1];
+          settings.locations[0].scale[1] = niftiHeader.dims[2];
+          settings.locations[0].scale[2] = niftiHeader.dims[3];
+        }
+        */
+      }
+      newTexture.initialise(settings, undefined);
+      newTexture.showEdges(0x999999);
+      return newTexture;
+    }
+  }
+  return undefined;
+}
+
+async function getImagesFromURL(url, maskURL, optionsIn) {
   const options = {
     hideWhitePixel: false,
     hideBlackPixel: true,
@@ -326,7 +336,18 @@ async function readNIFTIFromURL(url, useHeaderInfo, maskURL, textureSettings, op
   const buffer = await response.arrayBuffer();
   const {niftiHeader, niftiImage} = readNIFTI(buffer);
   const sources = createSources(niftiHeader, niftiImage, maskHeader, maskImage, options);
-  return createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSettings, options);
+
+  return {sources, niftiHeader};
 }
 
-export { readNIFTIFromURL };
+async function createPrimitivesFromNIFTI(url, useHeaderInfo, maskURL, textureSettings, optionsIn) {
+  const {sources, niftiHeader} = await getImagesFromURL(url, maskURL, optionsIn);
+  return createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSettings, optionsIn);
+}
+
+async function createTextureFromNIFTI(url, maskURL, optionsIn) {
+  const {sources} = await getImagesFromURL(url, useHeaderInfo, maskURL, textureSettings, optionsIn);
+  return createTextureArray(sources);
+}
+
+export { createPrimitivesFromNIFTI, createTextureFromNIFTI };

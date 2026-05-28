@@ -8,17 +8,21 @@ precision highp float;
 precision highp int;
 precision highp sampler2DArray;
 
-uniform sampler2DArray diffuse;
+uniform sampler2DArray diffuse0;
+uniform sampler2DArray diffuse1;
 uniform bool discardAlpha;
 uniform float brightness;
 uniform float contrast;
+uniform float time;
 in vec3 vUw;
 
 out vec4 outColor;
 
 void main() {
 
-  vec4 color = texture( diffuse, vUw );
+  vec4 color0 = texture( diffuse0, vUw );
+  vec4 color1 = texture( diffuse1, vUw );
+  vec4 color = mix(color0, color1, time);
 
   // discard if alpha is zero
   if (discardAlpha && color.a == 0.0) discard;
@@ -64,10 +68,12 @@ const getUniforms = function() {
     contrast: { value: 1},
     depth: { value: 1 },
     discardAlpha: {value: true},
-    diffuse: { value: undefined },
+    diffuse0: { value: undefined },
+    diffuse1: { value: undefined },
     direction: {value: 1},
     flipY: { value: true},
     slide: { value: new THREE.Vector3( 0, 0, 1 ) },
+    time: { value: 0 }
   };
 }
 

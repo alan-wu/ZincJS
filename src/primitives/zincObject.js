@@ -703,8 +703,7 @@ ZincObject.prototype.render = function(delta, playAnimation,
   if (this.visible && !(this.timeEnabled && playAnimation)) {
     this._lod.update(cameraControls, this.center);
   }
-  if (playAnimation == true)
-  {
+  if (playAnimation == true) {
     if ((this.clipAction) && this.isTimeVarying()) {
       this.mixer.update( delta );
     }

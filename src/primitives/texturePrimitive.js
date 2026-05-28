@@ -11,6 +11,12 @@ const TexturePrimitive = function (textureIn) {
   (require('./zincObject').ZincObject).call(this);
   this.isTexturePrimitive = true;
   this.texture = textureIn;
+  //List of textureArray object, which is used for
+  //time variation for textureSlides object
+  this.textureList = [];
+  if (this.texture) {
+    this.textureList.push(this.texture);
+  }
 
   /**
    * Load texture data into this primitves.
@@ -30,6 +36,7 @@ const TexturePrimitive = function (textureIn) {
         const _this = this;
         texture.loadFromImages(imgArray).then(() => {
           _this.texture = texture;
+          _this.textureList.push(this.texture);
           _this.initialise(textureData, finishCallback);
         });
       }
@@ -49,8 +56,6 @@ const TexturePrimitive = function (textureIn) {
       finishCallback(this);
     }
   }
-
-
 }
 
 TexturePrimitive.prototype = Object.create((require('./zincObject').ZincObject).prototype);
