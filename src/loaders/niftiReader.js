@@ -121,6 +121,89 @@ function readNIFTI(data) {
   return {niftiHeader: undefined, niftiImage: undefined};
 }
 
+
+function createSources(niftiHeader, niftiImage, maskHeader, maskImage, options) {
+  if (niftiHeader?.dims && niftiHeader.dims[0] === 3) {
+    const width = niftiHeader.dims[1];
+    const height = niftiHeader.dims[2];
+    const depth = niftiHeader.dims[3];
+    const { typedData, dataType } = getTypedData(niftiHeader, niftiImage);
+    const sliceSize = width * height;
+    const length = sliceSize * depth * 4;
+    const fullArray = new Uint8Array(length);
+    let maskData = undefined;
+    if (maskHeader && maskImage) {
+      const maskWidth = maskHeader.dims[1];
+      const maskHeight = maskHeader.dims[2];
+      const maskDepth = maskHeader.dims[3];
+      if (maskWidth === width && maskHeight === height && maskDepth === depth) {
+        const maskedTypedData = getTypedData(maskHeader, maskImage);
+        maskData = maskedTypedData.typedData;
+      }
+    }
+    let slope = niftiHeader.scl_slope || 1;
+    let intercept = niftiHeader.scl_inter || 0;
+
+    let min = Infinity;
+    let max = -Infinity;
+
+    const dataLength = typedData.length;
+    for (let i = 0; i < dataLength; i++) {
+      let val = (typedData[i] * slope) + intercept;
+      if (val < min) min = val;
+      if (val > max) max = val;
+    }
+    let range = max - min;
+
+    for (let slice = 0; slice < depth; slice++) {
+      const sliceOffset = sliceSize * slice;
+      for (let row = 0; row < height; row++) {
+        const rowOffset = row * width;
+        for (let col = 0; col < width; col++) {
+          const offset = sliceOffset + rowOffset + col;
+          let trueVal = typedData[offset] * slope + intercept;
+          let value = 0;
+          if (range !== 0) {
+            // Map [min, max] to [0, 255]
+            value = ((trueVal - min) / range) * 255;
+          }
+          fullArray[offset * 4] = value;
+          fullArray[offset * 4 + 1] = value;
+          fullArray[offset * 4 + 2] = value;
+          fullArray[offset * 4 + 3] = 255;
+          if (maskData) {
+            const maskedValue = maskData[offset];
+            if (options.hideBlackPixel) {
+              //if (maskedValue === 0 && 20 > value) {
+              if (maskedValue === 0) {
+                fullArray[offset * 4 + 3] = 0;
+              }
+            }
+          } else if (options.filterByValue) {
+            if (options.hideWhitePixel && value === 255) {
+              fullArray[offset * 4 + 3] = 0;
+            }
+            if (options.hideBlackPixel && 2 >= value) {
+              fullArray[offset * 4] = 240;
+              fullArray[offset * 4 + 1] = 240;
+              fullArray[offset * 4 + 2] = 240;
+              fullArray[offset * 4 + 3] = 1.0;
+            }
+          }
+        }
+      }
+    }
+
+    return {
+      data: fullArray,
+      width,
+      height,
+      depth,
+    };
+  }
+  return undefined;
+}
+/*
 function createSources(niftiHeader, niftiImage, maskHeader, maskImage, options) {
   if (niftiHeader?.dims && niftiHeader.dims[0] === 3) {
     const width = niftiHeader.dims[1];
@@ -205,6 +288,8 @@ function createSources(niftiHeader, niftiImage, maskHeader, maskImage, options) 
   }
   return undefined;
 }
+
+*/
 
 function getTypedData(niftiHeader, niftiImage) {
   if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_UINT8) {
