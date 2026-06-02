@@ -445,9 +445,7 @@ async function createPrimitivesFromNIFTI(url, useHeaderInfo, maskURL, textureSet
   }
   if (timeEnabled && textureP) {
     for (let i = 1; i < url.length; i++) {
-      console.log(i, url[i])
       const tArray = await createTextureFromNIFTI(url[i], maskURL, optionsIn);
-      console.log(tArray)
       textureP.addTextureArray(tArray);
     }
     textureP.timeEnabled = true;

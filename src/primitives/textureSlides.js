@@ -415,7 +415,6 @@ const TextureSlides = function (textureIn) {
       const t0 = Math.floor(iTime);
       const t1 = Math.ceil(iTime);
       const ratio = iTime - t0;
-      console.log("update", t0, t1, ratio)
       this.morph.children.forEach((mesh) => {
         const material = mesh.material;
         if (material.type === "ShaderMaterial") {
