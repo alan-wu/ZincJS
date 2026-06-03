@@ -1,5 +1,9 @@
 import * as nifti from 'nifti-reader-js';
-const THREE = require('three');
+import {
+  THREE,
+  TextureArray,
+  TextureSlides
+} from "zincjs";
 
 const defaultTextureSettings = {
   "id": "mesh-location-orientation",
@@ -346,7 +350,7 @@ function getTransformationFromHeader(header, options) {
 
 function createTextureArray(sources) {
   if (sources?.data) {
-    const tArray = new (require('../texture/textureArray').TextureArray)();
+    const tArray = new TextureArray();
     tArray.impl = new THREE.DataTexture2DArray(
       sources.data, sources.width, sources.height, sources.depth);
     tArray.impl.anisotropy = 4;
@@ -364,7 +368,7 @@ function createTextureArray(sources) {
 
 function createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSettings, options) {
   if (sources?.data) {
-    const newTexture = new (require('../primitives/textureSlides').TextureSlides)();;
+    const newTexture = new TextureSlides();
     const tArray = createTextureArray(sources);
     if (tArray) {
       newTexture.groupName = "Images";
