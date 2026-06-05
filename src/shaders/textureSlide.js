@@ -41,6 +41,7 @@ uniform float depth;
 uniform vec3 slide;
 uniform int direction;
 uniform bool flipY;
+uniform bool flipZ;
 
 void main() {
 
@@ -56,6 +57,8 @@ void main() {
 
   if (flipY)
     slidePos.y = 1.0 - slidePos.y;
+  if (flipZ)
+    slidePos.z = 1.0 - slidePos.z;
 
   vUw.xyz = vec3(slidePos.x, slidePos.y, slidePos.z * depth);
 
@@ -72,6 +75,7 @@ const getUniforms = function() {
     diffuse1: { value: undefined },
     direction: {value: 1},
     flipY: { value: true},
+    flipZ: { value: false},
     slide: { value: new THREE.Vector3( 0, 0, 1 ) },
     time: { value: 0 }
   };

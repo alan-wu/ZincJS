@@ -15,6 +15,7 @@ const defaultTextureSettings = {
       "position": [0, 0, 0],
       "scale": [1, 1, 1],
       "flipY": false,
+      "flipZ": false,
       "reference_point": "corner"
     }
   ],

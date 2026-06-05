@@ -1455,7 +1455,7 @@ class GLTFWriter {
 				let warned = false;
 
 				for ( const attributeName in geometry.morphAttributes ) {
-          
+
 
 					// glTF 2.0 morph supports only POSITION/NORMAL/TANGENT.
 					// Three.js doesn't support TANGENT yet.
@@ -1502,7 +1502,7 @@ class GLTFWriter {
 					if ( ! geometry.morphTargetsRelative ) {
 
             if (baseAttribute) {
-            
+
               for ( let j = 0, jl = attribute.count; j < jl; j ++ ) {
 
                 if (baseAttribute.count  > j) {

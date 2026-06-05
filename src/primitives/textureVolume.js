@@ -20,6 +20,7 @@ const TextureSlides = function (textureIn) {
   this.morph.userData = this;
   let edgesLine = undefined;
   let flipY = true;
+  let flipZ = false;
 
   /**
     @typedef SLIDE_SETTINGS
@@ -113,6 +114,7 @@ const TextureSlides = function (textureIn) {
         uniforms.diffuse.value = this.texture.impl;
         uniforms.depth.value = this.texture.size.depth;
         uniforms.flipY.value = flipY;
+        uniforms.flipZ.value = flipZ;
 
         const options = {
           fs: shader.fs,
@@ -283,6 +285,9 @@ const TextureSlides = function (textureIn) {
           locations[0].position, locations[0].scale);
         if ("flipY" in locations[0]) {
           flipY = locations[0].flipY;
+        }
+        if ("flipZ" in locations[0]) {
+          flipZ = locations[0].flipZ;
         }
       }
       this.createSlides(textureData.settings.slides);
