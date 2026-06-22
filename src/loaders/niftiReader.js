@@ -39,7 +39,6 @@ const defaultTextureSettings = {
 };
 
 const defaultOptions = {
-  hideWhitePixel: false,
   hideBlackPixel: true,
   keepScalePosition: true,
   filterByValue: true,
@@ -127,195 +126,79 @@ function readNIFTI(data) {
 }
 
 
-function createSources(niftiHeader, niftiImage, maskHeader, maskImage, options) {
+function convertNiftiToUint8Array(niftiHeader, niftiImage) {
+  // 1. Parse the raw array using the correct native typed array view
+  let rawData;
+  switch (niftiHeader.datatypeCode) {
+    case nifti.NIFTI1.TYPE_UINT8:   rawData = new Uint8Array(niftiImage); break;
+    case nifti.NIFTI1.TYPE_INT8:    rawData = new Int8Array(niftiImage); break;
+    case nifti.NIFTI1.TYPE_UINT16:  rawData = new Uint16Array(niftiImage); break;
+    case nifti.NIFTI1.TYPE_INT16:   rawData = new Int16Array(niftiImage); break;
+    case nifti.NIFTI1.TYPE_UINT32:  rawData = new Uint32Array(niftiImage); break;
+    case nifti.NIFTI1.TYPE_INT32:   rawData = new Int32Array(niftiImage); break;
+    case nifti.NIFTI1.TYPE_FLOAT32: rawData = new Float32Array(niftiImage); break;
+    case nifti.NIFTI1.TYPE_FLOAT64: rawData = new Float64Array(niftiImage); break;
+    default: throw new Error("Unsupported NIfTI data type");
+  }
+
+  const slope = niftiHeader.scl_slope || 1.0;
+  const intercept = niftiHeader.scl_inter || 0.0;
+
+  let min = Infinity;
+  let max = -Infinity;
+
+  const len = rawData.length;
+  for (let i = 0; i < len; i++) {
+    let val = rawData[i];
+    if (val < min) min = val;
+    if (val > max) max = val;
+  }
+
+  const uint8Data = new Uint8Array(len);
+  const range = max - min;
+
+  for (let i = 0; i < len; i++) {
+    let physicalVal = rawData[i];
+    let normalised = (physicalVal - min) / range;
+    normalised = Math.max(0.0, Math.min(1.0, normalised));
+    uint8Data[i] = Math.round(normalised * 255.0);
+  }
+
+  return uint8Data;
+}
+
+function createSources(niftiHeader, niftiImage, maskHeader, maskImage) {
   if (niftiHeader?.dims && niftiHeader.dims[0] === 3) {
     const width = niftiHeader.dims[1];
     const height = niftiHeader.dims[2];
     const depth = niftiHeader.dims[3];
-    const { typedData, dataType } = getTypedData(niftiHeader, niftiImage);
-    const sliceSize = width * height;
-    const length = sliceSize * depth * 4;
-    const fullArray = new Uint8Array(length);
+    let isRGB = false;
+    if (niftiHeader.intent_code === 1007 || niftiHeader.intent_code === 1008 ||
+      niftiHeader.datatypeCode === 128 || niftiHeader.datatypeCode === 2304) {
+      isRGB = true;
+    }
+    const typedData = convertNiftiToUint8Array(niftiHeader, niftiImage);
     let maskData = undefined;
     if (maskHeader && maskImage) {
       const maskWidth = maskHeader.dims[1];
       const maskHeight = maskHeader.dims[2];
       const maskDepth = maskHeader.dims[3];
       if (maskWidth === width && maskHeight === height && maskDepth === depth) {
-        const maskedTypedData = getTypedData(maskHeader, maskImage);
-        maskData = maskedTypedData.typedData;
-      }
-    }
-    let slope = niftiHeader.scl_slope || 1;
-    let intercept = niftiHeader.scl_inter || 0;
-
-    let min = Infinity;
-    let max = -Infinity;
-
-    const dataLength = typedData.length;
-    for (let i = 0; i < dataLength; i++) {
-      let val = (typedData[i] * slope) + intercept;
-      if (val < min) min = val;
-      if (val > max) max = val;
-    }
-    let range = max - min;
-
-    for (let slice = 0; slice < depth; slice++) {
-      const sliceOffset = sliceSize * slice;
-      for (let row = 0; row < height; row++) {
-        const rowOffset = row * width;
-        for (let col = 0; col < width; col++) {
-          const offset = sliceOffset + rowOffset + col;
-          let trueVal = typedData[offset] * slope + intercept;
-          let value = 0;
-          if (range !== 0) {
-            // Map [min, max] to [0, 255]
-            value = ((trueVal - min) / range) * 255;
-          }
-          fullArray[offset * 4] = value;
-          fullArray[offset * 4 + 1] = value;
-          fullArray[offset * 4 + 2] = value;
-          fullArray[offset * 4 + 3] = 255;
-          if (maskData) {
-            const maskedValue = maskData[offset];
-            if (options.hideBlackPixel) {
-              //if (maskedValue === 0 && 20 > value) {
-              if (maskedValue === 0) {
-                fullArray[offset * 4 + 3] = 0;
-              }
-            }
-          } else if (options.filterByValue) {
-            if (options.hideWhitePixel && value === 255) {
-              fullArray[offset * 4 + 3] = 0;
-            }
-            if (options.hideBlackPixel && 2 >= value) {
-              fullArray[offset * 4] = 240;
-              fullArray[offset * 4 + 1] = 240;
-              fullArray[offset * 4 + 2] = 240;
-              fullArray[offset * 4 + 3] = 1.0;
-            }
-          }
-        }
+        const maskedTypedData = convertNiftiToUint8Array(maskHeader, maskImage);
+        maskData = maskedTypedData;
       }
     }
 
     return {
-      data: fullArray,
+      data: typedData,
+      maskData: maskData,
       width,
       height,
       depth,
+      isRGB,
     };
   }
   return undefined;
-}
-/*
-function createSources(niftiHeader, niftiImage, maskHeader, maskImage, options) {
-  if (niftiHeader?.dims && niftiHeader.dims[0] === 3) {
-    const width = niftiHeader.dims[1];
-    const height = niftiHeader.dims[2];
-    const depth = niftiHeader.dims[3];
-    const { typedData, dataType } = getTypedData(niftiHeader, niftiImage);
-    const sliceSize = width * height;
-    const length = sliceSize * depth * 4;
-    const fullArray = new Uint8Array(length);
-    let maskData = undefined;
-    if (maskHeader && maskImage) {
-      const maskWidth = maskHeader.dims[1];
-      const maskHeight = maskHeader.dims[2];
-      const maskDepth = maskHeader.dims[3];
-      if (maskWidth === width && maskHeight === height && maskDepth === depth) {
-        const maskedTypedData = getTypedData(maskHeader, maskImage);
-        maskData = maskedTypedData.typedData;
-      }
-    }
-    let scale = 1;
-    let valueOffset = 0.0;
-    if (dataType === "float") {
-      //It should be like
-      // scl_slope = 0, intensity will be stored in value between 0, 1
-      // Otherwise the following
-      //y = scl_slope * x + scl_inter
-      if (niftiHeader.scl_slope === 0) {
-        scale = 255;
-      } else {
-        valueOffset = niftiHeader.scl_inter;
-      }
-    } else if (dataType === "uint") {
-      scale = 255;
-    } else if (dataType === "int16") {
-      //scale = 1 / 255;
-      if (niftiHeader.scl_slope === 0) {
-        scale = 255;
-      } else {
-        valueOffset = niftiHeader.scl_inter;
-      }
-    }
-    for (let slice = 0; slice < depth; slice++) {
-      const sliceOffset = sliceSize * slice;
-      for (let row = 0; row < height; row++) {
-        const rowOffset = row * width;
-        for (let col = 0; col < width; col++) {
-          const offset = sliceOffset + rowOffset + col;
-          let value = typedData[offset] * scale + valueOffset;
-          if (value < 0) value = 0;
-          fullArray[offset * 4] = value;
-          fullArray[offset * 4 + 1] = value;
-          fullArray[offset * 4 + 2] = value;
-          fullArray[offset * 4 + 3] = 255;
-          if (maskData) {
-            const maskedValue = maskData[offset];
-            if (options.hideBlackPixel) {
-              //if (maskedValue === 0 && 20 > value) {
-              if (maskedValue === 0) {
-                fullArray[offset * 4 + 3] = 0;
-              }
-            }
-          } else if (options.filterByValue) {
-            if (options.hideWhitePixel && value === 255) {
-              fullArray[offset * 4 + 3] = 0;
-            }
-            if (options.hideBlackPixel && 2 >= value) {
-              fullArray[offset * 4] = 240;
-              fullArray[offset * 4 + 1] = 240;
-              fullArray[offset * 4 + 2] = 240;
-              fullArray[offset * 4 + 3] = 1.0;
-            }
-          }
-        }
-      }
-    }
-    return {
-      data: fullArray,
-      width,
-      height,
-      depth,
-    };
-  }
-  return undefined;
-}
-
-*/
-
-function getTypedData(niftiHeader, niftiImage) {
-  if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_UINT8) {
-    return { typedData: new Uint8Array(niftiImage), dataType: "uint" };
-  } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_INT16) {
-    return { typedData: new Int16Array(niftiImage), dataType: "int16" };
-  } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_INT32) {
-    return { typedData: new Int32Array(niftiImage), dataType: "int32" };
-  } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_FLOAT32) {
-    return { typedData: new Float32Array(niftiImage), dataType: "float" };
-  } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_FLOAT64) {
-    return { typedData: new Float64Array(niftiImage), dataType: "float" };
-  } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_INT8) {
-    return { typedData: new Int8Array(niftiImage), dataType: "int" };
-  } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_UINT16) {
-    return { typedData: new Uint16Array(niftiImage), dataType: "int" };
-  } else if (niftiHeader.datatypeCode === nifti.NIFTI1.TYPE_UINT32) {
-    return { typedData: new Uint32Array(niftiImage), dataType: "int" };
-  } else {
-    return;
-  }
 }
 
 function getSFormTransformation(header, options) {
@@ -349,26 +232,41 @@ function getTransformationFromHeader(header, options) {
   return {position: undefined, scale: undefined}
 }
 
+function createDataTexture(data, width, height, depth, isRGB) {
+  const dataTexture = new THREE.DataTexture2DArray(
+    data, width, height, depth);
+  dataTexture.anisotropy = 4;
+  if (!isRGB) {
+    dataTexture.format = THREE.RedFormat;
+  }
+  dataTexture.minFilter = THREE.NearestFilter;
+  dataTexture.magFilter = THREE.NearestFilter;
+  dataTexture.needsUpdate = true;
+  return dataTexture;
+}
+
 function createTextureArray(sources) {
   if (sources?.data) {
     const tArray = new TextureArray();
-    tArray.impl = new THREE.DataTexture2DArray(
+    tArray.impl = new createDataTexture(
       sources.data, sources.width, sources.height, sources.depth);
-    tArray.impl.anisotropy = 4;
     tArray.size = {
       width: sources.width,
       height: sources.height,
       depth: sources.depth,
     };
     tArray.isLoading = false;
-    tArray.impl.needsUpdate = true;
     return tArray;
   }
   return undefined;
 }
 
-function createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSettings, options) {
+function createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSettings, optionsIn) {
   if (sources?.data) {
+    const options = {...defaultOptions};
+    if (optionsIn) {
+      Object.assign(options, optionsIn);
+    }
     const newTexture = new TextureSlides();
     const tArray = createTextureArray(sources);
     if (tArray) {
@@ -385,36 +283,23 @@ function createTexturePrimitives(niftiHeader, sources, useHeaderInfo, textureSet
           settings.locations[0].scale = scale;
           settings.locations[0].position = position;
         }
-  /*
-        if (niftiHeader.qoffset_x) {
-          settings.locations[0].position[0] = niftiHeader.qoffset_x;
-        }
-        if (niftiHeader.qoffset_y) {
-          settings.locations[0].position[1] = niftiHeader.qoffset_y;
-        }
-        if (niftiHeader.qoffset_y) {
-          settings.locations[0].position[2] = niftiHeader.qoffset_z;
-        }
-        if (niftiHeader.dims) {
-          settings.locations[0].scale[0] = niftiHeader.dims[1];
-          settings.locations[0].scale[1] = niftiHeader.dims[2];
-          settings.locations[0].scale[2] = niftiHeader.dims[3];
-        }
-        */
       }
       newTexture.initialise(settings, undefined);
       newTexture.showEdges(0x999999);
+      if (sources.maskData && !options.timeEnabled) {
+        const maskTexture = createDataTexture(sources.maskData,
+          sources.width, sources.height, sources.depth, false);
+        newTexture.setMask(maskTexture);
+      }
+      newTexture.setNumberOfChannels(sources.isRGB ? 3 : 1);
+
       return newTexture;
     }
   }
   return undefined;
 }
 
-async function getImagesFromURL(url, maskURL, optionsIn) {
-  const options = {...defaultOptions};
-  if (optionsIn) {
-    Object.assign(options, optionsIn);
-  }
+async function getImagesFromURL(url, maskURL) {
 
   //  try {
   let maskHeader = undefined, maskImage = undefined;
@@ -428,13 +313,13 @@ async function getImagesFromURL(url, maskURL, optionsIn) {
   const response = await fetch(url);
   const buffer = await response.arrayBuffer();
   const {niftiHeader, niftiImage} = readNIFTI(buffer);
-  const sources = createSources(niftiHeader, niftiImage, maskHeader, maskImage, options);
-
+  const sources = createSources(niftiHeader, niftiImage, maskHeader, maskImage);
   return {sources, niftiHeader};
 }
 
 
-async function createPrimitivesFromNIFTI(url, useHeaderInfo, maskURL, textureSettings, optionsIn) {
+async function createPrimitivesFromNIFTI(
+  url, useHeaderInfo, maskURL, textureSettings, optionsIn) {
   let timeEnabled = false;
   let textureP = undefined;
   let firstURL = url;
@@ -455,6 +340,7 @@ async function createPrimitivesFromNIFTI(url, useHeaderInfo, maskURL, textureSet
     }
     textureP.timeEnabled = true;
   }
+
   return textureP;
 }
 

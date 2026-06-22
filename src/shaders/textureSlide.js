@@ -10,27 +10,35 @@ precision highp sampler2DArray;
 
 uniform sampler2DArray diffuse0;
 uniform sampler2DArray diffuse1;
+uniform sampler2DArray mask;
 uniform bool discardAlpha;
+uniform bool maskEnabled;
 uniform float brightness;
 uniform float contrast;
 uniform float time;
+uniform int nChannels;
 in vec3 vUw;
 
 out vec4 outColor;
 
 void main() {
 
-  vec4 color0 = texture( diffuse0, vUw );
-  vec4 color1 = texture( diffuse1, vUw );
-  vec4 color = mix(color0, color1, time);
+  float color0 = texture( diffuse0, vUw ).r;
+  float color1 = texture( diffuse1, vUw ).r;
+  float color = mix(color0, color1, time);
+  // discard if alpha is zero
+  if (maskEnabled && discardAlpha) {
+    float mask = texture(mask, vUw).r;
+    if (mask == 0.0) discard;
+  }
 
   // discard if alpha is zero
-  if (discardAlpha && color.a == 0.0) discard;
+  //if (discardAlpha && color.a == 0.0) discard;
   // Apply brightness
-  vec3 brightenedColor = color.rgb + vec3(brightness);
+  vec3 brightenedColor = vec3(color) + vec3(brightness);
   // Apply contrast
   vec3 contrastedColor = (brightenedColor - vec3(0.5)) * contrast + vec3(0.5);
-  outColor = vec4(contrastedColor, color.a);
+  outColor = vec4(contrastedColor, 1.0);
 }
 `;
 
@@ -73,9 +81,12 @@ const getUniforms = function() {
     discardAlpha: {value: true},
     diffuse0: { value: undefined },
     diffuse1: { value: undefined },
-    direction: {value: 1},
-    flipY: { value: true},
-    flipZ: { value: false},
+    direction: { value: 1 },
+    flipY: { value: true },
+    flipZ: { value: false },
+    nChannels: { value: 1 },
+    mask: { value: undefined },
+    maskEnabled: { value: false },
     slide: { value: new THREE.Vector3( 0, 0, 1 ) },
     time: { value: 0 }
   };

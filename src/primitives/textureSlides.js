@@ -24,6 +24,9 @@ const TextureSlides = function (textureIn) {
   let flipZ = false;
   let brightness = 0.0;
   let contrast = 1.0;
+  let nChannels = 1;
+  let maskTexture = undefined;
+  let maskEnabled = false;
   let discardAlpha = true;
   let lt0 = 0;
   let lt1 = 0;
@@ -126,6 +129,9 @@ const TextureSlides = function (textureIn) {
         uniforms.depth.value = this.texture.size.depth;
         uniforms.flipY.value = flipY;
         uniforms.flipZ.value = flipZ;
+        uniforms.mask.value = maskTexture;
+        uniforms.maskEnabled.value = maskEnabled;
+        uniforms.nChannels.value = nChannels;
         const options = {
           fs: shader.fs,
           vs: shader.vs,
@@ -356,20 +362,25 @@ const TextureSlides = function (textureIn) {
     edgesLine.visible = true;
   }
 
+
+  this.setUniformsValue = (name, val) => {
+    this.morph.children.forEach((mesh) => {
+      const material = mesh.material;
+      if (material.type === "ShaderMaterial") {
+        const uniforms = material.uniforms;
+        uniforms[name].value = val;
+        material.needsUpdate = true;
+      }
+    });
+  }
+
   this.isAlphaPixelDiscarded = () => {
     return discardAlpha;
   }
 
   this.discardAlphaPixel = (flag) => {
     discardAlpha = flag;
-    this.morph.children.forEach((mesh) => {
-      const material = mesh.material;
-      if (material.type === "ShaderMaterial") {
-        const uniforms = material.uniforms;
-        uniforms.discardAlpha.value = discardAlpha;
-        material.needsUpdate = true;
-      }
-    });
+    this.setUniformsValue("discardAlpha", discardAlpha);
   }
 
   this.getBrightness = () => {
@@ -378,14 +389,7 @@ const TextureSlides = function (textureIn) {
 
   this.setBrightness = (brightnessIn) => {
     brightness = brightnessIn;
-    this.morph.children.forEach((mesh) => {
-      const material = mesh.material;
-      if (material.type === "ShaderMaterial") {
-        const uniforms = material.uniforms;
-        uniforms.brightness.value = brightness;
-        material.needsUpdate = true;
-      }
-    });
+    this.setUniformsValue("brightness", brightness);
   }
 
   this.getContrast = () => {
@@ -395,15 +399,27 @@ const TextureSlides = function (textureIn) {
   this.setContrast = (contrastIn) => {
     if (contrast >= 0 ) {
       contrast = contrastIn;
-      this.morph.children.forEach((mesh) => {
-        const material = mesh.material;
-        if (material.type === "ShaderMaterial") {
-          const uniforms = material.uniforms;
-          uniforms.contrast.value = contrast;
-          material.needsUpdate = true;
-        }
-      });
+      this.setUniformsValue("contrast", contrast);
     }
+  }
+
+  this.getNumberOfChannels = () => {
+    return nChannels;
+  }
+
+  this.setNumberOfChannels = (numbersIn) => {
+    nChannels = numbersIn;
+    this.setUniformsValue("nChannels", nChannels);
+  }
+
+  this.getMask = () => {
+    return maskTexture;
+  }
+
+  this.setMask = (maskTextureIn) => {
+    maskTexture = maskTextureIn;
+    this.setUniformsValue("mask", maskTexture);
+    this.setUniformsValue("maskEnabled", maskTexture ? true : false);
   }
 
   this.hideEdges = () => {
