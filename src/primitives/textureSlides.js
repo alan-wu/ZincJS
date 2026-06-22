@@ -418,8 +418,9 @@ const TextureSlides = function (textureIn) {
 
   this.setMask = (maskTextureIn) => {
     maskTexture = maskTextureIn;
+    maskEnabled = maskTexture ? true : false;
     this.setUniformsValue("mask", maskTexture);
-    this.setUniformsValue("maskEnabled", maskTexture ? true : false);
+    this.setUniformsValue("maskEnabled", maskEnabled);
   }
 
   this.hideEdges = () => {
