@@ -12,14 +12,11 @@
     "README.md",
     "src/*",
     "build/zinc.js",
-    "build/zinc.frontend.js",
     "build/zinc.js.map",
-    "webpack.config.js"
+    "vite.config.js"
   ],
   "scripts": {
-    "build-bundle": "webpack --config webpack.frontend.js; webpack --config webpack.backend.js",
-    "build-vite": "vite build",
-    "build-backend": "webpack --config webpack.backend.js",
+    "build-bundle": "vite build",
     "test": "npm --prefix ./test install && npm --prefix ./test run test-ci",
     "changelog": "auto-changelog -p --output CHANGELOG.md --template keepachangelog",
     "jsdoc": "jsdoc -c jsdoc_conf.json",
