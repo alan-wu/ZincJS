@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { Geometry as THREEGeometry } from './three/Geometry';
-import SpriteText from 'three-spritetext';
+import SpriteTextModule from 'three-spritetext';
+const SpriteText = SpriteTextModule.default || SpriteTextModule;
 import Zinc from './zinc';
 import discPNG from './assets/disc.png';
 

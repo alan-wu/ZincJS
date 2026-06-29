@@ -1,4 +1,5 @@
-import SpriteText from 'three-spritetext';
+import SpriteTextModule from 'three-spritetext';
+const SpriteText = SpriteTextModule.default || SpriteTextModule;
 
 /**
  * Bitmap labels, this is used with {@link Glyph} to
