@@ -28,6 +28,10 @@ const spriteMaterial = new THREE.SpriteMaterial({
  * @return {Marker}
  */
 const Marker = function(zincObject) {
+  if (Object.getPrototypeOf(this) !== ZincObject.prototype) {
+    Object.setPrototypeOf(Marker.prototype, ZincObject.prototype);
+  }
+
   ZincObject.call(this);
   this.texture = texture;
   let sprite = undefined;
@@ -237,5 +241,4 @@ const Marker = function(zincObject) {
 
 }
 
-Marker.prototype = Object.create(ZincObject.prototype);
 export { Marker };
