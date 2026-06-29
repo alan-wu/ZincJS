@@ -1,5 +1,4 @@
-const THREE = require('three');
-
+import * as THREE from 'three';
 const glslVersion = THREE.GLSL3;
 
 const fs =
@@ -92,7 +91,9 @@ const getUniforms = function() {
   };
 }
 
-exports.fs = fs;
-exports.vs = vs;
-exports.glslVersion = glslVersion;
-exports.getUniforms = getUniforms;
+export {
+  fs,
+  vs,
+  glslVersion,
+  getUniforms
+}

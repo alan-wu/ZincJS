@@ -1,5 +1,30 @@
-require("url-polyfill");
-const PACKAGE = require('../package.json');
+import "url-polyfill";
+import * as THREE from 'three';
+import PACKAGE from '../package.json';
+
+// Import all internal primitives and modules
+import { Geometry } from './primitives/geometry';
+import { Glyph } from './primitives/glyph';
+import { Glyphset } from './primitives/glyphset';
+import { Pointset } from './primitives/pointset';
+import { Label } from './primitives/label';
+import { Lines } from './primitives/lines';
+import { TextureArray } from './texture/textureArray';
+import { TextureSlides } from './primitives/textureSlides';
+import { Renderer } from './renderer';
+import { Scene } from './scene';
+//import { GeometryCSG } from './geometryCSG';
+//import { GlyphsetCSG } from './glyphsetCSG';
+import {
+  Viewport,
+  CameraControls,
+  SmoothCameraTransition,
+  RayCaster,
+  CameraAutoTumble,
+  StereoEffect
+} from './controls';
+import { loadExternalFile, loadExternalFiles } from './utilities';
+
 const version = PACKAGE.version;
 
 /**
@@ -8,33 +33,33 @@ const version = PACKAGE.version;
  * @namespace
  * @author Alan Wu
  */
-
 const Zinc = function() {
   this.Revision = version;
   this.defaultMaterialColor = 0xFFFFFF;
   this.defaultOpacity = 1.0;
   this.modelPrefix = undefined;
-  this.Geometry = require('./primitives/geometry').Geometry;
-  this.Glyph = require('./primitives/glyph').Glyph;
-  this.Glyphset = require('./primitives/glyphset').Glyphset;
-  this.Pointset = require('./primitives/pointset').Pointset;
-  this.Label = require('./primitives/label').Label;
-  this.Lines = require('./primitives/lines').Lines;
-  this.TextureArray = require('./texture/textureArray').TextureArray;
-  this.TextureSlides = require('./primitives/textureSlides').TextureSlides;
-  this.Renderer = require('./renderer').Renderer;
-  this.Scene = require('./scene').Scene;
-  this.GeometryCSG = require('./geometryCSG').GeometryCSG;
-  this.GlyphsetCSG = require('./glyphsetCSG').GlyphsetCSG;
-  this.Viewport = require('./controls').Viewport;
-  this.CameraControls = require('./controls').CameraControls;
-  this.SmoothCameraTransition = require('./controls').SmoothCameraTransition;
-  this.RayCaster = require('./controls').RayCaster;
-  this.CameraAutoTumble = require('./controls').CameraAutoTumble;
-  this.StereoEffect = require('./controls').StereoEffect;
-  this.loadExternalFile = require('./utilities').loadExternalFile;
-  this.loadExternalFiles = require('./utilities').loadExternalFiles;
-  this.THREE = require('three');
+  // Assign hoisted modules to the instance
+  this.Geometry = Geometry;
+  this.Glyph = Glyph;
+  this.Glyphset = Glyphset;
+  this.Pointset = Pointset;
+  this.Label = Label;
+  this.Lines = Lines;
+  this.TextureArray = TextureArray;
+  this.TextureSlides = TextureSlides;
+  this.Renderer = Renderer;
+  this.Scene = Scene;
+  //this.GeometryCSG = GeometryCSG;
+  //this.GlyphsetCSG = GlyphsetCSG;
+  this.Viewport = Viewport;
+  this.CameraControls = CameraControls;
+  this.SmoothCameraTransition = SmoothCameraTransition;
+  this.RayCaster = RayCaster;
+  this.CameraAutoTumble = CameraAutoTumble;
+  this.StereoEffect = StereoEffect;
+  this.loadExternalFile = loadExternalFile;
+  this.loadExternalFiles = loadExternalFiles;
+  this.THREE = THREE;
 };
 
-module.exports = new Zinc();
+export default new Zinc();

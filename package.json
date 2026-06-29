@@ -18,6 +18,7 @@
   ],
   "scripts": {
     "build-bundle": "webpack --config webpack.frontend.js; webpack --config webpack.backend.js",
+    "build-vite": "vite build",
     "build-backend": "webpack --config webpack.backend.js",
     "test": "npm --prefix ./test install && npm --prefix ./test run test-ci",
     "changelog": "auto-changelog -p --output CHANGELOG.md --template keepachangelog",
@@ -51,7 +52,7 @@
     "file-loader": "^6.2.0",
     "jsdoc": "^4.0.2",
     "raw-loader": "^4.0.2",
-    "vite": "^8.0.16",
+    "vite": "^5.0.10",
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {

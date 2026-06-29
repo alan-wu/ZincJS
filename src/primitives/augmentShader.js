@@ -2,7 +2,7 @@
 /**
  * Provide additional shaders to render time dependent color.
  */
-exports.augmentMorphColor = function() {
+const augmentMorphColor = function() {
     return function(shader) {
         shader.vertexShader = shader.vertexShader.replace(
             '#include <color_pars_vertex>',
@@ -24,3 +24,5 @@ exports.augmentMorphColor = function() {
         );
     };
 }
+
+export { augmentMorphColor };

@@ -1,6 +1,8 @@
-const THREE = require('three');
+import * as THREE from 'three';
+import { ZincObject } from './zincObject';
 const markerImage = new Image(128, 128);
-markerImage.src = require("../assets/mapMarkerOrange.svg");
+import mapMarkerOrange from '../assets/mapMarkerOrange.svg';
+markerImage.src = mapMarkerOrange;
 const texture = new THREE.Texture();
 texture.image = markerImage;
 texture.needsUpdate = true;
@@ -13,18 +15,18 @@ const spriteMaterial = new THREE.SpriteMaterial({
   depthWrite: false,
   sizeAttenuation: false
 });
-const createNewSpriteText = require('../utilities').createNewSpriteText;
+import { createNewSpriteText } from '../utilities';
 
 /**
  * A special graphics type with a tear drop shape.
  * It forms a cluster a marker based on distance.
- * 
+ *
  * @class
  * @author Alan Wu
  * @return {Marker}
  */
 const MarkerCluster = function(sceneIn) {
-  (require('./zincObject').ZincObject).call(this);
+  ZincObject.call(this);
   this.texture = texture;
   let sprite = undefined;
   let scene = sceneIn;
@@ -41,9 +43,9 @@ const MarkerCluster = function(sceneIn) {
 
   /**
    * Set the size of the marker.
-   * 
+   *
    * @param {Number} size - size to be set.
-   */ 
+   */
   this.setSpriteSize = size => {
     sprite.scale.set(0.015, 0.02, 1);
     sprite.scale.multiplyScalar(size);
@@ -56,7 +58,7 @@ const MarkerCluster = function(sceneIn) {
 
   /**
    * Clean up this object,
-   */ 
+   */
   this.dispose = () => {
     this.clear();
     if (this.morph) {
@@ -188,7 +190,7 @@ const MarkerCluster = function(sceneIn) {
 
   /**
    * Enable and visualise the marker.
-   */  
+   */
   this.enable = () => {
     enabled = true;
     this.morph.visible = true;
@@ -196,7 +198,7 @@ const MarkerCluster = function(sceneIn) {
 
   /**
    * Disable and hide the marker.
-   */ 
+   */
   this.disable = () => {
     enabled = false;
     this.morph.visible = false;
@@ -233,5 +235,5 @@ const MarkerCluster = function(sceneIn) {
   }
 }
 
-MarkerCluster.prototype = Object.create((require('./zincObject').ZincObject).prototype);
-exports.MarkerCluster = MarkerCluster;
+MarkerCluster.prototype = Object.create(ZincObject.prototype);
+export { MarkerCluster };

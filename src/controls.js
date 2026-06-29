@@ -1,5 +1,5 @@
-const THREE = require('three');
-const resolveURL = require('./utilities').resolveURL;
+import * as THREE from 'three';
+import { resolveURL } from './utilities';
 
 /**
  * Object with containg viewport information used in ZincJS.
@@ -2095,11 +2095,13 @@ const NDCCameraControl = function () {
   }
 };
 
-exports.Viewport = Viewport
-exports.CameraControls = CameraControls
-exports.SmoothCameraTransition = SmoothCameraTransition
-exports.RotateCameraTransition = RotateCameraTransition
-exports.RayCaster = RayCaster
-exports.CameraAutoTumble = CameraAutoTumble
-exports.StereoEffect = StereoEffect
-exports.NDCCameraControl = NDCCameraControl
+export {
+  Viewport,
+  CameraControls,
+  SmoothCameraTransition,
+  RotateCameraTransition,
+  RayCaster,
+  CameraAutoTumble,
+  StereoEffect,
+  NDCCameraControl
+}

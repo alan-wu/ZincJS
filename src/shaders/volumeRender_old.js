@@ -1,5 +1,4 @@
-const THREE = require('three');
-
+import * as THREE from 'three';
 const glslVersion = null;
 
 const fs =
@@ -237,7 +236,7 @@ const fs =
   }
 `;
 
-const vs = 
+const vs =
 `
   varying vec4 v_nearpos;
   varying vec4 v_farpos;
@@ -281,7 +280,9 @@ const getUniforms = function() {
   }
 };
 
-exports.fs = fs;
-exports.vs = vs;
-exports.glslVersion = glslVersion;
-exports.getUniforms = getUniforms;
+export {
+  fs,
+  vs,
+  glslVersion,
+  getUniforms
+}

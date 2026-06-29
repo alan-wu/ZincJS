@@ -1,7 +1,12 @@
-const THREE = require('three');
-const createBufferGeometry = require('../utilities').createBufferGeometry;
-const removeVertexAtIndex = require('../utilities').removeVertexAtIndex;
-const resolveURL = require('../utilities').resolveURL;
+import * as THREE from 'three';
+import {
+  createBufferGeometry,
+  getBoundingBox,
+  removeVertexAtIndex,
+  resolveURL
+} from '../utilities';
+import { LOD } from './lod';
+import { Marker } from './marker';
 
 let uniqueiId = 0;
 
@@ -23,7 +28,7 @@ const ZincObject = function() {
   // THREE.Mesh
   this.morph = undefined;
   this.group = new THREE.Group();
-  this._lod = new (require("./lod").LOD)(this);
+  this._lod = new LOD(this);
   /**
 	 * Groupname given to this geometry.
 	 */
@@ -533,8 +538,7 @@ ZincObject.prototype.getBoundingBox = function() {
     let morph = this._lod.getCurrentMorph();
     if (morph && morph.visible) {
       if (this.boundingBoxUpdateRequired) {
-        require("../utilities").getBoundingBox(morph, this.cachedBoundingBox,
-          this._b1, this._v1, this._v2);
+        getBoundingBox(morph, this.cachedBoundingBox, this._b1, this._v1, this._v2);
         this.cachedBoundingBox.getCenter(this.center);
         this.radius = this.center.distanceTo(this.cachedBoundingBox.max);
         this.boundingBoxUpdateRequired = false;
@@ -584,7 +588,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
     let ndcToBeUpdated = options.ndcToBeUpdated;
     if (this.groupName) {
       if (!this.marker) {
-        this.marker = new (require("./marker").Marker)(this);
+        this.marker = new Marker(this);
         this.markerUpdateRequired = true;
       }
       if (this.markerUpdateRequired) {
@@ -807,5 +811,5 @@ ZincObject.prototype.setScaleAll = function(scale) {
   }
 }
 
+export { ZincObject };
 
-exports.ZincObject = ZincObject;

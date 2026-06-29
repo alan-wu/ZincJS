@@ -1,6 +1,10 @@
-var THREE = require('three');
+import * as THREE from 'three';
+import myImage from '../assets/mapMarker.svg';
+import { createNewSpriteText } from '../utilities';
+import { ZincObject } from './zincObject';
+
 const markerImage = new Image(128, 128);
-markerImage.src = require("../assets/mapMarker.svg");
+markerImage.src = myImage;
 const texture = new THREE.Texture();
 texture.image = markerImage;
 texture.needsUpdate = true;
@@ -13,19 +17,18 @@ const spriteMaterial = new THREE.SpriteMaterial({
   depthWrite: false,
   sizeAttenuation: false
 });
-const createNewSpriteText = require('../utilities').createNewSpriteText;
 
 /**
  * A special graphics type with a tear drop shape.
  * It is currently used to mark the location of a
  * {@link zincObject}.
- * 
+ *
  * @class
  * @author Alan Wu
  * @return {Marker}
  */
 const Marker = function(zincObject) {
-  (require('./zincObject').ZincObject).call(this);
+  ZincObject.call(this);
   this.texture = texture;
   let sprite = undefined;
   let userTexture = undefined;
@@ -42,7 +45,7 @@ const Marker = function(zincObject) {
   let number = undefined;
   let label = undefined;
 
-	let initialise = () => {             
+	let initialise = () => {
     sprite = new THREE.Sprite(spriteMaterial);
     sprite.center.set(0.5, 0);
     this.morph.add(sprite);
@@ -71,7 +74,7 @@ const Marker = function(zincObject) {
 
   /**
    * Set the position of the marker.
-   * 
+   *
    * @param {Number} x - x coordinate to be set.
    * @param {Number} y - y coordinate to be set.
    * @param {Number} z - z coordinate to be set.
@@ -82,9 +85,9 @@ const Marker = function(zincObject) {
 
   /**
    * Set the size of the marker.
-   * 
+   *
    * @param {Number} size - size to be set.
-   */ 
+   */
   this.setSpriteSize = size => {
     sprite.scale.set(0.015, 0.02, 1);
     sprite.scale.multiplyScalar(size);
@@ -158,7 +161,7 @@ const Marker = function(zincObject) {
 
   /**
    * Clean up this object,
-   */ 
+   */
   this.dispose = () => {
     if (this.morph) {
       this.morph.clear();
@@ -201,8 +204,8 @@ const Marker = function(zincObject) {
 
   /**
    * Set the visibility of this Geometry.
-   * 
-   * @param {Boolean} visible - a boolean flag indicate the visibility to be set 
+   *
+   * @param {Boolean} visible - a boolean flag indicate the visibility to be set
    */
   this.setVisibility = function(visible) {
     if (visible !== this.visible) {
@@ -214,7 +217,7 @@ const Marker = function(zincObject) {
 
   /**
    * Enable and visualise the marker.
-   */  
+   */
   this.enable = () => {
     enabled = true;
     this.morph.visible = true;
@@ -223,7 +226,7 @@ const Marker = function(zincObject) {
 
   /**
    * Disable and hide the marker.
-   */ 
+   */
   this.disable = () => {
     enabled = false;
     this.morph.visible = false;
@@ -234,5 +237,5 @@ const Marker = function(zincObject) {
 
 }
 
-Marker.prototype = Object.create((require('./zincObject').ZincObject).prototype);
-exports.Marker = Marker;
+Marker.prototype = Object.create(ZincObject.prototype);
+export { Marker };

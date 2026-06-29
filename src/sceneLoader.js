@@ -1,11 +1,16 @@
-const THREE = require('three');
-const resolveURL = require('./utilities').resolveURL;
-const createNewURL = require('./utilities').createNewURL;
-const isRegionGroup = require('./utilities').isRegionGroup;
-
-const STLLoader = require('./loaders/STLLoader').STLLoader;
-const OBJLoader = require('./loaders/OBJLoader').OBJLoader;
-const PrimitivesLoader = require('./loaders/primitivesLoader').PrimitivesLoader;
+import * as THREE from 'three';
+import { GLTFToZincJSLoader } from './loaders/GLTFToZincJSLoader';
+import { OBJLoader } from './loaders/OBJLoader';
+import { PrimitivesLoader } from './loaders/primitivesLoader';
+import { STLLoader } from './loaders/STLLoader';
+import { Geometry } from './primitives/geometry';
+import { Glyphset } from './primitives/glyphset';
+import { Lines } from './primitives/lines';
+import { Pointset } from './primitives/pointset';
+import { TextureSlides } from './primitives/textureSlides';
+import { TubeLines } from './primitives/tubeLines';
+import { createNewURL, isRegionGroup, resolveURL } from './utilities';
+import Zinc from './zinc';
 
 /**
  * A helper class to help with reading / importing primitives and
@@ -16,7 +21,7 @@ const PrimitivesLoader = require('./loaders/primitivesLoader').PrimitivesLoader;
  * @author Alan Wu
  * @return {SceneLoader}
  */
-exports.SceneLoader = function (sceneIn) {
+const SceneLoader = function (sceneIn) {
   const scene = sceneIn;
   this.toBeDownloaded = 0;
   this.progressMap = {};
@@ -142,8 +147,8 @@ exports.SceneLoader = function (sceneIn) {
     this.toBeDownloaded += number;
     for (let i = 0; i < number; i++) {
       const filename = urls[i];
-      let colour = require('./zinc').defaultMaterialColor;
-      let opacity = require('./zinc').defaultOpacity;
+      let colour = Zinc.defaultMaterialColor;
+      let opacity = Zinc.defaultOpacity;
       if (colours != undefined && colours[i] != undefined)
         colour = colours[i] ? true : false;
       if (opacities != undefined && opacities[i] != undefined)
@@ -191,7 +196,7 @@ exports.SceneLoader = function (sceneIn) {
   const linesloader = (region, localTimeEnabled, localMorphColour, groupName,
     anatomicalId, renderOrder, lod, tubeLines, finishCallback) => {
       return (geometry, materials) => {
-      const newLines = tubeLines ? new (require('./primitives/tubeLines').TubeLines)() : new (require('./primitives/lines').Lines)();
+      const newLines = tubeLines ? new TubeLines() : new Lines();
       let material = undefined;
       if (materials && materials[0]) {
         material = new THREE.LineBasicMaterial({color:materials[0].color.clone()});
@@ -267,7 +272,7 @@ exports.SceneLoader = function (sceneIn) {
       let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
       let displayLabels = (options && options.displayLabels) ? options.displayLabels : undefined;
       let renderOrder = (options && "renderOrder" in options) ? options.renderOrder : undefined;
-      const newGlyphset = new (require('./primitives/glyphset').Glyphset)();
+      const newGlyphset = new Glyphset();
       newGlyphset.setDuration(scene.getDuration());
       newGlyphset.groupName = groupName;
       let myCallback = () => {
@@ -338,7 +343,7 @@ exports.SceneLoader = function (sceneIn) {
   //Internal loader for zinc pointset.
   const pointsetloader = (region, localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, finishCallback) => {
     return (geometry, materials) => {
-      const newPointset = new (require('./primitives/pointset').Pointset)();
+      const newPointset = new Pointset();
       let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 10, sizeAttenuation: false });
       if (materials && materials[0]) {
         if (1.0 > materials[0].opacity) {
@@ -378,8 +383,8 @@ exports.SceneLoader = function (sceneIn) {
    */
   this.loadSTL = (region, url, groupName, finishCallback) => {
     this.toBeDownloaded += 1;
-    const colour = require('./zinc').defaultMaterialColor;
-    const opacity = require('./zinc').defaultOpacity;
+    const colour = Zinc.defaultMaterialColor;
+    const opacity = Zinc.defaultOpacity;
     const loader = new STLLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
@@ -397,8 +402,8 @@ exports.SceneLoader = function (sceneIn) {
    */
   this.loadOBJ = (region, url, groupName, finishCallback) => {
     this.toBeDownloaded += 1;
-    const colour = require('./zinc').defaultMaterialColor;
-    const opacity = require('./zinc').defaultOpacity;
+    const colour = Zinc.defaultMaterialColor;
+    const opacity = Zinc.defaultOpacity;
     const loader = new OBJLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
@@ -420,8 +425,8 @@ exports.SceneLoader = function (sceneIn) {
    */
   const loadSurfaceURL = (region ,url, timeEnabled, morphColour, groupName, finishCallback, options) => {
     this.toBeDownloaded += 1;
-    const colour = require('./zinc').defaultMaterialColor;
-    const opacity = require('./zinc').defaultOpacity;
+    const colour = Zinc.defaultMaterialColor;
+    const opacity = Zinc.defaultOpacity;
     let localTimeEnabled = 0;
     let isInline = (options && options.isInline) ? options.isInline : false;
     let fileFormat = (options && options.fileFormat) ? options.fileFormat : undefined;
@@ -525,7 +530,7 @@ exports.SceneLoader = function (sceneIn) {
         }
       }
       if (textureData.type === "slides") {
-        newTexture = new (require('./primitives/textureSlides').TextureSlides)();
+        newTexture = new TextureSlides();
       }
       if (newTexture) {
         newTexture.groupName = groupName;
@@ -607,7 +612,7 @@ exports.SceneLoader = function (sceneIn) {
     options.opacity = opacity;
     options.localTimeEnabled = localTimeEnabled;
     options.localMorphColour = localMorphColour
-    const newGeometry = new (require('./primitives/geometry').Geometry)();
+    const newGeometry = new Geometry();
     newGeometry.createMesh(geometryIn, materialIn, options);
     if (newGeometry.getMorph()) {
       newGeometry.setName(groupName);
@@ -804,8 +809,8 @@ exports.SceneLoader = function (sceneIn) {
    * once the glyphset is succssfully load in.
    */
   this.loadGLTF = (region, url, finishCallback, allCompletedCallback, options) => {
-    const GLTFToZincJSLoader = new (require('./loaders/GLTFToZincJSLoader').GLTFToZincJSLoader)();
-    GLTFToZincJSLoader.load(scene, region, url, finishCallback, allCompletedCallback, options);
+    const loader = new GLTFToZincJSLoader();
+    loader.load(scene, region, url, finishCallback, allCompletedCallback, options);
   }
 
   let loadRegions = (currentRegion, referenceURL, regions, callback) => {
@@ -991,3 +996,5 @@ exports.SceneLoader = function (sceneIn) {
     xmlhttp.send();
   }
 }
+
+export { SceneLoader };

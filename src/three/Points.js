@@ -83,7 +83,7 @@ class Points extends Object3D {
 				for ( let i = start, il = end; i < il; i ++ ) {
 
 					const a = index.getX( i );
-          
+
           calculatePosition( this, positionAttribute, morphPosition, a );
 
 					testPoint( _position, a, localThresholdSq, matrixWorld, raycaster, intersects, this );
@@ -96,7 +96,7 @@ class Points extends Object3D {
 				const end = Math.min( positionAttribute.count, ( drawRange.start + drawRange.count ) );
 
 				for ( let i = start, l = end; i < l; i ++ ) {
-          
+
           calculatePosition( this, positionAttribute, morphPosition, i );
 
 					testPoint( _position, i, localThresholdSq, matrixWorld, raycaster, intersects, this );

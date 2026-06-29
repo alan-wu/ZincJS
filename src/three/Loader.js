@@ -1,5 +1,3 @@
-var THREE = require('three');
-
 import {
 	NoBlending,
 	NormalBlending,

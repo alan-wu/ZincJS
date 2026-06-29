@@ -1,5 +1,4 @@
-const THREE = require('three');
-
+import * as THREE from 'three';
 const glslVersion = null;
 
 const fs =
@@ -76,7 +75,7 @@ void main()
 }
 `;
 
-const vs = 
+const vs =
 `
 varying vec4 diffuse, ambientGlobal, ambient;
 uniform vec4 texture_scaling;
@@ -112,7 +111,9 @@ const getUniforms = function() {
   }
 };
 
-exports.fs = fs;
-exports.vs = vs;
-exports.glslVersion = glslVersion;
-exports.getUniforms = getUniforms;
+export {
+  fs,
+  vs,
+  glslVersion,
+  getUniforms
+}

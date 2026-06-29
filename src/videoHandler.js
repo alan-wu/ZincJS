@@ -1,15 +1,15 @@
-var THREE = require('three');
+import * as THREE from 'three';
 
 /**
  * Provide basic functionality to display video as texture.
  * VideoTexture is used for creating and updating a video projected onto a Three.js texture
- * 
+ *
  * @class
  * @param {Object} containerIn - Container to create the renderer on.
  * @author Alan Wu
  * @return {VideoHandler}
  */
-exports.VideoHandler = function(srcIn)  {
+const VideoHandler = function(srcIn)  {
 
 	var _this = this;
 	this.video = undefined;
@@ -22,7 +22,7 @@ exports.VideoHandler = function(srcIn)  {
 	var lastPlayPos    = 0;
 	var currentPlayPos = 0;
 	var bufferingDetected = false;
-	
+
 	var checkBuffering = function(delta, playAnimation) {
 	    currentPlayPos = _this.video.currentTime;
 
@@ -54,7 +54,7 @@ exports.VideoHandler = function(srcIn)  {
 		  	_this.video.src = src;
 		  	_this.video.load();
         _this.video.loop = true;
-        
+
 		}
 	}
 
@@ -76,7 +76,7 @@ exports.VideoHandler = function(srcIn)  {
     _this.video.currentTime = 0;
 		return _this.videoTexture;
 	}
-	
+
 	this.getCurrentTime = function(duration) {
 		if (_this.video)
 			return duration * (_this.video.currentTime / _this.video.duration);
@@ -91,8 +91,10 @@ exports.VideoHandler = function(srcIn)  {
 		}
 		return false;
 	}
-	
-	//this should be handle by scene... check the sync at 
+
+	//this should be handle by scene... check the sync at
 	initialise();
 
 }
+
+export { VideoHandler }

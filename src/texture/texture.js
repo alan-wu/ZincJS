@@ -1,9 +1,9 @@
-const THREE = require('three');
+import * as THREE from 'three';
 
 /**
  * Base texture object for importing images and turning them into
  * texures unit that can be used by other texture primitives.
- * 
+ *
  * @class
  * @author Alan Wu
  * @return {Texture}
@@ -21,11 +21,11 @@ const Texture = function () {
 
 /**
  * Read an image from src.
- * 
+ *
  * @async
  * @param {Image} img - An image object.
  * @param {String} src - Source location of the image.
- * 
+ *
  * @return {Promise} img on resolve.
  */
 Texture.prototype.loadImage = function (img, src) {
@@ -45,12 +45,12 @@ Texture.prototype.loadImage = function (img, src) {
   */
 /**
  * Read an image from src and turn it into Uint8Array.
- * 
+ *
  * @async
  * @param {Image} img - An image object.
  * @param {String} src - Source location of the image.
  * @param {Canvas} canvas - Canvas html element used for the conversion.
- * 
+ *
  * @return {IMAGE_UNIT8_RETURN}
  */
 Texture.prototype.imageToUint8Array = async function (instance, img, src, canvas) {
@@ -72,7 +72,7 @@ Texture.prototype.loadFromImages = async function (srcArrays) {
 
 /**
  * Return true if the texture is ready for consumption.
- * 
+ *
  * @return {Boolean}
  */
 Texture.prototype.isReady = function () {
@@ -83,7 +83,7 @@ Texture.prototype.isReady = function () {
 
 /**
  * Return true if  the texture is ready for consumption, otherwise false.
- * 
+ *
  * @return {Boolean}
  */
 Texture.prototype.getMaterial = function () {
@@ -98,4 +98,4 @@ Texture.prototype.getMaterial = function () {
   }
 }
 
-exports.Texture = Texture;
+export { Texture };

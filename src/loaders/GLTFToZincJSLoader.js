@@ -1,6 +1,8 @@
-const THREE = require('three');
-
-const GLTFLoader = require('three/examples/jsm/loaders/GLTFLoader').GLTFLoader;
+import * as THREE from 'three';
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
+import { Geometry } from '../primitives/geometry';
+import { Lines } from '../primitives/lines';
+import { Pointset } from '../primitives/pointset';
 
 const GLTFToZincJSLoader = function () {
 
@@ -24,11 +26,11 @@ const GLTFToZincJSLoader = function () {
       } else {
         let zincGeometry = undefined;
         if (object.type === "Mesh") {
-          zincGeometry = new (require('../primitives/geometry').Geometry)();
+          zincGeometry = new Geometry();
         } else if (object.type === "LineSegments") {
-          zincGeometry = new (require('../primitives/lines').Lines)();
+          zincGeometry = new Lines();
         } else if (object.type === "Points") {
-          zincGeometry = new (require('../primitives/pointset').Pointset)();
+          zincGeometry = new Pointset();
         }
         if (zincGeometry) {
           let localTimeEnabled = false;
@@ -63,7 +65,7 @@ const GLTFToZincJSLoader = function () {
 
   /**
    * Load GLTF into this scene object.
-   * 
+   *
    * @param {String} url - URL to the GLTF file
    * @param {Function} finishCallback - Callback function which will be called
    * once the glyphset is succssfully load in.
@@ -72,7 +74,7 @@ const GLTFToZincJSLoader = function () {
     const path = url.substring(0, url.lastIndexOf("/") + 1);
     const filename = url.substring(url.lastIndexOf("/") + 1, url.length);
     const loader = new GLTFLoader().setPath(path);
-    
+
     loader.load( filename, function ( gltf ) {
       console.log(gltf)
       _this.parseGLTFObjects(gltf.scene, region, 0, finishCallback);
@@ -83,4 +85,4 @@ const GLTFToZincJSLoader = function () {
   }
 }
 
-exports.GLTFToZincJSLoader = GLTFToZincJSLoader;
+export { GLTFToZincJSLoader };

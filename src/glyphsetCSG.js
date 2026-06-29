@@ -1,11 +1,13 @@
-const THREE = require('three');
-const ThreeBSP = require('./three-js-csg')(THREE);
-const Glyphset = require('./primitives/glyphset').Glyphset;
+import * as THREE from 'three';
+import { ThreeBSPWrapper } from './three-js-csg';
+import { Glyphset } from './primitives/glyphset';
+
+const ThreeBSP = ThreeBSPWrapper(THREE);
 
 /**
  * Provides an object which takes in a glyphset, convert it into a CSG and further
  * action such as intersect with another geometry may be performed.
- * 
+ *
  * @class
  * @author Alan Wu
  * @return {GlyphsetCSG}
@@ -16,17 +18,17 @@ const GlyphsetCSG = function (hostIn) {
 	  host = hostIn;
   const hostCSGs = new Array();
   const currentIntersect = undefined;
-  
+
   this.setGlyphset = hostIn => {
 	  if (hostIn && hostIn.isGlyphset)
 		  host = hostIn;
 	  hostCSG = undefined;
   }
-  
+
   this.getGlyphset = () => {
 	  return host;
   }
-  
+
   const prepareCSGForGlyphs = () => {
 	  return glyph => {
 		  const mesh = glyph.getMesh();
@@ -42,7 +44,7 @@ const GlyphsetCSG = function (hostIn) {
 		  }
 	  };
   };
-  
+
   const prepareCSG = guestGeometry => {
 	  if (host && guestGeometry && guestGeometry.getMorph()) {
 	      if (hostCSGs.length == 0) {
@@ -53,11 +55,11 @@ const GlyphsetCSG = function (hostIn) {
 	  }
 	  return undefined;
   };
-  
+
   this.intersect = guestGeometry => {
 	  const guestCSG = prepareCSG(guestGeometry);
 	  if ((hostCSGs.length > 0) && guestCSG) {
-		const glyphset = new (require('./primitives/glyphset').Glyphset)();
+		const glyphset = new Glyphset();
 		for (let i = 0; i < hostCSGs.length; i++) {
 			const hostCSG = hostCSGs[i];
 		    const intersect = hostCSG.csg.intersect(guestCSG);
@@ -72,13 +74,13 @@ const GlyphsetCSG = function (hostIn) {
 			    glyph.setLabel(hostCSG.label);
 		    }
 		}
-	    const newCSG = new GlyphsetCSG(glyphset);	
+	    const newCSG = new GlyphsetCSG(glyphset);
 	    return newCSG;
 	  }
 
 	  return undefined;
   }
-  
+
 };
 
-exports.GlyphsetCSG = GlyphsetCSG;
+export { GlyphsetCSG };

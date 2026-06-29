@@ -1,4 +1,4 @@
-const THREE = require('three');
+import * as THREE from 'three';
 
 const glslVersion = THREE.GLSL3;
 
@@ -23,7 +23,7 @@ void main() {
 }
 `;
 
-const vs = 
+const vs =
 `
 out vec3 vUw;
 uniform float depth;
@@ -44,8 +44,9 @@ const getUniforms = function() {
   };
 }
 
-
-exports.fs = fs;
-exports.vs = vs;
-exports.glslVersion = glslVersion;
-exports.getUniforms = getUniforms;
+export {
+  fs,
+  vs,
+  glslVersion,
+  getUniforms
+}

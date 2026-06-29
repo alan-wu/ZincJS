@@ -1,10 +1,12 @@
-const THREE = require('three');
-const THREEGeometry = require('./three/Geometry').Geometry;
-const SpriteText = require('three-spritetext').default;
+import * as THREE from 'three';
+import { Geometry as THREEGeometry } from './three/Geometry';
+import SpriteText from 'three-spritetext';
+import Zinc from './zinc';
+import discPNG from './assets/disc.png';
 
 function resolveURL(url) {
 	let actualURL = url;
-	let prefix = (require("./zinc").modelPrefix);
+	let prefix = Zinc.modelPrefix;
 
 	if (prefix) {
 		if (prefix[prefix.length -1] != '/')
@@ -126,7 +128,7 @@ function loadExternalFiles(urls, callback, errorCallback) {
 
 
 //Get the colours at index
-exports.getColorsRGB = (colors, index) => {
+const getColorsRGB = (colors, index) => {
     const index_in_colors = Math.floor(index/3);
     const remainder = index%3;
     let hex_value = 0;
@@ -146,7 +148,7 @@ exports.getColorsRGB = (colors, index) => {
     return [mycolor.r, mycolor.g, mycolor.b];
 }
 
-exports.updateMorphColorAttribute = function(targetGeometry, morph) {
+const updateMorphColorAttribute = function(targetGeometry, morph) {
   if (morph && targetGeometry && targetGeometry.morphAttributes &&
     targetGeometry.morphAttributes[ "color" ]) {
     const morphColors = targetGeometry.morphAttributes[ "color" ];
@@ -173,7 +175,7 @@ exports.updateMorphColorAttribute = function(targetGeometry, morph) {
 }
 
 
-exports.toBufferGeometry = (geometryIn, options) => {
+const toBufferGeometry = (geometryIn, options) => {
   let geometry = undefined;
   if (geometryIn instanceof THREEGeometry) {
     if (options.localTimeEnabled && !geometryIn.morphNormalsReady &&
@@ -194,11 +196,10 @@ exports.toBufferGeometry = (geometryIn, options) => {
   return geometry;
 }
 
-exports.copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
+const copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
   if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
     let array = [];
     let morphColors = geometry.morphColors;
-    const getColorsRGB = require("./utilities").getColorsRGB;
     for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
       let morphColor = morphColors[ i ];
       let colorArray = [];
@@ -224,7 +225,6 @@ const copyMorphColorsToIndexedBufferGeometry = (geometry, bufferGeometry) => {
   if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
     let array = [];
     let morphColors = geometry.morphColors;
-    const getColorsRGB = require("./utilities").getColorsRGB;
     for ( let i = 0, l = morphColors.length; i < l; i ++ ) {
       const morphColor = morphColors[ i ];
       const colorArray = [];
@@ -343,7 +343,7 @@ function mergeAttributes( attributes ) {
  * @param {boolean} [useGroups=false] - Whether to use groups or not.
  * @return {?BufferGeometry} The merged geometry. Returns `null` if the merge does not succeed.
  */
-exports.mergeGeometries = ( geometries, useGroups = false ) => {
+const mergeGeometries = ( geometries, useGroups = false ) => {
 
   const isIndexed = geometries[ 0 ].index !== null;
 
@@ -534,7 +534,7 @@ exports.mergeGeometries = ( geometries, useGroups = false ) => {
 
 }
 
-exports.mergeVertices = ( geometry, tolerance = 1e-4 ) => {
+const mergeVertices = ( geometry, tolerance = 1e-4 ) => {
 
   tolerance = Math.max( tolerance, Number.EPSILON );
 
@@ -742,7 +742,7 @@ function createBufferGeometry(length, coords) {
 
 function getCircularTexture() {
   const image = new Image();
-  image.src = require("./assets/disc.png");
+  image.src = discPNG;
   const texture = new THREE.Texture();
   texture.image = image;
   texture.needsUpdate = true;
@@ -844,14 +844,24 @@ function removeVertexAtIndex(geometry, index, maintainLength) {
 
 }
 
-exports.getBoundingBox = getBoundingBox;
-exports.createNewURL = createNewURL;
-exports.createBufferGeometry = createBufferGeometry;
-exports.getCircularTexture = getCircularTexture;
-exports.resolveURL = resolveURL;
-exports.loadExternalFile = loadExternalFile;
-exports.loadExternalFiles = loadExternalFiles;
-exports.PhongToToon = PhongToToon;
-exports.createNewSpriteText = createNewSpriteText;
-exports.isRegionGroup = isRegionGroup;
-exports.removeVertexAtIndex = removeVertexAtIndex;
+
+export {
+  copyMorphColorsToBufferGeometry,
+  createBufferGeometry,
+  createNewSpriteText,
+  createNewURL,
+  getBoundingBox,
+  getCircularTexture,
+  getColorsRGB,
+  isRegionGroup,
+  loadExternalFile,
+  loadExternalFiles,
+  mergeGeometries,
+  mergeVertices,
+  PhongToToon,
+  removeVertexAtIndex,
+  resolveURL,
+  updateMorphColorAttribute,
+  toBufferGeometry,
+ };
+
