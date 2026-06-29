@@ -1,4 +1,3 @@
-import "url-polyfill";
 import * as THREE from 'three';
 import PACKAGE from '../package.json';
 
