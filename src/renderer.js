@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { ResizeSensor } from 'css-element-queries';
-import { Scene } from 'scene';
+import { Scene } from './scene';
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
