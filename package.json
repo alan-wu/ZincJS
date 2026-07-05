@@ -17,7 +17,9 @@
   ],
   "scripts": {
     "build-bundle": "vite build",
-    "test": "npm --prefix ./test install && npm --prefix ./test run test-ci",
+    "test-watch": "vitest",
+    "test": "vitest run --reporter=junit --outputFile=test-results.xml",
+    "test-standard": "vitest run",
     "changelog": "auto-changelog -p --output CHANGELOG.md --template keepachangelog",
     "jsdoc": "jsdoc -c jsdoc_conf.json",
     "version": "npm run build-bundle;npm run jsdoc;npm run changelog; git add CHANGELOG.md docs",
@@ -44,12 +46,20 @@
   "devDependencies": {
     "@babel/core": "^7.23.9",
     "@babel/preset-env": "^7.23.9",
+    "@vitest/coverage-v8": "^1.6.1",
     "auto-changelog": "^2.4.0",
     "babel-preset-minify": "^0.5.1",
+    "chai": "^4.1.0",
     "file-loader": "^6.2.0",
+    "file-system": "^2.2.2",
+    "gl": "^6.0.2",
+    "happy-dom": "^20.10.6",
     "jsdoc": "^4.0.2",
+    "nock": "^13.5.3",
     "raw-loader": "^4.0.2",
     "vite": "^5.0.10",
+    "vite-plugin-node-polyfills": "^0.28.0",
+    "vitest": "^1.6.1",
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
