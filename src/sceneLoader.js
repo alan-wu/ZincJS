@@ -84,7 +84,7 @@ const SceneLoader = function (sceneIn) {
       const promises = [];
       for (const [key, value] of Object.entries(views.Entries)) {
         if (referenceURL) {
-          newURL = createNewURL(value, referenceURL);
+          const newURL = createNewURL(value, referenceURL);
           promises.push(new Promise((resolve, reject) => {
             // Add parameters if we are sent them
             fetch(newURL)

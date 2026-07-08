@@ -1599,7 +1599,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	const renderer = rendererIn;
 	const callbackFunction = callbackFunctionIn;
 	const hoverCallbackFunction = hoverCallbackFunctionIn;
-	const enabled = true;
+	let enabled = true;
 	const raycaster = new THREE.Raycaster();
 	raycaster.params.Line.threshold = 0.1;
 	raycaster.params.Points.threshold = 1;
@@ -1613,11 +1613,11 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 	let pickableObjects = undefined;
 
 	this.enable = () => {
-		enable = true;
+		enabled = true;
 	}
 
 	this.disable = () => {
-		enable = false;
+		enabled = false;
 	}
 
 	this.getIntersectsObject = (zincCamera) => {
