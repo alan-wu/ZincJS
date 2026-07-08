@@ -24,6 +24,7 @@
     "jsdoc": "jsdoc -c jsdoc_conf.json",
     "version": "npm run build-bundle;npm run jsdoc;npm run changelog; git add CHANGELOG.md docs",
     "release:beta": "npm version prerelease --preid=beta; npm publish --tag beta",
+    "release:major": "npm version major;  npm publish",
     "release:minor": "npm version minor; npm publish",
     "release:patch": "npm version patch;  npm publish"
   },
