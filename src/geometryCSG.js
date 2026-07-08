@@ -1,10 +1,12 @@
-const THREE = require('three');
-const ThreeBSP = require('./three-js-csg')(THREE);
-const Geometry = require('./primitives/geometry').Geometry;
-const work = require('webworkify-webpack');
-const Promise = require('promise-polyfill').default;
-//const work = undefined;
+import * as THREE from 'three';
+import { ThreeBSPWrapper } from './three-js-csg';
+import { Geometry } from './primitives/geometry';
+import GeometryWorker from './workers/geometryCSG.worker.js?worker';
+import { GeometryCSGInternal } from './workers/geometryCSGInternal';
+
+const ThreeBSP = ThreeBSPWrapper(THREE);
 const JSONLoader = THREE.BufferGeometryLoader;
+
 
 const GeometryCSG = function (hostIn) {
   //ZincGeoemtry of the main geometry
@@ -15,7 +17,7 @@ const GeometryCSG = function (hostIn) {
   let worker = undefined;
   let onProgress = false;
   let myResolve = undefined;
-  
+
   var createGeometryFromJSON = json => {
 	  const material = host.getMorph().material.clone();
 	  material.morphTargets = false;
@@ -28,7 +30,7 @@ const GeometryCSG = function (hostIn) {
 	  newGeometry.setMorph(mesh);
 	  return newGeometry;
   }
-  
+
   var workerEventHandler = ev => {
 	  switch (ev.data.action) {
 	  	case 'message':
@@ -45,13 +47,13 @@ const GeometryCSG = function (hostIn) {
 	    	throw 'Cannot handle specified action.';
     }
   }
-    
+
   var initialise = hostIn => {
 	  if (work !== undefined) {
-		worker = work(require.resolve('./workers/geometryCSG.worker.js'));
+		  worker = new GeometryWorker();
 	  }
 	  if (!worker) {
-	    core = new (require('./workers/geometryCSGInternal').GeometryCSGInternal)(hostIn);
+	    core = new GeometryCSGInternal(hostIn);
 	  } else {
 		if (hostIn && hostIn.isGeometry) {
 		  let mesh = hostIn.getMorph();
@@ -63,14 +65,14 @@ const GeometryCSG = function (hostIn) {
 		}
 	  }
   }
-  
+
   this.getHostGeometry = () => {
 	const tempCSG = new ThreeBSP(host.getMorph());
     return new createZincGeometry(tempCSG);
   }
-  
+
   this.getGeometry = () => host;
-  
+
   const createZincGeometry = csgMesh => {
 		const material = host.getMorph().material.clone();
 		material.morphTargets = false;
@@ -81,11 +83,11 @@ const GeometryCSG = function (hostIn) {
 	    newGeometry.setMorph(newMesh);
 	    return newGeometry;
   }
-  
+
   this.setCSG = CSG => {
 	  core.setCSG(CSG);
-  } 
-  
+  }
+
   const sendToWork = (guestGeometry, action, resolve, reject) => {
 	  if (!onProgress) {
 		  let mesh = guestGeometry.getMorph();
@@ -97,7 +99,7 @@ const GeometryCSG = function (hostIn) {
 		  reject("On progress");
 	  }
   }
-  
+
   this.intersect = guestGeometry => {
 	  return new Promise((resolve, reject) => {
 		  if (worker) {
@@ -110,7 +112,7 @@ const GeometryCSG = function (hostIn) {
 		  }
 	  });
 	};
-  
+
   this.subtract = guestGeometry => {
 	  return new Promise((resolve, reject) => {
 		  if (worker) {
@@ -123,7 +125,7 @@ const GeometryCSG = function (hostIn) {
 		  }
 	  });
   }
-  
+
   this.union = guestGeometry => {
 	  return new Promise((resolve, reject) => {
 		  if (worker) {
@@ -136,13 +138,13 @@ const GeometryCSG = function (hostIn) {
 		  }
 	  });
   }
-  
+
   this.terminateWorker = () => {
 	  if (worker)
 		  worker.terminate();
   }
-  
+
   initialise(hostIn);
 };
 
-exports.GeometryCSG = GeometryCSG;
+export { GeometryCSG };

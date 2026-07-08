@@ -1,24 +1,25 @@
-const THREE = require('three');
-const mergeGeometries = require('../utilities').mergeGeometries;
+import * as THREE from 'three';
+import { mergeGeometries } from '../utilities';
+import { ZincObject } from './zincObject';
 
 /**
  * Provides an object which stores lines.
  * This is created when a valid json file containing lines is read into a {@link Zinc.Scene}
  * object.
- * 
+ *
  * @class
  * @author Alan Wu
  * @return {TubeLines}
  */
 const TubeLines = function () {
-    (require('./zincObject').ZincObject).call(this);
+    ZincObject.call(this);
     this.isTubeLines = true;
     let dataIn = {};
     let geometryConfig = { radius: 1, radialSegments: 8, smooth: false };
 
     /**
      * Create the line segements using geometry and material.
-     * 
+     *
      * @param {THREE.Geomtry} geometryIn - Geometry of lines to be rendered.
      * @param {THREE.Material} materialIn - Material to be set for the lines.
      * @param {Object} options - Provide various options
@@ -39,7 +40,7 @@ const TubeLines = function () {
 
     /**
    * Set the width for the lines.
-   * 
+   *
    * @param {Number} width - Width of the lines.
    */
 	this.setWidth = width => {
@@ -52,8 +53,8 @@ const TubeLines = function () {
     /**
      * Set the opacity of this Geometry. This function will also set the transparent
      * according to the provided alpha value.
-     * 
-     * @param {Number} alpah - Alpha value to set for this geometry, 
+     *
+     * @param {Number} alpah - Alpha value to set for this geometry,
      * can be any value between from 0 to 1.0.
      */
     this.setAlpha = function (alpha) {
@@ -65,7 +66,7 @@ const TubeLines = function () {
 
     /**
      * Set the wireframe mode for this geometry.
-     * @param {Boolean} wireframe 
+     * @param {Boolean} wireframe
      */
     this.setWireframe = (wireframe) => {
         let mesh = this.getMorph();
@@ -74,7 +75,7 @@ const TubeLines = function () {
 
     /**
      * Update tube radius/radialSegments value
-     * 
+     *
      * @param {Float} radius The radius of the tube.
      * @param {Integer} radialSegments The number of segments that make up the cross-section.
      */
@@ -91,7 +92,7 @@ const TubeLines = function () {
 
     /**
      * Get merged geometry from list of geometry vertices
-     * 
+     *
      * @param {Array} vertices - An array of THREE.Vector3 vertices.
      * @returns {Object}
      */
@@ -115,5 +116,5 @@ const TubeLines = function () {
     }
 }
 
-TubeLines.prototype = Object.create((require('./zincObject').ZincObject).prototype);
-exports.TubeLines = TubeLines;
+TubeLines.prototype = Object.create(ZincObject.prototype);
+export { TubeLines };

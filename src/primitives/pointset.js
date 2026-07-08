@@ -1,8 +1,8 @@
-const THREE = require('three');
-const Points = require('../three/Points').Points;
-const toBufferGeometry = require('../utilities').toBufferGeometry;
-const getCircularTexture = require('../utilities').getCircularTexture;
-const Label = require('./label').Label;
+import * as THREE from 'three';
+import { Label } from './label';
+import { Points } from '../three/Points';
+import { ZincObject } from './zincObject';
+import { getCircularTexture, toBufferGeometry } from '../utilities';
 
 /**
  * Provides an object which stores points and provides method which controls its position.
@@ -14,7 +14,7 @@ const Label = require('./label').Label;
  * @return {Pointset}
  */
 const Pointset = function () {
-  (require('./zincObject').ZincObject).call(this);
+  ZincObject.call(this);
   this.isPointset = true;
   const labelSets = [];
   let labelSize = 1.0;
@@ -310,5 +310,5 @@ const Pointset = function () {
 
 }
 
-Pointset.prototype = Object.create((require('./zincObject').ZincObject).prototype);
-exports.Pointset = Pointset;
+Pointset.prototype = Object.create(ZincObject.prototype);
+export { Pointset };

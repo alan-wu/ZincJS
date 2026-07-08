@@ -1,5 +1,7 @@
-const THREE = require('three');
-const toBufferGeometry = require('../utilities').toBufferGeometry;
+import * as THREE from 'three';
+import { toBufferGeometry } from '../utilities';
+import { augmentMorphColor } from './augmentShader';
+import { ZincObject} from './zincObject';
 
 const createMeshForGeometry =  (geometryIn, materialIn, options) => {
   // First copy the geometry
@@ -40,7 +42,7 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
     }
     //material = PhongToToon(material);
     if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
-      material.onBeforeCompile = (require("./augmentShader").augmentMorphColor)();
+      material.onBeforeCompile = augmentMorphColor();
     }
   } else {
     let videoTexture = geometry._video.createCanvasVideoTexture();
@@ -54,27 +56,27 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
     });
     this.videoHandler = geometry._video;
   }
-  return new THREE.Mesh(geometry, material); 
+  return new THREE.Mesh(geometry, material);
 }
 
 /**
  * Provides an object which stores geometry and provides method which controls its animations.
  * This is created when a valid json file containging geometry is read into a {@link Zinc.Scene}
  * object.
- * 
+ *
  * @class
  * @author Alan Wu
  * @return {Geometry}
  */
 const Geometry = function () {
-  (require('./zincObject').ZincObject).call(this);
+  ZincObject.call(this);
 	// THREE.Geometry or THREE.BufferGeometry
 	this.videoHandler = undefined;
   this.isGeometry = true;
 
   /**
    * Create the mesh for rendering
-   * 
+   *
    * @param {THREE.Geomtry} geometryIn - Geometry to be rendered.
    * @param {THREE.Material} materialIn - Material to be set for the geometry.
    * @param {Object} options - Provide various options
@@ -89,7 +91,7 @@ const Geometry = function () {
     //Skip if there is a morph already
 		if (this.morph && this.morph.geometry && (geometryIn != undefined))
 			return;
-		const mesh = createMeshForGeometry(geometryIn, materialIn, options); 
+		const mesh = createMeshForGeometry(geometryIn, materialIn, options);
 		this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
 	}
 
@@ -114,7 +116,7 @@ const Geometry = function () {
 		            new THREE.Vector2((v3.x + offset.x)/range.x ,(v3.y + offset.y)/range.y)
 		        ]);
 		}
-		geometry.uvsNeedUpdate = true;	
+		geometry.uvsNeedUpdate = true;
 	}
 
   /**
@@ -124,10 +126,10 @@ const Geometry = function () {
   this.checkTransparentMesh = function() {
     this._lod.checkTransparentMesh();
   }
-	
+
 	/**
 	 * Set wireframe display for this geometry.
-	 * 
+	 *
 	 * @param {Boolean} wireframe - Flag to turn on/off wireframe display.
 	 */
 	this.setWireframe = wireframe => {
@@ -157,9 +159,9 @@ const Geometry = function () {
       }
     }
   }
-	
+
 
 }
 
-Geometry.prototype = Object.create((require('./zincObject').ZincObject).prototype);
-exports.Geometry = Geometry;
+Geometry.prototype = Object.create(ZincObject.prototype);
+export { Geometry };

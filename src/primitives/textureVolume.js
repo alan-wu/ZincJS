@@ -1,5 +1,7 @@
-const THREE = require('three');
-const shader = require("../shaders/volumeRender.js");
+import * as THREE from 'three';
+import * as shader from '../shaders/volumeRender.js';
+import { TexturePrimitive } from './texturePrimitive.js';
+
 /**
  * Provides a class which create a texture stacks in a block
  * with shaders allowing slices of texture to be displayed.
@@ -12,7 +14,7 @@ const shader = require("../shaders/volumeRender.js");
  * @return {TextureSlides}
  */
 const TextureSlides = function (textureIn) {
-  (require('./texturePrimitive.js').TexturePrimitive).call(this, textureIn);
+  TexturePrimitive.call(this, textureIn);
   this.isTextureVolume = true;
   const textureSettings = [];
   this.morph = new THREE.Group();
@@ -186,7 +188,7 @@ const TextureSlides = function (textureIn) {
       if (slide.material)
         slide.material.dispose();
     });
-    (require('./texturePrimitive.js').TexturePrimitive).prototype.dispose.call(this);
+    TexturePrimitive.prototype.dispose.call(this);
     this.boundingBoxUpdateRequired = true;
   }
 
@@ -317,6 +319,6 @@ const TextureSlides = function (textureIn) {
   }
 }
 
-TextureSlides.prototype = Object.create((require('./texturePrimitive.js').TexturePrimitive).prototype);
+TextureSlides.prototype = Object.create(TexturePrimitive.prototype);
 TextureSlides.prototype.constructor = TextureSlides;
-exports.TextureSlides = TextureSlides;
+export { TextureSlides };

@@ -1,6 +1,6 @@
 {
   "name": "zincjs",
-  "version": "1.20.1",
+  "version": "1.20.1-beta.3",
   "description": "ZincJS (Web-based-Zinc-Visualisation)",
   "main": "build/zinc.js",
   "directories": {
@@ -12,14 +12,14 @@
     "README.md",
     "src/*",
     "build/zinc.js",
-    "build/zinc.frontend.js",
     "build/zinc.js.map",
-    "webpack.config.js"
+    "vite.config.js"
   ],
   "scripts": {
-    "build-bundle": "webpack --config webpack.frontend.js; webpack --config webpack.backend.js",
-    "build-backend": "webpack --config webpack.backend.js",
-    "test": "npm --prefix ./test install && npm --prefix ./test run test-ci",
+    "build-bundle": "vite build",
+    "test-watch": "vitest",
+    "test": "vitest run --reporter=junit --outputFile=test-results.xml",
+    "test-standard": "vitest run",
     "changelog": "auto-changelog -p --output CHANGELOG.md --template keepachangelog",
     "jsdoc": "jsdoc -c jsdoc_conf.json",
     "version": "npm run build-bundle;npm run jsdoc;npm run changelog; git add CHANGELOG.md docs",
@@ -44,27 +44,23 @@
   },
   "homepage": "http://alan-wu.github.io/ZincJS/",
   "devDependencies": {
-    "@babel/core": "^7.23.9",
-    "@babel/preset-env": "^7.23.9",
+    "@vitest/coverage-v8": "^1.6.1",
     "auto-changelog": "^2.4.0",
-    "babel-loader": "^9.1.3",
-    "babel-preset-minify": "^0.5.1",
-    "file-loader": "^6.2.0",
+    "chai": "^4.1.0",
+    "gl": "^6.0.2",
+    "happy-dom": "^20.10.6",
     "jsdoc": "^4.0.2",
-    "raw-loader": "^4.0.2",
-    "webpack": "^5.90.3",
-    "webpack-cli": "^5.1.4",
+    "msw": "^2.14.6",
+    "vite": "^5.0.10",
+    "vite-plugin-node-polyfills": "^0.28.0",
+    "vitest": "^1.6.1",
     "webpack-node-externals": "^3.0.0"
   },
   "dependencies": {
     "css-element-queries": "^1.2.2",
     "lodash": "^4.17.19",
-    "nifti-reader-js": "^0.8.0",
-    "promise-polyfill": "^8.1.3",
+    "nifti-reader-js": "0.8.0",
     "three": "^0.130.1",
-    "three-spritetext": "1.6.2",
-    "url-loader": "^4.1.1",
-    "url-polyfill": "^1.1.7",
-    "webworkify-webpack": "^2.1.5"
+    "three-spritetext": "1.6.2"
   }
 }

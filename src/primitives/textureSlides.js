@@ -1,5 +1,7 @@
-const THREE = require('three');
-const shader = require("../shaders/textureSlide.js");
+import * as THREE from 'three';
+import * as shader from '../shaders/textureSlide.js';
+import { TexturePrimitive } from './texturePrimitive';
+
 /**
  * Provides a class which create a texture stacks in a block
  * with shaders allowing slices of texture to be displayed.
@@ -12,7 +14,7 @@ const shader = require("../shaders/textureSlide.js");
  * @return {TextureSlides}
  */
 const TextureSlides = function (textureIn) {
-  (require('./texturePrimitive').TexturePrimitive).call(this, textureIn);
+  TexturePrimitive.call(this, textureIn);
   this.isTextureSlides = true;
   const textureSettings = [];
   const idTextureMap = {};
@@ -238,7 +240,7 @@ const TextureSlides = function (textureIn) {
       if (slide.material)
         slide.material.dispose();
     });
-    (require('./texturePrimitive').TexturePrimitive).prototype.dispose.call(this);
+    TexturePrimitive.prototype.dispose.call(this);
     this.boundingBoxUpdateRequired = true;
   }
 
@@ -491,6 +493,6 @@ const TextureSlides = function (textureIn) {
 
 }
 
-TextureSlides.prototype = Object.create((require('./texturePrimitive').TexturePrimitive).prototype);
+TextureSlides.prototype = Object.create(TexturePrimitive.prototype);
 TextureSlides.prototype.constructor = TextureSlides;
-exports.TextureSlides = TextureSlides;
+export { TextureSlides };

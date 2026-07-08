@@ -1,14 +1,14 @@
-const THREE = require('three');
+import * as THREE from 'three';
 
 /**
  * This provide a full scale minimap. It will always
  * display the whole map.
- * 
+ *
  * @class
  * @author Alan Wu
  * @return {Minimap}
  */
-exports.Minimap = function (sceneIn) {
+const Minimap = function (sceneIn) {
   let targetScene = sceneIn;
   this.camera = new THREE.OrthographicCamera(
     -0.5, 0.5, 0.5, -0.5, 0.01, 10);
@@ -24,7 +24,7 @@ exports.Minimap = function (sceneIn) {
   ] );
   let positionAttributes = new THREE.BufferAttribute( vertices, 3 );
   geometry.setAttribute( 'position', positionAttributes);
-  var material = new THREE.MeshBasicMaterial( { color: 0x333333, 
+  var material = new THREE.MeshBasicMaterial( { color: 0x333333,
     depthTest: false,
     depthWrite: false,
     opacity: 0.5,
@@ -88,3 +88,5 @@ exports.Minimap = function (sceneIn) {
     }
   }
 }
+
+export { Minimap };

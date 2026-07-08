@@ -1,4 +1,0 @@
---webpack-config webpack.config-test.js
---require prepare/setup.js
---glob *.test.{js,ts}
---recursive

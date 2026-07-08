@@ -1,7 +1,7 @@
-const THREE = require('three');
-const ThreeBSP = require('../three-js-csg')(THREE);
-const Geometry = require('../primitives/geometry').Geometry;
-const GeometryCSG = require('../geometryCSG').GeometryCSG;
+import * as THREE from 'three';
+import { ThreeBSPWrapper } from '../three-js-csg';
+const ThreeBSP = ThreeBSPWrapper(THREE);
+
 
 const GeometryCSGInternal = function (hostIn) {
   //ZincGeoemtry of the main geometry
@@ -9,17 +9,17 @@ const GeometryCSGInternal = function (hostIn) {
   if (hostIn && hostIn.isGeometry)
     host = hostIn;
   let hostCSG = undefined;
-  
+
   this.setGeometry = hostIn => {
     if (hostIn && hostIn.isGeometry)
 	  host = hostIn;
     hostCSG = undefined;
   }
-  
+
   this.setCSG = csg => {
 	  hostCSG = csg;
   }
-  
+
   const prepareCSG = guestGeometry => {
 	  if (host && host.morph && guestGeometry && guestGeometry.morph) {
 	      if (hostCSG === undefined)
@@ -29,7 +29,7 @@ const GeometryCSGInternal = function (hostIn) {
 	  }
 	  return undefined;
   };
-  
+
   this.intersect = guestGeometry => {
 	  const guestCSG = prepareCSG(guestGeometry);
 	  if (hostCSG && guestCSG) {
@@ -37,7 +37,7 @@ const GeometryCSGInternal = function (hostIn) {
 	  }
 	  return undefined;
   }
-  
+
   this.subtract = guestGeometry => {
 	  const guestCSG = prepareCSG(guestGeometry);
 	  if (hostCSG && guestCSG) {
@@ -45,7 +45,7 @@ const GeometryCSGInternal = function (hostIn) {
 	  }
 	  return undefined;
   }
-  
+
   this.union = guestGeometry => {
 	  const guestCSG = prepareCSG(guestGeometry);
 	  if (hostCSG && guestCSG) {
@@ -55,4 +55,5 @@ const GeometryCSGInternal = function (hostIn) {
   }
 };
 
-exports.GeometryCSGInternal = GeometryCSGInternal;
+export { GeometryCSGInternal };
+

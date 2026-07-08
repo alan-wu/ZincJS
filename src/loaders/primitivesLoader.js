@@ -1,5 +1,5 @@
-const JSONLoader = require('./JSONLoader').JSONLoader;
-const THREE = require('three');
+import { JSONLoader } from './JSONLoader';
+import * as THREE from 'three';
 const FileLoader = THREE.FileLoader;
 
 const mergeGlyphData = (glyphData) => {
@@ -174,7 +174,7 @@ const MultiSourcesHandler = function(numberIn, onLoadCallback, options) {
   }
 }
 
-exports.PrimitivesLoader = function () {
+const PrimitivesLoader = function () {
   let concurrentDownloads = 0;
   const MAX_DOWNLOAD = 20;
   this.crossOrigin = "Anonymous";
@@ -304,3 +304,4 @@ exports.PrimitivesLoader = function () {
 
 }
 
+export { PrimitivesLoader };

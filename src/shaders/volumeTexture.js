@@ -1,5 +1,4 @@
-const THREE = require('three');
-
+import * as THREE from 'three';
 const glslVersion = THREE.GLSL3;
 
 const fs =
@@ -51,7 +50,7 @@ void main(void) {
 	// Step 4: Starting from the entry point, march the ray through the volume
 	// and sample it
 	vec3 p = transformed_eye + t_hit.x * ray_dir;
-  p.z = p.z * depth; 
+  p.z = p.z * depth;
 	for (float t = t_hit.x; t < t_hit.y; t += dt) {
 		// Step 4.1: Sample the volume, and color it by the transfer function.
 		// Note that here we don't use the opacity from the transfer function,
@@ -73,7 +72,7 @@ void main(void) {
 }
 `;
 
-const vs = 
+const vs =
 `
 uniform vec3 volume_scale;
 
@@ -101,7 +100,9 @@ const getUniforms = function() {
   }
 };
 
-exports.fs = fs;
-exports.vs = vs;
-exports.glslVersion = glslVersion;
-exports.getUniforms = getUniforms;
+export {
+  fs,
+  vs,
+  glslVersion,
+  getUniforms
+}

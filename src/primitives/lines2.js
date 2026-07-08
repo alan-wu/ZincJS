@@ -1,9 +1,8 @@
-const THREE = require('three');
-const toBufferGeometry = require('../utilities').toBufferGeometry;
-const LineSegments2 = require("../three/line/LineSegments2").LineSegments2;
-const LineMaterial = require("../three/line/LineMaterial").LineMaterial;
-const LineSegmentsGeometry = require("../three/line/LineSegmentsGeometry").LineSegmentsGeometry;
-
+import * as THREE from 'three';
+import { Lines } from './lines';
+import { LineSegments2 } from '../three/line/LineSegments2';
+import { LineMaterial } from '../three/line/LineMaterial';
+import { LineSegmentsGeometry } from '../three/line/LineSegmentsGeometry';
 /**
  * Provides an object which stores lines.
  * This is created when a valid json file containing lines is read into a {@link Zinc.Scene}
@@ -14,7 +13,7 @@ const LineSegmentsGeometry = require("../three/line/LineSegmentsGeometry").LineS
  * @return {Lines}
  */
 const Lines2 = function () {
-  (require('./lines').Lines).call(this);
+  Lines.call(this);
 	this.isLines2 = true;
   let positions = new Array(300);
 
@@ -178,6 +177,6 @@ const Lines2 = function () {
   }
 }
 
-Lines2.prototype = Object.create((require('./lines').Lines).prototype);
+Lines2.prototype = Object.create(Lines.prototype);
 Lines2.prototype.constructor = Lines2;
-exports.Lines2 = Lines2;
+export { Lines2 };

@@ -1,5 +1,6 @@
-const THREE = require('three');
-const resolveURL = require('../utilities').resolveURL;
+import { resolveURL } from '../utilities';
+import { TextureArray } from '../texture/textureArray';
+import { ZincObject } from './zincObject';
 /**
  * Provides a base class object which stores textures and rendering object.
  *
@@ -8,7 +9,7 @@ const resolveURL = require('../utilities').resolveURL;
  * @return {TexturePrimitive}
  */
 const TexturePrimitive = function (textureIn) {
-  (require('./zincObject').ZincObject).call(this);
+  ZincObject.call(this);
   this.isTexturePrimitive = true;
   this.texture = textureIn;
   //List of textureArray object, which is used for
@@ -28,7 +29,7 @@ const TexturePrimitive = function (textureIn) {
   this.load = (textureData, finishCallback, isInline) => {
     if (textureData) {
       if (textureData.images && textureData.images.source) {
-        const texture = new (require('../texture/textureArray').TextureArray)();
+        const texture = new TextureArray();
         const imgArray = [];
         textureData.images.source.forEach(img => {
           imgArray.push(resolveURL(img));
@@ -67,6 +68,6 @@ const TexturePrimitive = function (textureIn) {
   }
 }
 
-TexturePrimitive.prototype = Object.create((require('./zincObject').ZincObject).prototype);
+TexturePrimitive.prototype = Object.create(ZincObject.prototype);
 TexturePrimitive.prototype.constructor = TexturePrimitive;
-exports.TexturePrimitive = TexturePrimitive;
+export { TexturePrimitive };

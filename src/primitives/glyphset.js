@@ -1,5 +1,7 @@
-const THREE = require('three');
-const JSONLoader = require('../loaders/JSONLoader').JSONLoader;
+import * as THREE from 'three';
+import { Glyph } from './glyph';
+import { ZincObject } from './zincObject';
+import { JSONLoader } from '../loaders/JSONLoader';
 
 /**
  * This is a container of {@link Glyph} and their graphical properties
@@ -12,7 +14,7 @@ const JSONLoader = require('../loaders/JSONLoader').JSONLoader;
  * @return {Glyphset}
  */
 const Glyphset = function () {
-  (require('./zincObject').ZincObject).call(this);
+  ZincObject.call(this);
   const glyphList = [];
   let axis1s = undefined;
   let axis2s = undefined;
@@ -431,7 +433,7 @@ const Glyphset = function () {
    */
   const createGlyphs = (displayLabels) => {
     for (let i = 0; i < numberOfVertices; i++) {
-      const glyph = new (require('./glyph').Glyph)(undefined, undefined, i, this);
+      const glyph = new Glyph(undefined, undefined, i, this);
       let label = labels ? labels[i] : undefined;
       label = label ? label : this.groupName;
       if (label) {
@@ -477,7 +479,7 @@ const Glyphset = function () {
    */
   this.addMeshAsGlyph = (mesh, id) => {
     if (mesh.isMesh) {
-      const glyph = new (require('./glyph').Glyph)(undefined, undefined, id, this);
+      const glyph = new Glyph(undefined, undefined, id, this);
       glyph.fromMesh(mesh);
       glyphList.push(glyph);
       this.morph.add(glyph.getGroup())
@@ -694,5 +696,5 @@ const Glyphset = function () {
   }
 }
 
-Glyphset.prototype = Object.create((require('./zincObject').ZincObject).prototype);
-exports.Glyphset = Glyphset;
+Glyphset.prototype = Object.create(ZincObject.prototype);
+export { Glyphset };

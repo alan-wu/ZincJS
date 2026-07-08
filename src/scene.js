@@ -1,11 +1,19 @@
-const THREE = require('three');
-const MarkerCluster = require('./primitives/markerCluster').MarkerCluster;
-const SceneLoader = require('./sceneLoader').SceneLoader;
-const SceneExporter = require('./sceneExporter').SceneExporter;
-const Viewport = require('./controls').Viewport;
-const createBufferGeometry = require('./utilities').createBufferGeometry;
-const getCircularTexture = require('./utilities').getCircularTexture;
-const createNewSpriteText = require('./utilities').createNewSpriteText;
+import * as THREE from 'three';
+import { CameraControls, StereoEffect } from './controls';
+import { LineSegments } from './three/line/LineSegments';
+import { MarkerCluster } from './primitives/markerCluster';
+import { Minimap } from './minimap';
+import { Region } from './region';
+import { Points } from './three/Points';
+import { SceneExporter } from './sceneExporter';
+import { SceneLoader } from './sceneLoader';
+import { Viewport } from './controls';
+import {
+  createBufferGeometry,
+  createNewSpriteText,
+  getCircularTexture
+} from './utilities';
+
 let uniqueiId = 0;
 
 const getUniqueId = function () {
@@ -33,7 +41,7 @@ const defaultDuration = 6000;
  * @author Alan Wu
  * @return {Scene}
  */
-exports.Scene = function (containerIn, rendererIn) {
+const Scene = function (containerIn, rendererIn) {
   const container = containerIn;
   let cameraHelper = undefined;
   let videoHandler = undefined;
@@ -45,7 +53,7 @@ exports.Scene = function (containerIn, rendererIn) {
   let zincObjectRemovedCallbacks_id = 0;
   const scene = new THREE.Scene();
   const miniAxesScene = new THREE.Scene();
-  const rootRegion = new (require('./region').Region)(undefined, this);
+  const rootRegion = new Region(undefined, this);
   scene.add(rootRegion.getGroup());
   const tempGroup = new THREE.Group();
   scene.add(tempGroup);
@@ -151,12 +159,12 @@ exports.Scene = function (containerIn, rendererIn) {
 
     this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
     scene.add(this.directionalLight);
-    zincCameraControls = new (require('./controls').CameraControls)(this.camera, rendererIn.domElement, rendererIn, this);
+    zincCameraControls = new CameraControls(this.camera, rendererIn.domElement, rendererIn, this);
 
     zincCameraControls.setDirectionalLight(this.directionalLight);
     zincCameraControls.resetView();
 
-    minimap = new (require('./minimap').Minimap)(this);
+    minimap = new Minimap(this);
   };
 
   setupCamera();
@@ -784,7 +792,7 @@ exports.Scene = function (containerIn, rendererIn) {
   this.setStereoEffectEnable = stereoFlag => {
     if (stereoFlag == true) {
       if (!stereoEffect) {
-        stereoEffect = new require('./controls').StereoEffect(rendererIn);
+        stereoEffect = new StereoEffect(rendererIn);
       }
     }
     rendererIn.setSize(getDrawingWidth(), getDrawingHeight());
@@ -859,7 +867,7 @@ exports.Scene = function (containerIn, rendererIn) {
   }
 
   /**
-   * Transition the camera into viewing the zinc object wiexports.Scene.alignBoundingBoxToCameraViewth a
+   * Transition the camera into viewing the zinc object with a
    * smooth transition within the providied transitionTime.
    *
    * @param {ZincObject} zincObject - the bounding box to target
@@ -1232,7 +1240,7 @@ exports.Scene = function (containerIn, rendererIn) {
       color: colour, sizeAttenuation: false });
     const texture = getCircularTexture();
     material.map = texture;
-    let point = new (require('./three/Points').Points)(geometry, material);
+    let point = new Points(geometry, material);
     tempGroup.add(point);
     return point;
   }
@@ -1244,7 +1252,7 @@ exports.Scene = function (containerIn, rendererIn) {
   this.addTemporaryLines = (coords, colour) => {
     const geometry = createBufferGeometry(coords.length, coords);
     const material = new THREE.LineBasicMaterial({color:colour});
-    const line = new (require("./three/line/LineSegments").LineSegments)(geometry, material);
+    const line = new LineSegments(geometry, material);
     tempGroup.add(line);
     return line;
   }
@@ -1481,3 +1489,5 @@ exports.Scene = function (containerIn, rendererIn) {
     }
   }
 }
+
+export { Scene };

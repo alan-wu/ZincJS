@@ -1,4 +1,6 @@
-const THREE = require('three');
+import * as THREE from 'three';
+import { Label } from './label';
+import { ZincObject } from './zincObject';
 
 /**
  * Zinc representation of glyph graphic, it contains the colours,
@@ -13,7 +15,7 @@ const THREE = require('three');
  * @return {Glyph}
  */
 const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
-  (require('./zincObject').ZincObject).call(this);
+  ZincObject.call(this);
   let material = undefined;
   if (materialIn) {
     material = materialIn.clone();
@@ -80,7 +82,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
       label = undefined;
     }
     if (labelString && (typeof labelString === 'string' || labelString instanceof String)) {
-      label = new (require('./label').Label)(labelString, colour);
+      label = new Label(labelString, colour);
       label.setPosition(_position[0], _position[1], _position[2]);
       const sprite = label.getSprite();
       sprite.material.alphaTest = 0.5;
@@ -180,5 +182,5 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   }
 }
 
-Glyph.prototype = Object.create((require('./zincObject').ZincObject).prototype);
-exports.Glyph = Glyph;
+Glyph.prototype = Object.create(ZincObject.prototype);
+export { Glyph };

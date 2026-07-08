@@ -1,5 +1,6 @@
-const THREE = require('three');
-const ResizeSensor = require('css-element-queries/src/ResizeSensor');
+import * as THREE from 'three';
+import { ResizeSensor } from 'css-element-queries';
+import { Scene } from './scene';
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
@@ -12,7 +13,7 @@ const ResizeSensor = require('css-element-queries/src/ResizeSensor');
  * @author Alan Wu
  * @return {Renderer}
  */
-exports.Renderer = function (containerIn) {
+const Renderer = function (containerIn) {
 
 	let container = containerIn;
 
@@ -218,9 +219,9 @@ exports.Renderer = function (containerIn) {
 		} else {
 			let new_scene = undefined;
 			if (canvas)
-				new_scene = new (require('./scene').Scene)(canvas, renderer);
+				new_scene = new Scene(canvas, renderer);
 			else
-				new_scene = new (require('./scene').Scene)(container, renderer);
+				new_scene = new Scene(container, renderer);
 			sceneMap[name] = new_scene;
 			new_scene.sceneName = name;
 			return new_scene;
@@ -700,3 +701,5 @@ exports.Renderer = function (containerIn) {
     return false;
   }
 };
+
+export { Renderer };

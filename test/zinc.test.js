@@ -1,17 +1,28 @@
-import Zinc from "../../src/zinc";
+import Zinc from "../src/zinc";
 import {assert} from 'chai';
-import nock from 'nock';
+
 const THREE = Zinc.THREE;
-import fs from 'file-system';
-const container = window.document.querySelector("#container");
+const container = document.querySelector("#container");
 let geometryCount = 0;
-global.XMLHttpRequest = require("xhr2");
+import { describe, it, beforeAll } from 'vitest';
+import { assert } from 'chai';
+
 
 var testBoxGeometry = new THREE.BoxGeometry( 10, 10, 10 );
 
+const tData = {};
+tData.renderer = new Zinc.Renderer(container, window);
+var parameters = {};
+var context = require("gl")(1024, 1024);
+parameters['context'] = context;
+tData.renderer.initialiseVisualisation(parameters);
+tData.scene = tData.renderer.createScene("TestScene");
+tData.indexedScene = tData.renderer.createScene("indexedScene");
+tData.regionScene = tData.renderer.createScene("regionScene");
+
 var preRenderCallback = function() {
   return function() {
-    it('PreRenderCallbackFunction',function() 
+    it('PreRenderCallbackFunction',function()
       {assert.isTrue(true, 'PreRenderCallbackFunction is successfully called');}
     );
   }
@@ -19,15 +30,16 @@ var preRenderCallback = function() {
 
 var geometryCallback = function() {
   return function(geometry) {
-    assert.isObject(geometry, 'geometry has been read'); 
+    assert.isObject(geometry, 'geometry has been read');
     geometryCount = geometryCount + 1;
   }
 }
 
-function checkControls(scene) {
+function checkControls() {
+  let scene = tData.scene;
   describe('Controls()', function(){
-    var controls = undefined;
-    before('Get Camera Controls', function() {
+    let controls = undefined;
+    beforeAll(() => {
       controls = scene.getZincCameraControls();
       assert.isObject(controls, 'controls is available');
     });
@@ -58,15 +70,6 @@ function checkControls(scene) {
       });
     });
     describe('Methods()', function(){
-      before('Setup Mock response', function() {
-        var scope = nock('https://www.mytestserver.com')
-          .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-          .get(function(uri) {
-            console.log(uri)
-            return uri;
-          })
-          .reply(200, (uri, requestBody, cb) => {console.log(uri);fs.readFile("." + uri, cb)});
-      });
       it('setMouseButtonAction', function(){
         assert.isUndefined(controls.setMouseButtonAction("AUXILIARY", "ZOOM"), 'setMouseButtonAction is successfully called');
       });
@@ -88,9 +91,10 @@ function checkControls(scene) {
       it('setPlayRate', function(){
         assert.isUndefined(controls.setPlayRate(200), 'setPlayRate is successfully called');
       });
-      it('loadPathURL', function(done){
-        assert.isUndefined(controls.loadPathURL('https://www.mytestserver.com/models/test_path.json', done),
-        'loadPathURL is successfully called');
+      it('loadPathURL', async function() {
+        await new Promise((resolve, reject) => {
+          controls.loadPathURL('https://www.mytestserver.com/models/test_path.json', resolve);
+        });
       });
       it('getNumberOfTimeFrame', function(){
         assert.equal(controls.getNumberOfTimeFrame(), 8135, 'getNumberOfTimeFrame returns the correct value');
@@ -156,7 +160,7 @@ function checkControls(scene) {
       it('cameraTransition', function(){
         var startingViewport = controls.getViewportFromCentreAndRadius(10,20,30, 30, 40, 100);
         var endingViewport = controls.getViewportFromCentreAndRadius(20,40,60, 60, 80, 200);
-        assert.isUndefined(controls.cameraTransition(startingViewport, endingViewport, 2000), 
+        assert.isUndefined(controls.cameraTransition(startingViewport, endingViewport, 2000),
             'cameraTransition is successfully called');
       });
       it('enableCameraTransition', function(){
@@ -195,10 +199,11 @@ function checkControls(scene) {
   });
 }
 
-function checkGeometry(scene) {
+function checkGeometry() {
+  const scene = tData.scene;
   describe('Geometry()', function(){
     let geometry = undefined;
-    before('New Zinc Geometry', function() {
+    beforeAll(() => {
       geometry = new Zinc.Geometry();
       let options = {};
       options.colour = 0x00ff00;
@@ -291,9 +296,20 @@ function checkGeometry(scene) {
   });
 }
 
-function checkLines(lines) {
+function checkLines() {
+  const scene = tData.scene;
+
   describe('Lines()', function(){
+    let linesList = undefined;
+    let lines = undefined;
+    beforeAll(() => {
+      linesList = scene.findLinesWithGroupName("test lines");
+      lines = linesList.length ? linesList[0] : undefined;
+    });
     describe('Local Variables()', function(){
+      it ('findLines', function(){
+        assert.lengthOf(linesList, 1, 'findLinesWithGroupName returns 1 lines');
+      })
       it('lines', function(){
         assert.isObject(lines.getMorph(), 'geometry is an object');
       });
@@ -344,9 +360,21 @@ function checkLines(lines) {
   });
 }
 
-function checkPoints(points) {
+function checkPoints() {
+  const scene = tData.scene;
+  const pointsets = scene.findPointsetsWithGroupName("test point");
+  let points = pointsets.length ? pointsets[0] : undefined;
   describe('Points()', function(){
+    let pointsets = undefined;
+    let points = undefined;
+    beforeAll(() => {
+      pointsets = scene.findPointsetsWithGroupName("test point");
+      points = pointsets.length ? pointsets[0] : undefined;
+    });
     describe('Local Variables()', function(){
+      it ('findPointsets', function(){
+        assert.lengthOf(pointsets, 1, 'findPointsetsWithGroupName returns 1 point');
+      })
       it('points', function(){
         assert.isObject(points.getMorph(), 'geometry is an object');
       });
@@ -401,19 +429,14 @@ function checkPoints(points) {
   });
 }
 
-function checkTextureSlides(scene) {
+function checkTextureSlides() {
+  const scene = tData.scene;
   const rootRegion = scene.getRootRegion();
   describe('TextureSlides()', function(){
-    before('Setup Mock response', function(done) {
-      var scope = nock('https://www.mytestserver.com')
-        .persist()
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(function(uri) {
-          return uri;
-        })
-        .reply(200, (uri, requestBody, cb) => {fs.readFile("." + uri, cb)});
-
-      scene.loadMetadataURL("https://www.mytestserver.com/models/test_ts_metadata.json", undefined, done);
+    beforeAll(async () => {
+      await new Promise((resolve, reject) => {
+        scene.loadMetadataURL("https://www.mytestserver.com/models/test_ts_metadata.json", undefined, resolve);
+      });
     });
 
     describe('Methods()', function(){
@@ -427,7 +450,8 @@ function checkTextureSlides(scene) {
 }
 
 
-function checkCleanup(scene) {
+function checkCleanup() {
+  const scene = tData.scene;
   describe('Cleanup()', function(){
     describe('Local Variables()', function(){
       it('scene', function(){
@@ -448,11 +472,10 @@ function checkCleanup(scene) {
   });
 }
 
-function checkScene(renderer) {
-  var testScene = undefined;
+function checkScene() {
+  const scene = tData.scene;
+  const renderer = tData.renderer;
   describe('Scene()', function(){
-    var scene = renderer.createScene("TestScene");
-    testScene = scene;
     it('New scene object', function(){
       assert.isObject(scene, 'Scene has been created');
     });
@@ -468,7 +491,7 @@ function checkScene(renderer) {
 
     describe('Methods()', function(){
       var testGeometry = undefined;
-      before('addZincGeometry', function() {
+      beforeAll(function() {
         let options = {};
         options.colour = 0x00ff00;
         options.opacity = 1.0;
@@ -480,22 +503,22 @@ function checkScene(renderer) {
         scene.addZincObject(testGeometry);
         assert.isObject(testGeometry, 'ZincGeometry has been created');
         assert.equal(testGeometry.groupName, "TestGeometry", 'ZincGeometry group name has been set');
+        //nockSetup();
       });
-      before('Setup Mock response', function() {
-        var scope = nock('https://www.mytestserver.com')
-          .persist()
-          .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-          .get(function(uri) {
-            return uri;
-          })
-          .reply(200, (uri, requestBody, cb) => {fs.readFile("." + uri, cb)}, {'Content-Type': 'application/json'});
-      });
+
+
       it('loadView', function() {
         scene.loadViewURL("https://www.mytestserver.com/models/test_view.json");
       });
-      it('loadMetadataURL', function(done) {
-        scene.loadMetadataURL("https://www.mytestserver.com/models/test_metadata.json", undefined, 
-          done);
+      it('loadMetadataURL', async function() {
+        await new Promise((resolve, reject) => {
+          scene.loadMetadataURL(
+            "https://www.mytestserver.com/models/test_metadata.json",
+            undefined,
+            // Pass resolve as the callback so the await unblocks when finished
+            resolve
+          );
+        });
       });
       it('onWindowResize', function(){
         assert.isUndefined(scene.onWindowResize(), 'onWindowResize is successfully called');
@@ -594,47 +617,24 @@ function checkScene(renderer) {
         assert.isUndefined(scene.removeZincObject(testGeometry), 'removeZincGeometry is successfully called');
       });
       if ('getNamedObjectsScreenXY', function() {
-        assert.isObject(scene.getNamedObjectsScreenXY("TestGeometry"), 
+        assert.isObject(scene.getNamedObjectsScreenXY("TestGeometry"),
           'getNamedObjectsScreenXY is successfully called');
-      });
-      describe("primitives()", function(){
-        it ('Lines', function() {
-          var lines = scene.findLinesWithGroupName("test lines");
-          assert.lengthOf(lines, 1, 'findLinesWithGroupName returns 1 glyphset');
-          checkLines(lines[0]);
-        });
-        it ('pointset', function() {
-          var pointsets = scene.findPointsetsWithGroupName("test point");
-          assert.lengthOf(pointsets, 1, 'findPointsetsWithGroupName returns 1 point');
-          checkPoints(pointsets[0]);
-        });
-      });
-      describe('Cleanup()', function(){
-        it ('removeZincGlyphset', function() {
-          checkCleanup(scene);
-        });
       });
     });
   });
-  return testScene;
 }
 
 
-function checkRegion(scene) {
+function checkRegion() {
+  const scene = tData.regionScene;
   describe('Region()', function(){
     const rootRegion = scene.getRootRegion();
-    before('Setup Mock response', function(done) {
-      var scope = nock('https://www.mytestserver.com')
-        .persist()
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(function(uri) {
-          return uri;
-        })
-        .reply(200, (uri, requestBody, cb) => {fs.readFile("." + uri, cb)}, {'Content-Type': 'application/json'});
-        scene.loadMetadataURL("https://www.mytestserver.com/models/test_region_metadata.json", undefined, 
-          done);
+    beforeAll(async () => {
+      await new Promise((resolve, reject) => {
+        scene.loadMetadataURL("https://www.mytestserver.com/models/test_region_metadata.json", undefined,
+          resolve);
+      });
     });
-
     describe('Methods()', function(){
       it('getRegion', function(){
         const cubeRegion = rootRegion.getChildWithName("cube");
@@ -664,7 +664,7 @@ function checkRegion(scene) {
         rootRegion.getPickableThreeJSObjects(objectsList, true);
         assert.equal(objectsList.length, 6, 'Number of pickable object is not correct');
       });
-      
+
       it('duration', function() {
         rootRegion.setDuration(500);
         assert.equal(rootRegion.getDuration(), 500, 'Duration is not set correctly');
@@ -805,7 +805,8 @@ function checkRegion(scene) {
   });
 }
 
-function checkCreateAPIs(scene) {
+function checkCreateAPIs() {
+  const scene = tData.scene;
   describe('Methods()', function() {
     const rootRegion = scene.getRootRegion();
     it('createPoints', function() {
@@ -874,19 +875,15 @@ function checkCreateAPIs(scene) {
   });
 }
 
-function checkIndexedAndMergedFormat(scene) {
+function checkIndexedAndMergedFormat() {
+  const scene = tData.indexedScene;
   describe('IndexedAndMergedFormat()', function(){
     const rootRegion = scene.getRootRegion();
-    before('Setup Mock response', function(done) {
-      var scope = nock('https://www.mytestserver.com')
-        .persist()
-        .defaultReplyHeaders({ 'access-control-allow-origin': '*' })
-        .get(function(uri) {
-          return uri;
-        })
-        .reply(200, (uri, requestBody, cb) => {fs.readFile("." + uri, cb)}, {'Content-Type': 'application/json'});
-        scene.loadMetadataURL("https://www.mytestserver.com/models/test_indexed_metadata.json", undefined, 
-          done);
+    beforeAll(async () => {
+      await new Promise((resolve, reject) => {
+        scene.loadMetadataURL("https://www.mytestserver.com/models/test_indexed_metadata.json", undefined,
+          resolve);
+      });
     });
 
     describe('Methods()', function(){
@@ -914,14 +911,13 @@ function checkIndexedAndMergedFormat(scene) {
 }
 
 function checkRenderer() {
-  var testRenderer;
   describe('Renderer()', function(){
+    let renderer = tData.renderer;
     it('Renderer is a valid constructor', function(){
-      assert.isFunction(Zinc.Renderer, 'Zinc.Renderer is a valid constructor'); 
+      assert.isFunction(Zinc.Renderer, 'Zinc.Renderer is a valid constructor');
     });
-    var renderer = new Zinc.Renderer(container, window);
     it('Renderer creates an object', function(){
-      assert.isObject(renderer, 'Zinc.Renderer creates an object'); 
+      assert.isObject(renderer, 'Zinc.Renderer creates an object');
     });
     describe('Local Variables()', function(){
       it('playAnimation', function(){
@@ -929,13 +925,7 @@ function checkRenderer() {
       });
     })
     describe('Methods()', function(){
-      var parameters = {};
-      var context = require("gl")(1024, 1024);
-      parameters['context'] = context;
-      var returnValue = renderer.initialiseVisualisation(parameters);
-      it('initialiseVisualisation', function(){
-        assert.isUndefined(returnValue, 'initialiseVisualisation is successfully called');
-      });
+      let renderer =  tData.renderer;
       it('getCurrentScene', function(){
         assert.isObject(renderer.getCurrentScene(), 'getCurrentScene returns an object');
       });
@@ -1021,25 +1011,22 @@ function checkRenderer() {
         assert.equal(renderer.getDrawingHeight(), 0, 'getDrawingHeight is successfully called');
       });
     })
-
-    testRenderer = renderer;
   })
-  var testScene = checkScene(testRenderer);
-  checkGeometry(testScene);
-  
-  checkControls(testScene);
-  var indexedScene = testRenderer.createScene("indexedScene");
-  checkIndexedAndMergedFormat(indexedScene);
-  var regionScene = testRenderer.createScene("regionScene");
-  checkRegion(regionScene);
-  checkCreateAPIs(testScene);
-  checkTextureSlides(testScene)
-  //checkCleanup(testScene);
+  checkScene();
+  checkLines();
+  checkPoints();
+  checkGeometry();
+  checkControls();
+  checkIndexedAndMergedFormat();
+  checkRegion();
+  checkCreateAPIs();
+  checkTextureSlides();
+  checkCleanup();
 }
 
 function checkZincObject() {
   it('Zinc is a valid object', function(){
-    assert.isObject(Zinc, 'Zinc is an object'); 
+    assert.isObject(Zinc, 'Zinc is an object');
   });
   checkRenderer();
 }

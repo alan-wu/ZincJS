@@ -1,8 +1,8 @@
-const GLTFExporter = require('./three/GLTFExporter').GLTFExporter;
+import { GLTFExporter } from './three/GLTFExporter';
 
 /**
  * Provides an object which uses for exporting the scene
- * 
+ *
  * @class
  * @author Alan Wu
  * @return {SceneExporter}
@@ -29,4 +29,4 @@ const SceneExporter = function (sceneIn) {
 	}
 }
 
-exports.SceneExporter = SceneExporter;
+export { SceneExporter };

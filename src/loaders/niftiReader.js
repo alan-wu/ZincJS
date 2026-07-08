@@ -141,9 +141,6 @@ function convertNiftiToUint8Array(niftiHeader, niftiImage) {
     default: throw new Error("Unsupported NIfTI data type");
   }
 
-  const slope = niftiHeader.scl_slope || 1.0;
-  const intercept = niftiHeader.scl_inter || 0.0;
-
   let min = Infinity;
   let max = -Infinity;
 

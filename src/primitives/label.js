@@ -1,4 +1,5 @@
-const SpriteText = require('three-spritetext').default;
+import SpriteTextModule from 'three-spritetext';
+const SpriteText = SpriteTextModule.default || SpriteTextModule;
 
 /**
  * Bitmap labels, this is used with {@link Glyph} to
@@ -11,7 +12,7 @@ const SpriteText = require('three-spritetext').default;
  * @author Alan Wu
  * @return {Label}
  */
-exports.Label = function (textIn, colourIn) {
+const Label = function (textIn, colourIn) {
   let text = textIn;
   let sprite = undefined;
   const position = [0, 0, 0];
@@ -164,6 +165,8 @@ exports.Label = function (textIn, colourIn) {
   }
 
 };
+
+export { Label };
 
 
 

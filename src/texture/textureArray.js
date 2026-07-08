@@ -1,4 +1,5 @@
-const THREE = require('three');
+import * as THREE from 'three';
+import { Texture } from './texture';
 
 /**
  * Texture array object for holding array of images into
@@ -9,7 +10,7 @@ const THREE = require('three');
  * @return {TextureArray}
  */
 const TextureArray = function () {
-  (require('./texture').Texture).call(this);
+  Texture.call(this);
   this.isTextureArray = true;
 
 
@@ -112,5 +113,5 @@ const TextureArray = function () {
   }
 }
 
-TextureArray.prototype = Object.create((require('./texture').Texture).prototype);
-exports.TextureArray = TextureArray;
+TextureArray.prototype = Object.create(Texture.prototype);
+export { TextureArray };

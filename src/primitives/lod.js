@@ -1,18 +1,18 @@
-const THREE = require('three');
-const updateMorphColorAttribute = require("../utilities").updateMorphColorAttribute;
-const toBufferGeometry = require('../utilities').toBufferGeometry;
+import * as THREE from 'three';
+import { toBufferGeometry, updateMorphColorAttribute } from '../utilities';
+import { LineSegments } from '../three/line/LineSegments';
 
 /**
  * Provides an object which stores meshes at different levels based
  * on specified distance.
  * This object is ued by zincObject to provide mesh at different LODs.
- * A layer is displayed when the distance from the camera is greater 
+ * A layer is displayed when the distance from the camera is greater
  * than its specified distance and closest compared to other layers.
  * This is intended to be an internal object used only by Zinc Object.
- * 
+ *
  * This object assumes the centroid and bounding box are consistent between
  * different level of layers.
- * 
+ *
  * @class
  * @author Alan Wu
  * @return {LOD}
@@ -148,7 +148,7 @@ const LOD = function (parent) {
           this._secondaryMaterial.emissive.copy(this._material.emissive);
         }
         this._secondaryMaterial.needsUpdate = true;
-        // THREE.Mesh - for utilities purpose such as rendering 
+        // THREE.Mesh - for utilities purpose such as rendering
         // transparent surfaces - one for front face and one for back face.
         if (!level.secondaryMesh) {
           level.secondaryMesh = new THREE.Mesh(level.morph.geometry,
@@ -222,7 +222,7 @@ const LOD = function (parent) {
       if (this._parent.isGeometry) {
         mesh = new THREE.Mesh(geometry, material);
       } else if (this._parent.isLines) {
-        mesh = new (require("../three/line/LineSegments").LineSegments)(geometry, material);
+        mesh = new LineSegments(geometry, material);
       }
       mesh.userData = this._parent;
       mesh.renderOrder = this._renderOrder;
@@ -396,4 +396,4 @@ const LOD = function (parent) {
   }
 }
 
-exports.LOD = LOD;
+export { LOD };

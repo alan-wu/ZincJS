@@ -1,17 +1,17 @@
-var THREE = require('three');
+import * as THREE from 'three';
+import { Face3 } from '../three/Geometry';
+import { Geometry } from '../three/Geometry';
+import { Loader } from '../three/Loader';
+import { VideoHandler } from '../videoHandler';
 
-var Loader = require('../three/Loader').Loader;
-var LoaderUtils = THREE.LoaderUtils;
-var AnimationClip = THREE.AnimationClip;
-var Vector3 = THREE.Vector3;
-var Vector4 = THREE.Vector4;
-var Color = THREE.Color;
-var Vector2 = THREE.Vector2;
-var Face3 = require('../three/Geometry').Face3;
-var Geometry = require('../three/Geometry').Geometry;
-var FileLoader = THREE.FileLoader;
-var DefaultLoadingManager = THREE.DefaultLoadingManager;
-var VideoHandler = require('../videoHandler').VideoHandler;
+const AnimationClip = THREE.AnimationClip;
+const Color = THREE.Color;
+const DefaultLoadingManager = THREE.DefaultLoadingManager;
+const FileLoader = THREE.FileLoader;
+const LoaderUtils = THREE.LoaderUtils;
+const Vector2 = THREE.Vector2;
+const Vector3 = THREE.Vector3;
+const Vector4 = THREE.Vector4;
 
 /**
  * @author mrdoob / http://mrdoob.com/
