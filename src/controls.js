@@ -851,18 +851,24 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {requestCallback} finishCallback - The callback once the path is load.
    */
 	this.loadPathURL = (path_url, finishCallback) => {
-		const xmlhttp = new XMLHttpRequest();
-		xmlhttp.onreadystatechange = () => {
-		    if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-		        const pathData = JSON.parse(xmlhttp.responseText);
-		        this.loadPath(pathData);
-	          if (finishCallback != undefined && (typeof finishCallback == 'function'))
-	            finishCallback();
-		    }
-		}
-		const requestURL = resolveURL(path_url);
-		xmlhttp.open("GET", requestURL, true);
-		xmlhttp.send();
+    const requestURL = resolveURL(path_url);
+    fetch(requestURL)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((pathData) => {
+      this.loadPath(pathData);
+      if (finishCallback !== undefined && typeof finishCallback === 'function') {
+        finishCallback();
+      }
+    })
+    .catch((error) => {
+      console.error(`Failed to load path asset from: ${requestURL}`, error);
+    });
+
 	}
 
   /**

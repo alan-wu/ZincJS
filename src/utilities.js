@@ -87,23 +87,20 @@ function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {
     // Set up an asynchronous request
-    const request = new XMLHttpRequest();
-    request.open('GET', resolveURL(url), true);
-
-    // Hook the event that gets called as the request progresses
-    request.onreadystatechange = () => {
-        // If the request is "DONE" (completed or failed)
-        if (request.readyState == 4) {
-            // If we got HTTP status 200 (OK)
-            if (request.status == 200) {
-                callback(request.responseText, data)
-            } else { // Failed
-                errorCallback(url);
-            }
-        }
-    };
-
-    request.send(null);
+  fetch(resolveURL(url))
+  .then((response) => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.text();
+  })
+  .then((responseText) => {
+    callback(responseText, data);
+  })
+  .catch((error) => {
+    console.error(`Fetch string payload retrieval failed for: ${requestURL}`, error);
+    errorCallback(url);
+  });
 }
 
 function loadExternalFiles(urls, callback, errorCallback) {

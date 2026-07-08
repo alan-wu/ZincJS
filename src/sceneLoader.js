@@ -115,26 +115,28 @@ const SceneLoader = function (sceneIn) {
    */
   this.loadViewURL = (url, finishCallback) => {
     this.toBeDownloaded += 1;
-    const xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = () => {
-      if (xmlhttp.readyState == 4) {
-        if(xmlhttp.status == 200) {
-          const viewData = JSON.parse(xmlhttp.responseText);
-          scene.setupMultipleViews("default", { "default" : viewData });
-          scene.resetView();
-          viewLoaded = true;
-          --this.toBeDownloaded;
-          if (finishCallback != undefined && (typeof finishCallback == 'function'))
-            finishCallback();
-        } else {
-          (this.onError(finishCallback))({responseURL: url});
-        }
-      }
-    }
     const requestURL = resolveURL(url);
-    xmlhttp.open("GET", requestURL, true);
-    xmlhttp.send();
-  }
+    fetch(requestURL)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((viewData) => {
+        scene.setupMultipleViews("default", { "default" : viewData });
+        scene.resetView();
+        viewLoaded = true;
+        --this.toBeDownloaded;
+        if (finishCallback !== undefined && typeof finishCallback === 'function') {
+          finishCallback();
+        }
+      })
+      .catch((error) => {
+        console.error(`Fetch failed for URL: ${requestURL}`, error);
+        (this.onError(finishCallback))({ responseURL: requestURL });
+      });
+    }
 
 /**
    * Load a legacy model(s) format with the provided URLs and parameters. This only loads the geometry
@@ -173,23 +175,35 @@ const SceneLoader = function (sceneIn) {
    * @deprecated
    */
   this.loadFromViewURL = (targetRegion, jsonFilePrefix, finishCallback) => {
-    const xmlhttp = new XMLHttpRequest();
-    xmlhttp.onreadystatechange = () => {
-      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        const viewData = JSON.parse(xmlhttp.responseText);
-        scene.loadView(viewData);
-        const urls = [];
-        const filename_prefix = jsonFilePrefix + "_";
-        for (let i = 0; i < viewData.numberOfResources; i++) {
-          const filename = filename_prefix + (i + 1) + ".json";
-          urls.push(filename);
-        }
-        this.loadModelsURL(targetRegion, urls, viewData.colour, viewData.opacity, viewData.timeEnabled, viewData.morphColour, finishCallback);
-      }
-    }
     const requestURL = resolveURL(jsonFilePrefix + "_view.json");
-    xmlhttp.open("GET", requestURL, true);
-    xmlhttp.send();
+    fetch(requestURL)
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((viewData) => {
+      scene.loadView(viewData);
+      const urls = [];
+      const filename_prefix = jsonFilePrefix + "_";
+      for (let i = 0; i < viewData.numberOfResources; i++) {
+        const filename = filename_prefix + (i + 1) + ".json";
+        urls.push(filename);
+      }
+      this.loadModelsURL(
+        targetRegion,
+        urls,
+        viewData.colour,
+        viewData.opacity,
+        viewData.timeEnabled,
+        viewData.morphColour,
+        finishCallback
+      );
+    })
+    .catch((error) => {
+      console.error(`Failed to load view data from: ${requestURL}`, error);
+    });
   }
 
   //Internal loader for a regular zinc geometry.
@@ -549,17 +563,6 @@ const SceneLoader = function (sceneIn) {
     }
   };
 
-
-  //Load a glyphset into this scene.
-  const onLoadTextureReady = (region, xmlhttp, groupName, finishCallback, options) => {
-    return () => {
-      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
-        const textureData = JSON.parse(xmlhttp.responseText);
-        loadTexture(region, xmlhttp.responseURL, textureData, groupName, finishCallback, options);
-      }
-    };
-  };
-
   /**
    * Load a texture into this scene object.
    *
@@ -572,11 +575,21 @@ const SceneLoader = function (sceneIn) {
     if (isInline) {
       loadTexture(region, undefined, url, groupName, finishCallback, options);
     } else {
-      const xmlhttp = new XMLHttpRequest();
-      xmlhttp.onreadystatechange = onLoadTextureReady(region, xmlhttp,
-        groupName, finishCallback, options);
-      xmlhttp.open("GET", resolveURL(url), true);
-      xmlhttp.send();
+      const requestURL = resolveURL(url);
+      fetch(requestURL)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const referenceURL = response.url || (new URL(requestURL)).href;
+        return response.json().then((textureData) => ({ textureData, referenceURL }));
+      })
+      .then(({textureData, referenceURL}) => {
+        loadTexture(region, referenceURL, textureData, groupName, finishCallback, options);
+      })
+      .catch((error) => {
+        console.error(`Fetch failed for texture URL: ${requestURL}`, error);
+      });
     }
   }
 
@@ -971,29 +984,30 @@ const SceneLoader = function (sceneIn) {
     * for each glyphset and geometry that has been written in.
     */
   this.loadMetadataURL = (targetRegion, url, finishCallback, allCompletedCallback, options) => {
-    const xmlhttp = new XMLHttpRequest();
     const requestURL = resolveURL(url);
-    xmlhttp.onreadystatechange = () => {
-      if (xmlhttp.readyState == 4 && xmlhttp.status == 200) {
+    fetch(requestURL)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const referenceURL = response.url || (new URL(requestURL)).href;
+        return response.json().then((metadata) => ({ metadata, referenceURL }));
+      })
+      .then(({metadata, referenceURL}) => {
         scene.resetMetadata();
         scene.resetDuration();
         viewLoaded = false;
-        let referenceURL = xmlhttp.responseURL;
-        if (referenceURL === undefined)
-          referenceURL = (new URL(requestURL)).href;
-        const metadata = JSON.parse(xmlhttp.responseText);
         if (Array.isArray(metadata)) {
           loadVersionOne(targetRegion, metadata, referenceURL, finishCallback, allCompletedCallback, options);
         } else if (typeof metadata === "object" && metadata !== null) {
-          if (metadata.Version == "2.0") {
+          if (metadata.Version === "2.0") {
             loadVersionTwo(targetRegion, metadata, referenceURL, finishCallback, allCompletedCallback);
           }
         }
-      }
-    }
-
-    xmlhttp.open("GET", requestURL, true);
-    xmlhttp.send();
+      })
+      .catch((error) => {
+        console.error(`Fetch failed for URL: ${requestURL}`, error);
+      });
   }
 }
 
