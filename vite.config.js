@@ -13,7 +13,12 @@ export default defineConfig({
       formats: ['es', 'umd'],
     },
     rollupOptions: {
-      external: (id) => !id.startsWith('.') && !path.isAbsolute(id) && !id.includes('package.json'),
+      external(id) {
+        if (id.includes("nifti-reader-js")) {
+          return false
+        }
+        return !id.startsWith('.') && !path.isAbsolute(id) && !id.includes('package.json')
+      },
       output: {
         extend: true,
         globals: {

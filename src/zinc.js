@@ -12,6 +12,10 @@ import { TextureArray } from './texture/textureArray';
 import { TextureSlides } from './primitives/textureSlides';
 import { Renderer } from './renderer';
 import { Scene } from './scene';
+import {
+  createPrimitivesFromNIFTI,
+  createTextureFromNIFTI
+} from './loaders/niftiReader';
 //import { GeometryCSG } from './geometryCSG';
 //import { GlyphsetCSG } from './glyphsetCSG';
 import {
@@ -58,6 +62,8 @@ const Zinc = function() {
   this.StereoEffect = StereoEffect;
   this.loadExternalFile = loadExternalFile;
   this.loadExternalFiles = loadExternalFiles;
+  this.createPrimitivesFromNIFTI = createPrimitivesFromNIFTI;
+  this.createTextureFromNIFTI = createTextureFromNIFTI;
   this.THREE = THREE;
 };
 

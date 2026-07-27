@@ -1,9 +1,7 @@
 import * as nifti from 'nifti-reader-js';
-import {
-  THREE,
-  TextureArray,
-  TextureSlides
-} from "zincjs";
+import * as THREE from 'three';
+import { TextureArray } from '../texture/textureArray';
+import { TextureSlides } from '../primitives/textureSlides';
 
 const defaultTextureSettings = {
   "id": "mesh-location-orientation",
