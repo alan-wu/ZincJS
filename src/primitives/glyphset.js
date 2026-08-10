@@ -27,6 +27,7 @@ const Glyphset = function () {
   let numberOfVertices = 0;
   let baseSize = [0, 0, 0];
   let offset = [0, 0, 0];
+  let labelsOn = false;
   let scaleFactors = [0, 0, 0];
   let repeat_mode = "NONE";
   this.ready = false;
@@ -407,13 +408,26 @@ const Glyphset = function () {
     return undefined;
   }
 
+  this.isLabelDisplayed = () => {
+    return labelsOn;
+  }
+
+  /**
+   * Check whether label can be shown
+   */
+  this.canShowLabel = () => {
+    return (glyphList?.length && (labels?.length || this.groupName));
+  }
 
   /**
    * Display the label of the glyphs in the glyphset.
    */
   this.showLabel = () => {
-    for (let i = 0; i < glyphList.length; i++) {
-      glyphList[i].showLabel(this.morph.material ? this.morph.material.color : undefined);
+    if (glyphList?.length) {
+      labelsOn = true;
+      for (let i = 0; i < glyphList.length; i++) {
+        glyphList[i].showLabel(this.morph.material ? this.morph.material.color : undefined);
+      }
     }
   }
 
@@ -424,6 +438,7 @@ const Glyphset = function () {
       for (let i = 0; i < glyphList.length; i++) {
         glyphList[i].hideLabel();
       }
+      labelsOn = false;
     }
 
   /**
@@ -445,7 +460,8 @@ const Glyphset = function () {
       glyphList[i] = glyph;
       this.morph.add(glyph.getGroup());
     }
-    if (displayLabels) {
+    //Only display labels if the label list is available
+    if (labels && displayLabels) {
       this.showLabel();
     }
     //Update the transformation of the glyphs.
