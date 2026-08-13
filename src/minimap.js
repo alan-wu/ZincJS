@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { copyVector3sArray } from "./utilities";
 
 /**
  * This provide a full scale minimap. It will always
@@ -66,8 +67,7 @@ const Minimap = function (sceneIn) {
     let v3 = new THREE.Vector3(1, 1, target.z).unproject(targetScene.camera);
     let v4 = new THREE.Vector3(-1, 1, target.z).unproject(targetScene.camera);
     let array = [v1, v2, v3, v3, v4, v1];
-    positionAttributes.copyVector3sArray(array);
-    positionAttributes.needsUpdate = true;
+    copyVector3sArray(positionAttributes, array);
   }
 
   this.updateCamera = () => {

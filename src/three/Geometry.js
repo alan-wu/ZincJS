@@ -13,6 +13,12 @@ import {
 	Vector2,
 	Vector3
 } from 'three';
+import {
+  copyColorsArray,
+  copyVector2sArray,
+  copyVector3sArray,
+  copyVector4sArray
+} from "../utilities";
 
 const _m1 = new Matrix4();
 const _obj = new Object3D();
@@ -585,9 +591,9 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
         this.morphTargets[i].normals = new Array( this.vertices.length );
 
         for ( let v = 0; v < vertexNormals.length; v ++ ) {
-    
+
           this.morphTargets[i].normals[ v ] =  vertexNormals[v].clone();
-    
+
         }
       }
 
@@ -668,25 +674,25 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 				for ( let k = 0, kl = morphTarget2.vertices.length; k < kl; k ++ ) {
 
 					const vertex = morphTarget2.vertices[ k ];
-		
+
 					const vertexCopy = vertex.clone();
-		
+
 					if ( matrix !== undefined ) vertexCopy.applyMatrix4( matrix );
-		
+
 					morphTarget1.vertices.push( vertexCopy );
-		
+
 				}
 
 				if ( morphTarget1.normals && morphTarget2.normals ) {
-					
+
 					for ( let k = 0; k < morphTarget2.normals.length; k = k + 3) {
 
 						_temp.set(morphTarget2.normals2[k], morphTarget2.normals2[k + 1], morphTarget2.normals2[k + 2]);
-			
+
 						if ( matrix !== undefined ) _temp.applyMatrix4( matrix );
-			
+
 						morphTarget1.normals.push(_temp.x, _temp.y, _temp.z);
-			
+
 					}
 
 				}
@@ -705,7 +711,7 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 				for ( let k = 0, kl = morphColor2.colors; k < kl; k ++ ) {
 
 					morphColor1.colors.push( morphColor2.colors[ k ].clone() );
-		
+
 				}
 
 			}
@@ -1519,33 +1525,33 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		const buffergeometry = new BufferGeometry();
 
 		const positions = new Float32Array( geometry.vertices.length * 3 );
-		buffergeometry.setAttribute( 'position', new BufferAttribute( positions, 3 ).copyVector3sArray( geometry.vertices ) );
+		buffergeometry.setAttribute( 'position', copyVector3sArray(new BufferAttribute( positions, 3 ), geometry.vertices ) );
 
 		if ( geometry.normals.length > 0 ) {
 
 			const normals = new Float32Array( geometry.normals.length * 3 );
-			buffergeometry.setAttribute( 'normal', new BufferAttribute( normals, 3 ).copyVector3sArray( geometry.normals ) );
+			buffergeometry.setAttribute( 'normal', copyVector3sArray(new BufferAttribute( normals, 3 ), geometry.normals ) );
 
 		}
 
 		if ( geometry.colors.length > 0 ) {
 
 			const colors = new Float32Array( geometry.colors.length * 3 );
-			buffergeometry.setAttribute( 'color', new BufferAttribute( colors, 3 ).copyColorsArray( geometry.colors ) );
+			buffergeometry.setAttribute( 'color', copyVector3sArray(new BufferAttribute( colors, 3 ), geometry.colors ) );
 
 		}
 
 		if ( geometry.uvs.length > 0 ) {
 
 			const uvs = new Float32Array( geometry.uvs.length * 2 );
-			buffergeometry.setAttribute( 'uv', new BufferAttribute( uvs, 2 ).copyVector2sArray( geometry.uvs ) );
+			buffergeometry.setAttribute( 'uv', copyVector2sArray(new BufferAttribute( uvs, 2 ), geometry.uvs ) );
 
 		}
 
 		if ( geometry.uvs2.length > 0 ) {
 
 			const uvs2 = new Float32Array( geometry.uvs2.length * 2 );
-			buffergeometry.setAttribute( 'uv2', new BufferAttribute( uvs2, 2 ).copyVector2sArray( geometry.uvs2 ) );
+			buffergeometry.setAttribute( 'uv2', copyVector2sArray(new BufferAttribute( uvs2, 2 ), geometry.uvs2 ) );
 
 		}
 
@@ -1567,7 +1573,7 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 				const attribute = new Float32BufferAttribute( morphTarget.data.length * 3, 3 );
 				attribute.name = morphTarget.name;
 
-				array.push( attribute.copyVector3sArray( morphTarget.data ) );
+				array.push( copyVector3sArray(attribute, morphTarget.data ) );
 
 			}
 
@@ -1580,14 +1586,16 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		if ( geometry.skinIndices.length > 0 ) {
 
 			const skinIndices = new Float32BufferAttribute( geometry.skinIndices.length * 4, 4 );
-			buffergeometry.setAttribute( 'skinIndex', skinIndices.copyVector4sArray( geometry.skinIndices ) );
+      copyVector4sArray(skinIndices, geometry.skinIndices);
+			buffergeometry.setAttribute( 'skinIndex', skinIndices);
 
 		}
 
 		if ( geometry.skinWeights.length > 0 ) {
 
 			const skinWeights = new Float32BufferAttribute( geometry.skinWeights.length * 4, 4 );
-			buffergeometry.setAttribute( 'skinWeight', skinWeights.copyVector4sArray( geometry.skinWeights ) );
+      copyVector4sArray(skinWeights, geometry.skinWeights);
+			buffergeometry.setAttribute( 'skinWeight', skinWeights );
 
 		}
 
@@ -1616,7 +1624,7 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 		const buffergeometry = new BufferGeometry();
 
 		const positions = new Float32Array( this.vertices.length * 3 );
-		buffergeometry.setAttribute( 'position', new BufferAttribute( positions, 3 ).copyVector3sArray( this.vertices ) );
+		buffergeometry.setAttribute( 'position', copyVector3sArray(new BufferAttribute( positions, 3 ), this.vertices ) );
 
 		if ( this.normals.length > 0 ) {
 			const normals = new Float32Array( this.normals.length );
@@ -1641,7 +1649,7 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
         colorArray.push(new Color( this.colors[ i ] ));
       }
       const colors = new Float32Array( colorArray.length * 3 );
-			buffergeometry.setAttribute( 'color', new BufferAttribute( colors, 3 ).copyColorsArray( colorArray ) );
+			buffergeometry.setAttribute( 'color', copyColorsArray(new BufferAttribute( colors, 3 ), colorArray ) );
 
     } else {
 
@@ -1650,7 +1658,7 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
         colorsArray[i] = 1.0;
       }
       buffergeometry.setAttribute( 'color', new BufferAttribute( colorsArray, 3 ) );
-  
+
     }
 
     if (this.faces.length > 0) {
@@ -1664,17 +1672,17 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
         indices.push(this.faces[i].a, this.faces[i].b, this.faces[i].c);
 
         const vertexColors = this.faces[i].vertexColors;
-    
+
           if ( vertexColors.length === 3 ) {
-    
+
             colors.push( vertexColors[ 0 ], vertexColors[ 1 ], vertexColors[ 2 ] );
-    
+
           } else {
-    
+
             const color = this.faces[i].color;
-    
+
             colors.push( color, color, color );
-    
+
         }
 
       }
@@ -1683,7 +1691,7 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 
 //        const colorsArray = new Float32Array( colors.length * 3 );
 //        buffergeometry.setAttribute( 'color', new BufferAttribute( colorsArray, 3 ).copyColorsArray( colors ) );
-  
+
 //      }
 
       buffergeometry.setIndex( indices );
@@ -1706,7 +1714,7 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 				const attribute = new Float32BufferAttribute( morphTarget.vertices.length * 3, 3 );
 				attribute.name = morphTarget.name;
 
-				array.push( attribute.copyVector3sArray( morphTarget.vertices ) );
+				array.push( copyVector3sArray(attribute, morphTarget.vertices ) );
 
         if (morphTarget.normals) {
 
@@ -1714,8 +1722,8 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
           const attribute = new Float32BufferAttribute( morphTarget.normals.length * 3, 3 );
           attribute.name = morphTarget.name;
 
-          normalsArray.push( attribute.copyVector3sArray( morphTarget.normals ) );
-  
+          normalsArray.push( copyVector3sArray(attribute, morphTarget.normals ) );
+
         }
 
 			}
@@ -1795,10 +1803,13 @@ Geometry.createBufferGeometryFromObject = function ( object ) {
 	if ( object.isPoints || object.isLine ) {
 
 		const positions = new Float32BufferAttribute( geometry.vertices.length * 3, 3 );
-		const colors = new Float32BufferAttribute( geometry.colors.length * 3, 3 );
+    copyVector3sArray(positions, geometry.vertices );
 
-		buffergeometry.setAttribute( 'position', positions.copyVector3sArray( geometry.vertices ) );
-		buffergeometry.setAttribute( 'color', colors.copyColorsArray( geometry.colors ) );
+		const colors = new Float32BufferAttribute( geometry.colors.length * 3, 3 );
+    copyColorsArray(colors, geometry.colors);
+
+		buffergeometry.setAttribute( 'position', positions );
+		buffergeometry.setAttribute( 'color', colors );
 
 		if ( geometry.lineDistances && geometry.lineDistances.length === geometry.vertices.length ) {
 
