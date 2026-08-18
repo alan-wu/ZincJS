@@ -188,7 +188,7 @@ const TextureSlides = function (textureIn) {
   /**
    * Get  the array of slides, return them in an array
    *
-   * @return {Array} - Return an array of {@link THREE.Object)
+   * @return {Array} - Return an array of {@link THREE.Object}
    */
   this.getSlides = () => {
     if (this.morph) return [...this.morph.children];
