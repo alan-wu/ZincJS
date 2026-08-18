@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { resolveURL } from './utilities';
 
 /**
  * Object with containg viewport information used in ZincJS.
@@ -851,7 +850,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {requestCallback} finishCallback - The callback once the path is load.
    */
 	this.loadPathURL = (path_url, finishCallback) => {
-    const requestURL = resolveURL(path_url);
+    const requestURL = path_url;
     fetch(requestURL)
     .then((response) => {
       if (!response.ok) {

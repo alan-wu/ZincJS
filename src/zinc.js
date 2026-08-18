@@ -40,7 +40,6 @@ const Zinc = function() {
   this.Revision = version;
   this.defaultMaterialColor = 0xFFFFFF;
   this.defaultOpacity = 1.0;
-  this.modelPrefix = undefined;
   // Assign hoisted modules to the instance
   this.Geometry = Geometry;
   this.Glyph = Glyph;
@@ -48,8 +47,8 @@ const Zinc = function() {
   this.Pointset = Pointset;
   this.Label = Label;
   this.Lines = Lines;
-  this.TextureArray = TextureArray;
   this.TextureSlides = TextureSlides;
+  this.TextureArray = TextureArray;
   this.Renderer = Renderer;
   this.Scene = Scene;
   //this.GeometryCSG = GeometryCSG;

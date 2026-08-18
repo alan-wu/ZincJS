@@ -1,4 +1,4 @@
-import { resolveURL } from '../utilities';
+
 import { TextureArray } from '../texture/textureArray';
 import { ZincObject } from './zincObject';
 /**
@@ -32,7 +32,7 @@ const TexturePrimitive = function (textureIn) {
         const texture = new TextureArray();
         const imgArray = [];
         textureData.images.source.forEach(img => {
-          imgArray.push(resolveURL(img));
+          imgArray.push(img);
         });
         const _this = this;
         texture.loadFromImages(imgArray).then(() => {

@@ -2,24 +2,7 @@ import * as THREE from 'three';
 import { Geometry as THREEGeometry } from './three/Geometry';
 import SpriteTextModule from 'three-spritetext';
 const SpriteText = SpriteTextModule.default || SpriteTextModule;
-import Zinc from './zinc';
 import discPNG from './assets/disc.png';
-
-function resolveURL(url) {
-	let actualURL = url;
-	let prefix = Zinc.modelPrefix;
-
-	if (prefix) {
-		if (prefix[prefix.length -1] != '/')
-			prefix = prefix + '/';
-		const r = new RegExp('^(?:[a-z]+:)?//', 'i');
-		if (!r.test(url)) {
-			actualURL =  prefix + url;
-		}
-	}
-
-	return actualURL;
-}
 
 function createNewURL(target, reference) {
   const getNewURL = (target, reference) => {
@@ -87,7 +70,7 @@ function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {
     // Set up an asynchronous request
-  fetch(resolveURL(url))
+  fetch(url)
   .then((response) => {
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -858,7 +841,6 @@ export {
   mergeVertices,
   PhongToToon,
   removeVertexAtIndex,
-  resolveURL,
   updateMorphColorAttribute,
   toBufferGeometry,
  };

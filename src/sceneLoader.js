@@ -9,7 +9,7 @@ import { Lines } from './primitives/lines';
 import { Pointset } from './primitives/pointset';
 import { TextureSlides } from './primitives/textureSlides';
 import { TubeLines } from './primitives/tubeLines';
-import { createNewURL, isRegionGroup, resolveURL } from './utilities';
+import { createNewURL, isRegionGroup } from './utilities';
 import Zinc from './zinc';
 
 /**
@@ -115,7 +115,7 @@ const SceneLoader = function (sceneIn) {
    */
   this.loadViewURL = (url, finishCallback) => {
     this.toBeDownloaded += 1;
-    const requestURL = resolveURL(url);
+    const requestURL = url;
     fetch(requestURL)
       .then((response) => {
         if (!response.ok) {
@@ -161,7 +161,7 @@ const SceneLoader = function (sceneIn) {
       let localMorphColour = 0;
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
-      primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
+      primitivesLoader.load(filename, meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
         undefined, undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
     }
   }
@@ -175,7 +175,7 @@ const SceneLoader = function (sceneIn) {
    * @deprecated
    */
   this.loadFromViewURL = (targetRegion, jsonFilePrefix, finishCallback) => {
-    const requestURL = resolveURL(jsonFilePrefix + "_view.json");
+    const requestURL = jsonFilePrefix + "_view.json";
     fetch(requestURL)
     .then((response) => {
       if (!response.ok) {
@@ -299,7 +299,7 @@ const SceneLoader = function (sceneIn) {
         newGlyphset.load(glyphsetData, glyphurl, myCallback, isInline, displayLabels);
       }
       else {
-        newGlyphset.load(glyphsetData, resolveURL(glyphurl), myCallback, isInline, displayLabels);
+        newGlyphset.load(glyphsetData, glyphurl, myCallback, isInline, displayLabels);
       }
       newGlyphset.setAnatomicalId(anatomicalId);
       newGlyphset.setRenderOrder(renderOrder);
@@ -349,7 +349,7 @@ const SceneLoader = function (sceneIn) {
 
       xmlhttp.onreadystatechange = onLoadGlyphsetReady(region, xmlhttp, glyphurl,
         groupName, finishCallback, options);
-      xmlhttp.open("GET", resolveURL(metaurl), true);
+      xmlhttp.open("GET", metaurl, true);
       xmlhttp.send();*/
     }
   }
@@ -401,7 +401,7 @@ const SceneLoader = function (sceneIn) {
     const opacity = Zinc.defaultOpacity;
     const loader = new STLLoader();
     loader.crossOrigin = "Anonymous";
-    loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
+    loader.load(url, meshloader(region, colour, opacity, false,
       false, groupName, undefined, undefined, undefined, finishCallback));
   }
 
@@ -420,7 +420,7 @@ const SceneLoader = function (sceneIn) {
     const opacity = Zinc.defaultOpacity;
     const loader = new OBJLoader();
     loader.crossOrigin = "Anonymous";
-    loader.load(resolveURL(url), meshloader(region, colour, opacity, false,
+    loader.load(url, meshloader(region, colour, opacity, false,
       false, groupName, undefined, undefined, undefined, finishCallback));
   }
 
@@ -575,7 +575,7 @@ const SceneLoader = function (sceneIn) {
     if (isInline) {
       loadTexture(region, undefined, url, groupName, finishCallback, options);
     } else {
-      const requestURL = resolveURL(url);
+      const requestURL = url;
       fetch(requestURL)
       .then((response) => {
         if (!response.ok) {
@@ -982,7 +982,7 @@ const SceneLoader = function (sceneIn) {
     * for each glyphset and geometry that has been written in.
     */
   this.loadMetadataURL = (targetRegion, url, finishCallback, allCompletedCallback, options) => {
-    const requestURL = resolveURL(url);
+    const requestURL = url;
     fetch(requestURL)
       .then((response) => {
         if (!response.ok) {

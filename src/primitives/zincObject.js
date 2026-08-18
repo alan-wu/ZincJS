@@ -2,8 +2,7 @@ import * as THREE from 'three';
 import {
   createBufferGeometry,
   getBoundingBox,
-  removeVertexAtIndex,
-  resolveURL
+  removeVertexAtIndex
 } from '../utilities';
 import { LOD } from './lod';
 import { Marker } from './marker';
@@ -182,7 +181,7 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
       if (this.animationClip && (this.animationClip[0] != undefined)) {
         this.clipAction = this.mixer.clipAction(this.animationClip[0]).setDuration(
           this.duration);
-        this.clipAction.loop = THREE.loopOnce;
+        this.clipAction.loop = THREE.LoopOnce;
         this.clipAction.clampWhenFinished = true;
         this.clipAction.play();
       }
@@ -795,7 +794,7 @@ ZincObject.prototype.setPosition = function(x, y, z) {
 }
 
 ZincObject.prototype.loadAdditionalSources = function(primitivesLoader, sources) {
-  primitivesLoader.load(resolveURL(filename), meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
+  primitivesLoader.load(filename, meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
     undefined, undefined, finishCallback), this.onProgress(filename), this.onError(finishCallback));
 }
 
