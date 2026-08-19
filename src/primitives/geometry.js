@@ -24,6 +24,7 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
           color : options.colour,
           morphTargets : morphTargets,
           morphNormals : options.localTimeEnabled,
+          vertexColors : false,
           transparent : isTransparent,
           opacity : options.opacity,
           side : THREE.DoubleSide
@@ -33,7 +34,7 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
           color : options.colour,
           morphTargets : morphTargets,
           morphNormals : options.localTimeEnabled,
-          vertexColors : THREE.VertexColors,
+          vertexColors : true,
           transparent : isTransparent,
           opacity : options.opacity,
           side : THREE.DoubleSide

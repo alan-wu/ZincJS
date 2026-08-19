@@ -131,6 +131,7 @@ const Renderer = function (containerIn) {
 				container = undefined;
 				canvas = parameters["canvas"];
 			}
+      //parameters["forceWebGL"] = true;
 			//renderer = new WebGPURenderer(parameters);
       //await renderer.init();
 
