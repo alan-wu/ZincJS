@@ -181,7 +181,7 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
       if (this.animationClip && (this.animationClip[0] != undefined)) {
         this.clipAction = this.mixer.clipAction(this.animationClip[0]).setDuration(
           this.duration);
-        this.clipAction.loop = THREE.LoopOnce;
+        this.clipAction.loop = THREE.LoopRepeat;
         this.clipAction.clampWhenFinished = true;
         this.clipAction.play();
       }
