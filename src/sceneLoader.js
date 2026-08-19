@@ -366,7 +366,7 @@ const SceneLoader = function (sceneIn) {
         material.opacity = materials[0].opacity;
         material.color = materials[0].color;
         material.morphTargets = localTimeEnabled;
-        material.vertexColors = materials[0].vertexColors;
+        material.vertexColors = localMorphColour;
       }
       let options = {};
       options.localTimeEnabled = localTimeEnabled;
