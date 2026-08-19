@@ -295,6 +295,8 @@ const Glyphset = function () {
       }
     }
     this.morph.instanceMatrix.needsUpdate = true;
+    this.boundingBoxUpdateRequired = true;
+    this.morph.computeBoundingSphere();
   };
 
   /**
@@ -372,7 +374,6 @@ const Glyphset = function () {
     }
     updateGlyphsetTransformation(current_positions, current_axis1s, current_axis2s, current_axis3s,
       current_scales);
-    this.boundingBoxUpdateRequired = true;
     if (colors != undefined) {
       if (morphColours) {
         const bottom_colors = colors[bottom_frame.toString()];
@@ -472,7 +473,6 @@ const Glyphset = function () {
       updateGlyphsetHexColors(colors["0"]);
     }
     this.ready = true;
-    this.boundingBoxUpdateRequired = true;
   };
 
   /**
