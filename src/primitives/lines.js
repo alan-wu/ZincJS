@@ -31,8 +31,10 @@ const Lines = function () {
 	this.createLineSegment = (geometryIn, materialIn, options) => {
 		if (geometryIn && materialIn) {
 			let geometry = toBufferGeometry(geometryIn, options);
-			if (options.localMorphColour && geometry.morphAttributes[ "color" ])
+			if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
+        materialIn.vertexColors = true;
 				materialIn.onBeforeCompile = augmentMorphColor();
+      }
       let line = new LineSegments(geometry, materialIn);
       this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
 		}
