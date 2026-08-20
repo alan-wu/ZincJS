@@ -157,7 +157,7 @@ const Scene = function (containerIn, rendererIn) {
     this.ambient = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(this.ambient);
 
-    this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.8 * Math.PI);
+    this.directionalLight = new THREE.DirectionalLight(0xffffff, 0.7 * Math.PI);
     scene.add(this.directionalLight);
     zincCameraControls = new CameraControls(this.camera, rendererIn.domElement, rendererIn, this);
 
