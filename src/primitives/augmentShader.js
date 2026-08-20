@@ -35,15 +35,10 @@ const augmentMorphColor = function(shader) {
       `
   );
 }
-
-const augmentPointsMorphColor = function(shader) {
-  augmentMorphColor(shader);
-};
-
 const printShader = function (shader) {
   console.log(shader.vertexShader);
   console.log(shader.fragmentShader);
 }
 
 
-export { augmentMorphColor, augmentPointsMorphColor, printShader };
+export { augmentMorphColor, printShader };

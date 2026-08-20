@@ -3,7 +3,7 @@ import { Label } from './label';
 import { Points } from '../three/Points';
 import { ZincObject } from './zincObject';
 import { getCircularTexture, toBufferGeometry } from '../utilities';
-import { augmentPointsMorphColor, printShader } from './augmentShader';
+import { augmentMorphColor } from './augmentShader';
 
 /**
  * Provides an object which stores points and provides method which controls its position.
@@ -40,7 +40,7 @@ const Pointset = function () {
       console.log(geometry, options)
       if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
         materialIn.vertexColors = true;
-        materialIn.onBeforeCompile = augmentPointsMorphColor;
+        materialIn.onBeforeCompile = augmentMorphColor;
       }
       const texture = getCircularTexture();
       materialIn.map = texture;
