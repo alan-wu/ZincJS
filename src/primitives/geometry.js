@@ -43,7 +43,7 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
     }
     //material = PhongToToon(material);
     if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
-      material.onBeforeCompile = augmentMorphColor();
+      material.onBeforeCompile = augmentMorphColor;
     }
   } else {
     let videoTexture = geometry._video.createCanvasVideoTexture();

@@ -33,7 +33,7 @@ const Lines = function () {
 			let geometry = toBufferGeometry(geometryIn, options);
 			if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
         materialIn.vertexColors = true;
-				materialIn.onBeforeCompile = augmentMorphColor();
+				materialIn.onBeforeCompile = augmentMorphColor;
       }
       let line = new LineSegments(geometry, materialIn);
       this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
