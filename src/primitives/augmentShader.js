@@ -35,6 +35,7 @@ const augmentMorphColor = function(shader) {
       `
   );
 }
+
 const printShader = function (shader) {
   console.log(shader.vertexShader);
   console.log(shader.fragmentShader);

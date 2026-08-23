@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { WebGPURenderer } from 'three/webgpu';
+//import { WebGPURenderer } from 'three/webgpu';
 import { ResizeSensor } from 'css-element-queries';
 import { Scene } from './scene';
 /**
