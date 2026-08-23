@@ -8,9 +8,9 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
   let geometry = toBufferGeometry(geometryIn, options);
 
   let isTransparent = false;
-  if (1.0 > options.opacity)
-      isTransparent = true;
-
+  if (1.0 > options.opacity) {
+    isTransparent = true;
+  }
   let material = undefined;
   if (geometry._video === undefined) {
     const morphTargets = options.localTimeEnabled || options.localMorphColour;
@@ -19,30 +19,19 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
       material.morphTargets = morphTargets;
       material.morphNormals = options.localTimeEnabled;
     } else {
-      if (geometry instanceof THREE.BufferGeometry && geometry.attributes.color === undefined) {
-        material = new THREE.MeshPhongMaterial({
-          color : options.colour,
-          morphTargets : morphTargets,
-          morphNormals : options.localTimeEnabled,
-          vertexColors : false,
-          transparent : isTransparent,
-          opacity : options.opacity,
-          side : THREE.DoubleSide
-        });
-      } else {
-        material = new THREE.MeshPhongMaterial({
-          color : options.colour,
-          morphTargets : morphTargets,
-          morphNormals : options.localTimeEnabled,
-          vertexColors : true,
-          transparent : isTransparent,
-          opacity : options.opacity,
-          side : THREE.DoubleSide
-        });
-      }
+      material = new THREE.MeshPhongMaterial({
+        color : options.colour,
+        morphTargets : morphTargets,
+        morphNormals : options.localTimeEnabled,
+        vertexColors : false,
+        transparent : isTransparent,
+        opacity : options.opacity,
+        side : THREE.DoubleSide
+      });
     }
     //material = PhongToToon(material);
     if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
+      material.vertexColors = true;
       material.onBeforeCompile = augmentMorphColor;
     }
   } else {
