@@ -816,8 +816,6 @@ let Region = function (parentIn, sceneIn) {
     const zincGeometry = new Geometry();
     const material = new THREE.MeshPhongMaterial({
       color : colour,
-      morphTargets : false,
-      morphNormals : false,
       transparent : true,
       opacity : opacity,
       side : THREE.DoubleSide

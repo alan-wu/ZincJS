@@ -308,6 +308,7 @@ Object.assign( Loader.prototype, {
 					case 'opacity':
 					case 'reflectivity':
 					case 'transparent':
+          case 'video':
 					case 'visible':
 					case 'wireframe':
 						json[ name ] = value;

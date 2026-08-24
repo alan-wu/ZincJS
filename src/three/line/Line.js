@@ -134,7 +134,7 @@ class Line extends Object3D {
 
 					const a = index.getX( i );
           const b = index.getX( i + 1 );
-          
+
           calculatePosition( vStart, vEnd, this, positionAttribute, morphPosition, a, b );
 
 					const distSq = _ray.distanceSqToSegment( vStart, vEnd, interRay, interSegment );
@@ -260,7 +260,7 @@ function calculatePosition( vStart, vEnd, object, position, morphPosition, a, b 
 
   var morphInfluences = object.morphTargetInfluences;
 
-  if ( object.material.morphTargets && morphPosition && morphInfluences ) {
+  if ( morphPosition && morphInfluences ) {
 
     _morphA.set( 0, 0, 0 );
     _morphB.set( 0, 0, 0 );

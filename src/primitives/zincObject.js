@@ -45,7 +45,6 @@ const ZincObject = function() {
   this.duration = 6000;
   this.clipAction = undefined;
   this.userData = {};
-  this.videoHandler = undefined;
   this.marker = undefined;
   this.markerNumber = undefined;
   this.markerUpdateRequired = true;

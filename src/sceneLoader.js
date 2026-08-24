@@ -218,7 +218,6 @@ const SceneLoader = function (sceneIn) {
           material.transparent = true;
         }
         material.opacity = materials[0].opacity;
-        material.morphTargets = localTimeEnabled;
         material.vertexColors = materials[0].vertexColors;
       }
       let options = {};
@@ -370,7 +369,6 @@ const SceneLoader = function (sceneIn) {
         }
         material.opacity = materials[0].opacity;
         material.color = materials[0].color;
-        material.morphTargets = localTimeEnabled;
         material.vertexColors = false;
       }
       let options = {};
@@ -640,8 +638,9 @@ const SceneLoader = function (sceneIn) {
       newGeometry.setDuration(scene.getDuration());
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGeometry);
-      if (newGeometry.videoHandler)
+      if (newGeometry.videoHandler) {
         scene.setVideoHandler(newGeometry.videoHandler);
+      }
       return newGeometry;
     }
     return undefined;

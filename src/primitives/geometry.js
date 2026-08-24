@@ -13,16 +13,11 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
   }
   let material = undefined;
   if (geometry._video === undefined) {
-    const morphTargets = options.localTimeEnabled || options.localMorphColour;
     if (materialIn) {
       material = materialIn;
-      material.morphTargets = morphTargets;
-      material.morphNormals = options.localTimeEnabled;
     } else {
       material = new THREE.MeshPhongMaterial({
         color : options.colour,
-        morphTargets : morphTargets,
-        morphNormals : options.localTimeEnabled,
         vertexColors : false,
         transparent : isTransparent,
         opacity : options.opacity,
@@ -37,14 +32,12 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
   } else {
     let videoTexture = geometry._video.createCanvasVideoTexture();
     material = new THREE.MeshBasicMaterial({
-      morphTargets : options.localTimeEnabled,
       color : new THREE.Color(1, 1, 1),
       transparent : isTransparent,
       opacity : options.opacity,
       map : videoTexture,
       side : THREE.DoubleSide
     });
-    this.videoHandler = geometry._video;
   }
   return new THREE.Mesh(geometry, material);
 }
@@ -82,6 +75,7 @@ const Geometry = function () {
 		if (this.morph && this.morph.geometry && (geometryIn != undefined))
 			return;
 		const mesh = createMeshForGeometry(geometryIn, materialIn, options);
+    this.videoHandler = mesh.geometry._video;
 		this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
 	}
 
@@ -148,6 +142,17 @@ const Geometry = function () {
         this.boundingBoxUpdateRequired = true;
       }
     }
+  }
+
+  /**
+   * Check if the geometry is time varying.
+   *
+   * @return {Boolean}
+   */
+  this.isTimeVarying = function() {
+    if (this.timeEnabled || this.morphColour || this.videoHandler)
+      return true;
+    return false;
   }
 
 

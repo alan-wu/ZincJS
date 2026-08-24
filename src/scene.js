@@ -625,8 +625,6 @@ const Scene = function (containerIn, rendererIn) {
 				  zincCameraControls.update(0);
 			  }
 			  //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 6000);
-		  } else {
-			  myPlayRate = 0;
 		  }
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded) {
