@@ -7,7 +7,7 @@ export default defineConfig({
     outDir: 'build',
     minify: true,
     lib: {
-      entry: path.resolve(__dirname, 'src/zinc.js'),
+      entry: path.resolve(import.meta.dirname, 'src/zinc.js'),
       name: 'Zinc',
       fileName: () => 'zinc.js',
       formats: ['es', 'umd'],
@@ -25,7 +25,8 @@ export default defineConfig({
           'css-element-queries': 'cssElememtQueries',
           three: 'THREE',
           'three-spritetext': 'SpriteText',
-          'three/examples/jsm/loaders/GLTFLoader': 'GLTFLoader'
+          'three/examples/jsm/loaders/GLTFLoader': 'GLTFLoader',
+          'fflate': 'fflate'
         }
       }
     },
