@@ -284,7 +284,10 @@ const SceneLoader = function (sceneIn) {
       }
       let isInline  = (options && options.isInline) ? options.isInline : undefined;
       let anatomicalId = (options && options.anatomicalId) ? options.anatomicalId : undefined;
-      let displayLabels = options?.displayLabels ? options.displayLabels : true;
+      let displayLabels = options?.displayLabels;
+      if (displayLabels === undefined) {
+        displayLabels = true;
+      }
       let renderOrder = (options && "renderOrder" in options) ? options.renderOrder : undefined;
       const newGlyphset = new Glyphset();
       newGlyphset.setDuration(scene.getDuration());
@@ -760,7 +763,10 @@ const SceneLoader = function (sceneIn) {
           } else {
             newGeometryURL = item.Inline.GlyphGeometriesURL;
           }
-          options.displayLabels = item.displayLabels ? item.displayLabels : true;
+          options.displayLabels = item.DisplayLabels;
+          if (options.displayLabels === undefined) {
+            options.displayLabels = true;
+          }
           options.loaderOptions.isGlyphsets = true;
           this.loadGlyphsetURL(region, newURL, newGeometryURL, groupName, finishCallback, options);
           break;
