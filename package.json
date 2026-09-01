@@ -46,7 +46,7 @@
   },
   "homepage": "http://alan-wu.github.io/ZincJS/",
   "engines": {
-    "node": ">=20"
+    "node": "24.20.0"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.11",
