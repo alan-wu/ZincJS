@@ -732,10 +732,11 @@ function getCircularTexture() {
 
 function createNewSpriteText(text, height, colour, font, pixel, weight) {
   const sprite = new SpriteText(text, height, colour, font, pixel, weight);
+  sprite.canvasScale = 4;
   sprite.fontFace = font;
   sprite.fontSize = pixel;
   sprite.fontWeight = weight;
-  sprite.material.map.generateMipmaps = false;
+  sprite.material.map.generateMipmaps = true;
   sprite.material.map.anisotropy = 4;
   sprite.material.sizeAttenuation = false;
   sprite.material.alphaTest = 0.5;
