@@ -48,6 +48,10 @@
   "engines": {
     "node": "24.20.0"
   },
+  "allowScripts": {
+    "gl@8.1.6": true,
+    "msw@2.14.6": true
+  },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.11",
     "auto-changelog": "^2.4.0",
