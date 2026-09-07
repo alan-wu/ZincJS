@@ -1,3 +1,4 @@
+import * as THREE from 'three';
 import SpriteTextModule from 'three-spritetext';
 const SpriteText = SpriteTextModule.default || SpriteTextModule;
 
@@ -24,8 +25,12 @@ const Label = function (textIn, colourIn) {
   else
     sprite = new SpriteText(text, 0.012);
   sprite.fontFace = "Asap";
+  sprite.fontSize = 90;
   sprite.fontWeight = fontWeight;
-  sprite.material.map.generateMipmaps = false;
+  sprite.material.map.generateMipmaps = true;
+  sprite.material.map.anisotropy = 4;
+  sprite.material.minFilter = THREE.LinearMipmapLinearFilter; // Smooth downscaling
+  sprite.material.magFilter = THREE.LinearFilter;
   sprite.material.sizeAttenuation = false;
   sprite.center.x = -0.05;
   sprite.center.y = 0;

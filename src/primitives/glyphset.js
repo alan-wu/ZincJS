@@ -462,7 +462,7 @@ const Glyphset = function () {
       this.morph.add(glyph.getGroup());
     }
     //Only display labels if the label list is available
-    if (labels && displayLabels) {
+    if (labels && labels.length > 0 && displayLabels) {
       this.showLabel();
     }
     //Update the transformation of the glyphs.

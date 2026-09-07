@@ -1,7 +1,8 @@
 {
   "name": "zincjs",
-  "version": "2.1.1",
+  "version": "2.3.0",
   "description": "ZincJS (Web-based-Zinc-Visualisation)",
+  "type": "module",
   "main": "build/zinc.js",
   "directories": {
     "doc": "docs"
@@ -44,18 +45,24 @@
     "url": "https://github.com/alan-wu/ZincJS/issues"
   },
   "homepage": "http://alan-wu.github.io/ZincJS/",
+  "engines": {
+    "node": "24.20.0"
+  },
+  "allowScripts": {
+    "gl@8.1.6": true,
+    "msw@2.14.6": true
+  },
   "devDependencies": {
-    "@vitest/coverage-v8": "^1.6.1",
+    "@vitest/coverage-v8": "^4.1.11",
     "auto-changelog": "^2.4.0",
     "chai": "^4.1.0",
     "gl": "^8.1.6",
     "happy-dom": "^20.10.6",
     "jsdoc": "^4.0.2",
     "msw": "^2.14.6",
-    "vite": "^5.0.10",
+    "vite": "^8.2.1",
     "vite-plugin-node-polyfills": "^0.28.0",
-    "vitest": "^1.6.1",
-    "webpack-node-externals": "^3.0.0"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
     "css-element-queries": "^1.2.2",

@@ -5,7 +5,7 @@ import path from 'path';
 export default defineConfig({
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(import.meta.dirname, './src'),
     },
   },
   plugins: [
@@ -24,7 +24,7 @@ export default defineConfig({
 
     // 2. Replaces: --require prepare/setup.js
     // Runs this file once before executing your test suites
-    setupFiles: [path.resolve(__dirname, './test/prepare/setup.js')],
+    setupFiles: [path.resolve(import.meta.dirname, './test/prepare/setup.js')],
 
     coverage: {
       provider: 'v8',
