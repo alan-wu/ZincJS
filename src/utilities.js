@@ -742,7 +742,7 @@ function createNewSpriteText(text, height, colour, font, pixel, weight) {
   sprite.material.depthWrite = false;
   sprite.material.depthTest = false;
   sprite.center.set(0.5, -1.2);
-  sprite.renderOrder = 10000;
+  sprite.renderOrder = 10001;
   return sprite;
 }
 

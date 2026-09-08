@@ -3,11 +3,9 @@ import myImage from '../assets/mapMarker.svg';
 import { createNewSpriteText } from '../utilities';
 import { ZincObject } from './zincObject';
 
-const markerImage = new Image(128, 128);
-markerImage.src = myImage;
-const texture = new THREE.Texture();
-texture.image = markerImage;
-texture.needsUpdate = true;
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load(myImage);
+texture.colorSpace = THREE.SRGBColorSpace;
 const size = [0.02, 0.03, 1];
 const spriteMaterial = new THREE.SpriteMaterial({
   map: texture,
@@ -197,6 +195,7 @@ const Marker = function(zincObject) {
     }
     if (!label && numberIn) {
       label = createNewSpriteText(numberIn, 0.012, "black", "Asap", 120, 700);
+      label.renderOrder = 10001;
       this.morph.add(label);
     }
     number = numberIn;
