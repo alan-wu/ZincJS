@@ -1,5 +1,4 @@
-import * as THREE from 'three';
-//import { WebGPURenderer } from 'three/webgpu';
+import * as THREE from 'three/webgpu';
 import { ResizeSensor } from 'css-element-queries';
 import { Scene } from './scene';
 /**
@@ -109,7 +108,7 @@ const Renderer = function (containerIn) {
 	/**
 	 * Initialise the renderer and its visualisations.
 	 */
-	this.initialiseVisualisation = parameters => {
+	this.initialiseVisualisation = async (parameters) => {
 		if (!isInitialised) {
 			parameters = parameters || {};
 			if (parameters['antialias'] === undefined) {
@@ -131,11 +130,11 @@ const Renderer = function (containerIn) {
 				container = undefined;
 				canvas = parameters["canvas"];
 			}
-      //parameters["forceWebGL"] = true;
-			//renderer = new WebGPURenderer(parameters);
-      //await renderer.init();
+      parameters["forceWebGL"] = true;
+			renderer = new THREE.WebGPURenderer(parameters);
+      await renderer.init();
 
-      renderer = new THREE.WebGLRenderer(parameters);
+      //renderer = new THREE.WebGLRenderer(parameters);
 			if (container !== undefined) {
 				container.appendChild( renderer.domElement );
 			}
@@ -208,10 +207,10 @@ const Renderer = function (containerIn) {
 	 * @return {Zinc.Scene}
 	 */
 	this.getSceneByName = name => {
-		return sceneMap[name];
-	}
+    return sceneMap[name];
+  }
 
-	/**
+  /*
 	 * Create a new scene with the provided name if scene with the same name exists,
 	 * return undefined.
 	 *
@@ -244,6 +243,10 @@ const Renderer = function (containerIn) {
 				logoSprite.position.set(calculatedWidth, calculatedHeight, 1 );
 			}
 		}
+		return sceneMap[name];
+	}
+
+	/**
 	};
 
 	const updateOrthoCamera = () => {
@@ -573,11 +576,11 @@ const Renderer = function (containerIn) {
 	}
 
 	this.forceContextLoss = () => {
-		renderer.forceContextLoss();
+	//	renderer.forceContextLoss();
 	}
 
 	this.forceContextRestore= () => {
-		renderer.forceContextRestore();
+	//	renderer.forceContextRestore();
 	}
 
 	/**

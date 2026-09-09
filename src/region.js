@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Pointset } from './primitives/pointset';
 import { Lines2 } from './primitives/lines2';
 import { Geometry } from './primitives/geometry';

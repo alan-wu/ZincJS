@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { CameraControls, StereoEffect } from './controls';
 import { LineSegments } from './three/line/LineSegments';
 import { MarkerCluster } from './primitives/markerCluster';

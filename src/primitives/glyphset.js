@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Glyph } from './glyph';
 import { ZincObject } from './zincObject';
 import { JSONLoader } from '../loaders/JSONLoader';

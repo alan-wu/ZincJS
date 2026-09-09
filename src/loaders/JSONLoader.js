@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Face3 } from '../three/Geometry';
 import { Geometry } from '../three/Geometry';
 import { Loader } from '../three/Loader';

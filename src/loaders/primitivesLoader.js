@@ -1,5 +1,5 @@
 import { JSONLoader } from './JSONLoader';
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 const FileLoader = THREE.FileLoader;
 
 const mergeGlyphData = (glyphData) => {

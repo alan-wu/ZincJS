@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { toBufferGeometry, updateMorphColorAttribute } from '../utilities';
 import { LineSegments } from '../three/line/LineSegments';
 

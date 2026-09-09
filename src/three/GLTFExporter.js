@@ -19,7 +19,7 @@ import {
 	RepeatWrapping,
 	Scene,
 	Vector3
-} from 'three';
+} from 'three/webgpu';
 
 
 class GLTFExporter {

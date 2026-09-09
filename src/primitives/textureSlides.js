@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import * as shader from '../shaders/textureSlide.js';
 import { TexturePrimitive } from './texturePrimitive';
 

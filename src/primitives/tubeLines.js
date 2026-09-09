@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { mergeGeometries } from '../utilities';
 import { ZincObject } from './zincObject';
 

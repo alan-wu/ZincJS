@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import SpriteTextModule from 'three-spritetext';
 const SpriteText = SpriteTextModule.default || SpriteTextModule;
 

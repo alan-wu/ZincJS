@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Geometry } from '../primitives/geometry';
 import { Lines } from '../primitives/lines';

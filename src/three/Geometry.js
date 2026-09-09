@@ -12,7 +12,7 @@ import {
 	Sphere,
 	Vector2,
 	Vector3
-} from 'three';
+} from 'three/webgpu';
 import {
   copyColorsArray,
   copyVector2sArray,

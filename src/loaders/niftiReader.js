@@ -1,5 +1,5 @@
 import * as nifti from 'nifti-reader-js';
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { TextureArray } from '../texture/textureArray';
 import { TextureSlides } from '../primitives/textureSlides';
 

@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { toBufferGeometry } from '../utilities';
 import { augmentMorphColor } from './augmentShader';
 import { ZincObject} from './zincObject';

@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import myImage from '../assets/mapMarker.svg';
 import { createNewSpriteText } from '../utilities';
 import { ZincObject } from './zincObject';

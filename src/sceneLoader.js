@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { GLTFToZincJSLoader } from './loaders/GLTFToZincJSLoader';
 import { OBJLoader } from './loaders/OBJLoader';
 import { PrimitivesLoader } from './loaders/primitivesLoader';

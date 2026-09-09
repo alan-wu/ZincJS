@@ -6,7 +6,7 @@ import {
   Ray,
 	Sphere,
 	Vector3
-} from 'three';
+} from 'three/webgpu';
 
 
 const _inverseMatrix = /*@__PURE__*/ new Matrix4();

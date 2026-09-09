@@ -2,7 +2,7 @@ import { Line } from './Line.js';
 import {
   Float32BufferAttribute,
 	Vector3
-} from 'three';
+} from 'three/webgpu';
 
 const _start = /*@__PURE__*/ new Vector3();
 const _end = /*@__PURE__*/ new Vector3();

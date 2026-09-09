@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Label } from './label';
 import { Points } from '../three/Points';
 import { ZincObject } from './zincObject';

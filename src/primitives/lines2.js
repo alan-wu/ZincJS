@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Lines } from './lines';
 import { LineSegments2 } from '../three/line/LineSegments2';
 import { LineMaterial } from '../three/line/LineMaterial';

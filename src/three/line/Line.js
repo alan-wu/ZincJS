@@ -7,7 +7,7 @@ import {
   Ray,
 	Sphere,
 	Vector3
-} from 'three';
+} from 'three/webgpu';
 
 
 const _start = /*@__PURE__*/ new Vector3();

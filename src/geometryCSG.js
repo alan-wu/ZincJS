@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { ThreeBSPWrapper } from './three-js-csg';
 import { Geometry } from './primitives/geometry';
 import GeometryWorker from './workers/geometryCSG.worker.js?worker';
