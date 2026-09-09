@@ -301,11 +301,11 @@ const Pointset = function () {
 
 
   /**
- * Turn size attenuation on/off based on the flag.
- *
- * @param {Boolean} flag - Determin either size attenuation
- * should be on or off.
- */
+  * Turn size attenuation on/off based on the flag.
+  *
+  * @param {Boolean} flag - Determin either size attenuation
+  * should be on or off.
+  */
   this.render = (delta, playAnimation, cameraControls, options) => {
     if (this.morph && cameraControls) {
       this.morph.sizePerPixel = cameraControls.pixelHeight;

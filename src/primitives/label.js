@@ -20,10 +20,11 @@ const Label = function (textIn, colourIn) {
   let colour = colourIn;
   let size = 1.0;
   let fontWeight = 500;
+  const textHeight = 0.012;
   if (colourIn)
-    sprite = new SpriteText(text, 0.012, colourIn.getStyle());
+    sprite = new SpriteText(text, textHeight, colourIn.getStyle());
   else
-    sprite = new SpriteText(text, 0.012);
+    sprite = new SpriteText(text, textHeight);
   sprite.fontFace = "Asap";
   sprite.fontSize = 90;
   sprite.fontWeight = fontWeight;
@@ -34,7 +35,8 @@ const Label = function (textIn, colourIn) {
   sprite.material.sizeAttenuation = false;
   sprite.center.x = -0.05;
   sprite.center.y = 0;
-  const originalScale = [sprite.scale.x, sprite.scale.y];
+
+
 
   /**
    * Get the current position in an array containing the x, y and z
@@ -105,8 +107,7 @@ const Label = function (textIn, colourIn) {
    */
   this.setSize = sizeIn => {
     if (sizeIn > 0.0) {
-      sprite.scale.x = originalScale[0] * sizeIn;
-      sprite.scale.y = originalScale[1] * sizeIn;
+      sprite.textHeight = textHeight * sizeIn;
       size = sizeIn;
     }
   }
@@ -130,8 +131,25 @@ const Label = function (textIn, colourIn) {
    */
   this.setText = textIn => {
     if (textIn && textIn !== sprite.text) {
+      //Force teh texture to update
+      const canvas = sprite._canvas;
+      if (sprite.material && sprite.material.map) {
+        sprite.material.map.dispose();
+      }
+      if (sprite._canvas) {
+        const ctx = sprite._canvas.getContext('2d');
+        if (ctx) {
+          ctx.clearRect(0, 0, sprite._canvas.width, sprite._canvas.height);
+        }
+        sprite._canvas.width = 1;
+        sprite._canvas.height = 1;
+      }
       sprite.text = textIn;
+      sprite.textHeight = textHeight * size;
       text = textIn;
+      if (sprite.material && sprite.material.map) {
+        sprite.material.map.needsUpdate = true;
+      }
     }
   }
 
