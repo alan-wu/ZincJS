@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+//import { WebGPURenderer } from 'three/webgpu';
 import { ResizeSensor } from 'css-element-queries';
 import { Scene } from './scene';
 /**
@@ -130,7 +131,11 @@ const Renderer = function (containerIn) {
 				container = undefined;
 				canvas = parameters["canvas"];
 			}
-			renderer = new THREE.WebGLRenderer(parameters);
+      //parameters["forceWebGL"] = true;
+			//renderer = new WebGPURenderer(parameters);
+      //await renderer.init();
+
+      renderer = new THREE.WebGLRenderer(parameters);
 			if (container !== undefined) {
 				container.appendChild( renderer.domElement );
 			}

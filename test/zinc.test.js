@@ -13,7 +13,12 @@ var testBoxGeometry = new THREE.BoxGeometry( 10, 10, 10 );
 const tData = {};
 tData.renderer = new Zinc.Renderer(container, window);
 var parameters = {};
-var context = require("gl")(1024, 1024);
+var context = require("gl")(1024, 1024, { webgl2: true });
+if (!context.texImage3D) {
+  context.texImage3D = function() {};
+}
+parameters['context'] = context;
+tData.renderer.initialiseVisualisation(parameters);
 parameters['context'] = context;
 tData.renderer.initialiseVisualisation(parameters);
 tData.scene = tData.renderer.createScene("TestScene");
@@ -913,6 +918,7 @@ function checkIndexedAndMergedFormat() {
 function checkRenderer() {
   describe('Renderer()', function(){
     let renderer = tData.renderer;
+
     it('Renderer is a valid constructor', function(){
       assert.isFunction(Zinc.Renderer, 'Zinc.Renderer is a valid constructor');
     });

@@ -59,7 +59,10 @@ const VideoHandler = function(srcIn)  {
 	}
 
 	this.setMorphTime = function(time, duration){
-		var actualTime = time / duration * _this.video.duration;
+		let  actualTime = time / duration * _this.video.duration;
+    if (!Number.isFinite(actualTime)) {
+      actualTime = 0.0;
+    }
 		_this.video.currentTime = actualTime;
 	}
 

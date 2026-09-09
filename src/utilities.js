@@ -685,8 +685,6 @@ function PhongToToon(materialIn) {
 	if (materialIn.isMeshPhongMaterial) {
 		let material = new THREE.MeshToonMaterial({
 			color : materialIn.color.clone(),
-			morphTargets : materialIn.morphTargets,
-			morphNormals : materialIn.morphNormals,
 			vertexColors : materialIn.vertexColors,
 			transparent : materialIn.transparent,
 			opacity : materialIn.opacity,
@@ -744,7 +742,7 @@ function createNewSpriteText(text, height, colour, font, pixel, weight) {
   sprite.material.depthWrite = false;
   sprite.material.depthTest = false;
   sprite.center.set(0.5, -1.2);
-  sprite.renderOrder = 10000;
+  sprite.renderOrder = 10001;
   return sprite;
 }
 
@@ -823,12 +821,74 @@ function removeVertexAtIndex(geometry, index, maintainLength) {
   }
 
   return removed;
-
 }
 
+function copyVector2sArray(attribute, vectors) {
+  const array = attribute.array;
+  let offset = 0;
+
+  for (let i = 0; i < vectors.length; i++) {
+    const v = vectors[i];
+    array[offset++] = v.x;
+    array[offset++] = v.y;
+  }
+
+  attribute.needsUpdate = true;
+  return attribute;
+}
+
+function copyVector3sArray(attribute, vectors) {
+  const array = attribute.array;
+  let offset = 0;
+
+  for (let i = 0; i < vectors.length; i++) {
+    const v = vectors[i];
+    array[offset++] = v.x;
+    array[offset++] = v.y;
+    array[offset++] = v.z;
+  }
+
+  attribute.needsUpdate = true;
+  return attribute;
+}
+
+function copyVector4sArray(attribute, vectors) {
+  const array = attribute.array;
+  let offset = 0;
+
+  for (let i = 0; i < vectors.length; i++) {
+    const v = vectors[i];
+    array[offset++] = v.x;
+    array[offset++] = v.y;
+    array[offset++] = v.z;
+    array[offset++] = v.w;
+  }
+
+  attribute.needsUpdate = true;
+  return attribute;
+}
+
+function copyColorsArray(attribute, colors) {
+  const array = attribute.array;
+  let offset = 0;
+
+  for (let i = 0; i < colors.length; i++) {
+    const c = colors[i];
+    array[offset++] = c.r;
+    array[offset++] = c.g;
+    array[offset++] = c.b;
+  }
+
+  attribute.needsUpdate = true;
+  return attribute;
+}
 
 export {
   copyMorphColorsToBufferGeometry,
+  copyColorsArray,
+  copyVector2sArray,
+  copyVector3sArray,
+  copyVector4sArray,
   createBufferGeometry,
   createNewSpriteText,
   createNewURL,

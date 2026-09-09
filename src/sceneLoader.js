@@ -158,7 +158,7 @@ const SceneLoader = function (sceneIn) {
       let localTimeEnabled = 0;
       if (timeEnabled != undefined && timeEnabled[i] != undefined)
         localTimeEnabled = timeEnabled[i] ? true : false;
-      let localMorphColour = 0;
+      let localMorphColour = false;
       if (morphColour != undefined && morphColour[i] != undefined)
         localMorphColour = morphColour[i] ? true : false;
       primitivesLoader.load(filename, meshloader(region, colour, opacity, localTimeEnabled, localMorphColour, undefined, undefined,
@@ -218,7 +218,6 @@ const SceneLoader = function (sceneIn) {
           material.transparent = true;
         }
         material.opacity = materials[0].opacity;
-        material.morphTargets = localTimeEnabled;
         material.vertexColors = materials[0].vertexColors;
       }
       let options = {};
@@ -361,15 +360,19 @@ const SceneLoader = function (sceneIn) {
   const pointsetloader = (region, localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, finishCallback) => {
     return (geometry, materials) => {
       const newPointset = new Pointset();
-      let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 10, sizeAttenuation: false });
+      let material = new THREE.PointsMaterial(
+        {
+          alphaTest: 0.05,
+          size: 10,
+          sizeAttenuation: false,
+        });
       if (materials && materials[0]) {
         if (1.0 > materials[0].opacity) {
           material.transparent = true;
         }
         material.opacity = materials[0].opacity;
         material.color = materials[0].color;
-        material.morphTargets = localTimeEnabled;
-        material.vertexColors = materials[0].vertexColors;
+        material.vertexColors = false;
       }
       let options = {};
       options.localTimeEnabled = localTimeEnabled;
@@ -638,8 +641,9 @@ const SceneLoader = function (sceneIn) {
       newGeometry.setDuration(scene.getDuration());
       if (finishCallback != undefined && (typeof finishCallback == 'function'))
         finishCallback(newGeometry);
-      if (newGeometry.videoHandler)
+      if (newGeometry.videoHandler) {
         scene.setVideoHandler(newGeometry.videoHandler);
+      }
       return newGeometry;
     }
     return undefined;

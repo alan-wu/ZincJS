@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { ZincObject } from './zincObject';
-const markerImage = new Image(128, 128);
 import mapMarkerOrange from '../assets/mapMarkerOrange.svg';
-markerImage.src = mapMarkerOrange;
-const texture = new THREE.Texture();
-texture.image = markerImage;
-texture.needsUpdate = true;
+import { createNewSpriteText } from '../utilities';
+
+const textureLoader = new THREE.TextureLoader();
+const texture = textureLoader.load(mapMarkerOrange);
+texture.colorSpace = THREE.SRGBColorSpace;
 const size = [0.02, 0.03, 1];
 const spriteMaterial = new THREE.SpriteMaterial({
   map: texture,
@@ -15,7 +15,6 @@ const spriteMaterial = new THREE.SpriteMaterial({
   depthWrite: false,
   sizeAttenuation: false
 });
-import { createNewSpriteText } from '../utilities';
 
 /**
  * A special graphics type with a tear drop shape.
@@ -46,9 +45,9 @@ const MarkerCluster = function(sceneIn) {
    *
    * @param {Number} size - size to be set.
    */
-  this.setSpriteSize = size => {
+  this.setSpriteSize = sizeIn => {
     sprite.scale.set(0.015, 0.02, 1);
-    sprite.scale.multiplyScalar(size);
+    sprite.scale.multiplyScalar(sizeIn);
   }
 
   this.clear = () => {
@@ -101,6 +100,7 @@ const MarkerCluster = function(sceneIn) {
         sprite.label.material.dispose();
       }
       sprite.label = createNewSpriteText(number, 0.012, "black", "Asap", 120, 700);
+      sprite.label.renderOrder = 10001;
       sprite.number = number;
       sprite.group.add(sprite.label);
     }

@@ -228,7 +228,7 @@ function getTransformationFromHeader(header, options) {
 }
 
 function createDataTexture(data, width, height, depth, isRGB) {
-  const dataTexture = new THREE.DataTexture2DArray(
+  const dataTexture = new THREE.DataArrayTexture(
     data, width, height, depth);
   dataTexture.anisotropy = 4;
   if (!isRGB) {

@@ -3,6 +3,7 @@ import { Label } from './label';
 import { Points } from '../three/Points';
 import { ZincObject } from './zincObject';
 import { getCircularTexture, toBufferGeometry } from '../utilities';
+import { augmentMorphColor } from './augmentShader';
 
 /**
  * Provides an object which stores points and provides method which controls its position.
@@ -36,11 +37,15 @@ const Pointset = function () {
   this.createMesh = (geometryIn, materialIn, options) => {
     if (geometryIn && materialIn) {
       let geometry = toBufferGeometry(geometryIn, options);
+      console.log(geometry, options)
+      if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
+        materialIn.vertexColors = true;
+        materialIn.onBeforeCompile = augmentMorphColor;
+      }
       const texture = getCircularTexture();
       materialIn.map = texture;
       let point = new Points(geometry, materialIn);
-      this.setMesh(point, options.localTimeEnabled,
-        options.localMorphColour);
+      this.setMesh(point, options.localTimeEnabled, options.localMorphColour);
     }
   }
 
@@ -296,11 +301,11 @@ const Pointset = function () {
 
 
   /**
- * Turn size attenuation on/off based on the flag.
- *
- * @param {Boolean} flag - Determin either size attenuation
- * should be on or off.
- */
+  * Turn size attenuation on/off based on the flag.
+  *
+  * @param {Boolean} flag - Determin either size attenuation
+  * should be on or off.
+  */
   this.render = (delta, playAnimation, cameraControls, options) => {
     if (this.morph && cameraControls) {
       this.morph.sizePerPixel = cameraControls.pixelHeight;
