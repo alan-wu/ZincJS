@@ -48,7 +48,7 @@ const TextureArray = function () {
         length += data.length;
       });
 
-      this.impl = new THREE.DataArrayTexture(fullArray, w, h, d);
+      this.impl = new THREE.Data3DTexture(fullArray, w, h, d);
       this.size = {
         width: w,
         height: h,

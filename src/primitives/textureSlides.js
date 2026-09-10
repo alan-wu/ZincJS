@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
-import * as shader from '../shaders/textureSlide.js';
+//import * as shader from '../shaders/textureSlide.js';
+import { createWebGPUMaterial } from '../tls/textureSlides.js';
 import { TexturePrimitive } from './texturePrimitive';
 
 /**
@@ -63,7 +64,7 @@ const TextureSlides = function (textureIn) {
    */
   const setUniformSlideSettingsOfMesh = (mesh, settings) => {
     const material = mesh.material;
-    const uniforms = material.uniforms;
+    const uniforms = material.userData.uniforms;
     mesh.rotation.x = 0;
     mesh.rotation.y = 0;
     mesh.rotation.z = 0;
@@ -122,6 +123,7 @@ const TextureSlides = function (textureIn) {
       if (settings && settings.direction && settings.value !== undefined) {
         const geometry = new THREE.PlaneGeometry(1, 1);
         geometry.translate(0.5, 0.5, 0);
+        /*
         const uniforms = shader.getUniforms();
         uniforms.brightness.value = brightness;
         uniforms.contrast.value = contrast;
@@ -142,7 +144,21 @@ const TextureSlides = function (textureIn) {
           side: THREE.DoubleSide,
           transparent: false
         };
-        const material = this.texture.getMaterial(options);
+
+        //const material = this.texture.getMaterial(options);
+        */
+        const material = createWebGPUMaterial();
+        material.userData.uniforms.brightness.value = brightness;
+        material.userData.uniforms.contrast.value = contrast;
+        material.userData.uniforms.diffuse0 = this.texture.impl;
+        material.userData.uniforms.diffuse1 = this.texture.impl;
+        material.userData.uniforms.discardAlpha.value = discardAlpha;
+        material.userData.uniforms.depth.value = this.texture.size.depth;
+        material.userData.uniforms.flipY.value = flipY;
+        material.userData.uniforms.flipZ.value = flipZ;
+        material.userData.uniforms.mask = maskTexture;
+        material.userData.uniforms.maskEnabled.value = maskEnabled;
+        material.userData.uniforms.nChannels.value = nChannels;
         material.needsUpdate = true;
         const mesh = new THREE.Mesh(geometry, material);
         mesh.name = this.groupName;
@@ -288,7 +304,7 @@ const TextureSlides = function (textureIn) {
       this.cachedBoundingBox.makeEmpty();
       const vector = new THREE.Vector3(0, 0, 0);
       this.morph.children.forEach(slide => {
-        expandBoxWithSettings(this.cachedBoundingBox, slide.material.uniforms,
+        expandBoxWithSettings(this.cachedBoundingBox, slide.material.userData.uniforms,
           vector);
       });
       this.morph.updateMatrixWorld (true, true);
@@ -368,8 +384,8 @@ const TextureSlides = function (textureIn) {
   this.setUniformsValue = (name, val) => {
     this.morph.children.forEach((mesh) => {
       const material = mesh.material;
-      if (material.type === "ShaderMaterial") {
-        const uniforms = material.uniforms;
+      if (material.userData.uniforms) {
+        const uniforms = material.userData.uniforms;
         uniforms[name].value = val;
         material.needsUpdate = true;
       }
@@ -441,8 +457,8 @@ const TextureSlides = function (textureIn) {
       const ratio = iTime - t0;
       this.morph.children.forEach((mesh) => {
         const material = mesh.material;
-        if (material.type === "ShaderMaterial") {
-          const uniforms = material.uniforms;
+        if (material.userData.uniforms)  {
+          const uniforms = material.userData.uniforms;
           if (lt0 !== t0) {
             uniforms.diffuse0.value = this.textureList[t0].impl;
           }
