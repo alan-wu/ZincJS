@@ -8,12 +8,11 @@ import {
 	Mesh,
 	Sphere,
 	Vector3,
-	Vector4
+	Vector4,
+	Line2NodeMaterial,
+	Vector2
 } from 'three/webgpu';
 import { LineSegmentsGeometry } from './LineSegmentsGeometry.js';
-import { LineMaterial } from './LineMaterial.js';
-
-const _viewport = new Vector4();
 
 const _start = new Vector3();
 const _end = new Vector3();
@@ -30,6 +29,7 @@ const _closestPoint = new Vector3();
 const _box = new Box3();
 const _sphere = new Sphere();
 const _clipToWorldVector = new Vector4();
+const _viewport = new Vector4();
 
 let _ray, _lineWidth;
 
@@ -94,9 +94,9 @@ function raycastWorldUnits( lineSegments, intersects ) {
 function raycastScreenSpace( lineSegments, camera, intersects ) {
 
 	const projectionMatrix = camera.projectionMatrix;
-	const material = lineSegments.material;
-	const resolution = material.resolution;
 	const matrixWorld = lineSegments.matrixWorld;
+
+	const resolution = lineSegments._resolution;
 
 	const geometry = lineSegments.geometry;
 	const instanceStart = geometry.attributes.instanceStart;
@@ -231,22 +231,11 @@ function raycastScreenSpace( lineSegments, camera, intersects ) {
  * to be in world units. {@link Line2} extends this object, forming a polyline instead of individual
  * segments.
  *
- * This module can only be used with {@link WebGLRenderer}. When using {@link WebGPURenderer},
- * import the class from `lines/webgpu/LineSegments2.js`.
- *
- *  ```js
- * const geometry = new LineSegmentsGeometry();
- * geometry.setPositions( positions );
- * geometry.setColors( colors );
- *
- * const material = new LineMaterial( { linewidth: 5, vertexColors: true } };
- *
- * const lineSegments = new LineSegments2( geometry, material );
- * scene.add( lineSegments );
- * ```
+ * This module can only be used with {@link WebGPURenderer}. When using {@link WebGLRenderer},
+ * import the class from `lines/LineSegments2.js`.
  *
  * @augments Mesh
- * @three_import import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+ * @three_import import { LineSegments2 } from 'three/addons/lines/webgpu/LineSegments2.js';
  */
 class LineSegments2 extends Mesh {
 
@@ -254,9 +243,9 @@ class LineSegments2 extends Mesh {
 	 * Constructs a new wide line.
 	 *
 	 * @param {LineSegmentsGeometry} [geometry] - The line geometry.
-	 * @param {LineMaterial} [material] - The line material.
+	 * @param {Line2NodeMaterial} [material] - The line material.
 	 */
-	constructor( geometry = new LineSegmentsGeometry(), material = new LineMaterial( { color: Math.random() * 0xffffff } ) ) {
+	constructor( geometry = new LineSegmentsGeometry(), material = new Line2NodeMaterial( { color: Math.random() * 0xffffff } ) ) {
 
 		super( geometry, material );
 
@@ -270,6 +259,8 @@ class LineSegments2 extends Mesh {
 		this.isLineSegments2 = true;
 
 		this.type = 'LineSegments2';
+
+		this._resolution = new Vector2();
 
 	}
 
@@ -309,6 +300,13 @@ class LineSegments2 extends Mesh {
 
 	}
 
+	onBeforeRender( renderer ) {
+
+		renderer.getViewport( _viewport );
+		this._resolution.set( _viewport.z, _viewport.w );
+
+	}
+
 	/**
 	 * Computes intersection points between a casted ray and this instance.
 	 *
@@ -328,7 +326,7 @@ class LineSegments2 extends Mesh {
 
 		// early out if no resolution has been set (line was not rendered yet)
 
-		if ( worldUnits === false && ( this.material.resolution.x === 0 || this.material.resolution.y === 0 ) ) {
+		if ( worldUnits === false && ( this._resolution.x === 0 || this._resolution.y === 0 ) ) {
 
 			return;
 
@@ -362,7 +360,7 @@ class LineSegments2 extends Mesh {
 		} else {
 
 			const distanceToSphere = Math.max( camera.near, _sphere.distanceToPoint( _ray.origin ) );
-			sphereMargin = getWorldSpaceHalfWidth( camera, distanceToSphere, material.resolution );
+			sphereMargin = getWorldSpaceHalfWidth( camera, distanceToSphere, this._resolution );
 
 		}
 
@@ -392,7 +390,7 @@ class LineSegments2 extends Mesh {
 		} else {
 
 			const distanceToBox = Math.max( camera.near, _box.distanceToPoint( _ray.origin ) );
-			boxMargin = getWorldSpaceHalfWidth( camera, distanceToBox, material.resolution );
+			boxMargin = getWorldSpaceHalfWidth( camera, distanceToBox, this._resolution );
 
 		}
 
@@ -411,19 +409,6 @@ class LineSegments2 extends Mesh {
 		} else {
 
 			raycastScreenSpace( this, camera, intersects );
-
-		}
-
-	}
-
-	onBeforeRender( renderer ) {
-
-		const uniforms = this.material.uniforms;
-
-		if ( uniforms && uniforms.resolution ) {
-
-			renderer.getViewport( _viewport );
-			this.material.uniforms.resolution.value.set( _viewport.z, _viewport.w );
 
 		}
 

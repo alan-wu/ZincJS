@@ -1,8 +1,9 @@
 import * as THREE from 'three/webgpu';
 import { Lines } from './lines';
 import { LineSegments2 } from '../three/line/LineSegments2';
-import { LineMaterial } from '../three/line/LineMaterial';
+//import { LineMaterial } from '../three/line/LineMaterial';
 import { LineSegmentsGeometry } from '../three/line/LineSegmentsGeometry';
+
 /**
  * Provides an object which stores lines.
  * This is created when a valid json file containing lines is read into a {@link Zinc.Scene}
@@ -157,13 +158,12 @@ const Lines2 = function () {
       this.addVertices(coords);
       let mesh = this.getMorph();
       if (!mesh) {
-        const material = new LineMaterial( {
+        const material = new THREE.Line2NodeMaterial( {
           color: colour,
           linewidth:1,
           vertexColors: false,
           worldUnits: false,
         });
-        material.resolution.set( window.innerWidth, window.innerHeight );
         const options = { localTimeEnabled: false, localMorphColour: false};
         this.createLineSegment(positions, material, options);
       }
@@ -171,10 +171,6 @@ const Lines2 = function () {
     }
 	}
 
-  this.render = (delta, playAnimation, cameraControls, options) => {
-    const material = this.getMorph().material;
-    material.resolution.set( window.innerWidth, window.innerHeight );
-  }
 }
 
 Lines2.prototype = Object.create(Lines.prototype);
