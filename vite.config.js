@@ -23,7 +23,9 @@ export default defineConfig({
         extend: true,
         globals: {
           'css-element-queries': 'cssElememtQueries',
-          three: 'THREE',
+          'three': 'THREE',
+          'three/tsl': 'THREE',
+          'three/webgpu': 'THREE',
           'three-spritetext': 'SpriteText',
           'three/examples/jsm/loaders/GLTFLoader': 'GLTFLoader',
           'fflate': 'fflate'
