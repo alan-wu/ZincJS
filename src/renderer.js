@@ -76,8 +76,9 @@ const Renderer = function (containerIn) {
 	 */
 	this.onWindowResize = () => {
 		currentScene.onWindowResize();
-		const width = this.getDrawingWidth();
-		const height = this.getDrawingHeight();
+		//Give it a miniumum size of 1 x 1
+		const width = this.getDrawingWidth() || 1;
+		const height = this.getDrawingHeight() || 1;
 		if (renderer != undefined) {
 			let localRect = undefined;
 			if (container) {
@@ -130,7 +131,7 @@ const Renderer = function (containerIn) {
 				container = undefined;
 				canvas = parameters["canvas"];
 			}
-      parameters["forceWebGL"] = true;
+      //parameters["forceWebGL"] = true;
 			renderer = new THREE.WebGPURenderer(parameters);
       await renderer.init();
 
