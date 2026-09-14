@@ -12,7 +12,14 @@ import { Texture } from './texture';
 const TextureArray = function () {
   Texture.call(this);
   this.isTextureArray = true;
+  this.imageData = undefined;
 
+
+  this.setDataTexture = (dataTexture) => {
+    this.impl = dataTexture;
+    console.log("setDataTexture", dataTexture);
+    this.imageData = dataTexture.image.data;
+  }
 
   /**
    * Read images from an array containg src locations.

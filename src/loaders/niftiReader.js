@@ -228,12 +228,13 @@ function getTransformationFromHeader(header, options) {
 }
 
 function createDataTexture(data, width, height, depth, isRGB) {
-  const dataTexture = new THREE.DataArrayTexture(
+  const dataTexture = new THREE.Data3DTexture(
     data, width, height, depth);
   dataTexture.anisotropy = 4;
   if (!isRGB) {
     dataTexture.format = THREE.RedFormat;
   }
+  dataTexture.colorSpace = THREE.SRGBColorSpace;
   dataTexture.minFilter = THREE.NearestFilter;
   dataTexture.magFilter = THREE.NearestFilter;
   dataTexture.needsUpdate = true;
@@ -243,8 +244,9 @@ function createDataTexture(data, width, height, depth, isRGB) {
 function createTextureArray(sources) {
   if (sources?.data) {
     const tArray = new TextureArray();
-    tArray.impl = new createDataTexture(
-      sources.data, sources.width, sources.height, sources.depth);
+    const dataTexutre = new createDataTexture(
+        sources.data, sources.width, sources.height, sources.depth);
+    tArray.setDataTexture(dataTexutre);
     tArray.size = {
       width: sources.width,
       height: sources.height,

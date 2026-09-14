@@ -3,6 +3,24 @@ import * as THREE from 'three/webgpu';
 import { createWebGPUMaterial } from '../tls/textureSlides.js';
 import { TexturePrimitive } from './texturePrimitive';
 
+const cloneData3DTexture = (sourceTex) => {
+  const image = sourceTex.image;
+  const width = image.width;
+  const height = image.height;
+  const depth = image.depth;
+  const clonedData = image.data;
+  const targetTex = new THREE.Data3DTexture(clonedData, width, height, depth);
+  targetTex.format = sourceTex.format;
+  targetTex.type = sourceTex.type;
+  targetTex.minFilter = sourceTex.minFilter;
+  targetTex.magFilter = sourceTex.magFilter;
+  targetTex.wrapS = sourceTex.wrapS;
+  targetTex.wrapT = sourceTex.wrapT;
+  targetTex.wrapR = sourceTex.wrapR;
+  targetTex.needsUpdate = true;
+  return targetTex;
+}
+
 /**
  * Provides a class which create a texture stacks in a block
  * with shaders allowing slices of texture to be displayed.
@@ -93,7 +111,6 @@ const TextureSlides = function (textureIn) {
       default:
         break;
     }
-    material.needsUpdate = true;
     this.boundingBoxUpdateRequired = true;
   }
 
@@ -150,8 +167,8 @@ const TextureSlides = function (textureIn) {
         const material = createWebGPUMaterial();
         material.userData.uniforms.brightness.value = brightness;
         material.userData.uniforms.contrast.value = contrast;
-        material.userData.uniforms.diffuse0 = this.texture.impl;
-        material.userData.uniforms.diffuse1 = this.texture.impl;
+        material.userData.uniforms.diffuse0 = cloneData3DTexture(this.texture.impl);
+        material.userData.uniforms.diffuse1 = cloneData3DTexture(this.texture.impl);
         material.userData.uniforms.discardAlpha.value = discardAlpha;
         material.userData.uniforms.depth.value = this.texture.size.depth;
         material.userData.uniforms.flipY.value = flipY;
@@ -159,7 +176,6 @@ const TextureSlides = function (textureIn) {
         material.userData.uniforms.mask = maskTexture;
         material.userData.uniforms.maskEnabled.value = maskEnabled;
         material.userData.uniforms.nChannels.value = nChannels;
-        material.needsUpdate = true;
         const mesh = new THREE.Mesh(geometry, material);
         mesh.name = this.groupName;
         mesh.userData = this;
@@ -387,7 +403,6 @@ const TextureSlides = function (textureIn) {
       if (material.userData.uniforms) {
         const uniforms = material.userData.uniforms;
         uniforms[name].value = val;
-        material.needsUpdate = true;
       }
     });
   }
@@ -437,7 +452,13 @@ const TextureSlides = function (textureIn) {
   this.setMask = (maskTextureIn) => {
     maskTexture = maskTextureIn;
     maskEnabled = maskTexture ? true : false;
-    this.setUniformsValue("mask", maskTexture);
+    this.morph.children.forEach((mesh) => {
+      const material = mesh.material;
+      if (material.userData.uniforms) {
+      const uniforms = material.userData.uniforms;
+      uniforms.mask = maskTexture;
+      }
+    });
     this.setUniformsValue("maskEnabled", maskEnabled);
   }
 
@@ -458,15 +479,17 @@ const TextureSlides = function (textureIn) {
       this.morph.children.forEach((mesh) => {
         const material = mesh.material;
         if (material.userData.uniforms)  {
+
           const uniforms = material.userData.uniforms;
           if (lt0 !== t0) {
-            uniforms.diffuse0.value = this.textureList[t0].impl;
+            uniforms.diffuse0.image.data = this.textureList[t0].imageData;
+            uniforms.diffuse0.needsUpdate = true;
           }
           if (lt1 !== t1) {
-            uniforms.diffuse1.value = this.textureList[t1].impl;
+            uniforms.diffuse1.image.data = this.textureList[t1].imageData;
+            uniforms.diffuse1.needsUpdate = true;
           }
           uniforms.time.value = ratio;
-          material.needsUpdate = true;
         }
       });
       lt0 = t0;

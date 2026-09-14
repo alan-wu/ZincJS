@@ -4,6 +4,7 @@ import {
   uniform,
   vec3,
   vec4,
+  texture,
   texture3D,
   mix,
   positionLocal,
@@ -68,7 +69,7 @@ export function createWebGPUMaterial() {
     });
 
     // Write to our varying
-    vUw.assign(vec3(slidePos.x, slidePos.y, slidePos.z.mul(uniforms.depth)));
+    vUw.assign(vec3(slidePos.x, slidePos.y, slidePos.z));
 
     return positionLocal;
   });
