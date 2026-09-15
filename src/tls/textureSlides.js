@@ -4,7 +4,6 @@ import {
   uniform,
   vec3,
   vec4,
-  texture,
   texture3D,
   mix,
   positionLocal,
@@ -18,9 +17,24 @@ export function createWebGPUMaterial() {
   const material = new THREE.MeshBasicNodeMaterial({
     side: THREE.DoubleSide
   });
-  const dummyData = new Uint8Array([0, 0, 0, 0]);
-  const placeholderTexture = new THREE.Data3DTexture(dummyData, 1, 1, 1);
-  placeholderTexture.needsUpdate = true;
+
+const dummyData = new Uint8Array(32);
+
+const placeholderTexture = new THREE.Data3DTexture(dummyData, 2, 2, 2);
+placeholderTexture.image = {
+    data: dummyData,
+    width: 2,
+    height: 2,
+    depth: 2,
+};
+
+placeholderTexture.format = THREE.RGBAFormat;
+placeholderTexture.type = THREE.UnsignedByteType; // Be explicit for WebGPU
+placeholderTexture.minFilter = THREE.LinearFilter;
+placeholderTexture.magFilter = THREE.LinearFilter;
+placeholderTexture.generateMipmaps = false; // WebGPU cannot auto-generate mipmaps for custom Data3D
+placeholderTexture.unpackAlignment = 1;
+placeholderTexture.needsUpdate = true;
 
   // --- 1. Define Uniforms ---
   const uniforms = {
@@ -28,9 +42,6 @@ export function createWebGPUMaterial() {
     contrast:     uniform(1),
     depth:        uniform(1),
     discardAlpha: uniform(true),
-    diffuse0:     placeholderTexture,
-    diffuse1:     placeholderTexture,
-    mask:         placeholderTexture,
     direction:    uniform(1),
     flipY:        uniform(true),
     flipZ:        uniform(false),
@@ -43,6 +54,9 @@ export function createWebGPUMaterial() {
   // --- 2. Share Varyings via TSL ---
   // A TSL varying automatically wires itself from the vertex stage to the fragment stage.
   const vUw = varying(vec3(0.0), 'vUw');
+  uniforms.diffuse0 = texture3D(placeholderTexture, vUw);
+  uniforms.diffuse1 = texture3D(placeholderTexture, vUw);
+  uniforms.mask = texture3D(placeholderTexture, vUw);
 
   // --- 3. Vertex Node ---
   const vertexNode = Fn(() => {
@@ -77,15 +91,15 @@ export function createWebGPUMaterial() {
 
   // --- 4. Fragment Node ---
   const fragmentNode = Fn(() => {
-    // texture3D is used for texture(sampler2DArray, vec3) lookups in TSL
-    const color0 = texture3D(uniforms.diffuse0, vUw).r;
-    const color1 = texture3D(uniforms.diffuse1, vUw).r;
+    // diffuse0/diffuse1/mask are already-built texture3D sampling nodes.
+    const color0 = uniforms.diffuse0.r;
+    const color1 = uniforms.diffuse1.r;
 
     const color = mix(color0, color1, uniforms.time).toVar();
 
     // Mask implementation & discard logic
     If(uniforms.maskEnabled.and(uniforms.discardAlpha), () => {
-      const maskVal = texture3D(uniforms.mask, vUw).r;
+      const maskVal = uniforms.mask.r;
       If(maskVal.equal(0.0), () => {
         Discard();
       });

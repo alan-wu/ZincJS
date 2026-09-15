@@ -3,6 +3,7 @@ import * as THREE from 'three/webgpu';
 import { createWebGPUMaterial } from '../tls/textureSlides.js';
 import { TexturePrimitive } from './texturePrimitive';
 
+
 const cloneData3DTexture = (sourceTex) => {
   const image = sourceTex.image;
   const width = image.width;
@@ -167,13 +168,15 @@ const TextureSlides = function (textureIn) {
         const material = createWebGPUMaterial();
         material.userData.uniforms.brightness.value = brightness;
         material.userData.uniforms.contrast.value = contrast;
-        material.userData.uniforms.diffuse0 = cloneData3DTexture(this.texture.impl);
-        material.userData.uniforms.diffuse1 = cloneData3DTexture(this.texture.impl);
+        material.userData.uniforms.diffuse0.value = cloneData3DTexture(this.texture.impl);
+        material.userData.uniforms.diffuse1.value = cloneData3DTexture(this.texture.impl);
         material.userData.uniforms.discardAlpha.value = discardAlpha;
         material.userData.uniforms.depth.value = this.texture.size.depth;
         material.userData.uniforms.flipY.value = flipY;
         material.userData.uniforms.flipZ.value = flipZ;
-        material.userData.uniforms.mask = maskTexture;
+        if (maskTexture) {
+          material.userData.uniforms.mask.value = maskTexture;
+        }
         material.userData.uniforms.maskEnabled.value = maskEnabled;
         material.userData.uniforms.nChannels.value = nChannels;
         const mesh = new THREE.Mesh(geometry, material);
@@ -456,7 +459,9 @@ const TextureSlides = function (textureIn) {
       const material = mesh.material;
       if (material.userData.uniforms) {
       const uniforms = material.userData.uniforms;
-      uniforms.mask = maskTexture;
+        if (maskTexture) {
+          uniforms.mask.value = maskTexture;
+        }
       }
     });
     this.setUniformsValue("maskEnabled", maskEnabled);
@@ -479,15 +484,14 @@ const TextureSlides = function (textureIn) {
       this.morph.children.forEach((mesh) => {
         const material = mesh.material;
         if (material.userData.uniforms)  {
-
           const uniforms = material.userData.uniforms;
           if (lt0 !== t0) {
-            uniforms.diffuse0.image.data = this.textureList[t0].imageData;
-            uniforms.diffuse0.needsUpdate = true;
+            uniforms.diffuse0.value.image.data = this.textureList[t0].imageData;
+            uniforms.diffuse0.value.needsUpdate = true;
           }
           if (lt1 !== t1) {
-            uniforms.diffuse1.image.data = this.textureList[t1].imageData;
-            uniforms.diffuse1.needsUpdate = true;
+            uniforms.diffuse1.value.image.data = this.textureList[t1].imageData;
+            uniforms.diffuse1.value.needsUpdate = true;
           }
           uniforms.time.value = ratio;
         }
