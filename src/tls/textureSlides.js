@@ -36,7 +36,7 @@ placeholderTexture.generateMipmaps = false; // WebGPU cannot auto-generate mipma
 placeholderTexture.unpackAlignment = 1;
 placeholderTexture.needsUpdate = true;
 
-  // --- 1. Define Uniforms ---
+  // Define Uniforms
   const uniforms = {
     brightness:   uniform(0),
     contrast:     uniform(1),
@@ -51,14 +51,14 @@ placeholderTexture.needsUpdate = true;
     time:         uniform(0)
   };
 
-  // --- 2. Share Varyings via TSL ---
+  // Share Varyings via TSL
   // A TSL varying automatically wires itself from the vertex stage to the fragment stage.
   const vUw = varying(vec3(0.0), 'vUw');
   uniforms.diffuse0 = texture3D(placeholderTexture, vUw);
   uniforms.diffuse1 = texture3D(placeholderTexture, vUw);
   uniforms.mask = texture3D(placeholderTexture, vUw);
 
-  // --- 3. Vertex Node ---
+  // Vertex Node
   const vertexNode = Fn(() => {
     // positionLocal provides position.xyz out-of-the-box
     const slidePos = vec3(positionLocal).toVar();
@@ -89,7 +89,7 @@ placeholderTexture.needsUpdate = true;
   });
 
 
-  // --- 4. Fragment Node ---
+  // Fragment Node
   const fragmentNode = Fn(() => {
     // diffuse0/diffuse1/mask are already-built texture3D sampling nodes.
     const color0 = uniforms.diffuse0.r;
@@ -114,7 +114,7 @@ placeholderTexture.needsUpdate = true;
     return vec4(contrastedColor, 1.0);
   });
 
-   // --- 5. Assign to NodeMaterial slots ---
+   // Assign to NodeMaterial slots
   // TSL handles the base vertex transformation automatically, positionNode hooks custom vertex behaviour.
   material.positionNode = vertexNode();
   material.colorNode = fragmentNode();

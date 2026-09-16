@@ -1,5 +1,6 @@
 import {
 	BufferAttribute,
+	BufferGeometry,
 	ClampToEdgeWrapping,
 	DoubleSide,
 	InterpolateDiscrete,
@@ -1292,6 +1293,48 @@ class GLTFWriter {
 	}
 
 	/**
+	 * A Pointset's {@link InstancedPoints} draws every point as an instance of a
+	 * small camera facing quad - its `geometry` only carries that quad, the
+	 * actual point positions/colours live in `pointPositions`/`instanceColor`.
+	 * Temporarily substitute a plain points geometry built from that data (and
+	 * flag the object as `isPoints`) so the regular POINTS export path below
+	 * produces a correct round trip, then return a function that restores the
+	 * object to its original state.
+	 *
+	 * @param {InstancedPoints} object Object to substitute the geometry of
+	 * @return {Function} Restores `object` to its pre-substitution state
+	 */
+	substituteInstancedPointsGeometry( object ) {
+
+		const count = object.count;
+		const geometry = new BufferGeometry();
+		geometry.setAttribute( 'position',
+			new BufferAttribute( object.pointPositions.slice( 0, count * 3 ), 3 ) );
+
+		if ( object.instanceColor ) {
+
+			geometry.setAttribute( 'color',
+				new BufferAttribute( object.instanceColor.array.slice( 0, count * 3 ), 3 ) );
+
+		}
+
+		const originalGeometry = object.geometry;
+		const originalIsPoints = object.isPoints;
+
+		object.geometry = geometry;
+		object.isPoints = true;
+
+		return function () {
+
+			object.geometry = originalGeometry;
+			object.isPoints = originalIsPoints;
+			geometry.dispose();
+
+		};
+
+	}
+
+	/**
 	 * Process mesh
 	 * @param  {THREE.Mesh} mesh Mesh to process
 	 * @return {Integer|null} Index of the processed mesh in the "meshes" array
@@ -1887,9 +1930,19 @@ class GLTFWriter {
 
 		this.serializeUserData( object, nodeDef );
 
-		if ( object.isMesh || object.isLine || object.isPoints ) {
+		if ( object.isMesh || object.isLine || object.isPoints || object.isInstancedPoints ) {
+
+			let restoreInstancedPoints;
+
+			if ( object.isInstancedPoints ) {
+
+				restoreInstancedPoints = this.substituteInstancedPointsGeometry( object );
+
+			}
 
 			const meshIndex = this.processMesh( object );
+
+			if ( restoreInstancedPoints ) restoreInstancedPoints();
 
 			if ( meshIndex !== null ) nodeDef.mesh = meshIndex;
 

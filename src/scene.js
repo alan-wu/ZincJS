@@ -4,10 +4,12 @@ import { LineSegments } from './three/line/LineSegments';
 import { MarkerCluster } from './primitives/markerCluster';
 import { Minimap } from './minimap';
 import { Region } from './region';
-import { Points } from './three/Points';
+import { InstancedPoints } from './three/InstancedPoints';
 import { SceneExporter } from './sceneExporter';
 import { SceneLoader } from './sceneLoader';
 import { Viewport } from './controls';
+import { createPointQuadGeometry } from './primitives/pointset';
+import { createInstancedPointsMaterial } from './tls/pointsMaterial';
 import {
   createBufferGeometry,
   createNewSpriteText,
@@ -1233,12 +1235,22 @@ const Scene = function (containerIn, rendererIn) {
    * with clearTemporaryPrimitives method.
 	 */
   this.addTemporaryPoints = (coords, colour) => {
-    const geometry = createBufferGeometry(coords.length, coords);
-    let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 15,
-      color: colour, sizeAttenuation: false });
-    const texture = getCircularTexture();
-    material.map = texture;
-    let point = new Points(geometry, material);
+    const geometry = createPointQuadGeometry(coords.length);
+    const material = createInstancedPointsMaterial(getCircularTexture());
+    material.color.set(colour);
+    material.size = 15;
+    material.userData.uniforms.pointSize.value = 15;
+    material.alphaTest = 0.5;
+    const point = new InstancedPoints(geometry, material, coords.length);
+    point.pointPositions = new Float32Array(coords.length * 3);
+    const instancePosition = geometry.getAttribute('instancePosition');
+    coords.forEach((coord, index) => {
+      instancePosition.setXYZ(index, coord[0], coord[1], coord[2]);
+      point.pointPositions[index * 3] = coord[0];
+      point.pointPositions[index * 3 + 1] = coord[1];
+      point.pointPositions[index * 3 + 2] = coord[2];
+    });
+    instancePosition.needsUpdate = true;
     tempGroup.add(point);
     return point;
   }
