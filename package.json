@@ -49,20 +49,19 @@
     "node": "24.20.0"
   },
   "allowScripts": {
-    "gl@8.1.6": true,
     "msw@2.14.6": true
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.11",
     "auto-changelog": "^2.4.0",
     "chai": "^4.1.0",
-    "gl": "^8.1.6",
     "happy-dom": "^20.10.6",
     "jsdoc": "^4.0.2",
     "msw": "^2.14.6",
     "vite": "^8.2.1",
     "vite-plugin-node-polyfills": "^0.28.0",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.11",
+    "webgpu": "^0.4.0"
   },
   "dependencies": {
     "css-element-queries": "^1.2.2",

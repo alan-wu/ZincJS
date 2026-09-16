@@ -1,5 +1,4 @@
 // prepare/setup.js
-import createWebGLContext from 'gl';
 import { http, HttpResponse } from 'msw';
 import { setupServer } from 'msw/node';
 import { BatchInterceptor } from '@mswjs/interceptors';
@@ -17,25 +16,6 @@ import util from 'node:util';
 if (!util.styleText) {
   util.styleText = (format, text) => text;
 }
-
-const glContext = createWebGLContext(1024, 1024);
-
-const originalCreateElement = document.createElement.bind(document);
-
-document.createElement = (tagName) => {
-  if (tagName.toLowerCase() === 'canvas') {
-    const canvas = originalCreateElement('canvas');
-    // Mock getContext to return your headless context
-    canvas.getContext = (contextType) => {
-      if (contextType === 'webgl' || contextType === 'experimental-webgl') {
-        return glContext;
-      }
-      return null;
-    };
-    return canvas;
-  }
-  return originalCreateElement(tagName);
-};
 
 const interceptor = new BatchInterceptor({
   name: 'vitest-xhr-fix',

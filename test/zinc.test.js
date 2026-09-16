@@ -1,5 +1,6 @@
 import Zinc from "../src/zinc";
 import {assert} from 'chai';
+import { create as createGPU, globals as gpuGlobals } from 'webgpu';
 
 const THREE = Zinc.THREE;
 const container = document.querySelector("#container");
@@ -10,17 +11,55 @@ import { assert } from 'chai';
 
 var testBoxGeometry = new THREE.BoxGeometry( 10, 10, 10 );
 
+//Dawn's node bindings provide a real GPUDevice but no HTMLCanvasElement/
+//canvas.getContext('webgpu') (there is no OS window to present to headlessly)
+//- WebGPUBackend accepts a pre made GPUCanvasContext via parameters.context
+//the same way the old headless-gl setup passed a raw WebGL2 context, so fake
+//just enough of one (configure/getCurrentTexture) backed by an offscreen
+//texture instead.
+function createFakeCanvasContext(deviceIn, width, height) {
+  let texture;
+  return {
+    configure(descriptor) {
+      if (texture) texture.destroy();
+      texture = deviceIn.createTexture({
+        size: [width, height],
+        format: descriptor.format,
+        usage: descriptor.usage,
+      });
+    },
+    unconfigure() {
+      if (texture) {
+        texture.destroy();
+        texture = undefined;
+      }
+    },
+    getCurrentTexture() {
+      return texture;
+    },
+  };
+}
+
 const tData = {};
 tData.renderer = new Zinc.Renderer(container, window);
-var parameters = {};
-var context = require("gl")(1024, 1024, { webgl2: true });
-if (!context.texImage3D) {
-  context.texImage3D = function() {};
-}
-parameters['context'] = context;
-tData.renderer.initialiseVisualisation(parameters);
-parameters['context'] = context;
-tData.renderer.initialiseVisualisation(parameters);
+//Headless WebGPU (Dawn's node bindings) instead of a headless-gl WebGL2
+//context, so the suite runs against the real WebGPU backend rather than
+//WebGPURenderer's WebGL2 compatibility fallback.
+Object.assign(globalThis, gpuGlobals);
+const gpu = createGPU([]);
+//three.js reads navigator.gpu directly (e.g. for the preferred canvas
+//format) - happy-dom's navigator does not have one by default.
+navigator.gpu = gpu;
+const adapter = await gpu.requestAdapter();
+const device = await adapter.requestDevice();
+//happy-dom runs no layout engine so container.clientWidth/clientHeight
+//stay 0 here, which is also what Renderer.getDrawingWidth/Height (and thus
+//its own depth attachment sizing) fall back to 1 for - size this fake
+//colour attachment to match, or WebGPU's stricter validation rejects the
+//mismatch (WebGL silently tolerated it).
+const gpuCanvasContext = createFakeCanvasContext(
+  device, container.clientWidth || 1, container.clientHeight || 1);
+await tData.renderer.initialiseVisualisation({ device, context: gpuCanvasContext });
 tData.scene = tData.renderer.createScene("TestScene");
 tData.indexedScene = tData.renderer.createScene("indexedScene");
 tData.regionScene = tData.renderer.createScene("regionScene");
