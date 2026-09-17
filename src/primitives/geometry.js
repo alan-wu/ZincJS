@@ -86,30 +86,6 @@ const Geometry = function () {
 	}
 
   /**
-   * Calculate the UV for texture rendering.
-   */
-	this.calculateUVs = () => {
-    //Multilayers
-		this.geometry.computeBoundingBox();
-		const max = this.geometry.boundingBox.max, min = this.geometry.boundingBox.min;
-		const offset = new THREE.Vector2(0 - min.x, 0 - min.y);
-		const range = new THREE.Vector2(max.x - min.x, max.y - min.y);
-		this.geometry.faceVertexUvs[0] = [];
-		for (let i = 0; i < this.geometry.faces.length ; i++) {
-		    const v1 = this.geometry.vertices[this.geometry.faces[i].a];
-		    const v2 = this.geometry.vertices[this.geometry.faces[i].b];
-		    const v3 = this.geometry.vertices[this.geometry.faces[i].c];
-		    geometry.faceVertexUvs[0].push(
-		        [
-		            new THREE.Vector2((v1.x + offset.x)/range.x ,(v1.y + offset.y)/range.y),
-		            new THREE.Vector2((v2.x + offset.x)/range.x ,(v2.y + offset.y)/range.y),
-		            new THREE.Vector2((v3.x + offset.x)/range.x ,(v3.y + offset.y)/range.y)
-		        ]);
-		}
-		geometry.uvsNeedUpdate = true;
-	}
-
-  /**
    * Handle transparent mesh, create a clone for backside rendering if it is
    * transparent.
    */

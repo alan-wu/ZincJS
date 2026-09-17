@@ -31,7 +31,7 @@ const TubeLines = function () {
     this.createLineSegment = (geometryIn, materialIn, options) => {
         if (geometryIn && materialIn) {
             dataIn = { geometryIn, materialIn, options };
-            const geometry = getTubeLinesGeometry(geometryIn.vertices);
+            const geometry = getTubeLinesGeometry(extractVertices(geometryIn));
             const material = new THREE.MeshStandardMaterial({ color: materialIn.color });
             const mesh = new THREE.Mesh(geometry, material);
             this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
@@ -86,8 +86,25 @@ const TubeLines = function () {
             mesh.geometry.dispose();
 
             geometryConfig = Object.assign(geometryConfig, { radius, radialSegments });
-            mesh.geometry = getTubeLinesGeometry(geometryIn.vertices);
+            mesh.geometry = getTubeLinesGeometry(extractVertices(geometryIn));
         }
+    }
+
+    /**
+     * Read the position attribute of a BufferGeometry into an array of
+     * THREE.Vector3, since TubeGeometry/CatmullRomCurve3/LineCurve3 need
+     * actual Vector3 instances to work with, not a flat typed array.
+     *
+     * @param {THREE.BufferGeometry} geometry
+     * @returns {Array}
+     */
+    const extractVertices = (geometry) => {
+        const position = geometry.getAttribute('position');
+        const vertices = [];
+        for (let i = 0; i < position.count; i++) {
+            vertices.push(new THREE.Vector3().fromBufferAttribute(position, i));
+        }
+        return vertices;
     }
 
     /**

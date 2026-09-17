@@ -4,6 +4,7 @@ import { JSONLoader } from '../src/loaders/JSONLoader';
 import { Geometry } from '../src/primitives/geometry';
 import { Lines } from '../src/primitives/lines';
 import { Pointset } from '../src/primitives/pointset';
+import { TubeLines } from '../src/primitives/tubeLines';
 
 const bit = (...positions) => positions.reduce((v, p) => v | (1 << p), 0);
 
@@ -159,5 +160,33 @@ describe('Geometry/Pointset colour and video regressions', () => {
     expect(mesh.instanceColor.getZ(0)).toBeCloseTo(0);
     expect(mesh.instanceColor.getX(1)).toBeCloseTo(0);
     expect(mesh.instanceColor.getY(1)).toBeCloseTo(1);
+  });
+
+  it('tubeLines reads vertices from a JSONLoader BufferGeometry', () => {
+    //TubeLines bypasses toBufferGeometry() and consumes the loader's
+    //geometry directly (see sceneLoader.js's linesloader), so it must read
+    //vertices off the BufferGeometry position attribute rather than the
+    //legacy Geometry's .vertices array (which no longer exists).
+    const loader = new JSONLoader();
+    const json = {
+      metadata: { formatVersion: 3 },
+      vertices: [0, 0, 0, 1, 0, 0, 2, 0, 0, 3, 0, 0],
+      faces: [0, 0, 1, 2, 0, 2, 3, 0],
+      materials: [{ colorDiffuse: [1, 1, 1], opacity: 1 }],
+    };
+    const { geometry, materials } = loader.parse(json, '');
+
+    const tubeLines = new TubeLines();
+    const material = new THREE.LineBasicMaterial({ color: materials[0].color.clone() });
+    expect(() => tubeLines.createLineSegment(geometry, material, {
+      localTimeEnabled: false,
+      localMorphColour: false,
+    })).not.toThrow();
+
+    const mesh = tubeLines.getMorph();
+    expect(mesh.geometry.getAttribute('position').count).toBeGreaterThan(0);
+
+    expect(() => tubeLines.setTubeLines(2, 6)).not.toThrow();
+    expect(mesh.geometry.getAttribute('position').count).toBeGreaterThan(0);
   });
 });
