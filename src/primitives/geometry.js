@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { toBufferGeometry } from '../utilities';
-import { augmentMorphColor } from './augmentShader';
+import { applyMorphColorNode } from '../tls/morphColorMaterial';
 import { ZincObject} from './zincObject';
 
 const createMeshForGeometry =  (geometryIn, materialIn, options) => {
@@ -27,7 +27,7 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
     //material = PhongToToon(material);
     if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
       material.vertexColors = true;
-      material.onBeforeCompile = augmentMorphColor;
+      material = applyMorphColorNode(material);
     }
   } else {
     let videoTexture = geometry._video.createCanvasVideoTexture();

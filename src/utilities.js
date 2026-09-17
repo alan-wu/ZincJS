@@ -145,12 +145,25 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
         morphArray.push([i, influences[i]]);
       }
     }
+    //morphColorMix (0 = fully morphColor0, 1 = fully morphColor1) drives the
+    //TSL colorNode set up by applyMorphColorNode - keep it in sync with
+    //whichever two morph targets currently have non-zero influence.
+    let mix = 0;
     if (morphArray.length == 2) {
+      console.log(morphArray[0][0], morphColors[ morphArray[0][0] ], morphArray[1][0], morphColors[ morphArray[1][0] ] );
       targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
       targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
+      const total = morphArray[0][1] + morphArray[1][1];
+      mix = total > 0 ? morphArray[1][1] / total : 0;
     } else if (morphArray.length == 1) {
       targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
       targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
+    }
+    const morphColorMix = morph.material && morph.material.userData &&
+      morph.material.userData.uniforms && morph.material.userData.uniforms.morphColorMix;
+    if (morphColorMix) {
+      console.log(morphColorMix.value)
+      morphColorMix.value = mix;
     }
   }
 }

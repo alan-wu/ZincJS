@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { toBufferGeometry } from '../utilities';
-import { augmentMorphColor } from './augmentShader';
+import { applyMorphColorNode } from '../tls/morphColorMaterial';
 import { LineSegments } from '../three/line/LineSegments';
 import { ZincObject } from './zincObject';
 
@@ -33,7 +33,7 @@ const Lines = function () {
 			let geometry = toBufferGeometry(geometryIn, options);
 			if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
         materialIn.vertexColors = true;
-				materialIn.onBeforeCompile = augmentMorphColor;
+				materialIn = applyMorphColorNode(materialIn);
       }
       let line = new LineSegments(geometry, materialIn);
       this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
