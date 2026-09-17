@@ -13,6 +13,13 @@ import { Geometry } from '../src/primitives/geometry';
 //renderer.render(scene, camera) call. So this file sets up its own tiny
 //real WebGPU renderer (same approach as test/zinc.test.js) rather than
 //reusing the shared one, to force that build to happen.
+//
+//JSONLoader now always computes morphAttributes.normal itself (via
+//BufferGeometry.computeVertexNormals()) whenever morphTargets are present
+//and the file doesn't supply morphNormals explicitly, so the "missing
+//morph normal" case these tests originally targeted can no longer occur
+//through JSONLoader - the render-without-throwing assertion is kept as a
+//general regression guard for the morph shader build path.
 
 const SIZE = 4;
 const bit = (...positions) => positions.reduce((v, p) => v | (1 << p), 0);
@@ -75,20 +82,13 @@ describe('WebGPU shader build for morph geometry', () => {
 
     const lines = new Lines();
     const material = new THREE.LineBasicMaterial({ color: 0xffffff });
-    //localTimeEnabled: false here only controls whether toBufferGeometry
-    //auto-computes missing morph normals (it does when true) - it does
-    //NOT stop setMesh from building the morph target animation clip,
-    //which only checks for morphAttributes.position, so the crash-prone
-    //shader build path below is still exercised with morphAttributes.normal
-    //genuinely absent.
     lines.createLineSegment(geometry, material, {
       localTimeEnabled: false,
       localMorphColour: false,
     });
-    //loader.parse() only returns the legacy, pre-buffer Geometry - check
-    //the guard condition (no morphNormals) on the actual BufferGeometry
-    //createLineSegment built from it.
-    expect(lines.getMorph().geometry.morphAttributes.normal).toBeUndefined();
+    //JSONLoader computed these itself since the file had morphTargets but
+    //no explicit morphNormals - one per morph target.
+    expect(lines.getMorph().geometry.morphAttributes.normal.length).toBe(3);
 
     const scene = new THREE.Scene();
     scene.add(lines.getGroup());
@@ -114,22 +114,15 @@ describe('WebGPU shader build for morph geometry', () => {
     const { geometry } = loader.parse(json, '');
 
     const zincGeometry = new Geometry();
-    //localTimeEnabled: false here only controls whether toBufferGeometry
-    //auto-computes missing morph normals (it does when true) - it does
-    //NOT stop setMesh from building the morph target animation clip,
-    //which only checks for morphAttributes.position, so the crash-prone
-    //shader build path below is still exercised with morphAttributes.normal
-    //genuinely absent.
     zincGeometry.createMesh(geometry, undefined, {
       localTimeEnabled: false,
       localMorphColour: false,
       colour: 0xffffff,
       opacity: 1,
     });
-    //loader.parse() only returns the legacy, pre-buffer Geometry - check
-    //the guard condition (no morphNormals) on the actual BufferGeometry
-    //createMesh built from it.
-    expect(zincGeometry.getMorph().geometry.morphAttributes.normal).toBeUndefined();
+    //JSONLoader computed these itself since the file had morphTargets but
+    //no explicit morphNormals - one per morph target.
+    expect(zincGeometry.getMorph().geometry.morphAttributes.normal.length).toBe(2);
 
     const scene = new THREE.Scene();
     scene.add(zincGeometry.getGroup());

@@ -521,11 +521,9 @@ const Glyphset = function () {
 
   var meshloader = (finishCallback, displayLabels) => {
     return (geometry, materials) => {
-      const tempGeometry = geometry.toBufferGeometry();
-      this.geometry.copy(tempGeometry);
+      this.geometry.copy(geometry);
       this.geometry.computeBoundingSphere();
       this.geometry.computeBoundingBox();
-      tempGeometry.dispose();
       if (materials && materials[0])
         this.morph.material = materials[0];
       createGlyphs(displayLabels);

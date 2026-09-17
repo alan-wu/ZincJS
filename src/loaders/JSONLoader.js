@@ -1,17 +1,15 @@
 import * as THREE from 'three/webgpu';
-import { Face3 } from '../three/Geometry';
-import { Geometry } from '../three/Geometry';
 import { Loader } from '../three/Loader';
 import { VideoHandler } from '../videoHandler';
+import { getColorsRGB } from '../utilities';
 
-const AnimationClip = THREE.AnimationClip;
+const BufferAttribute = THREE.BufferAttribute;
+const BufferGeometry = THREE.BufferGeometry;
 const Color = THREE.Color;
 const DefaultLoadingManager = THREE.DefaultLoadingManager;
 const FileLoader = THREE.FileLoader;
+const Float32BufferAttribute = THREE.Float32BufferAttribute;
 const LoaderUtils = THREE.LoaderUtils;
-const Vector2 = THREE.Vector2;
-const Vector3 = THREE.Vector3;
-const Vector4 = THREE.Vector4;
 
 /**
  * @author mrdoob / http://mrdoob.com/
@@ -116,473 +114,216 @@ Object.assign( JSONLoader.prototype, {
 
 	parse: ( function () {
 
-		function parseModel( json, geometry ) {
+		function isBitSet( value, position ) {
 
-			function isBitSet( value, position ) {
+			return value & ( 1 << position );
 
-				return value & ( 1 << position );
+		}
 
-			}
+		//Walks json.faces once, decoding each triangle (quads are split into two)
+		//into a flat vertex-index list plus a parallel per-triangle materialIndex,
+		//in exactly the order the legacy Face3-based parser used to push faces -
+		//that order is what computeGroups() below depends on.
+		function parseFaces( json ) {
 
-			var i, j, fi,
+			const faces = json.faces;
 
-				offset, zLength,
-
-				colorIndex, normalIndex, uvIndex, materialIndex,
-
-				type,
-				isQuad,
-				hasMaterial,
-				hasFaceVertexUv,
-				hasFaceNormal, hasFaceVertexNormal,
-				hasFaceColor, hasFaceVertexColor,
-
-				vertex, face, faceA, faceB, hex, normal,
-
-				uvLayer, uv, u, v,
-
-				faces = json.faces,
-				vertices = json.vertices,
-				normals = json.normals,
-				colors = json.colors,
-
-				scale = json.scale,
-
-				nUvLayers = 0;
-
-
+			let nUvLayers = 0;
 			if ( json.uvs !== undefined ) {
 
-				// disregard empty arrays
-
-				for ( i = 0; i < json.uvs.length; i ++ ) {
+				for ( let i = 0; i < json.uvs.length; i ++ ) {
 
 					if ( json.uvs[ i ].length ) nUvLayers ++;
 
 				}
 
-				for ( i = 0; i < nUvLayers; i ++ ) {
-
-					geometry.faceVertexUvs[ i ] = [];
-
-				}
-
 			}
 
-			offset = 0;
-			zLength = vertices.length;
+			const indices = [];
+			const materialIndices = [];
+
+			let offset = 0;
+			const zLength = faces.length;
 
 			while ( offset < zLength ) {
 
-				vertex = new Vector3();
+				const type = faces[ offset ++ ];
 
-				vertex.x = vertices[ offset ++ ] * scale;
-				vertex.y = vertices[ offset ++ ] * scale;
-				vertex.z = vertices[ offset ++ ] * scale;
+				const isQuad = isBitSet( type, 0 );
+				const hasMaterial = isBitSet( type, 1 );
+				const hasFaceVertexUv = isBitSet( type, 3 );
+				const hasFaceNormal = isBitSet( type, 4 );
+				const hasFaceVertexNormal = isBitSet( type, 5 );
+				const hasFaceColor = isBitSet( type, 6 );
+				const hasFaceVertexColor = isBitSet( type, 7 );
 
-				geometry.vertices.push( vertex );
-
-			}
-
-			offset = 0;
-			zLength = faces.length;
-
-      if (json.uvs) {
-
-        for ( i = 0; i < json.uvs.length; i ++ ) {
-
-          geometry.uvs[i] = [];
-
-          for ( let k = 0; k < json.uvs[i].length ; k++ ) {
-
-            geometry.uvs[i][k] = json.uvs[i][k];
-
-          }
-
-        }
-
-      }
-
-      if (normals) {
-
-        for ( i = 0; i < normals.length; i ++ ) {
-
-          geometry.normals[i] = normals[i];
-
-        }
-
-      }
-
-      if (colors) {
-
-        for ( i = 0; i < colors.length; i ++ ) {
-
-          geometry.colors[i] = colors[i];
-
-        }
-
-      }
-
-
-			while ( offset < zLength ) {
-
-				type = faces[ offset ++ ];
-
-				isQuad = isBitSet( type, 0 );
-				hasMaterial = isBitSet( type, 1 );
-				hasFaceVertexUv = isBitSet( type, 3 );
-				hasFaceNormal = isBitSet( type, 4 );
-				hasFaceVertexNormal = isBitSet( type, 5 );
-				hasFaceColor = isBitSet( type, 6 );
-				hasFaceVertexColor = isBitSet( type, 7 );
-
-				// console.log("type", type, "bits", isQuad, hasMaterial, hasFaceVertexUv, hasFaceNormal, hasFaceVertexNormal, hasFaceColor, hasFaceVertexColor);
+				let a, b, c;
 
 				if ( isQuad ) {
 
-					faceA = new Face3();
-					faceA.a = faces[ offset ];
-					faceA.b = faces[ offset + 1 ];
-					faceA.c = faces[ offset + 3 ];
-
-					faceB = new Face3();
-					faceB.a = faces[ offset + 1 ];
-					faceB.b = faces[ offset + 2 ];
-					faceB.c = faces[ offset + 3 ];
+					const v0 = faces[ offset ];
+					const v1 = faces[ offset + 1 ];
+					const v2 = faces[ offset + 2 ];
+					const v3 = faces[ offset + 3 ];
 
 					offset += 4;
 
+					let materialIndex = 0;
 					if ( hasMaterial ) {
 
 						materialIndex = faces[ offset ++ ];
-						faceA.materialIndex = materialIndex;
-						faceB.materialIndex = materialIndex;
 
 					}
-
-					// to get face <=> uv index correspondence
-
-					fi = geometry.faces.length;
 
 					if ( hasFaceVertexUv ) {
 
-						for ( i = 0; i < nUvLayers; i ++ ) {
-
-							uvLayer = json.uvs[ i ];
-
-							geometry.faceVertexUvs[ i ][ fi ] = [];
-							geometry.faceVertexUvs[ i ][ fi + 1 ] = [];
-
-							for ( j = 0; j < 4; j ++ ) {
-
-								uvIndex = faces[ offset ++ ];
-
-								u = uvLayer[ uvIndex * 2 ];
-								v = uvLayer[ uvIndex * 2 + 1 ];
-
-								uv = new Vector2( u, v );
-
-								if ( j !== 2 ) geometry.faceVertexUvs[ i ][ fi ].push( uv );
-								if ( j !== 0 ) geometry.faceVertexUvs[ i ][ fi + 1 ].push( uv );
-
-							}
-
-						}
+						offset += nUvLayers * 4;
 
 					}
 
-					if ( hasFaceNormal ) {
+					if ( hasFaceNormal ) offset += 1;
+					if ( hasFaceVertexNormal ) offset += 4;
+					if ( hasFaceColor ) offset += 1;
+					if ( hasFaceVertexColor ) offset += 4;
 
-						normalIndex = faces[ offset ++ ] * 3;
+					indices.push( v0, v1, v3 );
+					materialIndices.push( materialIndex );
 
-						faceA.normal.set(
-							normals[ normalIndex ++ ],
-							normals[ normalIndex ++ ],
-							normals[ normalIndex ]
-						);
+					indices.push( v1, v2, v3 );
+					materialIndices.push( materialIndex );
 
-						faceB.normal.copy( faceA.normal );
-
-					}
-
-					if ( hasFaceVertexNormal ) {
-
-						for ( i = 0; i < 4; i ++ ) {
-
-							normalIndex = faces[ offset ++ ] * 3;
-
-							normal = new Vector3(
-								normals[ normalIndex ++ ],
-								normals[ normalIndex ++ ],
-								normals[ normalIndex ]
-							);
-
-
-							if ( i !== 2 ) faceA.vertexNormals.push( normal );
-							if ( i !== 0 ) faceB.vertexNormals.push( normal );
-
-						}
-
-					}
-
-
-					if ( hasFaceColor ) {
-
-						colorIndex = faces[ offset ++ ];
-						hex = colors[ colorIndex ];
-
-						faceA.color.setHex( hex );
-						faceB.color.setHex( hex );
-
-					}
-
-
-					if ( hasFaceVertexColor ) {
-
-						for ( i = 0; i < 4; i ++ ) {
-
-							colorIndex = faces[ offset ++ ];
-							hex = colors[ colorIndex ];
-
-							if ( i !== 2 ) faceA.vertexColors.push( new Color( hex ) );
-							if ( i !== 0 ) faceB.vertexColors.push( new Color( hex ) );
-
-						}
-
-					}
-
-					geometry.faces.push( faceA );
-					geometry.faces.push( faceB );
-
-				} else {
-
-					face = new Face3();
-					face.a = faces[ offset ++ ];
-					face.b = faces[ offset ++ ];
-					face.c = faces[ offset ++ ];
-
-          //A hack to get things going
-          if (!face.b) face.b = face.a;
-          if (!face.c) face.c = face.b;
-
-
-					if ( hasMaterial ) {
-
-						materialIndex = faces[ offset ++ ];
-						face.materialIndex = materialIndex;
-
-					}
-
-					// to get face <=> uv index correspondence
-
-					fi = geometry.faces.length;
-
-					if ( hasFaceVertexUv ) {
-
-						for ( i = 0; i < nUvLayers; i ++ ) {
-
-							uvLayer = json.uvs[ i ];
-
-							geometry.faceVertexUvs[ i ][ fi ] = [];
-
-							for ( j = 0; j < 3; j ++ ) {
-
-								uvIndex = faces[ offset ++ ];
-
-								u = uvLayer[ uvIndex * 2 ];
-								v = uvLayer[ uvIndex * 2 + 1 ];
-
-								uv = new Vector2( u, v );
-
-								geometry.faceVertexUvs[ i ][ fi ].push( uv );
-
-							}
-
-						}
-
-					}
-
-					if ( hasFaceNormal ) {
-
-						normalIndex = faces[ offset ++ ] * 3;
-
-						face.normal.set(
-							normals[ normalIndex ++ ],
-							normals[ normalIndex ++ ],
-							normals[ normalIndex ]
-						);
-
-					}
-
-					if ( hasFaceVertexNormal ) {
-
-						for ( i = 0; i < 3; i ++ ) {
-
-							normalIndex = faces[ offset ++ ] * 3;
-
-							normal = new Vector3(
-								normals[ normalIndex ++ ],
-								normals[ normalIndex ++ ],
-								normals[ normalIndex ]
-							);
-
-							face.vertexNormals.push( normal );
-
-						}
-
-					}
-
-
-					if ( hasFaceColor ) {
-
-						colorIndex = faces[ offset ++ ];
-						face.color.setHex( colors[ colorIndex ] );
-
-					}
-
-
-					if ( hasFaceVertexColor ) {
-
-						for ( i = 0; i < 3; i ++ ) {
-
-							colorIndex = faces[ offset ++ ];
-							face.vertexColors.push( new Color( colors[ colorIndex ] ) );
-
-						}
-
-					}
-
-					geometry.faces.push( face );
+					continue;
 
 				}
 
+				a = faces[ offset ++ ];
+				b = faces[ offset ++ ];
+				c = faces[ offset ++ ];
+
+        //A hack to get things going
+        if (!b) b = a;
+        if (!c) c = b;
+
+				let materialIndex = 0;
+				if ( hasMaterial ) {
+
+					materialIndex = faces[ offset ++ ];
+
+				}
+
+				if ( hasFaceVertexUv ) {
+
+					offset += nUvLayers * 3;
+
+				}
+
+				if ( hasFaceNormal ) offset += 1;
+				if ( hasFaceVertexNormal ) offset += 3;
+				if ( hasFaceColor ) offset += 1;
+				if ( hasFaceVertexColor ) offset += 3;
+
+				indices.push( a, b, c );
+				materialIndices.push( materialIndex );
+
 			}
+
+			return { indices, materialIndices };
 
 		}
 
-		function parseSkin( json, geometry ) {
+		//Material-index run-length groups over the triangle list, matching
+		//Geometry.prototype.computeGroups() in src/three/Geometry.js.
+		function computeGroups( materialIndices ) {
 
-			var influencesPerVertex = ( json.influencesPerVertex !== undefined ) ? json.influencesPerVertex : 2;
+			const groups = [];
+			let group;
+			let materialIndex = undefined;
 
-			if ( json.skinWeights ) {
+			for ( let i = 0; i < materialIndices.length; i ++ ) {
 
-				for ( var i = 0, l = json.skinWeights.length; i < l; i += influencesPerVertex ) {
+				if ( materialIndices[ i ] !== materialIndex ) {
 
-					var x = json.skinWeights[ i ];
-					var y = ( influencesPerVertex > 1 ) ? json.skinWeights[ i + 1 ] : 0;
-					var z = ( influencesPerVertex > 2 ) ? json.skinWeights[ i + 2 ] : 0;
-					var w = ( influencesPerVertex > 3 ) ? json.skinWeights[ i + 3 ] : 0;
+					materialIndex = materialIndices[ i ];
 
-					geometry.skinWeights.push( new Vector4( x, y, z, w ) );
+					if ( group !== undefined ) {
 
-				}
+						group.count = ( i * 3 ) - group.start;
+						groups.push( group );
 
-			}
+					}
 
-			if ( json.skinIndices ) {
-
-				for ( var i = 0, l = json.skinIndices.length; i < l; i += influencesPerVertex ) {
-
-					var a = json.skinIndices[ i ];
-					var b = ( influencesPerVertex > 1 ) ? json.skinIndices[ i + 1 ] : 0;
-					var c = ( influencesPerVertex > 2 ) ? json.skinIndices[ i + 2 ] : 0;
-					var d = ( influencesPerVertex > 3 ) ? json.skinIndices[ i + 3 ] : 0;
-
-					geometry.skinIndices.push( new Vector4( a, b, c, d ) );
+					group = { start: i * 3, materialIndex: materialIndex };
 
 				}
 
 			}
 
-			geometry.bones = json.bones;
+			if ( group !== undefined ) {
 
-			if ( geometry.bones && geometry.bones.length > 0 && ( geometry.skinWeights.length !== geometry.skinIndices.length || geometry.skinIndices.length !== geometry.vertices.length ) ) {
-
-				console.warn( 'When skinning, number of vertices (' + geometry.vertices.length + '), skinIndices (' +
-					geometry.skinIndices.length + '), and skinWeights (' + geometry.skinWeights.length + ') should match.' );
+				group.count = ( materialIndices.length * 3 ) - group.start;
+				groups.push( group );
 
 			}
+
+			return groups;
 
 		}
 
-		function parseMorphing( json, geometry ) {
+		//Computes per-vertex normals for a morph target's position set by
+		//reusing the shared index and the standard BufferGeometry algorithm,
+		//instead of hand-rolling face/vertex normal averaging.
+		function computeMorphNormalAttribute( positionAttribute, indices ) {
 
-			var scale = json.scale;
+			const scratch = new BufferGeometry();
+			scratch.setIndex( indices );
+			scratch.setAttribute( 'position', positionAttribute );
+			scratch.computeVertexNormals();
+
+			const normalAttribute = scratch.getAttribute( 'normal' );
+			normalAttribute.name = positionAttribute.name;
+			return normalAttribute;
+
+		}
+
+		function parseMorphTargets( json, scale ) {
+
+			const morphPositions = [];
 
 			if ( json.morphTargets !== undefined ) {
 
-				for ( var i = 0, l = json.morphTargets.length; i < l; i ++ ) {
+				for ( let i = 0, l = json.morphTargets.length; i < l; i ++ ) {
 
-					geometry.morphTargets[ i ] = {};
-					geometry.morphTargets[ i ].name = json.morphTargets[ i ].name;
-					geometry.morphTargets[ i ].vertices = [];
+					const srcVertices = json.morphTargets[ i ].vertices;
+					const array = new Float32Array( srcVertices.length );
 
-					var dstVertices = geometry.morphTargets[ i ].vertices;
-					var srcVertices = json.morphTargets[ i ].vertices;
+					for ( let v = 0, vl = srcVertices.length; v < vl; v ++ ) {
 
-					for ( var v = 0, vl = srcVertices.length; v < vl; v += 3 ) {
-
-						var vertex = new Vector3();
-						vertex.x = srcVertices[ v ] * scale;
-						vertex.y = srcVertices[ v + 1 ] * scale;
-						vertex.z = srcVertices[ v + 2 ] * scale;
-
-						dstVertices.push( vertex );
+						array[ v ] = srcVertices[ v ] * scale;
 
 					}
+
+					const attribute = new Float32BufferAttribute( array, 3 );
+					attribute.name = json.morphTargets[ i ].name;
+					morphPositions.push( attribute );
 
 				}
 
 			}
+
+			const morphNormals = [];
 
 			if ( json.morphNormals !== undefined ) {
 
-				for ( var i = 0, l = json.morphNormals.length; i < l; i ++ ) {
+				for ( let i = 0, l = json.morphNormals.length; i < l; i ++ ) {
 
-          if (geometry.morphTargets[ i ]) {
+					if ( morphPositions[ i ] ) {
 
-            geometry.morphTargets[ i ].normals = [];
+						const srcNormals = json.morphNormals[ i ].normals;
+						const array = Float32Array.from( srcNormals );
 
-            var dstNormals = geometry.morphTargets[ i ].normals;
-            var srcNormals = json.morphNormals[ i ].normals;
-
-            for ( var v = 0, vl = srcNormals.length; v < vl; v += 3 ) {
-
-              var normals = new Vector3();
-              normals.x = srcNormals[ v ];
-              normals.y = srcNormals[ v + 1 ] ;
-              normals.z = srcNormals[ v + 2 ] ;
-
-              dstNormals.push( normals );
-
-            }
-
-            geometry.morphNormalsReady = true;
-
-          }
-
-				}
-
-			}
-
-			if ( json.morphColors !== undefined ) {
-
-				var i, l, c, cl, dstColors, srcColors, color;
-
-				for ( i = 0, l = json.morphColors.length; i < l; i ++ ) {
-
-					geometry.morphColors[ i ] = {};
-					geometry.morphColors[ i ].name = json.morphColors[ i ].name;
-					geometry.morphColors[ i ].colors = [];
-
-					dstColors = geometry.morphColors[ i ].colors;
-					srcColors = json.morphColors[ i ].colors;
-
-					for ( c = 0, cl = srcColors.length; c < cl; c += 3 ) {
-
-						color = new THREE.Color( 0xffaa00 );
-						color.setRGB( srcColors[ c ], srcColors[ c + 1 ], srcColors[ c + 2 ] );
-						dstColors.push( color );
+						const attribute = new Float32BufferAttribute( array, 3 );
+						attribute.name = morphPositions[ i ].name;
+						morphNormals[ i ] = attribute;
 
 					}
 
@@ -590,52 +331,49 @@ Object.assign( JSONLoader.prototype, {
 
 			}
 
+			return { morphPositions, morphNormals };
+
 		}
 
-		function parseAnimations( json, geometry ) {
+		//Reproduces copyMorphColorsToIndexedBufferGeometry()/getColorsRGB() from
+		//src/utilities.js exactly (that path has no test coverage today, so the
+		//arithmetic - odd as some of it looks - is ported unchanged rather than
+		//redesigned here).
+		function parseMorphColors( json ) {
 
-			var outputAnimations = [];
+			if ( json.morphColors === undefined ) return undefined;
 
-			// parse old style Bone/Hierarchy animations
-			var animations = [];
+			const morphAttributes = [];
 
-			if ( json.animation !== undefined ) {
+			for ( let i = 0, l = json.morphColors.length; i < l; i ++ ) {
 
-				animations.push( json.animation );
+				const srcColors = json.morphColors[ i ].colors;
+				const colors = [];
 
-			}
+				for ( let c = 0, cl = srcColors.length; c < cl; c += 3 ) {
 
-			if ( json.animations !== undefined ) {
-
-				if ( json.animations.length ) {
-
-					animations = animations.concat( json.animations );
-
-				} else {
-
-					animations.push( json.animations );
+					const color = new Color( 0xffaa00 );
+					color.setRGB( srcColors[ c ], srcColors[ c + 1 ], srcColors[ c + 2 ] );
+					colors.push( color );
 
 				}
 
-			}
+				const colorArray = [];
 
-			for ( var i = 0; i < animations.length; i ++ ) {
+				for ( let j = 0, jl = colors.length * 3; j < jl; j ++ ) {
 
-				var clip = AnimationClip.parseAnimation( animations[ i ], geometry.bones );
-				if ( clip ) outputAnimations.push( clip );
+					const rgb = getColorsRGB( colors, j );
+					colorArray.push( rgb[ 0 ], rgb[ 1 ], rgb[ 2 ] );
 
-			}
+				}
 
-			// parse implicit morph animations
-			if ( geometry.morphTargets ) {
-
-				// TODO: Figure out what an appropraite FPS is for morph target animations -- defaulting to 10, but really it is completely arbitrary.
-				var morphAnimationClips = AnimationClip.CreateClipsFromMorphTargetSequences( geometry.morphTargets, 10 );
-				outputAnimations = outputAnimations.concat( morphAnimationClips );
+				const attribute = new Float32BufferAttribute( colorArray, 3 );
+				attribute.name = json.morphColors[ i ].name;
+				morphAttributes.push( attribute );
 
 			}
 
-			if ( outputAnimations.length > 0 ) geometry.animations = outputAnimations;
+			return morphAttributes;
 
 		}
 
@@ -648,24 +386,113 @@ Object.assign( JSONLoader.prototype, {
 
 			}
 
-			if ( json.scale !== undefined ) {
+			const scale = ( json.scale !== undefined ) ? 1.0 / json.scale : 1.0;
 
-				json.scale = 1.0 / json.scale;
+			const srcVertices = json.vertices;
+			const vertexCount = srcVertices.length / 3;
 
-			} else {
+			const positions = new Float32Array( srcVertices.length );
+			for ( let i = 0, l = srcVertices.length; i < l; i ++ ) {
 
-				json.scale = 1.0;
+				positions[ i ] = srcVertices[ i ] * scale;
 
 			}
 
-			var geometry = new Geometry();
-			geometry.morphColors = [];
-			parseModel( json, geometry );
-			parseSkin( json, geometry );
-			parseMorphing( json, geometry );
-			parseAnimations( json, geometry );
+			const geometry = new BufferGeometry();
+			geometry.setAttribute( 'position', new BufferAttribute( positions, 3 ) );
 
-			geometry.computeFaceNormals();
+			if ( json.normals !== undefined && json.normals.length > 0 ) {
+
+				geometry.setAttribute( 'normal', new BufferAttribute( Float32Array.from( json.normals ), 3 ) );
+
+			}
+
+			if ( json.uvs !== undefined ) {
+
+				if ( json.uvs[ 0 ] && json.uvs[ 0 ].length > 0 ) {
+
+					geometry.setAttribute( 'uv', new BufferAttribute( Float32Array.from( json.uvs[ 0 ] ), 2 ) );
+
+				}
+
+				if ( json.uvs[ 1 ] && json.uvs[ 1 ].length > 0 ) {
+
+					geometry.setAttribute( 'uv2', new BufferAttribute( Float32Array.from( json.uvs[ 1 ] ), 2 ) );
+
+				}
+
+			}
+
+			if ( json.colors !== undefined && json.colors.length > 0 ) {
+
+				const colorArray = new Float32Array( json.colors.length * 3 );
+
+				for ( let i = 0, l = json.colors.length; i < l; i ++ ) {
+
+					const color = new Color( json.colors[ i ] );
+					colorArray[ i * 3 ] = color.r;
+					colorArray[ i * 3 + 1 ] = color.g;
+					colorArray[ i * 3 + 2 ] = color.b;
+
+				}
+
+				geometry.setAttribute( 'color', new BufferAttribute( colorArray, 3 ) );
+
+			} else {
+
+				const colorArray = new Float32Array( vertexCount * 3 ).fill( 1.0 );
+				geometry.setAttribute( 'color', new BufferAttribute( colorArray, 3 ) );
+
+			}
+
+			const { indices, materialIndices } = parseFaces( json );
+
+			if ( indices.length > 0 ) {
+
+				geometry.setIndex( indices );
+				geometry.groups = computeGroups( materialIndices );
+
+			}
+
+			const { morphPositions, morphNormals } = parseMorphTargets( json, scale );
+
+			if ( morphPositions.length > 0 ) {
+
+				geometry.morphAttributes.position = morphPositions;
+
+				const resolvedMorphNormals = [];
+
+				for ( let i = 0; i < morphPositions.length; i ++ ) {
+
+					if ( morphNormals[ i ] ) {
+
+						resolvedMorphNormals.push( morphNormals[ i ] );
+
+					} else if ( indices.length > 0 ) {
+
+						resolvedMorphNormals.push( computeMorphNormalAttribute( morphPositions[ i ], indices ) );
+
+					}
+
+				}
+
+				if ( resolvedMorphNormals.length > 0 ) {
+
+					geometry.morphAttributes.normal = resolvedMorphNormals;
+
+				}
+
+			}
+
+			const morphColorAttributes = parseMorphColors( json );
+
+			if ( morphColorAttributes !== undefined ) {
+
+				geometry.morphAttributes.color = morphColorAttributes;
+
+			}
+
+			geometry.computeBoundingBox();
 			geometry.computeBoundingSphere();
 
 			if ( json.materials === undefined || json.materials.length === 0 ) {

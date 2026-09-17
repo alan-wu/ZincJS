@@ -1,4 +1,5 @@
 import { JSONLoader } from './JSONLoader';
+import { mergeGeometries as mergeBufferGeometries } from '../utilities';
 import * as THREE from 'three/webgpu';
 const FileLoader = THREE.FileLoader;
 
@@ -30,16 +31,13 @@ const mergeGlyphData = (glyphData) => {
 }
 
 const mergeGeometries = (geometries) => {
-  const merge = (geometry1, geometry2) => {
-    geometry1.merge(geometry2);
-  }
-
   if (geometries && geometries.length > 0) {
-    while (geometries.length > 1) {
-      const geometry2 = geometries.splice(1,1);
-      merge(geometries[0], geometry2[0]);
+    if (geometries.length === 1) {
+      return geometries[0];
     }
-    return geometries[0];
+    const merged = mergeBufferGeometries(geometries);
+    geometries.forEach((geometry) => geometry.dispose());
+    return merged;
   }
   return undefined;
 }
