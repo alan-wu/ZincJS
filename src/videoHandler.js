@@ -75,7 +75,6 @@ const VideoHandler = function(srcIn)  {
 		_this.videoTexture = new THREE.VideoTexture( _this.video );
 		_this.videoTexture.minFilter = THREE.LinearFilter;
 		_this.videoTexture.magFilter = THREE.LinearFilter;
-		_this.videoTexture.format = THREE.RGBFormat;
     _this.video.currentTime = 0;
 		return _this.videoTexture;
 	}

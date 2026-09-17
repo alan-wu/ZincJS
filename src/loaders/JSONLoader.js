@@ -232,7 +232,7 @@ Object.assign( JSONLoader.prototype, {
 		}
 
 		//Material-index run-length groups over the triangle list, matching
-		//Geometry.prototype.computeGroups() in src/three/Geometry.js.
+		//the legacy Geometry.prototype.computeGroups() this replaced.
 		function computeGroups( materialIndices ) {
 
 			const groups = [];

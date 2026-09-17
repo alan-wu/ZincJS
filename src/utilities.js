@@ -1,5 +1,4 @@
 import * as THREE from 'three/webgpu';
-import { Geometry as THREEGeometry } from './three/Geometry';
 import SpriteTextModule from 'three-spritetext';
 const SpriteText = SpriteTextModule.default || SpriteTextModule;
 import discPNG from './assets/disc.png';
@@ -190,69 +189,14 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
 }
 
 
-const toBufferGeometry = (geometryIn, options) => {
-  let geometry = undefined;
-  if (geometryIn instanceof THREEGeometry) {
-    if (options.localTimeEnabled && !geometryIn.morphNormalsReady &&
-      (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
-      geometryIn.computeMorphNormals();
-    geometry = geometryIn.toIndexedBufferGeometry();
-    if (options.localMorphColour) {
-      copyMorphColorsToIndexedBufferGeometry(geometryIn, geometry);
-    }
-  } else if (geometryIn instanceof THREE.BufferGeometry) {
-    geometry = geometryIn.clone();
-  }
+const toBufferGeometry = (geometryIn) => {
+  const geometry = geometryIn.clone();
   geometry.colorsNeedUpdate = true;
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   if (geometryIn._video)
     geometry._video = geometryIn._video;
   return geometry;
-}
-
-const copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
-  if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
-    let array = [];
-    let morphColors = geometry.morphColors;
-    for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
-      let morphColor = morphColors[ i ];
-      let colorArray = [];
-      for ( var j = 0; j < geometry.faces.length; j ++ ) {
-        let face = geometry.faces[j];
-        let color = getColorsRGB(morphColor.colors, face.a);
-        colorArray.push(color[0], color[1], color[2]);
-        color = getColorsRGB(morphColor.colors, face.b);
-        colorArray.push(color[0], color[1], color[2]);
-        color = getColorsRGB(morphColor.colors, face.c);
-        colorArray.push(color[0], color[1], color[2]);
-      }
-      var attribute = new THREE.Float32BufferAttribute( geometry.faces.length * 3 * 3, 3 );
-      attribute.name = morphColor.name;
-      array.push( attribute.copyArray( colorArray ) );
-    }
-    bufferGeometry.morphAttributes[ "color" ] = array;
-  }
-}
-
-
-const copyMorphColorsToIndexedBufferGeometry = (geometry, bufferGeometry) => {
-  if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
-    let array = [];
-    let morphColors = geometry.morphColors;
-    for ( let i = 0, l = morphColors.length; i < l; i ++ ) {
-      const morphColor = morphColors[ i ];
-      const colorArray = [];
-      for ( let j = 0; j < morphColor.colors.length * 3; j ++ ) {
-        let color = getColorsRGB(morphColor.colors, j);
-        colorArray.push(color[0], color[1], color[2]);
-      }
-      const attribute = new THREE.Float32BufferAttribute( colorArray, 3 );
-      attribute.name = morphColor.name;
-      array.push( attribute );
-    }
-    bufferGeometry.morphAttributes[ "color" ] = array;
-  }
 }
 
 /**
@@ -918,7 +862,6 @@ function copyColorsArray(attribute, colors) {
 }
 
 export {
-  copyMorphColorsToBufferGeometry,
   copyColorsArray,
   copyVector2sArray,
   copyVector3sArray,

@@ -4,15 +4,14 @@ import { toBufferGeometry } from '../src/utilities';
 
 const bit = (...positions) => positions.reduce((v, p) => v | (1 << p), 0);
 
-//loader.parse() only ever returns the legacy, pre-buffer Geometry (with
-//.faces/.vertices/.colors etc, not .getAttribute()/.getIndex()/
-//.morphAttributes) - production code always converts it via
-//toBufferGeometry() before touching it as a BufferGeometry, so tests do
-//the same here rather than asserting on the untouched parse() output.
+//loader.parse() already returns a THREE.BufferGeometry directly. Production
+//code still runs it through toBufferGeometry() (which now just clones it
+//and computes bounds) before touching it, so tests do the same here rather
+//than asserting on the raw parse() output.
 const parseToBufferGeometry = (json, options = {}) => {
   const loader = new JSONLoader();
-  const { geometry: legacyGeometry } = loader.parse(json, '');
-  return toBufferGeometry(legacyGeometry, options);
+  const { geometry } = loader.parse(json, '');
+  return toBufferGeometry(geometry, options);
 };
 
 describe('JSONLoader BufferGeometry construction', () => {
