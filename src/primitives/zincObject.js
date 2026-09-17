@@ -183,6 +183,10 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
         this.clipAction.loop = THREE.LoopRepeat;
         this.clipAction.clampWhenFinished = true;
         this.clipAction.play();
+        //Evaluate the clip immediately so morphTargetInfluences reflects
+        //time 0 right away, rather than staying at its all-zero default
+        //until the first mixer.update() from playback/setMorphTime.
+        this.mixer.update(0);
       }
     }
   }
@@ -199,6 +203,14 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
       geometry.setAttribute('morphTarget0', geometry.getAttribute( 'position' ) );
       geometry.setAttribute('morphTarget1', geometry.getAttribute( 'position' ) );
     }
+  }
+  if (this.morphColour) {
+    //Make sure morphColor0/morphColor1 exist before this mesh is ever
+    //rendered. WebGPU builds its pipeline against whatever attributes the
+    //geometry has at first render, and adding these two afterwards doesn't
+    //get picked up by an already-built pipeline - the object would render
+    //black forever after, since the colour shader can no longer see them.
+    this.initiateMorphColor();
   }
   this.boundingBoxUpdateRequired = true;
 }

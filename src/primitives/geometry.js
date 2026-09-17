@@ -24,9 +24,15 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
         side : THREE.DoubleSide
       });
     }
-    //material = PhongToToon(material);
     if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
-      material.vertexColors = true;
+      //Force vertexColors off (even if materialIn already had it true) -
+      //NodeMaterial would otherwise multiply our morph colour blend by
+      //the static, non-morph 'color' attribute (vertexColor() in
+      //setupDiffuseColor), which zeroes out whatever channel that static
+      //colour never needed (e.g. blue on an originally pure-red vertex),
+      //turning parts of the blend black instead of the intended hue.
+      //applyMorphColorNode's colorNode fully replaces vertex colouring.
+      material.vertexColors = false;
       material = applyMorphColorNode(material);
     }
   } else {

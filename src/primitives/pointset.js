@@ -72,6 +72,16 @@ const extractColorFrames = (geometry, localMorphColour) => {
 }
 
 /**
+ * Extract the plain, non-morph per-vertex 'color' attribute (if any) so a
+ * Pointset still shows static vertex colours from the file when there is
+ * no colour animation to blend between.
+ */
+const extractStaticColorFrame = (geometry) => {
+  const colorAttribute = geometry.getAttribute('color');
+  return colorAttribute ? Float32Array.from(colorAttribute.array) : undefined;
+}
+
+/**
  * Provides an object which stores points and provides method which controls its position.
  * This is created when a valid json file containing point is read into a {@link Zinc.Scene}
  * object.
@@ -196,10 +206,10 @@ const Pointset = function () {
     instancePosition.array.set(positionFrames[0]);
     instancePosition.needsUpdate = true;
 
-    if (colorFrames) {
-      const frame = colorFrames[0];
+    const initialColorFrame = colorFrames ? colorFrames[0] : extractStaticColorFrame(geometry);
+    if (initialColorFrame) {
       for (let i = 0; i < numberOfPoints; i++) {
-        _tempColor.setRGB(frame[i * 3], frame[i * 3 + 1], frame[i * 3 + 2]);
+        _tempColor.setRGB(initialColorFrame[i * 3], initialColorFrame[i * 3 + 1], initialColorFrame[i * 3 + 2]);
         mesh.setColorAt(i, _tempColor);
       }
     }

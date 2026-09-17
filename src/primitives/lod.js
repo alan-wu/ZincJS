@@ -216,6 +216,7 @@ const LOD = function (parent) {
       const options = {
         localTimeEnabled: this._parent.timeEnabled,
         localMorphColour: this._parent.morphColour,
+        isLines: this._parent.isLines,
       }
       const geometry = toBufferGeometry(geometryIn, options);
       let mesh = undefined;
@@ -234,8 +235,13 @@ const LOD = function (parent) {
   this.updateMorphColorAttribute = (currentOnly) => {
     //Multilayers - set all
     if (this._material) {
-      if ((this._material.vertexColors == THREE.VertexColors) ||
-        (this._material.vertexColors == true)) {
+      //Gate on our own morphColorMix uniform rather than
+      //material.vertexColors - that flag is deliberately left false for
+      //morph colour materials now (see applyMorphColorNode's callers), so
+      //NodeMaterial doesn't multiply the blend by the static 'color'
+      //attribute on top of it.
+      if (this._material.userData && this._material.userData.uniforms &&
+        this._material.userData.uniforms.morphColorMix) {
         if (currentOnly) {
           const morph = this.getCurrentMorph();
           updateMorphColorAttribute(morph.geometry, morph);

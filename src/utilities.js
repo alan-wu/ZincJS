@@ -135,13 +135,9 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
     const morphColors = targetGeometry.morphAttributes[ "color" ];
     const influences = morph.morphTargetInfluences;
     const length = influences.length;
-    targetGeometry.deleteAttribute( 'morphColor0' );
-    targetGeometry.deleteAttribute( 'morphColor1' );
-    let bound = 0;
     let morphArray = [];
-    for (let i = 0; (1 > bound) || (i < length); i++) {
+    for (let i = 0; i < length; i++) {
       if (influences[i] > 0) {
-        bound++;
         morphArray.push([i, influences[i]]);
       }
     }
@@ -149,20 +145,45 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
     //TSL colorNode set up by applyMorphColorNode - keep it in sync with
     //whichever two morph targets currently have non-zero influence.
     let mix = 0;
-    if (morphArray.length == 2) {
-      console.log(morphArray[0][0], morphColors[ morphArray[0][0] ], morphArray[1][0], morphColors[ morphArray[1][0] ] );
-      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
+    let index0 = 0;
+    let index1 = 0;
+    if (morphArray.length >= 2) {
+      index0 = morphArray[0][0];
+      index1 = morphArray[1][0];
       const total = morphArray[0][1] + morphArray[1][1];
       mix = total > 0 ? morphArray[1][1] / total : 0;
     } else if (morphArray.length == 1) {
-      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
+      index0 = index1 = morphArray[0][0];
     }
+    //Keep morphColor0/morphColor1 as two persistent attributes and mutate
+    //their contents in place (array.set + needsUpdate) rather than
+    //swapping which BufferAttribute object is bound under those names
+    //every call. WebGPU's pipeline is built once against whichever
+    //attribute object first occupies a given slot; a brand new object
+    //bound in later (as deleteAttribute/setAttribute would do every frame)
+    //isn't guaranteed to be picked up by an already-built pipeline, which
+    //silently renders black. Mutating a single long-lived attribute is the
+    //standard, well tested update path both the WebGL and WebGPU
+    //backends use everywhere else.
+    let attribute0 = targetGeometry.getAttribute('morphColor0');
+    let attribute1 = targetGeometry.getAttribute('morphColor1');
+    if (!attribute0 || !attribute1) {
+      attribute0 = new THREE.Float32BufferAttribute(
+        new Float32Array(morphColors[0].array.length), morphColors[0].itemSize);
+      attribute1 = new THREE.Float32BufferAttribute(
+        new Float32Array(morphColors[0].array.length), morphColors[0].itemSize);
+      attribute0.setUsage(THREE.DynamicDrawUsage);
+      attribute1.setUsage(THREE.DynamicDrawUsage);
+      targetGeometry.setAttribute('morphColor0', attribute0);
+      targetGeometry.setAttribute('morphColor1', attribute1);
+    }
+    attribute0.array.set(morphColors[index0].array);
+    attribute0.needsUpdate = true;
+    attribute1.array.set(morphColors[index1].array);
+    attribute1.needsUpdate = true;
     const morphColorMix = morph.material && morph.material.userData &&
       morph.material.userData.uniforms && morph.material.userData.uniforms.morphColorMix;
     if (morphColorMix) {
-      console.log(morphColorMix.value)
       morphColorMix.value = mix;
     }
   }

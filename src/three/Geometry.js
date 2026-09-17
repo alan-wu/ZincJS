@@ -1729,7 +1729,9 @@ Geometry.prototype = Object.assign( Object.create( EventDispatcher.prototype ), 
 			}
 
 			buffergeometry.morphAttributes.position = array;
-      buffergeometry.morphAttributes.normal = normalsArray;
+      if (normalsArray.length > 0) {
+        buffergeometry.morphAttributes.normal = normalsArray;
+      }
 
 		}
 
