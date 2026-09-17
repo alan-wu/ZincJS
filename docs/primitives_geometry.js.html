@@ -26,9 +26,9 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import * as THREE from 'three';
+            <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
 import { toBufferGeometry } from '../utilities';
-import { augmentMorphColor } from './augmentShader';
+import { applyMorphColorNode } from '../tls/morphColorMaterial';
 import { ZincObject} from './zincObject';
 
 const createMeshForGeometry =  (geometryIn, materialIn, options) => {
@@ -52,10 +52,16 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
         side : THREE.DoubleSide
       });
     }
-    //material = PhongToToon(material);
     if (options.localMorphColour &amp;&amp; geometry.morphAttributes[ "color" ]) {
-      material.vertexColors = true;
-      material.onBeforeCompile = augmentMorphColor;
+      //Force vertexColors off (even if materialIn already had it true) -
+      //NodeMaterial would otherwise multiply our morph colour blend by
+      //the static, non-morph 'color' attribute (vertexColor() in
+      //setupDiffuseColor), which zeroes out whatever channel that static
+      //colour never needed (e.g. blue on an originally pure-red vertex),
+      //turning parts of the blend black instead of the intended hue.
+      //applyMorphColorNode's colorNode fully replaces vertex colouring.
+      material.vertexColors = false;
+      material = applyMorphColorNode(material);
     }
   } else {
     let videoTexture = geometry._video.createCanvasVideoTexture();
@@ -105,30 +111,6 @@ const Geometry = function () {
 		const mesh = createMeshForGeometry(geometryIn, materialIn, options);
     this.videoHandler = mesh.geometry._video;
 		this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
-	}
-
-  /**
-   * Calculate the UV for texture rendering.
-   */
-	this.calculateUVs = () => {
-    //Multilayers
-		this.geometry.computeBoundingBox();
-		const max = this.geometry.boundingBox.max, min = this.geometry.boundingBox.min;
-		const offset = new THREE.Vector2(0 - min.x, 0 - min.y);
-		const range = new THREE.Vector2(max.x - min.x, max.y - min.y);
-		this.geometry.faceVertexUvs[0] = [];
-		for (let i = 0; i &lt; this.geometry.faces.length ; i++) {
-		    const v1 = this.geometry.vertices[this.geometry.faces[i].a];
-		    const v2 = this.geometry.vertices[this.geometry.faces[i].b];
-		    const v3 = this.geometry.vertices[this.geometry.faces[i].c];
-		    geometry.faceVertexUvs[0].push(
-		        [
-		            new THREE.Vector2((v1.x + offset.x)/range.x ,(v1.y + offset.y)/range.y),
-		            new THREE.Vector2((v2.x + offset.x)/range.x ,(v2.y + offset.y)/range.y),
-		            new THREE.Vector2((v3.x + offset.x)/range.x ,(v3.y + offset.y)/range.y)
-		        ]);
-		}
-		geometry.uvsNeedUpdate = true;
 	}
 
   /**
@@ -198,13 +180,13 @@ export { Geometry };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Sep 17 2026 20:48:20 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

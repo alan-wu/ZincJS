@@ -52,6 +52,12 @@
     Provides an object which stores points and provides method which controls its position.
 This is created when a valid json file containing point is read into a Zinc.Scene
 object.
+
+Points are rendered as an instanced mesh - every point is one instance of a
+small quad billboarded towards the camera and kept at a constant size in
+pixels on the GPU. Time varying vertex colour and morph vertex positions
+are supported by blending between per time step position/colour arrays on
+the CPU and writing the result into the instance attributes every frame.
 </div>
 
 
@@ -102,7 +108,7 @@ object.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line17">line 17</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line99">line 99</a>
     </li></ul></dd>
     
 
@@ -328,7 +334,7 @@ if the number of coords equals to the number labels provided.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line89">line 89</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line272">line 272</a>
     </li></ul></dd>
     
 
@@ -372,7 +378,7 @@ if the number of coords equals to the number labels provided.</td>
 
 
 <div class="description">
-    Create the pointsets using geometry and material.
+    Create the pointset using geometry and material.
 </div>
 
 
@@ -447,7 +453,8 @@ if the number of coords equals to the number labels provided.</td>
 
             
 
-            <td class="description last">Material to be set for the lines.</td>
+            <td class="description last">Material to be set for the points,
+only its colour/opacity/alphaTest are used.</td>
         </tr>
 
     
@@ -512,8 +519,8 @@ if the number of coords equals to the number labels provided.</td>
 
             
 
-            <td class="description last">A flag to indicate either the lines is
-time dependent.</td>
+            <td class="description last">A flag to indicate either the points'
+positions are time dependent.</td>
         </tr>
 
     
@@ -585,7 +592,7 @@ time dependent.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line37">line 37</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line174">line 174</a>
     </li></ul></dd>
     
 
@@ -673,7 +680,7 @@ time dependent.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line279">line 279</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line485">line 485</a>
     </li></ul></dd>
     
 
@@ -810,7 +817,7 @@ time dependent.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line200">line 200</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line397">line 397</a>
     </li></ul></dd>
     
 
@@ -898,7 +905,289 @@ time dependent.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line251">line 251</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line449">line 449</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getBoundingBox"><span class="type-signature"></span>getBoundingBox<span class="signature">()</span><span class="type-signature"> &rarr; {THREE.Box3}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Get the bounding box for the whole set of points.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line566">line 566</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">THREE.Box3</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getClosestVertex"><span class="type-signature"></span>getClosestVertex<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Get the closest vertex to centroid.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line546">line 546</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getClosestVertexIndex"><span class="type-signature"></span>getClosestVertexIndex<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Get the index of the closest vertex to centroid.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line524">line 524</a>
     </li></ul></dd>
     
 
@@ -986,7 +1275,7 @@ time dependent.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line236">line 236</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line434">line 434</a>
     </li></ul></dd>
     
 
@@ -1022,7 +1311,7 @@ time dependent.</td>
     
 
     
-    <h4 class="name" id="render"><span class="type-signature"></span>render<span class="signature">(flag)</span><span class="type-signature"></span></h4>
+    <h4 class="name" id="isTimeVarying"><span class="type-signature"></span>isTimeVarying<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
     
 
     
@@ -1030,7 +1319,7 @@ time dependent.</td>
 
 
 <div class="description">
-    Turn size attenuation on/off based on the flag.
+    Check if the pointset is time varying.
 </div>
 
 
@@ -1039,56 +1328,6 @@ time dependent.</td>
 
 
 
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>flag</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Determin either size attenuation
-should be on or off.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
 
 
 
@@ -1124,7 +1363,114 @@ should be on or off.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line309">line 309</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line588">line 588</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="render"><span class="type-signature"></span>render<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Update the geometry and colours depending on the internal time and
+refresh the marker/LOD state for the render.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line614">line 614</a>
     </li></ul></dd>
     
 
@@ -1261,7 +1607,7 @@ should be on or off.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line142">line 142</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line339">line 339</a>
     </li></ul></dd>
     
 
@@ -1398,7 +1744,7 @@ should be on or off.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line125">line 125</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line322">line 322</a>
     </li></ul></dd>
     
 
@@ -1536,7 +1882,7 @@ should be on or off.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line157">line 157</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line354">line 354</a>
     </li></ul></dd>
     
 
@@ -1673,7 +2019,7 @@ should be on or off.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line171">line 171</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line368">line 368</a>
     </li></ul></dd>
     
 
@@ -1811,7 +2157,233 @@ value is 1.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line186">line 186</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line383">line 383</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="setMesh"><span class="type-signature"></span>setMesh<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Adapt a plain THREE.Points object (e.g. one parsed from a GLTF file)
+into this Pointset's instanced mesh representation.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line226">line 226</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="setMorphTime"><span class="type-signature"></span>setMorphTime<span class="signature">(time)</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Set the local time of this pointset.
+</div>
+
+
+
+
+
+
+
+
+
+    <h5>Parameters:</h5>
+    
+
+<table class="params">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>time</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Number</span>
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last">Can be any value between 0 to duration.</td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line597">line 597</a>
     </li></ul></dd>
     
 
@@ -1948,7 +2520,7 @@ value is 1.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line292">line 292</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line511">line 511</a>
     </li></ul></dd>
     
 
@@ -1992,7 +2564,7 @@ value is 1.</td>
 
 
 <div class="description">
-    Set the size of the points.
+    Set the size of the points in pixels.
 </div>
 
 
@@ -2085,7 +2657,7 @@ value is 1.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line213">line 213</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line410">line 410</a>
     </li></ul></dd>
     
 
@@ -2223,7 +2795,96 @@ should be on or off.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line226">line 226</a>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line424">line 424</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="~updateMorphPointset"><span class="type-signature">(inner) </span>updateMorphPointset<span class="signature">()</span><span class="type-signature"></span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Blend positionFrames/colorFrames based on the current inbuildTime and
+write the result into the instancePosition/instanceColor attributes.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line117">line 117</a>
     </li></ul></dd>
     
 
@@ -2269,13 +2930,13 @@ should be on or off.</td>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Sep 17 2026 20:48:20 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

@@ -26,8 +26,7 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import * as THREE from 'three';
-import { Geometry as THREEGeometry } from './three/Geometry';
+            <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
 import SpriteTextModule from 'three-spritetext';
 const SpriteText = SpriteTextModule.default || SpriteTextModule;
 import discPNG from './assets/disc.png';
@@ -163,90 +162,69 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
     const morphColors = targetGeometry.morphAttributes[ "color" ];
     const influences = morph.morphTargetInfluences;
     const length = influences.length;
-    targetGeometry.deleteAttribute( 'morphColor0' );
-    targetGeometry.deleteAttribute( 'morphColor1' );
-    let bound = 0;
     let morphArray = [];
-    for (let i = 0; (1 > bound) || (i &lt; length); i++) {
+    for (let i = 0; i &lt; length; i++) {
       if (influences[i] > 0) {
-        bound++;
         morphArray.push([i, influences[i]]);
       }
     }
-    if (morphArray.length == 2) {
-      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
+    //morphColorMix (0 = fully morphColor0, 1 = fully morphColor1) drives the
+    //TSL colorNode set up by applyMorphColorNode - keep it in sync with
+    //whichever two morph targets currently have non-zero influence.
+    let mix = 0;
+    let index0 = 0;
+    let index1 = 0;
+    if (morphArray.length >= 2) {
+      index0 = morphArray[0][0];
+      index1 = morphArray[1][0];
+      const total = morphArray[0][1] + morphArray[1][1];
+      mix = total > 0 ? morphArray[1][1] / total : 0;
     } else if (morphArray.length == 1) {
-      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
+      index0 = index1 = morphArray[0][0];
+    }
+    //Keep morphColor0/morphColor1 as two persistent attributes and mutate
+    //their contents in place (array.set + needsUpdate) rather than
+    //swapping which BufferAttribute object is bound under those names
+    //every call. WebGPU's pipeline is built once against whichever
+    //attribute object first occupies a given slot; a brand new object
+    //bound in later (as deleteAttribute/setAttribute would do every frame)
+    //isn't guaranteed to be picked up by an already-built pipeline, which
+    //silently renders black. Mutating a single long-lived attribute is the
+    //standard, well tested update path both the WebGL and WebGPU
+    //backends use everywhere else.
+    let attribute0 = targetGeometry.getAttribute('morphColor0');
+    let attribute1 = targetGeometry.getAttribute('morphColor1');
+    if (!attribute0 || !attribute1) {
+      attribute0 = new THREE.Float32BufferAttribute(
+        new Float32Array(morphColors[0].array.length), morphColors[0].itemSize);
+      attribute1 = new THREE.Float32BufferAttribute(
+        new Float32Array(morphColors[0].array.length), morphColors[0].itemSize);
+      attribute0.setUsage(THREE.DynamicDrawUsage);
+      attribute1.setUsage(THREE.DynamicDrawUsage);
+      targetGeometry.setAttribute('morphColor0', attribute0);
+      targetGeometry.setAttribute('morphColor1', attribute1);
+    }
+    attribute0.array.set(morphColors[index0].array);
+    attribute0.needsUpdate = true;
+    attribute1.array.set(morphColors[index1].array);
+    attribute1.needsUpdate = true;
+    const morphColorMix = morph.material &amp;&amp; morph.material.userData &amp;&amp;
+      morph.material.userData.uniforms &amp;&amp; morph.material.userData.uniforms.morphColorMix;
+    if (morphColorMix) {
+      morphColorMix.value = mix;
     }
   }
 }
 
 
-const toBufferGeometry = (geometryIn, options) => {
-  let geometry = undefined;
-  if (geometryIn instanceof THREEGeometry) {
-    if (options.localTimeEnabled &amp;&amp; !geometryIn.morphNormalsReady &amp;&amp;
-      (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
-      geometryIn.computeMorphNormals();
-    geometry = geometryIn.toIndexedBufferGeometry();
-    if (options.localMorphColour) {
-      copyMorphColorsToIndexedBufferGeometry(geometryIn, geometry);
-    }
-  } else if (geometryIn instanceof THREE.BufferGeometry) {
-    geometry = geometryIn.clone();
-  }
+const toBufferGeometry = (geometryIn) => {
+  const geometry = geometryIn.clone();
   geometry.colorsNeedUpdate = true;
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   if (geometryIn._video)
     geometry._video = geometryIn._video;
   return geometry;
-}
-
-const copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
-  if (geometry &amp;&amp; geometry.morphColors &amp;&amp; geometry.morphColors.length > 0 ) {
-    let array = [];
-    let morphColors = geometry.morphColors;
-    for ( var i = 0, l = morphColors.length; i &lt; l; i ++ ) {
-      let morphColor = morphColors[ i ];
-      let colorArray = [];
-      for ( var j = 0; j &lt; geometry.faces.length; j ++ ) {
-        let face = geometry.faces[j];
-        let color = getColorsRGB(morphColor.colors, face.a);
-        colorArray.push(color[0], color[1], color[2]);
-        color = getColorsRGB(morphColor.colors, face.b);
-        colorArray.push(color[0], color[1], color[2]);
-        color = getColorsRGB(morphColor.colors, face.c);
-        colorArray.push(color[0], color[1], color[2]);
-      }
-      var attribute = new THREE.Float32BufferAttribute( geometry.faces.length * 3 * 3, 3 );
-      attribute.name = morphColor.name;
-      array.push( attribute.copyArray( colorArray ) );
-    }
-    bufferGeometry.morphAttributes[ "color" ] = array;
-  }
-}
-
-
-const copyMorphColorsToIndexedBufferGeometry = (geometry, bufferGeometry) => {
-  if (geometry &amp;&amp; geometry.morphColors &amp;&amp; geometry.morphColors.length > 0 ) {
-    let array = [];
-    let morphColors = geometry.morphColors;
-    for ( let i = 0, l = morphColors.length; i &lt; l; i ++ ) {
-      const morphColor = morphColors[ i ];
-      const colorArray = [];
-      for ( let j = 0; j &lt; morphColor.colors.length * 3; j ++ ) {
-        let color = getColorsRGB(morphColor.colors, j);
-        colorArray.push(color[0], color[1], color[2]);
-      }
-      const attribute = new THREE.Float32BufferAttribute( colorArray, 3 );
-      attribute.name = morphColor.name;
-      array.push( attribute );
-    }
-    bufferGeometry.morphAttributes[ "color" ] = array;
-  }
 }
 
 /**
@@ -912,7 +890,6 @@ function copyColorsArray(attribute, colors) {
 }
 
 export {
-  copyMorphColorsToBufferGeometry,
   copyColorsArray,
   copyVector2sArray,
   copyVector3sArray,
@@ -944,13 +921,13 @@ export {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Sep 17 2026 20:48:20 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

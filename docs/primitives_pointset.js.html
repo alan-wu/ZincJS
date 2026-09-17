@@ -26,17 +26,99 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import * as THREE from 'three';
+            <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
 import { Label } from './label';
-import { Points } from '../three/Points';
+import { InstancedPoints } from '../three/InstancedPoints';
 import { ZincObject } from './zincObject';
 import { getCircularTexture, toBufferGeometry } from '../utilities';
-import { augmentMorphColor } from './augmentShader';
+import { createInstancedPointsMaterial } from '../tls/pointsMaterial';
+
+//Maximum number of points a programmatically built (addPoints) Pointset can
+//hold - the InstancedMesh backing it is allocated once with this capacity.
+const DEFAULT_CAPACITY = 500;
+
+/**
+ * Build the shared quad geometry every point instance is drawn with plus
+ * the per instance `instancePosition` attribute used to place it - the
+ * actual on screen billboard offset and constant pixel sizing is computed
+ * in {@link createInstancedPointsMaterial}.
+ */
+const createPointQuadGeometry = (capacity) => {
+  const geometry = new THREE.PlaneGeometry(1, 1);
+  const instancePosition = new THREE.InstancedBufferAttribute(
+    new Float32Array(capacity * 3), 3);
+  instancePosition.setUsage(THREE.DynamicDrawUsage);
+  geometry.setAttribute('instancePosition', instancePosition);
+  return geometry;
+}
+
+/**
+ * Extract the per time step, flat [x0, y0, z0, x1, y1, z1, ...] position
+ * arrays from a (possibly time varying) BufferGeometry. Index 0 is always
+ * the base frame, subsequent entries come from `morphAttributes.position`.
+ */
+const extractPositionFrames = (geometry, localTimeEnabled) => {
+  const positionAttribute = geometry.getAttribute('position');
+  const frames = [Float32Array.from(positionAttribute.array)];
+  const morphPositions = geometry.morphAttributes.position;
+  if (localTimeEnabled &amp;&amp; morphPositions &amp;&amp; morphPositions.length > 0) {
+    const relative = geometry.morphTargetsRelative;
+    morphPositions.forEach((attribute) => {
+      if (relative) {
+        const frame = new Float32Array(positionAttribute.array.length);
+        for (let i = 0; i &lt; frame.length; i++) {
+          frame[i] = positionAttribute.array[i] + attribute.array[i];
+        }
+        frames.push(frame);
+      } else {
+        frames.push(Float32Array.from(attribute.array));
+      }
+    });
+  }
+  return frames;
+}
+
+/**
+ * Extract the per time step, flat [r0, g0, b0, r1, g1, b1, ...] colour
+ * arrays from a time varying BufferGeometry. Returns undefined unless
+ * localMorphColour is requested and the geometry actually carries morph
+ * colour targets, mirroring the legacy vertexColors/onBeforeCompile gating.
+ */
+const extractColorFrames = (geometry, localMorphColour) => {
+  const morphColors = geometry.morphAttributes.color;
+  if (localMorphColour &amp;&amp; morphColors &amp;&amp; morphColors.length > 0) {
+    const colorAttribute = geometry.getAttribute('color');
+    const frames = [];
+    frames.push(colorAttribute ? Float32Array.from(colorAttribute.array) :
+      new Float32Array(morphColors[0].array.length));
+    morphColors.forEach((attribute) => {
+      frames.push(Float32Array.from(attribute.array));
+    });
+    return frames;
+  }
+  return undefined;
+}
+
+/**
+ * Extract the plain, non-morph per-vertex 'color' attribute (if any) so a
+ * Pointset still shows static vertex colours from the file when there is
+ * no colour animation to blend between.
+ */
+const extractStaticColorFrame = (geometry) => {
+  const colorAttribute = geometry.getAttribute('color');
+  return colorAttribute ? Float32Array.from(colorAttribute.array) : undefined;
+}
 
 /**
  * Provides an object which stores points and provides method which controls its position.
  * This is created when a valid json file containing point is read into a {@link Zinc.Scene}
  * object.
+ *
+ * Points are rendered as an instanced mesh - every point is one instance of a
+ * small quad billboarded towards the camera and kept at a constant size in
+ * pixels on the GPU. Time varying vertex colour and morph vertex positions
+ * are supported by blending between per time step position/colour arrays on
+ * the CPU and writing the result into the instance attributes every frame.
  *
  * @class
  * @author Alan Wu
@@ -50,30 +132,131 @@ const Pointset = function () {
   let labelDepthTest = false;
   let fontWeight = 500;
   let labelVisibility = true;
+  let positionFrames = [];
+  let colorFrames = undefined;
+  let morphVertices = false;
+  let morphColours = false;
+  const _tempColor = new THREE.Color();
 
   /**
-   * Create the pointsets using geometry and material.
+   * Blend positionFrames/colorFrames based on the current inbuildTime and
+   * write the result into the instancePosition/instanceColor attributes.
+   */
+  const updateMorphPointset = () => {
+    const mesh = this.getMorph();
+    if (!mesh || positionFrames.length === 0) {
+      return;
+    }
+    const activeCount = mesh.count;
+    const totalSteps = positionFrames.length;
+    let bottomFrame = 0;
+    let topFrame = 0;
+    let proportion = 1;
+    if (totalSteps > 1) {
+      const currentTime = this.inbuildTime / this.duration * (totalSteps - 1);
+      bottomFrame = Math.floor(currentTime);
+      topFrame = Math.ceil(currentTime);
+      proportion = 1 - (currentTime - bottomFrame);
+    }
+    if (morphVertices) {
+      const bottomPositions = positionFrames[bottomFrame];
+      const topPositions = positionFrames[topFrame];
+      const positions = mesh.pointPositions;
+      const length = activeCount * 3;
+      for (let i = 0; i &lt; length; i++) {
+        positions[i] = proportion * bottomPositions[i] + (1 - proportion) * topPositions[i];
+      }
+      const instancePosition = mesh.geometry.getAttribute('instancePosition');
+      instancePosition.array.set(positions.subarray(0, length));
+      instancePosition.needsUpdate = true;
+      this.boundingBoxUpdateRequired = true;
+    }
+    if (morphColours &amp;&amp; colorFrames) {
+      const bottomColors = colorFrames[Math.min(bottomFrame, colorFrames.length - 1)];
+      const topColors = colorFrames[Math.min(topFrame, colorFrames.length - 1)];
+      for (let i = 0; i &lt; activeCount; i++) {
+        const index = i * 3;
+        _tempColor.setRGB(
+          proportion * bottomColors[index] + (1 - proportion) * topColors[index],
+          proportion * bottomColors[index + 1] + (1 - proportion) * topColors[index + 1],
+          proportion * bottomColors[index + 2] + (1 - proportion) * topColors[index + 2],
+        );
+        mesh.setColorAt(i, _tempColor);
+      }
+      mesh.instanceColor.needsUpdate = true;
+    }
+  }
+
+  /**
+   * Create the pointset using geometry and material.
    *
    * @param {THREE.Geomtry} geometryIn - Geometry of points to be rendered.
-   * @param {THREE.Material} materialIn - Material to be set for the lines.
+   * @param {THREE.Material} materialIn - Material to be set for the points,
+   * only its colour/opacity/alphaTest are used.
    * @param {Object} options - Provide various options
-   * @param {Boolean} options.localTimeEnabled - A flag to indicate either the lines is
-   * time dependent.
+   * @param {Boolean} options.localTimeEnabled - A flag to indicate either the points'
+   * positions are time dependent.
    * @param {Boolean} options.localMorphColour - A flag to indicate either the colour is
    * time dependent.
    */
   this.createMesh = (geometryIn, materialIn, options) => {
-    if (geometryIn &amp;&amp; materialIn) {
-      let geometry = toBufferGeometry(geometryIn, options);
-      console.log(geometry, options)
-      if (options.localMorphColour &amp;&amp; geometry.morphAttributes[ "color" ]) {
-        materialIn.vertexColors = true;
-        materialIn.onBeforeCompile = augmentMorphColor;
+    if (!geometryIn || !materialIn) {
+      return;
+    }
+    const geometry = toBufferGeometry(geometryIn, options);
+    positionFrames = extractPositionFrames(geometry, options.localTimeEnabled);
+    colorFrames = extractColorFrames(geometry, options.localMorphColour);
+    morphVertices = positionFrames.length > 1;
+    morphColours = !!colorFrames;
+    this.timeEnabled = morphVertices;
+    this.morphColour = morphColours;
+
+    const numberOfPoints = positionFrames[0].length / 3;
+    const quadGeometry = createPointQuadGeometry(numberOfPoints);
+    const material = createInstancedPointsMaterial(getCircularTexture());
+    if (materialIn.color) {
+      material.color.copy(materialIn.color);
+    }
+    if (materialIn.opacity !== undefined) {
+      material.opacity = materialIn.opacity;
+    }
+    material.transparent = !!materialIn.transparent;
+    material.alphaTest = materialIn.alphaTest !== undefined ? materialIn.alphaTest : 0.5;
+
+    const mesh = new InstancedPoints(quadGeometry, material, numberOfPoints);
+    mesh.count = numberOfPoints;
+    mesh.pointPositions = new Float32Array(numberOfPoints * 3);
+    mesh.pointPositions.set(positionFrames[0]);
+    mesh.userData = this;
+    this.drawRange = numberOfPoints;
+
+    const instancePosition = quadGeometry.getAttribute('instancePosition');
+    instancePosition.array.set(positionFrames[0]);
+    instancePosition.needsUpdate = true;
+
+    const initialColorFrame = colorFrames ? colorFrames[0] : extractStaticColorFrame(geometry);
+    if (initialColorFrame) {
+      for (let i = 0; i &lt; numberOfPoints; i++) {
+        _tempColor.setRGB(initialColorFrame[i * 3], initialColorFrame[i * 3 + 1], initialColorFrame[i * 3 + 2]);
+        mesh.setColorAt(i, _tempColor);
       }
-      const texture = getCircularTexture();
-      materialIn.map = texture;
-      let point = new Points(geometry, materialIn);
-      this.setMesh(point, options.localTimeEnabled, options.localMorphColour);
+    }
+
+    this.setMorph(mesh);
+    geometry.dispose();
+    this.boundingBoxUpdateRequired = true;
+  }
+
+  /**
+   * Adapt a plain THREE.Points object (e.g. one parsed from a GLTF file)
+   * into this Pointset's instanced mesh representation.
+   */
+  this.setMesh = (mesh, localTimeEnabled, localMorphColour) => {
+    this.createMesh(mesh.geometry, mesh.material,
+      { localTimeEnabled, localMorphColour });
+    const newMesh = this.getMorph();
+    if (newMesh) {
+      newMesh.name = mesh.name;
     }
   }
 
@@ -116,31 +299,45 @@ const Pointset = function () {
    */
   this.addPoints = (coords, labels, colour) => {
     if (coords &amp;&amp; coords.length > 0) {
-      let current = this.drawRange;
-      if (current === -1) {
-        current = 0;
-      }
-      const geometry = this.addVertices(coords);
       let mesh = this.getMorph();
+      let current = this.drawRange;
       if (!mesh) {
-        let material = new THREE.PointsMaterial({ alphaTest: 0.5, size: 10,
-          color: colour, sizeAttenuation: false });
-        const options = { localTimeEnabled: false, localMorphColour: false};
-        geometry.colorsNeedUpdate = true;
-        this.createMesh(geometry, material, options);
+        current = 0;
+        this.drawRange = 0;
+        const quadGeometry = createPointQuadGeometry(DEFAULT_CAPACITY);
+        const material = createInstancedPointsMaterial(getCircularTexture());
+        material.color.set(colour);
+        material.alphaTest = 0.5;
+        mesh = new InstancedPoints(quadGeometry, material, DEFAULT_CAPACITY);
+        mesh.pointPositions = new Float32Array(DEFAULT_CAPACITY * 3);
+        mesh.count = 0;
+        mesh.userData = this;
+        this.setMorph(mesh);
       }
+      const instancePosition = mesh.geometry.getAttribute('instancePosition');
+      coords.forEach(coord => {
+        if (this.drawRange &lt; DEFAULT_CAPACITY) {
+          instancePosition.setXYZ(this.drawRange, coord[0], coord[1], coord[2]);
+          mesh.pointPositions[this.drawRange * 3] = coord[0];
+          mesh.pointPositions[this.drawRange * 3 + 1] = coord[1];
+          mesh.pointPositions[this.drawRange * 3 + 2] = coord[2];
+          this.drawRange++;
+        }
+      });
+      instancePosition.needsUpdate = true;
+      mesh.count = this.drawRange;
 
       let end = current + coords.length;
       let index = 0;
       if ((Array.isArray(labels) &amp;&amp; labels.length === coords.length) ||
         (typeof labels === "string")) {
-        const size = labelSets.length;
         for (current; current + index &lt; end;) {
           const labelText = typeof labels === "string" ? labels : labels[index];
           addLabel(current + index, coords[index], labelText, this._lod._material.color);
           index++;
         }
       }
+      this.boundingBoxUpdateRequired = true;
       if (this.region) this.region.pickableUpdateRequired = true;
     }
   }
@@ -234,14 +431,15 @@ const Pointset = function () {
       }
     }
   /**
-   * Set the size of the points.
+   * Set the size of the points in pixels.
    *
    * @param {Number} size - size to be set.
    */
   this.setSize = size => {
     if (this.morph &amp;&amp; this.morph.material) {
       this.morph.material.size = size;
-      this.morph.material.needsUpdate = true;
+      this.morph.material.userData.uniforms.pointSize.value = size;
+      this.morph.pointSize = size;
     }
   }
 
@@ -254,7 +452,7 @@ const Pointset = function () {
   this.setSizeAttenuation = flag => {
     if (this.morph &amp;&amp; this.morph.material) {
       this.morph.material.sizeAttenuation = flag;
-      this.morph.material.needsUpdate = true;
+      this.morph.material.userData.uniforms.sizeAttenuation.value = flag ? 1 : 0;
     }
   }
 
@@ -262,12 +460,12 @@ const Pointset = function () {
    * Get vertices at index
    */
   this.getVerticesByIndex = function(index) {
-    if (index >= 0 &amp;&amp; this.drawRange > index) {
-      const positionAttribute = this.getMorph().geometry.getAttribute( 'position' );
+    const mesh = this.getMorph();
+    if (mesh &amp;&amp; index >= 0 &amp;&amp; this.drawRange > index) {
       return [
-        positionAttribute.getX(index),
-        positionAttribute.getY(index),
-        positionAttribute.getZ(index)
+        mesh.pointPositions[index * 3],
+        mesh.pointPositions[index * 3 + 1],
+        mesh.pointPositions[index * 3 + 2],
       ];
     }
     return undefined;
@@ -278,24 +476,32 @@ const Pointset = function () {
    */
   this.editVertices = function(coords, i) {
     if (coords &amp;&amp; coords.length) {
-      let mesh = this.getMorph();
+      const mesh = this.getMorph();
       const maxIndex = i + coords.length - 1;
       if (!mesh || 0 > i || maxIndex >= this.drawRange) {
         return;
       } else {
-        const positionAttribute = mesh.geometry.getAttribute( 'position' );
+        const instancePosition = mesh.geometry.getAttribute('instancePosition');
         let index = i;
         coords.forEach(coord => {
           const label = labelSets[index];
           if (label) {
             label.setPosition(coord[0], coord[1], coord[2]);
           }
-          positionAttribute.setXYZ(index++, coord[0], coord[1], coord[2]);
-
+          instancePosition.setXYZ(index, coord[0], coord[1], coord[2]);
+          mesh.pointPositions[index * 3] = coord[0];
+          mesh.pointPositions[index * 3 + 1] = coord[1];
+          mesh.pointPositions[index * 3 + 2] = coord[2];
+          //Keep the base frame consistent for any pointset that also
+          //happens to be time varying.
+          if (positionFrames[0]) {
+            positionFrames[0][index * 3] = coord[0];
+            positionFrames[0][index * 3 + 1] = coord[1];
+            positionFrames[0][index * 3 + 2] = coord[2];
+          }
+          index++;
         });
-        positionAttribute.needsUpdate = true;
-        mesh.geometry.computeBoundingBox();
-        mesh.geometry.computeBoundingSphere();
+        instancePosition.needsUpdate = true;
         this.boundingBoxUpdateRequired = true;
       }
     }
@@ -305,10 +511,23 @@ const Pointset = function () {
    * Delete a vertex in index.
    */
     this.deleteVertices = function(index) {
-      let removed = Pointset.prototype.deleteVertices.call(this, index);
-      if (removed) {
-        removeLabel(index);
+      const mesh = this.getMorph();
+      if (!mesh || 0 > index || index >= this.drawRange) {
+        return this.drawRange;
       }
+      const instancePosition = mesh.geometry.getAttribute('instancePosition');
+      const end = this.drawRange - 1;
+      instancePosition.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
+      mesh.pointPositions.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
+      if (mesh.instanceColor) {
+        mesh.instanceColor.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
+        mesh.instanceColor.needsUpdate = true;
+      }
+      instancePosition.needsUpdate = true;
+      this.drawRange = end;
+      mesh.count = this.drawRange;
+      removeLabel(index);
+      this.boundingBoxUpdateRequired = true;
       return this.drawRange;
     }
 
@@ -327,24 +546,121 @@ const Pointset = function () {
     })
   }
 
+  /**
+   * Get the index of the closest vertex to centroid.
+   */
+  this.getClosestVertexIndex = function() {
+    let closestIndex = -1;
+    const mesh = this.getMorph();
+    if (mesh &amp;&amp; this.drawRange > 0) {
+      this._b1.setFromArray(mesh.pointPositions.subarray(0, this.drawRange * 3));
+      this._b1.getCenter(this._v1);
+      let distance = -1;
+      for (let i = 0; i &lt; this.drawRange; i++) {
+        this._v2.fromArray(mesh.pointPositions, i * 3);
+        const currentDistance = this._v1.distanceTo(this._v2);
+        if (distance === -1 || currentDistance &lt; distance) {
+          distance = currentDistance;
+          closestIndex = i;
+        }
+      }
+    }
+    return closestIndex;
+  }
 
   /**
-  * Turn size attenuation on/off based on the flag.
-  *
-  * @param {Boolean} flag - Determin either size attenuation
-  * should be on or off.
+   * Get the closest vertex to centroid.
+   */
+  this.getClosestVertex = function(applyMatrixWorld) {
+    const mesh = this.getMorph();
+    if (this.closestVertexIndex === -1) {
+      this.closestVertexIndex = this.getClosestVertexIndex();
+    }
+    const position = new THREE.Vector3();
+    if (mesh &amp;&amp; this.closestVertexIndex >= 0) {
+      position.fromArray(mesh.pointPositions, this.closestVertexIndex * 3);
+      return applyMatrixWorld ? position.applyMatrix4(mesh.matrixWorld) : position;
+    }
+    this.getBoundingBox();
+    position.copy(this.center);
+    return position;
+  }
+
+  /**
+   * Get the bounding box for the whole set of points.
+   *
+   * @return {THREE.Box3}
+   */
+  this.getBoundingBox = function() {
+    const mesh = this.getMorph();
+    if (this.visible &amp;&amp; mesh &amp;&amp; mesh.visible &amp;&amp; this.drawRange > 0) {
+      if (this.boundingBoxUpdateRequired) {
+        this._b1.setFromArray(mesh.pointPositions.subarray(0, this.drawRange * 3));
+        this.cachedBoundingBox.copy(this._b1);
+        mesh.updateWorldMatrix(true, true);
+        this.cachedBoundingBox.applyMatrix4(mesh.matrixWorld);
+        this.cachedBoundingBox.getCenter(this.center);
+        this.radius = this.center.distanceTo(this.cachedBoundingBox.max);
+        this.boundingBoxUpdateRequired = false;
+      }
+      return this.cachedBoundingBox;
+    }
+    return undefined;
+  }
+
+  /**
+   * Check if the pointset is time varying.
+   *
+   * @return {Boolean}
+   */
+  this.isTimeVarying = () => {
+    return morphVertices || morphColours;
+  }
+
+  /**
+   * Set the local time of this pointset.
+   *
+   * @param {Number} time - Can be any value between 0 to duration.
+   */
+  this.setMorphTime = time => {
+    if (time > this.duration) {
+      this.inbuildTime = this.duration;
+    } else if (0 > time) {
+      this.inbuildTime = 0;
+    } else {
+      this.inbuildTime = time;
+    }
+    if (morphVertices || morphColours) {
+      updateMorphPointset();
+    }
+  }
+
+  /**
+  * Update the geometry and colours depending on the internal time and
+  * refresh the marker/LOD state for the render.
   */
   this.render = (delta, playAnimation, cameraControls, options) => {
     if (this.morph &amp;&amp; cameraControls) {
       this.morph.sizePerPixel = cameraControls.pixelHeight;
     }
-    Pointset.prototype.render.call(this, delta, playAnimation, cameraControls, options);
+    if (this.visible) {
+      this._lod.update(cameraControls, this.center);
+    }
+    if (playAnimation === true &amp;&amp; (morphVertices || morphColours)) {
+      let targetTime = this.inbuildTime + delta;
+      if (targetTime > this.duration) {
+        targetTime = targetTime - this.duration;
+      }
+      this.inbuildTime = targetTime;
+      updateMorphPointset();
+    }
+    this.updateMarker(playAnimation, options);
   }
 
 }
 
 Pointset.prototype = Object.create(ZincObject.prototype);
-export { Pointset };
+export { Pointset, createPointQuadGeometry };
 </code></pre>
         </article>
     </section>
@@ -355,13 +671,13 @@ export { Pointset };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Sep 17 2026 20:48:20 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>

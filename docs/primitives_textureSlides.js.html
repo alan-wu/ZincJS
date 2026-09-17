@@ -26,9 +26,29 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import * as THREE from 'three';
-import * as shader from '../shaders/textureSlide.js';
+            <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
+//import * as shader from '../shaders/textureSlide.js';
+import { createWebGPUMaterial } from '../tls/textureSlides.js';
 import { TexturePrimitive } from './texturePrimitive';
+
+
+const cloneData3DTexture = (sourceTex) => {
+  const image = sourceTex.image;
+  const width = image.width;
+  const height = image.height;
+  const depth = image.depth;
+  const clonedData = image.data;
+  const targetTex = new THREE.Data3DTexture(clonedData, width, height, depth);
+  targetTex.format = sourceTex.format;
+  targetTex.type = sourceTex.type;
+  targetTex.minFilter = sourceTex.minFilter;
+  targetTex.magFilter = sourceTex.magFilter;
+  targetTex.wrapS = sourceTex.wrapS;
+  targetTex.wrapT = sourceTex.wrapT;
+  targetTex.wrapR = sourceTex.wrapR;
+  targetTex.needsUpdate = true;
+  return targetTex;
+}
 
 /**
  * Provides a class which create a texture stacks in a block
@@ -91,7 +111,7 @@ const TextureSlides = function (textureIn) {
    */
   const setUniformSlideSettingsOfMesh = (mesh, settings) => {
     const material = mesh.material;
-    const uniforms = material.uniforms;
+    const uniforms = material.userData.uniforms;
     mesh.rotation.x = 0;
     mesh.rotation.y = 0;
     mesh.rotation.z = 0;
@@ -120,7 +140,6 @@ const TextureSlides = function (textureIn) {
       default:
         break;
     }
-    material.needsUpdate = true;
     this.boundingBoxUpdateRequired = true;
   }
 
@@ -150,6 +169,7 @@ const TextureSlides = function (textureIn) {
       if (settings &amp;&amp; settings.direction &amp;&amp; settings.value !== undefined) {
         const geometry = new THREE.PlaneGeometry(1, 1);
         geometry.translate(0.5, 0.5, 0);
+        /*
         const uniforms = shader.getUniforms();
         uniforms.brightness.value = brightness;
         uniforms.contrast.value = contrast;
@@ -170,8 +190,23 @@ const TextureSlides = function (textureIn) {
           side: THREE.DoubleSide,
           transparent: false
         };
-        const material = this.texture.getMaterial(options);
-        material.needsUpdate = true;
+
+        //const material = this.texture.getMaterial(options);
+        */
+        const material = createWebGPUMaterial();
+        material.userData.uniforms.brightness.value = brightness;
+        material.userData.uniforms.contrast.value = contrast;
+        material.userData.uniforms.diffuse0.value = cloneData3DTexture(this.texture.impl);
+        material.userData.uniforms.diffuse1.value = cloneData3DTexture(this.texture.impl);
+        material.userData.uniforms.discardAlpha.value = discardAlpha;
+        material.userData.uniforms.depth.value = this.texture.size.depth;
+        material.userData.uniforms.flipY.value = flipY;
+        material.userData.uniforms.flipZ.value = flipZ;
+        if (maskTexture) {
+          material.userData.uniforms.mask.value = maskTexture;
+        }
+        material.userData.uniforms.maskEnabled.value = maskEnabled;
+        material.userData.uniforms.nChannels.value = nChannels;
         const mesh = new THREE.Mesh(geometry, material);
         mesh.name = this.groupName;
         mesh.userData = this;
@@ -316,7 +351,7 @@ const TextureSlides = function (textureIn) {
       this.cachedBoundingBox.makeEmpty();
       const vector = new THREE.Vector3(0, 0, 0);
       this.morph.children.forEach(slide => {
-        expandBoxWithSettings(this.cachedBoundingBox, slide.material.uniforms,
+        expandBoxWithSettings(this.cachedBoundingBox, slide.material.userData.uniforms,
           vector);
       });
       this.morph.updateMatrixWorld (true, true);
@@ -396,10 +431,9 @@ const TextureSlides = function (textureIn) {
   this.setUniformsValue = (name, val) => {
     this.morph.children.forEach((mesh) => {
       const material = mesh.material;
-      if (material.type === "ShaderMaterial") {
-        const uniforms = material.uniforms;
+      if (material.userData.uniforms) {
+        const uniforms = material.userData.uniforms;
         uniforms[name].value = val;
-        material.needsUpdate = true;
       }
     });
   }
@@ -449,7 +483,15 @@ const TextureSlides = function (textureIn) {
   this.setMask = (maskTextureIn) => {
     maskTexture = maskTextureIn;
     maskEnabled = maskTexture ? true : false;
-    this.setUniformsValue("mask", maskTexture);
+    this.morph.children.forEach((mesh) => {
+      const material = mesh.material;
+      if (material.userData.uniforms) {
+      const uniforms = material.userData.uniforms;
+        if (maskTexture) {
+          uniforms.mask.value = maskTexture;
+        }
+      }
+    });
     this.setUniformsValue("maskEnabled", maskEnabled);
   }
 
@@ -469,16 +511,17 @@ const TextureSlides = function (textureIn) {
       const ratio = iTime - t0;
       this.morph.children.forEach((mesh) => {
         const material = mesh.material;
-        if (material.type === "ShaderMaterial") {
-          const uniforms = material.uniforms;
+        if (material.userData.uniforms)  {
+          const uniforms = material.userData.uniforms;
           if (lt0 !== t0) {
-            uniforms.diffuse0.value = this.textureList[t0].impl;
+            uniforms.diffuse0.value.image.data = this.textureList[t0].imageData;
+            uniforms.diffuse0.value.needsUpdate = true;
           }
           if (lt1 !== t1) {
-            uniforms.diffuse1.value = this.textureList[t1].impl;
+            uniforms.diffuse1.value.image.data = this.textureList[t1].imageData;
+            uniforms.diffuse1.value.needsUpdate = true;
           }
           uniforms.time.value = ratio;
-          material.needsUpdate = true;
         }
       });
       lt0 = t0;
@@ -534,13 +577,13 @@ export { TextureSlides };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Thu Sep 17 2026 20:48:20 GMT+1200 (New Zealand Standard Time)
 </footer>
 
 <script> prettyPrint(); </script>
