@@ -23,7 +23,7 @@ const Renderer = function (containerIn) {
 	let currentScene = undefined;
 
 	//myGezincGeometriestains a tuple of the threejs mesh, timeEnabled, morphColour flag, unique id and morph
-	const clock = new THREE.Clock(false);
+	const clock = new THREE.Timer();
 	this.playAnimation = true;
   /* default animation update rate, rate is 1000 and duration
     is default to 6000, 6s to finish a full animation */
@@ -345,7 +345,6 @@ const Renderer = function (containerIn) {
 	 */
 	this.stopAnimate = () => {
     if (isRendering) {
-      clock.stop();
       isRendering = false;
     }
 	}
@@ -355,7 +354,7 @@ const Renderer = function (containerIn) {
 	 */
 	this.animate = () => {
     if (!isRendering) {
-      clock.start();
+      clock.reset();
       isRendering = true;
       runAnimation();
     }
@@ -553,6 +552,7 @@ const Renderer = function (containerIn) {
 					sensor = new ResizeSensor(canvas, this.onWindowResize);
 			}
 		}
+    clock.update();
 		const delta = clock.getDelta();
 		currentScene.renderGeometries(playRate, delta, this.playAnimation);
 	    for(let i = 0; i < additionalActiveScenes.length; i++) {
