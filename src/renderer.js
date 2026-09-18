@@ -131,7 +131,22 @@ const Renderer = function (containerIn) {
 				container = undefined;
 				canvas = parameters["canvas"];
 			}
-      //parameters["forceWebGL"] = true;
+      //WebGPURenderer otherwise requests a device with the default
+      //maxTextureArrayLayers (256 on many adapters), which is too low for
+      //some currnetly sypported scaffold. We will request the highest possible
+      //on the device
+      if (parameters.device === undefined && parameters.requiredLimits === undefined &&
+        typeof navigator !== 'undefined' && navigator.gpu) {
+        try {
+          const adapter = await navigator.gpu.requestAdapter({ powerPreference: parameters.powerPreference });
+          if (adapter) {
+            parameters.requiredLimits = { maxTextureArrayLayers: adapter.limits.maxTextureArrayLayers };
+          }
+        } catch (err) {
+          //Fall through and let WebGPURenderer's own adapter/device request
+          //use its defaults.
+        }
+      }
 			renderer = new THREE.WebGPURenderer(parameters);
       await renderer.init();
 

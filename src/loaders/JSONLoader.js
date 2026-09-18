@@ -490,6 +490,24 @@ Object.assign( JSONLoader.prototype, {
 
 				geometry.morphAttributes.color = morphColorAttributes;
 
+				//Support cases where only morphColorAttributes is available
+        //without morphPositionAttributes
+				if ( geometry.morphAttributes.position === undefined ) {
+
+					const basePosition = geometry.getAttribute( 'position' );
+
+					geometry.morphAttributes.position = morphColorAttributes.map( ( colorAttribute ) => {
+
+						const positionAttribute = new BufferAttribute( basePosition.array, basePosition.itemSize );
+
+						positionAttribute.name = colorAttribute.name;
+
+						return positionAttribute;
+
+					} );
+
+				}
+
 			}
 
 			geometry.computeBoundingBox();

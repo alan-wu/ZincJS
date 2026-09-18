@@ -132,4 +132,46 @@ describe('WebGPU shader build for morph geometry', () => {
 
     expect(() => renderer.render(scene, camera)).not.toThrow();
   });
+
+  it('renders a Geometry mesh with morphColors but no morphTargets without throwing', () => {
+    //Some models only animate colour (e.g. a pressure heatmap) with a
+    //static, non-morphing mesh: morphColors present, morphTargets absent.
+    //Three's own Morph.js getEntry() always indexes
+    //geometry.morphAttributes.position (using its .length to drive the
+    //morph target count and its per-frame .count to iterate), regardless of
+    //whether position morphing is actually used, so JSONLoader must
+    //synthesize a position entry per colour frame or this crashes reading
+    //`undefined.count`.
+    const loader = new JSONLoader();
+    const json = {
+      metadata: { formatVersion: 3 },
+      vertices: [0, 0, 0, 1, 0, 0, 1, 1, 0],
+      colors: [0xff0000, 0x00ff00, 0x0000ff],
+      faces: [bit(), 0, 1, 2],
+      morphColors: [
+        { name: 'anim000001', colors: [1, 0, 0, 0, 1, 0, 0, 0, 1] },
+        { name: 'anim000002', colors: [0, 0, 1, 1, 0, 0, 0, 1, 0] },
+      ],
+      materials: [{ colorDiffuse: [1, 1, 1], opacity: 1 }],
+    };
+    const { geometry } = loader.parse(json, '');
+    expect(geometry.morphAttributes.position).toBeDefined();
+    expect(geometry.morphAttributes.position.length).toBe(2);
+
+    const zincGeometry = new Geometry();
+    zincGeometry.createMesh(geometry, undefined, {
+      localTimeEnabled: false,
+      localMorphColour: true,
+      colour: 0xffffff,
+      opacity: 1,
+    });
+
+    const scene = new THREE.Scene();
+    scene.add(zincGeometry.getGroup());
+    const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+    camera.position.set(0, 0, 5);
+    camera.lookAt(0, 0, 0);
+
+    expect(() => renderer.render(scene, camera)).not.toThrow();
+  });
 });
