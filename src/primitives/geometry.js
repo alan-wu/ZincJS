@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { toBufferGeometry } from '../utilities';
-import { applyMorphColorNode } from '../tls/morphColorMaterial';
+import { applyMorphColorNode } from '../tsl/morphColorMaterial';
 import { ZincObject} from './zincObject';
 
 const createMeshForGeometry =  (geometryIn, materialIn, options) => {

@@ -9,7 +9,7 @@ import { SceneExporter } from './sceneExporter';
 import { SceneLoader } from './sceneLoader';
 import { Viewport } from './controls';
 import { createPointQuadGeometry } from './primitives/pointset';
-import { createInstancedPointsMaterial } from './tls/pointsMaterial';
+import { createInstancedPointsMaterial } from './tsl/pointsMaterial';
 import {
   createBufferGeometry,
   createNewSpriteText,

@@ -11,6 +11,7 @@ import {
   If,
   varying,
   float,
+  sRGBTransferEOTF,
 } from 'three/tsl';
 
 export function createWebGPUMaterial() {
@@ -111,7 +112,9 @@ placeholderTexture.needsUpdate = true;
     // Contrast calculations
     const contrastedColor = brightenedColor.sub(vec3(0.5)).mul(uniforms.contrast).add(vec3(0.5));
 
-    return vec4(contrastedColor, 1.0);
+    // WebGPURenderer always applies an sRGB OETF (linear -> sRGB) encode to
+    // the final composited frame, we are applying an sRGB -> linear here to cancel out the effect.
+    return vec4(sRGBTransferEOTF(contrastedColor), 1.0);
   });
 
    // Assign to NodeMaterial slots

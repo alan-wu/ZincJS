@@ -234,7 +234,7 @@ function createDataTexture(data, width, height, depth, isRGB) {
   if (!isRGB) {
     dataTexture.format = THREE.RedFormat;
   }
-  dataTexture.colorSpace = THREE.SRGBColorSpace;
+  dataTexture.colorSpace = THREE.NoColorSpace;
   dataTexture.minFilter = THREE.NearestFilter;
   dataTexture.magFilter = THREE.NearestFilter;
   dataTexture.needsUpdate = true;
@@ -244,7 +244,7 @@ function createDataTexture(data, width, height, depth, isRGB) {
 function createTextureArray(sources) {
   if (sources?.data) {
     const tArray = new TextureArray();
-    const dataTexutre = new createDataTexture(
+    const dataTexutre = createDataTexture(
         sources.data, sources.width, sources.height, sources.depth);
     tArray.setDataTexture(dataTexutre);
     tArray.size = {

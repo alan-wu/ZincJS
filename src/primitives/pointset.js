@@ -3,7 +3,7 @@ import { Label } from './label';
 import { InstancedPoints } from '../three/InstancedPoints';
 import { ZincObject } from './zincObject';
 import { getCircularTexture, toBufferGeometry } from '../utilities';
-import { createInstancedPointsMaterial } from '../tls/pointsMaterial';
+import { createInstancedPointsMaterial } from '../tsl/pointsMaterial';
 
 //Maximum number of points a programmatically built (addPoints) Pointset can
 //hold - the InstancedMesh backing it is allocated once with this capacity.

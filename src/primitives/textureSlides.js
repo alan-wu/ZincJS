@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 //import * as shader from '../shaders/textureSlide.js';
-import { createWebGPUMaterial } from '../tls/textureSlides.js';
+import { createWebGPUMaterial } from '../tsl/textureSlides.js';
 import { TexturePrimitive } from './texturePrimitive';
 
 
@@ -18,6 +18,8 @@ const cloneData3DTexture = (sourceTex) => {
   targetTex.wrapS = sourceTex.wrapS;
   targetTex.wrapT = sourceTex.wrapT;
   targetTex.wrapR = sourceTex.wrapR;
+  targetTex.colorSpace = sourceTex.colorSpace;
+  targetTex.anisotropy = sourceTex.anisotropy;
   targetTex.needsUpdate = true;
   return targetTex;
 }

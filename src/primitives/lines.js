@@ -1,6 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { toBufferGeometry } from '../utilities';
-import { applyMorphColorNode } from '../tls/morphColorMaterial';
+import { applyMorphColorNode } from '../tsl/morphColorMaterial';
 import { LineSegments } from '../three/line/LineSegments';
 import { ZincObject } from './zincObject';
 
