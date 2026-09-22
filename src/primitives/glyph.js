@@ -27,6 +27,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   let labelString = undefined;
   this.isGlyph = true;
   let _position = [0, 0, 0];
+  let _colour = undefined;
 
   /**
    * Create a glyph using mesh
@@ -72,7 +73,9 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   /**
    * Display label with the choosen colour. It will replace the current
    * label.
-   * @param   {THREE.Color} colour - Colour for the label.
+   * @param   {THREE.Color} colour - Colour to fall back to for the label if
+   * this glyph doesn't already have its own colour (see setColour()/
+   * getColour()) - e.g. genuinely no colour data at all for this glyphset.
    */
   this.showLabel = (colour) => {
     if (label) {
@@ -82,7 +85,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
       label = undefined;
     }
     if (labelString && (typeof labelString === 'string' || labelString instanceof String)) {
-      label = new Label(labelString, colour);
+      label = new Label(labelString, _colour || colour);
       label.setPosition(_position[0], _position[1], _position[2]);
       const sprite = label.getSprite();
       sprite.material.alphaTest = 0.5;
@@ -158,19 +161,30 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   }
 
   /**
-   * Set the color of the glyph and its label.
+   * Set the color of the glyph and its label. Remembered (see showLabel())
+   * so a label created/recreated later - e.g. by Glyphset.showLabel(),
+   * which otherwise only has a single shared material colour to fall back
+   * on - starts out with this glyph's own correct colour rather than that
+   * shared one.
    *
    * @param {THREE.Color} color - Colour to be set.
    */
   this.setColour = (color) => {
+    _colour = color ? color.clone() : undefined;
     if (label)
       label.setColour(color);
     if (this.secondaryMesh && this.secondaryMesh.material)
-      this.secondaryMesh.material.color = colour;
+      this.secondaryMesh.material.color = color;
     if (this.geometry) {
       this.geometry.colorsNeedUpdate = true;
     }
   }
+
+  /**
+   * Get the last colour set via setColour(), if any.
+   * @return {THREE.Color|undefined}
+   */
+  this.getColour = () => _colour;
 
   /**
    * Clear and free its memory.

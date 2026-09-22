@@ -394,8 +394,19 @@ const Glyphset = function () {
 
   /**
    * Update colour for each of the glyph in this glyphset.
+   *
+   * @param {Array} current_colors - one hex value per raw (pre-repeat_mode-
+   * expansion) glyph record.
+   * @param {Boolean} labelsOnly - when true, only glyph labels are
+   * recoloured - instanceColor is left untouched (not even created). Used
+   * for the initial load-time colour of GPU-compute-driven glyphsets (see
+   * createGlyphs()): instanceColor must stay uncreated there (see
+   * applyGlyphComputeResult's comment on the NodeMaterial double-multiply
+   * this avoids), but labels aren't part of the compute-buffer render path
+   * at all and would otherwise show no colour until the first accurate
+   * resync.
    */
-  const updateGlyphsetHexColors = current_colors => {
+  const updateGlyphsetHexColors = (current_colors, labelsOnly) => {
     let numberOfGlyphs = 1;
     if (repeat_mode == "AXES_2D" || repeat_mode == "MIRROR")
       numberOfGlyphs = 2;
@@ -407,14 +418,18 @@ const Glyphset = function () {
       const hex_values = current_colors[i];
       for (let j = 0; j < numberOfGlyphs; j++) {
         _bot_colour.setHex(hex_values)
-        this.morph.setColorAt(current_glyph_index, _bot_colour);
+        if (!labelsOnly) {
+          this.morph.setColorAt(current_glyph_index, _bot_colour);
+        }
         const glyph = glyphList[current_glyph_index];
         if (glyph)
           glyph.setColour(_bot_colour);
         current_glyph_index++;
       }
     }
-    this.morph.instanceColor.needsUpdate = true;
+    if (!labelsOnly) {
+      this.morph.instanceColor.needsUpdate = true;
+    }
   };
 
   /**
@@ -426,6 +441,7 @@ const Glyphset = function () {
    */
   const applyGlyphComputeResult = (result) => {
     const matrixArray = this.morph.instanceMatrix.array;
+    const updateLabels = this.canShowLabel();
     for (let i = 0; i < numberOfVertices; i++) {
       const o4 = i * 4;
       const o16 = i * 16;
@@ -445,21 +461,43 @@ const Glyphset = function () {
       matrixArray[o16 + 13] = result.position[o4 + 1];
       matrixArray[o16 + 14] = result.position[o4 + 2];
       matrixArray[o16 + 15] = 1;
+      if (updateLabels) {
+        const glyph = glyphList[i];
+        if (glyph) {
+          glyph.setTransformation(
+            [result.position[o4], result.position[o4 + 1], result.position[o4 + 2]],
+            [result.axis1[o4], result.axis1[o4 + 1], result.axis1[o4 + 2]],
+            [result.axis2[o4], result.axis2[o4 + 1], result.axis2[o4 + 2]],
+            [result.axis3[o4], result.axis3[o4 + 1], result.axis3[o4 + 2]],
+          );
+        }
+      }
     }
     this.morph.instanceMatrix.needsUpdate = true;
     this.boundingBoxUpdateRequired = true;
     this.morph.computeBoundingSphere();
 
-    if (result.color && this.morph.instanceColor) {
-      const colorArray = this.morph.instanceColor.array;
+    if (result.color) {
+      const colorArray = this.morph.instanceColor ? this.morph.instanceColor.array : undefined;
       for (let i = 0; i < numberOfVertices; i++) {
         const o4 = i * 4;
-        const o3 = i * 3;
-        colorArray[o3] = result.color[o4];
-        colorArray[o3 + 1] = result.color[o4 + 1];
-        colorArray[o3 + 2] = result.color[o4 + 2];
+        if (colorArray) {
+          const o3 = i * 3;
+          colorArray[o3] = result.color[o4];
+          colorArray[o3 + 1] = result.color[o4 + 1];
+          colorArray[o3 + 2] = result.color[o4 + 2];
+        }
+        if (updateLabels) {
+          const glyph = glyphList[i];
+          if (glyph) {
+            _bot_colour.setRGB(result.color[o4], result.color[o4 + 1], result.color[o4 + 2]);
+            glyph.setColour(_bot_colour);
+          }
+        }
       }
-      this.morph.instanceColor.needsUpdate = true;
+      if (colorArray) {
+        this.morph.instanceColor.needsUpdate = true;
+      }
     }
   };
 
@@ -643,7 +681,7 @@ const Glyphset = function () {
       } else {
         current_colors = colors["0"];
       }
-      updateGlyphsetHexColors(current_colors);
+      updateGlyphsetHexColors(current_colors, false);
     }
   };
 
@@ -763,17 +801,8 @@ const Glyphset = function () {
     //Update the transformation of the glyphs.
     updateGlyphsetTransformation(positions["0"], axis1s["0"],
       axis2s["0"], axis3s["0"], scales["0"]);
-    //Update the color of the glyphs. Skipped when glyphCompute drives colour
-    // (see ../tsl/glyphRenderMaterial.js's colorNode) - NodeMaterial.
-    // setupDiffuseColor() unconditionally multiplies colorNode's output by
-    // object.instanceColor whenever that attribute exists (unlike
-    // positionNode, which fully replaces rather than composes), so ever
-    // creating instanceColor here would silently corrupt every frame's
-    // rendered colour with a second, stale/duplicate multiply. Leaving
-    // instanceColor uncreated (stays null) keeps that branch out of the
-    // compiled shader entirely.
-    if (colors != undefined && !(glyphCompute && glyphCompute.outputs.color)) {
-      updateGlyphsetHexColors(colors["0"]);
+    if (colors != undefined) {
+      updateGlyphsetHexColors(colors["0"], !!(glyphCompute && glyphCompute.outputs.color));
     }
     if (glyphCompute) {
       allFramesBoundingBox = computeAllFramesBoundingBox();
