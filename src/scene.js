@@ -993,6 +993,16 @@ const Scene = function (containerIn, rendererIn) {
   }
 
   /**
+   * Get the THREE.WebGPURenderer this scene is being drawn with, for code
+   * that needs to dispatch its own GPU work (e.g. a TSL compute pass).
+   *
+   * @return {THREE.WebGPURenderer}
+   */
+  this.getRenderer = () => {
+    return rendererIn;
+  }
+
+  /**
    * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
    * This does not remove obejcts that are added using the addObject APIs.
    */

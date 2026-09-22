@@ -126,6 +126,15 @@ let Region = function (parentIn, sceneIn) {
   }
 
   /**
+   * Get the {@link Scene} this region belongs to.
+   *
+   * @return {Scene}
+   */
+  this.getScene = () => {
+    return scene;
+  }
+
+  /**
    * Get the array of each hierarachy from the root region to this region.
    *
    * @return {Array}
