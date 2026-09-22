@@ -133,14 +133,20 @@ const Renderer = function (containerIn) {
 			}
       //WebGPURenderer otherwise requests a device with the default
       //maxTextureArrayLayers (256 on many adapters), which is too low for
-      //some currnetly sypported scaffold. We will request the highest possible
-      //on the device
+      //some currnetly sypported scaffold, and the default
+      //maxStorageBuffersPerShaderStage (8 on many adapters), which is too
+      //low for compute passes like glyphset.js's GPU glyph-transform (11
+      //storage buffers). We will request the highest possible on the device
+      //for both.
       if (parameters.device === undefined && parameters.requiredLimits === undefined &&
         typeof navigator !== 'undefined' && navigator.gpu) {
         try {
           const adapter = await navigator.gpu.requestAdapter({ powerPreference: parameters.powerPreference });
           if (adapter) {
-            parameters.requiredLimits = { maxTextureArrayLayers: adapter.limits.maxTextureArrayLayers };
+            parameters.requiredLimits = {
+              maxTextureArrayLayers: adapter.limits.maxTextureArrayLayers,
+              maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage,
+            };
           }
         } catch (err) {
           //Fall through and let WebGPURenderer's own adapter/device request
