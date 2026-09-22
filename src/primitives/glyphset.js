@@ -2,6 +2,8 @@ import * as THREE from 'three/webgpu';
 import { Glyph } from './glyph';
 import { ZincObject } from './zincObject';
 import { JSONLoader } from '../loaders/JSONLoader';
+import { createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, readbackGlyphTransform } from '../tsl/glyphTransform';
+import { createGlyphInstancedMaterial } from '../tsl/glyphRenderMaterial';
 
 /**
  * This is a container of {@link Glyph} and their graphical properties
@@ -49,8 +51,90 @@ const Glyphset = function () {
   const _current_colors = [];
   const _glyph_axis_array = [];
   this.globalScale = 1;
+  let glyphCompute = undefined;
+  let glyphComputePending = false;
+  // True once a full resync (dispatchGlyphCompute) has completed and nothing
+  // has invalidated it since; false during active playback and while a resync
+  // is in flight.
+  let boundsAreExact = true;
+  let renderBuffersInitialized = false;
+  let wasAnimating = false;
+  // Conservative bounding box unioned across every keyframe's exact
+  let allFramesBoundingBox = undefined;
+  // Debounces the accurate GPU->CPU readback (dispatchGlyphCompute) behind
+  // setMorphTime() - e.g. a downstream slider firing many calls per second
+  // while being dragged. The fast, readback-free GPU-only update still
+  // happens on every call (see updateMorphGlyphsets), so visuals stay live;
+  // Only the costlier readback (bounding box/raycast/export accuracy) waits
+  // for ACCURATE_RESYNC_DEBOUNCE_MS of quiet.
+  let accurateResyncTimer = undefined;
+  const ACCURATE_RESYNC_DEBOUNCE_MS = 500;
   for (let i = 0; i < 8; i++) {
     _points[i] = new THREE.Vector3();
+  }
+
+  /**
+   * Writes a resolve_glyph_axes() result tuple [point, axis1, axis2, axis3]
+   * into a THREE.Matrix4's .elements, matching the column-major
+   * axis1/axis2/axis3/point layout instanceMatrix expects.
+   */
+  const writeTransformMatrix = (matrix, arrayTuple) => {
+    matrix.elements[0] = arrayTuple[1][0];
+    matrix.elements[1] = arrayTuple[1][1];
+    matrix.elements[2] = arrayTuple[1][2];
+    matrix.elements[3] = 0.0;
+    matrix.elements[4] = arrayTuple[2][0];
+    matrix.elements[5] = arrayTuple[2][1];
+    matrix.elements[6] = arrayTuple[2][2];
+    matrix.elements[7] = 0.0;
+    matrix.elements[8] = arrayTuple[3][0];
+    matrix.elements[9] = arrayTuple[3][1];
+    matrix.elements[10] = arrayTuple[3][2];
+    matrix.elements[11] = 0.0;
+    matrix.elements[12] = arrayTuple[0][0];
+    matrix.elements[13] = arrayTuple[0][1];
+    matrix.elements[14] = arrayTuple[0][2];
+    matrix.elements[15] = 1.0;
+  }
+
+  /**
+   * Flattens a { "0": [x,y,z,...], "1": [...], ... } per-keyframe object
+   * (as used for axis1/axis2/axis3/positions/scale) into one contiguous
+   * [time][record][xyz] buffer for the GPU compute path.
+   */
+  const flattenVec3Frames = (framesObj, steps, baseCount) => {
+    const out = new Float32Array(steps * baseCount * 3);
+    for (let t = 0; t < steps; t++) {
+      const frame = framesObj[t.toString()];
+      if (frame) {
+        out.set(frame, t * baseCount * 3);
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Same as flattenVec3Frames but for the colours object, whose per-frame
+   * values are one packed hex int per glyph rather than 3 raw components -
+   * decode each into RGB floats up front so the compute shader only ever
+   * deals with plain vec3s.
+   */
+  const flattenColorFrames = (framesObj, steps, baseCount) => {
+    const out = new Float32Array(steps * baseCount * 3);
+    const tmpColor = new THREE.Color();
+    for (let t = 0; t < steps; t++) {
+      const frame = framesObj[t.toString()];
+      if (frame) {
+        for (let i = 0; i < baseCount; i++) {
+          tmpColor.setHex(frame[i]);
+          const o = (t * baseCount + i) * 3;
+          out[o] = tmpColor.r;
+          out[o + 1] = tmpColor.g;
+          out[o + 2] = tmpColor.b;
+        }
+      }
+    }
+    return out;
   }
 
   /**
@@ -84,6 +168,30 @@ const Glyphset = function () {
     baseSize = glyphsetData.metadata.base_size;
     offset = glyphsetData.metadata.offset;
     scaleFactors = glyphsetData.metadata.scale_factors;
+    glyphCompute = undefined;
+    if (morphVertices && numberOfTimeSteps > 1 && positions && positions["0"]) {
+      const baseCount = positions["0"].length / 3;
+      try {
+        glyphCompute = createGlyphTransformCompute({
+          baseCount,
+          outputCount: numberOfVertices,
+          repeat_mode,
+          positionsData: flattenVec3Frames(positions, numberOfTimeSteps, baseCount),
+          axis1Data: flattenVec3Frames(axis1s, numberOfTimeSteps, baseCount),
+          axis2Data: flattenVec3Frames(axis2s, numberOfTimeSteps, baseCount),
+          axis3Data: flattenVec3Frames(axis3s, numberOfTimeSteps, baseCount),
+          scaleData: flattenVec3Frames(scales, numberOfTimeSteps, baseCount),
+          colorData: (morphColours && colors) ? flattenColorFrames(colors, numberOfTimeSteps, baseCount) : undefined,
+          baseSize,
+          offset,
+          scaleFactors,
+          globalScale: this.globalScale,
+        });
+      } catch (err) {
+        console.error("Failed to set up GPU glyph transform compute, falling back to CPU animation.", err);
+        glyphCompute = undefined;
+      }
+    }
     const loader = new JSONLoader();
     this.geometry = new THREE.BufferGeometry();
     const instancedMesh = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
@@ -180,7 +288,7 @@ const Glyphset = function () {
           + offset[1] * axis_scale[1] * axis2[j]
           + offset[2] * axis_scale[2] * axis3[j];
       }
-      const number_of_glyphs = (glyph_repeat_mode == "AXES_2D") ? 2 : 3;
+      const number_of_glyphs = (repeat_mode == "AXES_2D") ? 2 : 3;
       for (let k = 0; k < number_of_glyphs; k++) {
         let use_axis1, use_axis2;
         const use_scale = scale[k];
@@ -193,7 +301,7 @@ const Glyphset = function () {
         }
         else if (k == 1) {
           use_axis1 = axis2;
-          use_axis2 = (glyph_repeat_mode == "AXES_2D") ? axis1 : axis3;
+          use_axis2 = (repeat_mode == "AXES_2D") ? axis1 : axis3;
         }
         else // if (k == 2)
         {
@@ -268,22 +376,7 @@ const Glyphset = function () {
         current_axis3, current_scale, _glyph_axis_array);
       if (arrays.length == numberOfGlyphs) {
         for (let j = 0; j < numberOfGlyphs; j++) {
-          _transformMatrix.elements[0] = arrays[j][1][0];
-          _transformMatrix.elements[1] = arrays[j][1][1];
-          _transformMatrix.elements[2] = arrays[j][1][2];
-          _transformMatrix.elements[3] = 0.0;
-          _transformMatrix.elements[4] = arrays[j][2][0];
-          _transformMatrix.elements[5] = arrays[j][2][1];
-          _transformMatrix.elements[6] = arrays[j][2][2];
-          _transformMatrix.elements[7] = 0.0;
-          _transformMatrix.elements[8] = arrays[j][3][0];
-          _transformMatrix.elements[9] = arrays[j][3][1];
-          _transformMatrix.elements[10] = arrays[j][3][2];
-          _transformMatrix.elements[11] = 0.0;
-          _transformMatrix.elements[12] = arrays[j][0][0];
-          _transformMatrix.elements[13] = arrays[j][0][1];
-          _transformMatrix.elements[14] = arrays[j][0][2];
-          _transformMatrix.elements[15] = 1.0;
+          writeTransformMatrix(_transformMatrix, arrays[j]);
           this.morph.setMatrixAt(current_glyph_index, _transformMatrix);
           const glyph = glyphList[current_glyph_index];
           if (glyph) {
@@ -325,11 +418,175 @@ const Glyphset = function () {
   };
 
   /**
+   * Writes back a GPU glyph-transform compute readback (see
+   * dispatchGlyphCompute) into instanceMatrix/instanceColor - i.e. exactly
+   * the data updateGlyphsetTransformation()/updateGlyphsetHexColors() write
+   * on the CPU path, so bounding box/raycast/getClosestVertex keep working
+   * completely unchanged downstream.
+   */
+  const applyGlyphComputeResult = (result) => {
+    const matrixArray = this.morph.instanceMatrix.array;
+    for (let i = 0; i < numberOfVertices; i++) {
+      const o4 = i * 4;
+      const o16 = i * 16;
+      matrixArray[o16] = result.axis1[o4];
+      matrixArray[o16 + 1] = result.axis1[o4 + 1];
+      matrixArray[o16 + 2] = result.axis1[o4 + 2];
+      matrixArray[o16 + 3] = 0;
+      matrixArray[o16 + 4] = result.axis2[o4];
+      matrixArray[o16 + 5] = result.axis2[o4 + 1];
+      matrixArray[o16 + 6] = result.axis2[o4 + 2];
+      matrixArray[o16 + 7] = 0;
+      matrixArray[o16 + 8] = result.axis3[o4];
+      matrixArray[o16 + 9] = result.axis3[o4 + 1];
+      matrixArray[o16 + 10] = result.axis3[o4 + 2];
+      matrixArray[o16 + 11] = 0;
+      matrixArray[o16 + 12] = result.position[o4];
+      matrixArray[o16 + 13] = result.position[o4 + 1];
+      matrixArray[o16 + 14] = result.position[o4 + 2];
+      matrixArray[o16 + 15] = 1;
+    }
+    this.morph.instanceMatrix.needsUpdate = true;
+    this.boundingBoxUpdateRequired = true;
+    this.morph.computeBoundingSphere();
+
+    if (result.color && this.morph.instanceColor) {
+      const colorArray = this.morph.instanceColor.array;
+      for (let i = 0; i < numberOfVertices; i++) {
+        const o4 = i * 4;
+        const o3 = i * 3;
+        colorArray[o3] = result.color[o4];
+        colorArray[o3 + 1] = result.color[o4 + 1];
+        colorArray[o3 + 2] = result.color[o4 + 2];
+      }
+      this.morph.instanceColor.needsUpdate = true;
+    }
+  };
+
+  /**
+   * Kicks off (at most one in flight at a time) an async GPU compute +
+   * readback for the current bottom/top frame + proportion. If a previous
+   * dispatch is still resolving, this frame's update is skipped rather than
+   * queued - the next call to updateMorphGlyphsets() will dispatch with
+   * whatever bottom/top/proportion is current *then*, so playback can't
+   * fall further and further behind, at the cost of the displayed state
+   * lagging the true target time by about one frame while animating.
+   */
+  const dispatchGlyphCompute = (bottom_frame, top_frame, proportion) => {
+    if (glyphComputePending) return;
+    const renderer = this.region?.getScene?.()?.getRenderer?.();
+    if (!renderer) return;
+    glyphCompute.uniforms.bottomFrame.value = bottom_frame;
+    glyphCompute.uniforms.topFrame.value = top_frame;
+    glyphCompute.uniforms.proportion.value = proportion;
+    glyphCompute.uniforms.globalScale.value = this.globalScale;
+    glyphComputePending = true;
+    boundsAreExact = false;
+    dispatchAndReadbackGlyphTransform(renderer, glyphCompute).then((result) => {
+      glyphComputePending = false;
+      applyGlyphComputeResult(result);
+      boundsAreExact = true;
+      // Restore the stock InstancedMesh.raycast (instanceMatrix is now
+      // exact again) by dropping the no-op instance override, if present.
+      delete this.morph.raycast;
+    }).catch((err) => {
+      glyphComputePending = false;
+      console.error("Glyph transform compute readback failed.", err);
+    });
+  };
+
+  /**
+   * The fast per-frame path used while actively playing: only dispatches
+   * the compute pass (updating the GPU buffers the render material reads
+   * directly - see ../tsl/glyphRenderMaterial.js) with no CPU readback at
+   * all, bouding box will not be updated.
+   */
+  const dispatchGlyphComputeFast = (bottom_frame, top_frame, proportion) => {
+    const renderer = this.region?.getScene?.()?.getRenderer?.();
+    if (!renderer) return false;
+    glyphCompute.uniforms.bottomFrame.value = bottom_frame;
+    glyphCompute.uniforms.topFrame.value = top_frame;
+    glyphCompute.uniforms.proportion.value = proportion;
+    glyphCompute.uniforms.globalScale.value = this.globalScale;
+    renderer.compute(glyphCompute.compute);
+    boundsAreExact = false;
+    this.morph.raycast = () => {};
+    renderBuffersInitialized = true;
+    return true;
+  };
+
+  /**
+   * The readback half of the debounced accurate resync (see
+   * scheduleAccurateResync): unlike dispatchGlyphCompute(), this does NOT
+   * call renderer.compute() first - by the time this fires, the buffers
+   * already hold the right result.
+   */
+  const readbackGlyphComputeOnly = () => {
+    if (glyphComputePending) return;
+    const renderer = this.region?.getScene?.()?.getRenderer?.();
+    if (!renderer) return;
+    glyphComputePending = true;
+    readbackGlyphTransform(renderer, glyphCompute).then((result) => {
+      glyphComputePending = false;
+      applyGlyphComputeResult(result);
+      boundsAreExact = true;
+      delete this.morph.raycast;
+    }).catch((err) => {
+      glyphComputePending = false;
+      console.error("Glyph transform compute readback failed.", err);
+    });
+  };
+
+  const cancelScheduledAccurateResync = () => {
+    if (accurateResyncTimer !== undefined) {
+      clearTimeout(accurateResyncTimer);
+      accurateResyncTimer = undefined;
+    }
+  };
+
+  /**
+   * (Re)schedules a single accurate resync ACCURATE_RESYNC_DEBOUNCE_MS from
+   * now, cancelling any previously scheduled one.
+   */
+  const scheduleAccurateResync = () => {
+    cancelScheduledAccurateResync();
+    accurateResyncTimer = setTimeout(() => {
+      accurateResyncTimer = undefined;
+      readbackGlyphComputeOnly();
+    }, ACCURATE_RESYNC_DEBOUNCE_MS);
+  };
+
+  /**
    * Update the current states of the glyphs in this glyphset, this includes transformation and
    * colour for each of them. This is called when glyphset and glyphs are initialised and whenever
    * the internal time has been updated.
+   *
+   * @param {Boolean} debounceAccurateResync - When true the costlier GPU->CPU readback
+   * (bounding box/raycast/ export accuracy - see dispatchGlyphCompute) is debounced
+   * until updates have been quiet for ACCURATE_RESYNC_DEBOUNCE_MS. When false/omitted
+   * (e.g. the render loop's animation-just-stopped resync), the readback happens
+   * immediately, as before.
    */
-  const updateMorphGlyphsets = () => {
+  const updateMorphGlyphsets = (debounceAccurateResync) => {
+    const current_time = this.inbuildTime / this.duration * (numberOfTimeSteps - 1);
+    const bottom_frame = Math.floor(current_time);
+    const proportion = 1 - (current_time - bottom_frame);
+    const top_frame = Math.ceil(current_time);
+
+    if (morphVertices && glyphCompute) {
+      if (debounceAccurateResync) {
+        dispatchGlyphComputeFast(bottom_frame, top_frame, proportion);
+        scheduleAccurateResync();
+      } else {
+        cancelScheduledAccurateResync();
+        // GPU path: transform (and colour, if morphColours) for this frame -
+        // handles both updateGlyphsetTransformation() and
+        // updateGlyphsetHexColors() below in one dispatch.
+        dispatchGlyphCompute(bottom_frame, top_frame, proportion);
+      }
+      return;
+    }
+
     let current_positions = _current_positions;
     let current_axis1s = _current_axis1s;
     let current_axis2s = _current_axis2s;
@@ -337,10 +594,6 @@ const Glyphset = function () {
     let current_scales = _current_scales;
     let current_colors = _current_colors;
 
-    const current_time = this.inbuildTime / this.duration * (numberOfTimeSteps - 1);
-    const bottom_frame = Math.floor(current_time);
-    const proportion = 1 - (current_time - bottom_frame);
-    const top_frame = Math.ceil(current_time);
     if (morphVertices) {
       const bottom_positions = positions[bottom_frame.toString()];
       const top_positions = positions[top_frame.toString()];
@@ -387,11 +640,6 @@ const Glyphset = function () {
             _bot_colour.b * proportion + _top_colour.b * (1 - proportion));
           current_colors[i] = _bot_colour.getHex();
         }
-        /*
-        for (var i = 0; i < bottom_colors.length; i++) {
-          current_colors.push(proportion * bottom_colors[i] + (1.0 - proportion) * top_colors[i]);
-        }
-        */
       } else {
         current_colors = colors["0"];
       }
@@ -443,6 +691,53 @@ const Glyphset = function () {
     }
 
   /**
+   * Computes a single Box3 that conservatively contains every keyframe's
+   * exact per-instance transform of the base glyph geometry, for use as
+   * getBoundingBox()'s answer while boundsAreExact is false (see its
+   * declaration above for the caveat on this not being a formally proven
+   * bound). One-time cost at load, reusing resolve_glyph_axes() the same
+   * way updateGlyphsetTransformation() does, just for every keyframe
+   * instead of just the current one, unioned together.
+   */
+  const computeAllFramesBoundingBox = () => {
+    const localBox = new THREE.Box3().setFromBufferAttribute(this.geometry.attributes.position);
+    const tempMatrix = new THREE.Matrix4();
+    const tempBox = new THREE.Box3();
+    const tempArray = [];
+    const result = new THREE.Box3();
+    let first = true;
+    for (let t = 0; t < numberOfTimeSteps; t++) {
+      const tPositions = positions[t.toString()];
+      const tAxis1 = axis1s[t.toString()];
+      const tAxis2 = axis2s[t.toString()];
+      const tAxis3 = axis3s[t.toString()];
+      const tScales = scales[t.toString()];
+      if (!tPositions) continue;
+      const numberOfPositions = tPositions.length / 3;
+      for (let i = 0; i < numberOfPositions; i++) {
+        const idx = i * 3;
+        const point = [tPositions[idx], tPositions[idx + 1], tPositions[idx + 2]];
+        const a1 = [tAxis1[idx], tAxis1[idx + 1], tAxis1[idx + 2]];
+        const a2 = [tAxis2[idx], tAxis2[idx + 1], tAxis2[idx + 2]];
+        const a3 = [tAxis3[idx], tAxis3[idx + 1], tAxis3[idx + 2]];
+        const sc = [tScales[idx], tScales[idx + 1], tScales[idx + 2]];
+        const arrays = resolve_glyph_axes(point, a1, a2, a3, sc, tempArray);
+        for (let j = 0; j < arrays.length; j++) {
+          writeTransformMatrix(tempMatrix, arrays[j]);
+          tempBox.copy(localBox).applyMatrix4(tempMatrix);
+          if (first) {
+            result.copy(tempBox);
+            first = false;
+          } else {
+            result.union(tempBox);
+          }
+        }
+      }
+    }
+    return first ? undefined : result;
+  }
+
+  /**
    * Create the glyphs in the glyphset.
    *
    * @param {Boolean} displayLabels -Flag to determine either the labels should be display or not.
@@ -468,9 +763,20 @@ const Glyphset = function () {
     //Update the transformation of the glyphs.
     updateGlyphsetTransformation(positions["0"], axis1s["0"],
       axis2s["0"], axis3s["0"], scales["0"]);
-    //Update the color of the glyphs.
-    if (colors != undefined) {
+    //Update the color of the glyphs. Skipped when glyphCompute drives colour
+    // (see ../tsl/glyphRenderMaterial.js's colorNode) - NodeMaterial.
+    // setupDiffuseColor() unconditionally multiplies colorNode's output by
+    // object.instanceColor whenever that attribute exists (unlike
+    // positionNode, which fully replaces rather than composes), so ever
+    // creating instanceColor here would silently corrupt every frame's
+    // rendered colour with a second, stale/duplicate multiply. Leaving
+    // instanceColor uncreated (stays null) keeps that branch out of the
+    // compiled shader entirely.
+    if (colors != undefined && !(glyphCompute && glyphCompute.outputs.color)) {
       updateGlyphsetHexColors(colors["0"]);
+    }
+    if (glyphCompute) {
+      allFramesBoundingBox = computeAllFramesBoundingBox();
     }
     this.ready = true;
   };
@@ -526,6 +832,9 @@ const Glyphset = function () {
       this.geometry.computeBoundingBox();
       if (materials && materials[0])
         this.morph.material = materials[0];
+      if (glyphCompute) {
+        this.morph.material = createGlyphInstancedMaterial(this.morph.material, glyphCompute);
+      }
       createGlyphs(displayLabels);
       this.morph.name = this.groupName;
       this.morph.userData = this;
@@ -597,6 +906,12 @@ const Glyphset = function () {
    */
   this.getBoundingBox = () => {
     if (this.morph && this.ready && this.morph.visible) {
+      if (glyphCompute && !boundsAreExact && allFramesBoundingBox) {
+        this.cachedBoundingBox.copy(allFramesBoundingBox);
+        this.morph.updateWorldMatrix(true, true);
+        this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
+        return this.cachedBoundingBox;
+      }
       if (this.boundingBoxUpdateRequired) {
         _boundingBox1.setFromBufferAttribute(
           this.morph.geometry.attributes.position);
@@ -635,7 +950,7 @@ const Glyphset = function () {
     else
       this.inbuildTime = time;
     if (morphColours || morphVertices) {
-      updateMorphGlyphsets();
+      updateMorphGlyphsets(true);
       if (morphVertices)
         this.markerUpdateRequired = true;
     }
@@ -663,13 +978,56 @@ const Glyphset = function () {
   }
 
   /**
+   * Exporters (see sceneExporter.js/GLTFExporter.js) read
+   * THREE.InstancedMesh.instanceColor directly off this.morph - which
+   * createGlyphs() intentionally leaves null whenever colour is
+   * glyphCompute-driven. No-op for glyphsets whose colour isn't glyphCompute-driven
+   * (instanceColor there is already accurate, ordinary CPU-driven state).
+   *
+   * @return {Promise}
+   */
+  this.prepareColorForExport = async () => {
+    if (!(glyphCompute && glyphCompute.outputs.color)) return;
+    const renderer = this.region?.getScene?.()?.getRenderer?.();
+    if (!renderer) return;
+    renderer.compute(glyphCompute.compute);
+    const colorResult = new Float32Array(
+      await renderer.getArrayBufferAsync(glyphCompute.outputs.color.value));
+    // setColorAt(0, ...) is only here to lazily allocate instanceColor the
+    // same way the stock InstancedMesh API would; the loop below overwrites
+    // every instance (including 0) with the real snapshot right after.
+    this.morph.setColorAt(0, _bot_colour);
+    const colorArray = this.morph.instanceColor.array;
+    for (let i = 0; i < numberOfVertices; i++) {
+      const o4 = i * 4;
+      const o3 = i * 3;
+      colorArray[o3] = colorResult[o4];
+      colorArray[o3 + 1] = colorResult[o4 + 1];
+      colorArray[o3 + 2] = colorResult[o4 + 2];
+    }
+    this.morph.instanceColor.needsUpdate = true;
+  }
+
+  /**
+   * Undoes prepareColorForExport() - see its comment for why this matters:
+   * without it, the next live render would permanently pick up the stale
+   * instanceColor multiply bug this whole design avoids.
+   */
+  this.clearColorExportState = () => {
+    if (glyphCompute && glyphCompute.outputs.color && this.morph.instanceColor) {
+      this.morph.instanceColor = null;
+      if (this.morph.material) this.morph.material.needsUpdate = true;
+    }
+  }
+
+  /**
    * Set the objects scale.
    *
    * @return {THREE.Box3}.
    */
   this.setScaleAll = function(scale) {
     this.globalScale = scale;
-    updateMorphGlyphsets();
+    updateMorphGlyphsets(false);
   }
 
   /**
@@ -683,12 +1041,19 @@ const Glyphset = function () {
       this.geometry.dispose();
     if (this.morph)
       this.morph.material.dispose();
+    cancelScheduledAccurateResync();
     axis1s = undefined;
     axis2s = undefined;
     axis3s = undefined;
     positions = undefined;
     scales = undefined;
     colors = undefined;
+    glyphCompute = undefined;
+    glyphComputePending = false;
+    boundsAreExact = true;
+    renderBuffersInitialized = false;
+    wasAnimating = false;
+    allFramesBoundingBox = undefined;
     this.ready = false;
     this.groupName = undefined;
   }
@@ -697,14 +1062,42 @@ const Glyphset = function () {
    * Update the glyphsets if required the render.
    */
   this.render = (delta, playAnimation, options) => {
+    if (glyphCompute && !renderBuffersInitialized) {
+      const renderer = this.region?.getScene?.()?.getRenderer?.();
+      if (renderer) {
+        renderer.compute(glyphCompute.compute);
+        renderBuffersInitialized = true;
+      }
+    }
     if (playAnimation == true) {
       let targetTime = this.inbuildTime + delta;
       if (targetTime > this.duration)
         targetTime = targetTime - this.duration;
       this.inbuildTime = targetTime;
-      if (morphColours || morphVertices) {
-        updateMorphGlyphsets();
+      if (morphVertices && glyphCompute) {
+        // Fast GPU-only path: update the render buffers every frame with
+        // no CPU readback. Colour (if morphColours) rides along in the
+        // same compute pass/buffers - see glyphRenderMaterial.js's colorNode.
+        // Also drop any accurate resync a prior setMorphTime() call (e.g. a
+        // downstream slider) left debounced-and-pending - it would apply a
+        // now-stale frame once it fired mid-animation otherwise.
+        cancelScheduledAccurateResync();
+        const current_time = this.inbuildTime / this.duration * (numberOfTimeSteps - 1);
+        const bottom_frame = Math.floor(current_time);
+        const proportion = 1 - (current_time - bottom_frame);
+        const top_frame = Math.ceil(current_time);
+        dispatchGlyphComputeFast(bottom_frame, top_frame, proportion);
+      } else if (morphColours || morphVertices) {
+        updateMorphGlyphsets(false);
       }
+      wasAnimating = true;
+    } else {
+      if (wasAnimating && glyphCompute) {
+        // Just stopped: one accurate resync so bounding-box/raycast are
+        // exact again for as long as playback stays paused.
+        updateMorphGlyphsets(false);
+      }
+      wasAnimating = false;
     }
     this.updateMarker(playAnimation, options);
   }
