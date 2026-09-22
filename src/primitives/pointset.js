@@ -26,28 +26,26 @@ const createPointQuadGeometry = (capacity) => {
 
 /**
  * Extract the per time step, flat [x0, y0, z0, x1, y1, z1, ...] position
- * arrays from a (possibly time varying) BufferGeometry. Index 0 is always
- * the base frame, subsequent entries come from `morphAttributes.position`.
+ * arrays from a (possibly time varying) BufferGeometry.
+
  */
 const extractPositionFrames = (geometry, localTimeEnabled) => {
   const positionAttribute = geometry.getAttribute('position');
-  const frames = [Float32Array.from(positionAttribute.array)];
   const morphPositions = geometry.morphAttributes.position;
   if (localTimeEnabled && morphPositions && morphPositions.length > 0) {
     const relative = geometry.morphTargetsRelative;
-    morphPositions.forEach((attribute) => {
-      if (relative) {
-        const frame = new Float32Array(positionAttribute.array.length);
-        for (let i = 0; i < frame.length; i++) {
-          frame[i] = positionAttribute.array[i] + attribute.array[i];
-        }
-        frames.push(frame);
-      } else {
-        frames.push(Float32Array.from(attribute.array));
+    return morphPositions.map((attribute) => {
+      if (!relative) {
+        return Float32Array.from(attribute.array);
       }
+      const frame = new Float32Array(positionAttribute.array.length);
+      for (let i = 0; i < frame.length; i++) {
+        frame[i] = positionAttribute.array[i] + attribute.array[i];
+      }
+      return frame;
     });
   }
-  return frames;
+  return [Float32Array.from(positionAttribute.array)];
 }
 
 /**
@@ -59,14 +57,7 @@ const extractPositionFrames = (geometry, localTimeEnabled) => {
 const extractColorFrames = (geometry, localMorphColour) => {
   const morphColors = geometry.morphAttributes.color;
   if (localMorphColour && morphColors && morphColors.length > 0) {
-    const colorAttribute = geometry.getAttribute('color');
-    const frames = [];
-    frames.push(colorAttribute ? Float32Array.from(colorAttribute.array) :
-      new Float32Array(morphColors[0].array.length));
-    morphColors.forEach((attribute) => {
-      frames.push(Float32Array.from(attribute.array));
-    });
-    return frames;
+    return morphColors.map((attribute) => Float32Array.from(attribute.array));
   }
   return undefined;
 }

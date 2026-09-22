@@ -162,6 +162,36 @@ describe('Geometry/Pointset colour and video regressions', () => {
     expect(mesh.instanceColor.getY(1)).toBeCloseTo(1);
   });
 
+  it('pointset morph position starts moving immediately, not halfway through the duration', () => {
+    const loader = new JSONLoader();
+    const json = {
+      metadata: { formatVersion: 3 },
+      vertices: [0, 0, 0],
+      colors: [0xffffff],
+      faces: [],
+      morphTargets: [
+        { name: 'anim_000', vertices: [0, 0, 0] },
+        { name: 'anim_001', vertices: [10, 0, 0] },
+      ],
+      materials: [{ colorDiffuse: [1, 1, 1], opacity: 1 }],
+    };
+    const { geometry } = loader.parse(json, '');
+
+    const material = new THREE.PointsMaterial({ color: 0xffffff, opacity: 1 });
+    const pointset = new Pointset();
+    pointset.createMesh(geometry, material, { localTimeEnabled: true, localMorphColour: false });
+    pointset.duration = 10;
+
+    const mesh = pointset.getMorph();
+    const instancePosition = mesh.geometry.getAttribute('instancePosition');
+
+    pointset.setMorphTime(1); // 10% through the duration.
+    expect(instancePosition.getX(0), 'point had not started morphing 10% into the duration').toBeCloseTo(1, 5);
+
+    pointset.setMorphTime(5); // halfway through the duration.
+    expect(instancePosition.getX(0)).toBeCloseTo(5, 5);
+  });
+
   it('tubeLines reads vertices from a JSONLoader BufferGeometry', () => {
     //TubeLines bypasses toBufferGeometry() and consumes the loader's
     //geometry directly (see sceneLoader.js's linesloader), so it must read

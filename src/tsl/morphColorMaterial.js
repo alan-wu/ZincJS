@@ -2,7 +2,9 @@ import * as THREE from 'three/webgpu';
 import { Fn, attribute, materialColor, materialOpacity, mix, uniform, vec4 } from 'three/tsl';
 
 //Maps a classic material's constructor name to its NodeMaterial
-//equivalent, since only NodeMaterial exposes colorNode.
+//equivalent, since only NodeMaterial exposes colorNode/positionNode.
+//Exported for reuse anywhere else a classic material needs upgrading to a
+//NodeMaterial to attach a custom node to (see glyphRenderMaterial.js).
 const NODE_MATERIAL_CLASSES = {
   MeshBasicMaterial: THREE.MeshBasicNodeMaterial,
   MeshLambertMaterial: THREE.MeshLambertNodeMaterial,
@@ -16,15 +18,6 @@ const NODE_MATERIAL_CLASSES = {
  * targets {@link updateMorphColorAttribute} (in utilities.js) keeps
  * published as the 'morphColor0'/'morphColor1' geometry attributes -
  * whichever two morph targets currently have non-zero influence.
- *
- * This replaces the legacy `material.onBeforeCompile = augmentMorphColor`
- * approach, which patched raw GLSL into the classic WebGL shader and has no
- * effect once a material is compiled through the WebGPU/TSL pipeline.
- * three.js's own built-in WebGPU morph target system packs morph colour
- * data into its morph texture (see three's Morph.js) but its blend loop
- * only ever applies the result to position/normal, never colour, so this
- * has to be done by hand.
- *
  * Converts `material` to its NodeMaterial equivalent first if it isn't one
  * already, since only NodeMaterial exposes `colorNode`.
  *
@@ -47,9 +40,6 @@ const applyMorphColorNode = (material) => {
 
   const morphColorMix = uniform(0);
 
-  //materialColor already folds in material.color and, if present, .map -
-  //multiplying it by the blended per vertex morph colour keeps that
-  //compositing instead of replacing it outright.
   target.colorNode = Fn(() => {
     const colorA = attribute('morphColor0', 'vec3');
     const colorB = attribute('morphColor1', 'vec3');
@@ -62,4 +52,4 @@ const applyMorphColorNode = (material) => {
   return target;
 };
 
-export { applyMorphColorNode };
+export { applyMorphColorNode, NODE_MATERIAL_CLASSES };
