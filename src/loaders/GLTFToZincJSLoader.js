@@ -8,6 +8,40 @@ const GLTFToZincJSLoader = function () {
 
   const _this = this;
 
+  /*
+   * glTF stores morph targets as offsets from the base attribute and
+   * GLTFLoader keeps them that way (morphTargetsRelative), but zinc expects
+   * absolute morph targets. GLTFLoader also only keeps the target names in
+   * morphTargetDictionary, while zinc builds its animation clip from the
+   * attribute names, so copy the names back onto the attributes.
+   */
+  const convertMorphTargets = (object) => {
+    const geometry = object.geometry;
+    if (!geometry || !geometry.morphAttributes) return;
+    const names = [];
+    if (object.morphTargetDictionary) {
+      for (const key in object.morphTargetDictionary) {
+        names[object.morphTargetDictionary[key]] = key;
+      }
+    }
+    for (const attributeName in geometry.morphAttributes) {
+      const base = geometry.attributes[attributeName];
+      geometry.morphAttributes[attributeName].forEach((attribute, i) => {
+        if (geometry.morphTargetsRelative && base) {
+          const array = attribute.array;
+          const baseArray = base.array;
+          const length = Math.min(array.length, baseArray.length);
+          for (let j = 0; j < length; j++) {
+            array[j] += baseArray[j];
+          }
+          attribute.needsUpdate = true;
+        }
+        if (names[i] !== undefined) attribute.name = names[i];
+      });
+    }
+    geometry.morphTargetsRelative = false;
+  }
+
   this.parseGLTFObjects = (object, region, depth, finishCallback) => {
     let childRegion = region;
     if (depth !== 0) {
@@ -36,6 +70,7 @@ const GLTFToZincJSLoader = function () {
           let localTimeEnabled = false;
           let localMorphColour = false;
           if (object.geometry && object.geometry.morphAttributes) {
+            convertMorphTargets(object);
             localTimeEnabled = object.geometry.morphAttributes.position ? true : false;
             localMorphColour = object.geometry.morphAttributes.color ? true : false;
           }

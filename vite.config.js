@@ -27,6 +27,7 @@ export default defineConfig({
           'three/tsl': 'THREE',
           'three/webgpu': 'THREE',
           'three-spritetext': 'SpriteText',
+          'three/examples/jsm/exporters/GLTFExporter': 'GLTFExporter',
           'three/examples/jsm/loaders/GLTFLoader': 'GLTFLoader',
           'fflate': 'fflate'
         }
