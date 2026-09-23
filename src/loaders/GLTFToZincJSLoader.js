@@ -1,8 +1,8 @@
-import * as THREE from 'three/webgpu';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Geometry } from '../primitives/geometry';
 import { Lines } from '../primitives/lines';
 import { Pointset } from '../primitives/pointset';
+import { applyMorphColorNode } from '../tsl/morphColorMaterial';
 
 const GLTFToZincJSLoader = function () {
 
@@ -42,6 +42,22 @@ const GLTFToZincJSLoader = function () {
     geometry.morphTargetsRelative = false;
   }
 
+  /*
+   * Zinc renders colour morphs with its own colorNode (see geometry.js and
+   * lines.js), so swap it into the materials GLTFLoader created. Without it
+   * the colours stay at the first frame.
+   */
+  const applyMorphColourMaterial = (object) => {
+    const setup = (material) => {
+      //Same as geometry.js - vertexColors would multiply the blend by the
+      //static colour attribute.
+      material.vertexColors = false;
+      return applyMorphColorNode(material);
+    };
+    object.material = Array.isArray(object.material) ?
+      object.material.map(setup) : setup(object.material);
+  }
+
   this.parseGLTFObjects = (object, region, depth, finishCallback) => {
     let childRegion = region;
     if (depth !== 0) {
@@ -74,7 +90,10 @@ const GLTFToZincJSLoader = function () {
             localTimeEnabled = object.geometry.morphAttributes.position ? true : false;
             localMorphColour = object.geometry.morphAttributes.color ? true : false;
           }
-          zincGeometry.setMesh(object.clone(), localTimeEnabled, localMorphColour);
+          const mesh = object.clone();
+          if (localMorphColour && !zincGeometry.isPointset)
+            applyMorphColourMaterial(mesh);
+          zincGeometry.setMesh(mesh, localTimeEnabled, localMorphColour);
           const morph = zincGeometry.getMorph();
           zincGeometry.groupName = morph.name;
           morph.matrixAutoUpdate = true;

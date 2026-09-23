@@ -1,4 +1,50 @@
+import { BufferAttribute } from 'three/webgpu';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter';
+
+/*
+ * GLTFExporter only writes POSITION and NORMAL morph targets. glTF allows
+ * COLOR_n morph targets as well (GLTFLoader reads them), so add them to the
+ * targets the exporter has already written. Like other glTF morph targets
+ * they are stored relative to the base attribute.
+ */
+class GLTFMorphColourPlugin {
+  constructor(writer) {
+    this.writer = writer;
+    this.name = 'ZINC_morph_colour';
+  }
+
+  writeMesh(mesh, meshDef) {
+    const geometry = mesh.geometry;
+    const morphColours = geometry && geometry.morphAttributes ?
+      geometry.morphAttributes.color : undefined;
+    const baseColour = geometry ? geometry.attributes.color : undefined;
+    const primitive = meshDef.primitives ? meshDef.primitives[0] : undefined;
+    if (!morphColours || !baseColour || !primitive || !primitive.targets)
+      return;
+    // All primitives of a mesh share the same targets array.
+    const targets = primitive.targets;
+    const itemSize = baseColour.itemSize;
+    const count = baseColour.count;
+    for (let i = 0; i < targets.length && i < morphColours.length; i++) {
+      const attribute = morphColours[i];
+      if (attribute.itemSize !== itemSize || attribute.count < count) {
+        console.warn('GLTFExporter: Colour morph target does not match the base colour, skipped.');
+        return;
+      }
+      const array = new Float32Array(count * itemSize);
+      for (let j = 0; j < count; j++) {
+        for (let a = 0; a < itemSize; a++) {
+          const value = attribute.getComponent(j, a);
+          array[j * itemSize + a] = geometry.morphTargetsRelative ?
+            value : value - baseColour.getComponent(j, a);
+        }
+      }
+      targets[i].COLOR_0 = this.writer.processAccessor(
+        new BufferAttribute(array, itemSize), geometry);
+    }
+  }
+}
+
 /**
  * Provides an object which uses for exporting the scene
  *
@@ -44,6 +90,7 @@ const SceneExporter = function (sceneIn) {
       }
     }
     const exporter = new GLTFExporter();
+    exporter.register(writer => new GLTFMorphColourPlugin(writer));
     const options = { binary, animations, onlyVisible: true };
     try {
       return await new Promise((resolve, reject) => {
