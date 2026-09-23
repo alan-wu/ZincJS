@@ -988,8 +988,22 @@ const Scene = function (containerIn, rendererIn) {
     return undefined;
   }
 
+  /**
+   * Check if the renderer is running on the WebGL 2 fallback backend.
+   *
+   * @return {Boolean}
+   */
   this.isWebGL2 = () => {
-    return rendererIn.isWebGL2();
+    return rendererIn?.backend?.isWebGLBackend === true;
+  }
+
+  /**
+   * Check if the renderer is running on the WebGPU backend.
+   *
+   * @return {Boolean}
+   */
+  this.isWebGPU = () => {
+    return rendererIn?.backend?.isWebGPUBackend === true;
   }
 
   /**

@@ -725,10 +725,23 @@ const Renderer = function (containerIn) {
 		}
 	}
 
+  /**
+   * Check if the renderer is running on the WebGL 2 fallback backend.
+   * WebGPURenderer never uses WebGL 1, so this is false when WebGPU is used.
+   *
+   * @return {Boolean}
+   */
   this.isWebGL2 = () => {
-    if (renderer)
-      return renderer.capabilities.isWebGL2;
-    return false;
+    return renderer?.backend?.isWebGLBackend === true;
+  }
+
+  /**
+   * Check if the renderer is running on the WebGPU backend.
+   *
+   * @return {Boolean}
+   */
+  this.isWebGPU = () => {
+    return renderer?.backend?.isWebGPUBackend === true;
   }
 };
 
