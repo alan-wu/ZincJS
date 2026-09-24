@@ -121,4 +121,13 @@ const TextureArray = function () {
 }
 
 TextureArray.prototype = Object.create(Texture.prototype);
+
+/**
+ * Free the memory allocated for this texture array.
+ */
+TextureArray.prototype.dispose = function () {
+  Texture.prototype.dispose.call(this);
+  this.imageData = undefined;
+}
+
 export { TextureArray };

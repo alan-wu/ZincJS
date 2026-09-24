@@ -71,6 +71,16 @@ Texture.prototype.loadFromImages = async function (srcArrays) {
 }
 
 /**
+ * Free the memory allocated for this texture.
+ */
+Texture.prototype.dispose = function () {
+  if (this.impl) {
+    this.impl.dispose();
+    this.impl = undefined;
+  }
+}
+
+/**
  * Return true if the texture is ready for consumption.
  *
  * @return {Boolean}

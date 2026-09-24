@@ -565,6 +565,10 @@ ZincObject.prototype.getBoundingBox = function() {
 ZincObject.prototype.dispose = function() {
   //multilayyers
   this._lod.dispose();
+  if (this.marker) {
+    this.marker.dispose();
+    this.marker = undefined;
+  }
   this.animationGroup = undefined;
   this.mixer = undefined;
   this.morph = undefined;

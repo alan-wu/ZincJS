@@ -22,6 +22,8 @@ const Glyphset = function () {
   let axis2s = undefined;
   let axis3s = undefined;
   let positions = undefined;
+  //Glyph geometry loaded after dispose is discarded
+  let disposed = false;
   let scales = undefined;
   let colors = undefined;
   let labels = undefined;
@@ -149,6 +151,7 @@ const Glyphset = function () {
    * geometry is loaded.
    */
   this.load = (glyphsetData, glyphURL, finishCallback, isInline, displayLabels) => {
+    disposed = false;
     axis1s = glyphsetData.axis1;
     axis2s = glyphsetData.axis2;
     axis3s = glyphsetData.axis3;
@@ -856,6 +859,10 @@ const Glyphset = function () {
 
   var meshloader = (finishCallback, displayLabels) => {
     return (geometry, materials) => {
+      if (disposed) {
+        geometry.dispose();
+        return;
+      }
       this.geometry.copy(geometry);
       this.geometry.computeBoundingSphere();
       this.geometry.computeBoundingBox();
@@ -1063,6 +1070,7 @@ const Glyphset = function () {
    * Clear this glyphset and its list of glyphs which will release them from the memory.
    */
   this.dispose = () => {
+    disposed = true;
     for (let i = glyphList.length - 1; i >= 0; i--) {
       glyphList[i].dispose();
     }

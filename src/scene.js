@@ -1025,7 +1025,7 @@ const Scene = function (containerIn, rendererIn) {
     rootRegion.clear(true);
     this.clearZincObjectAddedCallbacks();
     this.clearZincObjectRemovedCallbacks();
-    sceneLoader.toBeDwonloaded = 0;
+    sceneLoader.cancelPendingLoads();
     if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
     }

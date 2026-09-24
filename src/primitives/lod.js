@@ -26,6 +26,8 @@ const LOD = function (parent) {
   this._loader = undefined;
   //The owning Zinc Object
   this._parent = parent;
+  //Levels loaded after dispose are discarded
+  this._disposed = false;
 
   /*
    * Add a level of LOD at the specified distance
@@ -182,6 +184,7 @@ const LOD = function (parent) {
   }
 
   this.dispose = () => {
+    this._disposed = true;
     this.levels.forEach((level) => {
       if (level.morph && level.morph.geometry) {
         level.morph.geometry.dispose();
@@ -212,6 +215,10 @@ const LOD = function (parent) {
  */
   this.lodLoader = function (distance) {
     return (geometryIn) => {
+      if (this._disposed) {
+        geometryIn.dispose();
+        return;
+      }
       const material = this._material;
       const options = {
         localTimeEnabled: this._parent.timeEnabled,

@@ -123,13 +123,16 @@ const GLTFToZincJSLoader = function () {
    * @param {String} url - URL to the GLTF file
    * @param {Function} finishCallback - Callback function which will be called
    * once the glyphset is succssfully load in.
+   * @param {Function} isCancelled - Optional function returning true if this
+   * load has been cancelled, the loaded content will be discarded.
    */
-  this.load = (scene, region, url, finishCallback, allCompletedCallback, options) => {
+  this.load = (scene, region, url, finishCallback, allCompletedCallback, options, isCancelled) => {
     const path = url.substring(0, url.lastIndexOf("/") + 1);
     const filename = url.substring(url.lastIndexOf("/") + 1, url.length);
     const loader = new GLTFLoader().setPath(path);
 
     loader.load( filename, function ( gltf ) {
+      if (isCancelled && isCancelled()) return;
       console.log(gltf)
       _this.parseGLTFObjects(gltf.scene, region, 0, finishCallback);
       _this.setCamera(scene);

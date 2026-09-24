@@ -445,13 +445,18 @@ let Region = function (parentIn, sceneIn) {
    */
   this.clear = transverse => {
     if (transverse) {
-      children.forEach(childRegion => childRegion.clear(transverse));
+      children.forEach(childRegion => {
+        childRegion.clear(transverse);
+        group.remove(childRegion.getGroup());
+      });
     }
     zincObjects.forEach(zincObject => {
       group.remove(zincObject.getGroup());
       zincObject.dispose();
     });
-    children = [];
+    if (transverse) {
+      children = [];
+    }
     zincObjects = [];
   }
 

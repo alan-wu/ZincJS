@@ -277,6 +277,11 @@ const TextureSlides = function (textureIn) {
       if (slide.material)
         slide.material.dispose();
     });
+    if (maskTexture) {
+      maskTexture.dispose();
+      maskTexture = undefined;
+      maskEnabled = false;
+    }
     TexturePrimitive.prototype.dispose.call(this);
     this.boundingBoxUpdateRequired = true;
   }
