@@ -124,7 +124,7 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback)
       if (data) {
         processItemDownloaded(item);
       } else {
-        processItemError(error);
+        processItemError(item);
       }
     } else if (downloading) {
       //quene it up

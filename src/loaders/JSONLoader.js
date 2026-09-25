@@ -302,7 +302,7 @@ Object.assign( JSONLoader.prototype, {
 
 					}
 
-					const attribute = new Float32BufferAttribute( array, 3 );
+					const attribute = new BufferAttribute( array, 3 );
 					attribute.name = json.morphTargets[ i ].name;
 					morphPositions.push( attribute );
 
@@ -321,7 +321,7 @@ Object.assign( JSONLoader.prototype, {
 						const srcNormals = json.morphNormals[ i ].normals;
 						const array = Float32Array.from( srcNormals );
 
-						const attribute = new Float32BufferAttribute( array, 3 );
+						const attribute = new BufferAttribute( array, 3 );
 						attribute.name = morphPositions[ i ].name;
 						morphNormals[ i ] = attribute;
 
