@@ -128,31 +128,40 @@ const getColorsRGB = (colors, index) => {
     return [mycolor.r, mycolor.g, mycolor.b];
 }
 
+//morphColor0/morphColor1 attribute -> morph colour target last copied into it
+const morphColorSources = new WeakMap();
+
 const updateMorphColorAttribute = function(targetGeometry, morph) {
   if (morph && targetGeometry && targetGeometry.morphAttributes &&
     targetGeometry.morphAttributes[ "color" ]) {
     const morphColors = targetGeometry.morphAttributes[ "color" ];
     const influences = morph.morphTargetInfluences;
     const length = influences.length;
-    let morphArray = [];
-    for (let i = 0; i < length; i++) {
+    //Find the first two morph targets with non-zero influence
+    let found = 0;
+    let index0 = 0;
+    let index1 = 0;
+    let weight0 = 0;
+    let weight1 = 0;
+    for (let i = 0; i < length && found < 2; i++) {
       if (influences[i] > 0) {
-        morphArray.push([i, influences[i]]);
+        if (found === 0) {
+          index0 = index1 = i;
+          weight0 = influences[i];
+        } else {
+          index1 = i;
+          weight1 = influences[i];
+        }
+        found++;
       }
     }
     //morphColorMix (0 = fully morphColor0, 1 = fully morphColor1) drives the
     //TSL colorNode set up by applyMorphColorNode - keep it in sync with
     //whichever two morph targets currently have non-zero influence.
     let mix = 0;
-    let index0 = 0;
-    let index1 = 0;
-    if (morphArray.length >= 2) {
-      index0 = morphArray[0][0];
-      index1 = morphArray[1][0];
-      const total = morphArray[0][1] + morphArray[1][1];
-      mix = total > 0 ? morphArray[1][1] / total : 0;
-    } else if (morphArray.length == 1) {
-      index0 = index1 = morphArray[0][0];
+    if (found >= 2) {
+      const total = weight0 + weight1;
+      mix = total > 0 ? weight1 / total : 0;
     }
     //Keep morphColor0/morphColor1 as two persistent attributes and mutate
     //their contents in place (array.set + needsUpdate) rather than
@@ -176,10 +185,20 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
       targetGeometry.setAttribute('morphColor0', attribute0);
       targetGeometry.setAttribute('morphColor1', attribute1);
     }
-    attribute0.array.set(morphColors[index0].array);
-    attribute0.needsUpdate = true;
-    attribute1.array.set(morphColors[index1].array);
-    attribute1.needsUpdate = true;
+    //Only copy and upload when the pair of keyframes changes, between
+    //keyframes only morphColorMix changes.
+    const source0 = morphColors[index0];
+    const source1 = morphColors[index1];
+    if (morphColorSources.get(attribute0) !== source0) {
+      attribute0.array.set(source0.array);
+      attribute0.needsUpdate = true;
+      morphColorSources.set(attribute0, source0);
+    }
+    if (morphColorSources.get(attribute1) !== source1) {
+      attribute1.array.set(source1.array);
+      attribute1.needsUpdate = true;
+      morphColorSources.set(attribute1, source1);
+    }
     const morphColorMix = morph.material && morph.material.userData &&
       morph.material.userData.uniforms && morph.material.userData.uniforms.morphColorMix;
     if (morphColorMix) {
