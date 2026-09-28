@@ -32,14 +32,21 @@ const Label = function (textIn, colourIn) {
   sprite.material = new THREE.SpriteNodeMaterial({
     map: canvasTexture,
   });
-  sprite.material.map.generateMipmaps = true;
-  sprite.material.map.anisotropy = 4;
-  sprite.material.minFilter = THREE.LinearMipmapLinearFilter; // Smooth downscaling
-  sprite.material.magFilter = THREE.LinearFilter;
   sprite.material.sizeAttenuation = false;
   sprite.center.x = -0.05;
   sprite.center.y = 0;
-
+  //SpriteText replaces the texture whenever the text, colour or size
+  //changes, the settings need to be re-applied to the new texture.
+  const applyTextureSettings = () => {
+    const texture = sprite.material.map;
+    if (texture) {
+      texture.generateMipmaps = true;
+      texture.anisotropy = 4;
+      texture.minFilter = THREE.LinearMipmapLinearFilter; // Smooth downscaling
+      texture.magFilter = THREE.LinearFilter;
+    }
+  }
+  applyTextureSettings();
 
 
   /**
@@ -78,7 +85,13 @@ const Label = function (textIn, colourIn) {
    */
   this.setColour = colourIn => {
     if (colourIn) {
-      sprite.color = colourIn.getStyle();
+      //Changing the colour redraws the canvas and creates a new texture,
+      //only do it when the colour has changed.
+      const style = colourIn.getStyle();
+      if (style !== sprite.color) {
+        sprite.color = style;
+        applyTextureSettings();
+      }
       colour = colourIn;
     }
   }
@@ -112,6 +125,7 @@ const Label = function (textIn, colourIn) {
   this.setSize = sizeIn => {
     if (sizeIn > 0.0) {
       sprite.textHeight = textHeight * sizeIn;
+      applyTextureSettings();
       size = sizeIn;
     }
   }
@@ -124,6 +138,7 @@ const Label = function (textIn, colourIn) {
   this.setFontWeight = fontWeightIn => {
     if (fontWeightIn && fontWeightIn !== fontWeight) {
       sprite.fontWeight = fontWeightIn;
+      applyTextureSettings();
       fontWeight = fontWeightIn;
     }
   }
@@ -152,6 +167,7 @@ const Label = function (textIn, colourIn) {
       sprite.textHeight = textHeight * size;
       text = textIn;
       if (sprite.material && sprite.material.map) {
+        applyTextureSettings();
         sprite.material.map.needsUpdate = true;
       }
     }
