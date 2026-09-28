@@ -27,8 +27,6 @@ const SceneLoader = function (sceneIn) {
   this.progressMap = {};
   let viewLoaded = false;
   let errorDownload = false;
-  //Incremented when pending loads are cancelled, loads requested
-  //before the increment are discarded once they complete.
   let generation = 0;
   const primitivesLoader = new PrimitivesLoader();
 
@@ -450,7 +448,8 @@ const SceneLoader = function (sceneIn) {
     const loader = new STLLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(url, meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined, undefined, finishCallback));
+      false, groupName, undefined, undefined, {}, finishCallback),
+      this.onProgress(url), this.onError(finishCallback));
   }
 
   /**
@@ -468,8 +467,9 @@ const SceneLoader = function (sceneIn) {
     const opacity = Zinc.defaultOpacity;
     const loader = new OBJLoader();
     loader.crossOrigin = "Anonymous";
-    loader.load(url, meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined, undefined, finishCallback));
+    loader.load(url, objloader(region, colour, opacity, false,
+      false, groupName, undefined, undefined, {}, finishCallback),
+      this.onProgress(url), this.onError(finishCallback));
   }
 
   /**
@@ -500,17 +500,14 @@ const SceneLoader = function (sceneIn) {
     if (morphColour != undefined)
       localMorphColour = morphColour ? true : false;
     let loader = primitivesLoader;
-    if (fileFormat !== undefined) {
-      if (fileFormat == "STL") {
-        loader = new STLLoader();
-      } else if (fileFormat == "OBJ") {
-        loader = new OBJLoader();
-        loader.crossOrigin = "Anonymous";
-        loader.load(url, objloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(url), this.onError,
-          options.loaderOptions);
-        return;
-      }
+    if (fileFormat == "STL" || fileFormat == "OBJ") {
+      const typedLoader = fileFormat == "STL" ? meshloader : objloader;
+      loader = fileFormat == "STL" ? new STLLoader() : new OBJLoader();
+      loader.crossOrigin = "Anonymous";
+      loader.load(url, typedLoader(region, colour, opacity, localTimeEnabled,
+        localMorphColour, groupName, anatomicalId, renderOrder, options ? options : {},
+        finishCallback), this.onProgress(url), this.onError(finishCallback));
+      return;
     }
     if (isInline) {
       const object = primitivesLoader.parse( url );
@@ -723,7 +720,7 @@ const SceneLoader = function (sceneIn) {
       }
       const zincGeometry = addZincGeometry(region, geometry, colour, opacity,
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder, anatomicalId);
-      if (options.lod && options.lod.levels) {
+      if (options?.lod?.levels) {
         for (const [key, value] of Object.entries(options.lod.levels)) {
           zincGeometry.addLOD(primitivesLoader, key, value.URL, value.Index, options.lod.preload);
         }
@@ -733,6 +730,48 @@ const SceneLoader = function (sceneIn) {
       if (finishCallback != undefined && (typeof finishCallback == 'function')) {
         finishCallback(zincGeometry);
       }
+    };
+  }
+
+  //Internal loader for OBJ files, OBJLoader returns a group and each mesh
+  //in it is added as a separate zinc geometry.
+  const objloader = (
+    region,
+    colour,
+    opacity,
+    localTimeEnabled,
+    localMorphColour,
+    groupName,
+    anatomicalId,
+    renderOrder,
+    options,
+    finishCallback
+  ) => {
+    const isStale = createStaleCheck();
+    const onMeshLoaded = meshloader(region, colour, opacity, localTimeEnabled,
+      localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback);
+    return (group) => {
+      const meshes = [];
+      group.traverse((child) => {
+        if (child.isMesh && child.geometry) {
+          meshes.push(child);
+        }
+        if (child.material) {
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          materials.forEach((material) => material.dispose());
+        }
+      });
+      if (isStale()) {
+        meshes.forEach((mesh) => mesh.geometry.dispose());
+        return;
+      }
+      if (meshes.length === 0) {
+        --this.toBeDownloaded;
+        return;
+      }
+      //meshloader decrements the counter once per mesh
+      this.toBeDownloaded += meshes.length - 1;
+      meshes.forEach((mesh) => onMeshLoaded(mesh.geometry));
     };
   }
 
@@ -1017,9 +1056,9 @@ const SceneLoader = function (sceneIn) {
     // view file does not receive callback
     let callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
     // Prioritise the view file and settings before loading anything else
-    for (let i = 0; i < metadata.length; i++)
+    for (let i = 0; i < filteredMetada.length; i++)
       readViewAndSettingsItem(referenceURL, filteredMetada[i], callback);
-    for (let i = 0; i < metadata.length; i++) {
+    for (let i = 0; i < filteredMetada.length; i++) {
       readVersionOneRegionPath(targetRegion, referenceURL, filteredMetada[i], i, callback);
     }
   }
