@@ -529,7 +529,7 @@ const TextureSlides = function (textureIn) {
   /**
    * Update the glyphsets if required the render.
    */
-  this.render = (delta, playAnimation, options) => {
+  this.render = (delta, playAnimation, cameraControls, options) => {
    //console.log("render", delta, playAnimation, this.textureList)
     if (playAnimation == true && this.timeEnabled &&
         this.textureList.length > 1) {
