@@ -580,16 +580,16 @@ const Renderer = function (containerIn) {
 	        const sceneItem = additionalActiveScenes[i];
 	        sceneItem.renderGeometries(playRate, delta, this.playAnimation);
 	    }
-		if (cameraOrtho != undefined && sceneOrtho != undefined) {
-			renderer.clearDepth();
-			renderer.render( sceneOrtho, cameraOrtho );
-		}
     for (let key of Object.keys(preRenderCallbackFunctions)) {
       if (preRenderCallbackFunctions.hasOwnProperty(key)) {
         preRenderCallbackFunctions[key].call();
       }
     }
     currentScene.render(renderer);
+		if (cameraOrtho != undefined && sceneOrtho != undefined) {
+			renderer.clearDepth();
+			renderer.render( sceneOrtho, cameraOrtho );
+		}
     for (let key of Object.keys(postRenderCallbackFunctions)) {
       if (postRenderCallbackFunctions.hasOwnProperty(key)) {
         postRenderCallbackFunctions[key].call();
