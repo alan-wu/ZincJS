@@ -6,8 +6,11 @@ const FileLoader = THREE.FileLoader;
 const mergeGlyphData = (glyphData) => {
   const merge = (glyphData1, glyphData2) => {
     glyphData1.metadata.number_of_vertices += glyphData2.metadata.number_of_vertices;
-    if ('labels' in glyphData1) {
-      glyphData1.labels.push(...glyphData1.labels);
+    if ('labels' in glyphData1 && glyphData2.labels) {
+      const labels = glyphData2.labels;
+      for (let i = 0; i < labels.length; i++) {
+        glyphData1.labels.push(labels[i]);
+      }
     }
     const fields = ['axis1', 'axis2', 'axis3', 'colors', 'positions', 'scale'];
     fields.forEach(field => {
@@ -42,12 +45,13 @@ const mergeGeometries = (geometries) => {
   return undefined;
 }
 
-const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback) {
+const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback, onErrorCallback) {
   const fileLoader = new FileLoader();
   const jsonLoader = new JSONLoader();
   fileLoader.crossOrigin = crossOrigin;
   const url = urlIn;
   const onDownloaded = onDownloadedCallback;
+  const onDownloadError = onErrorCallback;
   let data = undefined;
   let downloading = false;
   let finished = false;
@@ -100,6 +104,9 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback)
       items.forEach((item) => {
         processItemError(item);
       });
+      if (onDownloadError) {
+        onDownloadError(xhr);
+      }
     }
   }
 
@@ -132,32 +139,62 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback)
     } else {
       items.push(item);
       downloading = true;
-      fileLoader.load(url, onDownloaded, progressHandling, errorHandling);
+      fileLoader.load(url, onDownloaded, progressHandling(), errorHandling());
     }
   }
 }
 
-const MultiSourcesHandler = function(numberIn, onLoadCallback, options) {
+const MultiSourcesHandler = function(numberIn, onLoadCallback, onErrorCallback, options) {
   const allData = [];
   const number = numberIn;
   const onLoad = onLoadCallback;
+  const onError = onErrorCallback;
   let totalDownloaded = 0;
-  const isGlyphData = options.isGlyphsets;
+  let failure = undefined;
+  const isGlyphData = options?.isGlyphsets;
+
+  //Release whatever was downloaded successfully and report the first failure
+  const reportFailure = () => {
+    if (!isGlyphData) {
+      allData.forEach((data) => {
+        if (data) {
+          data[0]?.dispose?.();
+          data[1]?.forEach((material) => material.dispose());
+        }
+      });
+    }
+    if (onError) {
+      onError(...failure);
+    }
+  }
+
+  this.itemFailed = (order, args) => {
+    if (!failure) {
+      failure = args;
+    }
+    totalDownloaded++;
+    if (totalDownloaded == number) {
+      reportFailure();
+    }
+  }
 
   this.itemDownloaded = (order, args) => {
     allData[order]= args;
     totalDownloaded++;
     if (totalDownloaded == number) {
-      if (allData.length > 0) {
+      if (failure) {
+        reportFailure();
+      } else if (allData.length > 0) {
         //Assume when item length is one then it is a glyphset otherwise geometry
         if (!isGlyphData) {
           const materials = allData[0][1];
           const geometries = allData.map((data) => data[0]);
           //All geometries will be merged into the first one
           const geometry = mergeGeometries(geometries);
+          //mergeGeometries has disposed the source geometries,
+          //only the first set of materials is kept
           for (let i = 1; i < number; i++) {
-            allData[order][0].dispose();
-            allData[order][1].forEach((material) => material.dispose());
+            allData[i][1]?.forEach((material) => material.dispose());
           }
           onLoad(geometry, materials);
         } else {
@@ -186,7 +223,7 @@ const PrimitivesLoader = function () {
   //Load the first file then the rest will be handled separately
   const loadFromMultipleSources = (urls, onLoad, onProgress, onError, options) => {
     const number = urls.length;
-    const msHandler = new MultiSourcesHandler(number, onLoad, options);
+    const msHandler = new MultiSourcesHandler(number, onLoad, onError, options);
     //The order here will give us hint on the sequence on merging the primitives
     let order = 0;
     urls.forEach((url) => {
@@ -204,8 +241,10 @@ const PrimitivesLoader = function () {
     if (!indexedLoader) {
       if (MAX_DOWNLOAD > concurrentDownloads) {
         const onLoadCallback = new onFinally(undefined, this, newOptions);
+        const onErrorCallback = new onFinally(undefined, this, {});
         ++concurrentDownloads;
-        indexedLoader = new IndexedSourcesHandler(url, this.crossOrigin, onLoadCallback);
+        indexedLoader = new IndexedSourcesHandler(url, this.crossOrigin, onLoadCallback,
+          onErrorCallback);
         indexedLoaders[url] = indexedLoader;
       } else {
         waitingList.push({
@@ -231,8 +270,8 @@ const PrimitivesLoader = function () {
       if (MAX_DOWNLOAD > concurrentDownloads) {
         ++concurrentDownloads;
         const onLoadCallback = new onFinally(onLoad, this, options);
-        const onErrorCallback = new onFinally(onError, this, options);
-        if (!options.isGlyphsets) {
+        const onErrorCallback = new onFinally(onError, this, options, true);
+        if (!options?.isGlyphsets) {
           jsonloader.crossOrigin = this.crossOrigin;
           jsonloader.load(url, onLoadCallback, onProgress, onErrorCallback);
         } else {
@@ -279,11 +318,15 @@ const PrimitivesLoader = function () {
     }
   }
 
-  const onFinally = function(callback, loader, options) {
+  const onFinally = function(callback, loader, options, isError = false) {
     return (...args) => {
       --concurrentDownloads;
       if (options?.msHandler) {
-        options.msHandler.itemDownloaded(options.order, args);
+        if (isError) {
+          options.msHandler.itemFailed(options.order, args);
+        } else {
+          options.msHandler.itemDownloaded(options.order, args);
+        }
       } else if (options?.isHandler) {
         options.isHandler.downloadCompleted(args);
       } else {
@@ -297,7 +340,7 @@ const PrimitivesLoader = function () {
   }
 
   this.parse = data => {
-    return loader.parse(data);
+    return jsonloader.parse(data);
   }
 
 }
