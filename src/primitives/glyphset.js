@@ -71,6 +71,9 @@ const Glyphset = function () {
   // for ACCURATE_RESYNC_DEBOUNCE_MS of quiet.
   let accurateResyncTimer = undefined;
   const ACCURATE_RESYNC_DEBOUNCE_MS = 500;
+  //Set to false when the static (non morphing) transformation needs to be
+  //re-applied, e.g. after a scale change.
+  let staticTransformationApplied = false;
   for (let i = 0; i < 8; i++) {
     _points[i] = new THREE.Vector3();
   }
@@ -666,8 +669,13 @@ const Glyphset = function () {
       current_axis3s = axis3s["0"];
       current_scales = scales["0"];
     }
-    updateGlyphsetTransformation(current_positions, current_axis1s, current_axis2s, current_axis3s,
-      current_scales);
+    //Colour only morphing does not change the transformation, skip it
+    //unless it is out of date.
+    if (morphVertices || !staticTransformationApplied) {
+      updateGlyphsetTransformation(current_positions, current_axis1s, current_axis2s, current_axis3s,
+        current_scales);
+      staticTransformationApplied = !morphVertices;
+    }
     if (colors != undefined) {
       if (morphColours) {
         const bottom_colors = colors[bottom_frame.toString()];
@@ -804,6 +812,7 @@ const Glyphset = function () {
     //Update the transformation of the glyphs.
     updateGlyphsetTransformation(positions["0"], axis1s["0"],
       axis2s["0"], axis3s["0"], scales["0"]);
+    staticTransformationApplied = true;
     if (colors != undefined) {
       updateGlyphsetHexColors(colors["0"], !!(glyphCompute && glyphCompute.outputs.color));
     }
@@ -1063,6 +1072,7 @@ const Glyphset = function () {
    */
   this.setScaleAll = function(scale) {
     this.globalScale = scale;
+    staticTransformationApplied = false;
     updateMorphGlyphsets(false);
   }
 
@@ -1098,7 +1108,7 @@ const Glyphset = function () {
   /**
    * Update the glyphsets if required the render.
    */
-  this.render = (delta, playAnimation, options) => {
+  this.render = (delta, playAnimation, cameraControls, options) => {
     if (glyphCompute && !renderBuffersInitialized) {
       const renderer = this.region?.getScene?.()?.getRenderer?.();
       if (renderer) {
