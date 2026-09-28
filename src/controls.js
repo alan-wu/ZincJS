@@ -486,14 +486,17 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	}
 
 	const onDocumentTouchEnd = event => {
-		const len = event.touches.length;
+		const previousState = this._state;
 		this.touchZoomDistanceStart = this.touchZoomDistanceEnd = 0;
 		this.targetTouchId = -1;
 		this._state = STATE.NONE;
-		if (len == 1) {
+		//A single finger tap, the lifted touch is in changedTouches
+		if (previousState === STATE.TOUCH_ROTATE && event.touches.length === 0 &&
+			event.changedTouches && event.changedTouches.length === 1 && rect) {
 			if (zincRayCaster !== undefined) {
-				if (this.pointer_x_start==(event.touches[0].clientX- rect.left) && this.pointer_y_start==(event.touches[0].clientY- rect.top)) {
-					zincRayCaster.pick(this.cameraObject, event.touches[0].clientX, event.touches[0].clientY, this.renderer);
+				const touch = event.changedTouches[0];
+				if (this.pointer_x_start==(touch.clientX- rect.left) && this.pointer_y_start==(touch.clientY- rect.top)) {
+					zincRayCaster.pick(this, touch.clientX, touch.clientY, this.renderer);
 				}
 			}
 		}
@@ -820,6 +823,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    */
 	this.disable = function () {
 		enabled = false;
+    this._state = STATE.NONE;
 		if (this.domElement && this.domElement.removeEventListener) {
 			this.domElement.removeEventListener( 'mousedown', onDocumentMouseDown, false );
 			this.domElement.removeEventListener( 'mousemove', onDocumentMouseMove, false );
@@ -1065,14 +1069,14 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		} else if (currentMode === MODE.SMOOTH_CAMERA_TRANSITION && smoothCameraTransitionObject) {
 			smoothCameraTransitionObject.update(delta);
 			if (smoothCameraTransitionObject.isTransitionCompleted()) {
-				smoothCameraTransitionObject == undefined;
+				smoothCameraTransitionObject = undefined;
 				currentMode = MODE.DEFAULT;
 			}
 			controlEnabled = false;
-		} else if (currentMode === MODE.ROTATE_CAMERA_TRANSITION && rotateCameraTransitionObject) {
+		} else if (currentMode === MODE.ROTATE_TRANSITION && rotateCameraTransitionObject) {
 			rotateCameraTransitionObject.update(delta);
 			if (rotateCameraTransitionObject.isTransitionCompleted()) {
-				rotateCameraTransitionObject == undefined;
+				rotateCameraTransitionObject = undefined;
 				currentMode = MODE.DEFAULT;
 			}
 			controlEnabled = false;
@@ -1354,7 +1358,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 	  if (smoothCameraTransitionObject)
 	    currentMode = MODE.SMOOTH_CAMERA_TRANSITION;
 	  if (rotateCameraTransitionObject)
-	    currentMode = MODE.ROTATE_CAMERA_TRANSITION;
+	    currentMode = MODE.ROTATE_TRANSITION;
 	}
 
   /**
@@ -1379,7 +1383,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    */
 	this.isTransitioningCamera = () => {
 		return (currentMode === MODE.SMOOTH_CAMERA_TRANSITION ||
-		    currentMode === MODE.ROTATE_CAMERA_TRANSITION);
+		    currentMode === MODE.ROTATE_TRANSITION);
 	}
 
   /**
@@ -1609,6 +1613,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
   let timeDiff = 0;
   let pickedObjects = new Array();
   let lastPosition = { zincCamera: undefined, x: -1 ,y: -1};
+  let hoverFrameRequested = false;
 	let pickableObjects = undefined;
 
 	this.enable = () => {
@@ -1621,8 +1626,8 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 
 	this.getIntersectsObject = (zincCamera) => {
     if (hostScene !== scene) {
-      const threejsScene = scene.getThreeJSScene();
-      renderer.render(threejsScene, zincCamera.cameraObject);
+      //Only the world matrices need to be up to date for raycasting
+      scene.getThreeJSScene().updateMatrixWorld();
     }
     let objects = pickableObjects ? pickableObjects : scene.getPickableThreeJSObjects();
     //Reset pickedObjects array
@@ -1690,19 +1695,29 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 
 	this.move = (zincCamera, x, y) => {
     if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
+      lastPosition.zincCamera = zincCamera;
+      lastPosition.x = x;
+      lastPosition.y = y;
       if (scene.displayMarkers) {
-        hovered(zincCamera, x, y);
+        //Markers need responsive hovering, but there is no need to
+        //raycast more than once per frame.
+        if (typeof requestAnimationFrame !== 'function') {
+          hovered(zincCamera, x, y);
+        } else if (!hoverFrameRequested) {
+          hoverFrameRequested = true;
+          requestAnimationFrame(() => {
+            hoverFrameRequested = false;
+            hovered(lastPosition.zincCamera, lastPosition.x, lastPosition.y);
+          });
+        }
       } else {
-        lastPosition.zincCamera = zincCamera;
-        lastPosition.x = x;
-        lastPosition.y = y;
         if (!awaiting) {
           timeDiff = lastHoveredDate ? Date.now() - lastHoveredDate.getTime() : 250;
           if (timeDiff >= 250) {
             hovered(zincCamera, x, y);
           } else {
             awaiting = true;
-            setTimeout(awaitMove(lastPosition), timeDiff);
+            setTimeout(awaitMove(lastPosition), 250 - timeDiff);
           }
         }
       }
@@ -1825,7 +1840,7 @@ Object.assign( StereoCameraZoomFixed.prototype, {
 				const projectionMatrix = camera.projectionMatrix.clone();
 				const eyeSep = 0.064 / 2;
 				const eyeSepOnProjection = eyeSep * near / focus;
-				const ymax = near * Math.tan( THREE.Math.DEG2RAD * fov * 0.5 ) / camera.zoom;
+				const ymax = near * Math.tan( THREE.MathUtils.DEG2RAD * fov * 0.5 ) / camera.zoom;
 				let xmin, xmax;
 
 				// translate xOffset
@@ -2003,10 +2018,10 @@ const ModifiedDeviceOrientationControls = function ( object ) {
 
 		if ( scope.enabled === false ) return;
 
-		const alpha  = scope.deviceOrientation.alpha ? THREE.Math.degToRad( scope.deviceOrientation.alpha ) : 0; // Z
-		const beta   = scope.deviceOrientation.beta  ? THREE.Math.degToRad( scope.deviceOrientation.beta  ) : 0; // X'
-		const gamma  = scope.deviceOrientation.gamma ? THREE.Math.degToRad( scope.deviceOrientation.gamma ) : 0; // Y''
-		const orient = scope.screenOrientation       ? THREE.Math.degToRad( scope.screenOrientation       ) : 0; // O
+		const alpha  = scope.deviceOrientation.alpha ? THREE.MathUtils.degToRad( scope.deviceOrientation.alpha ) : 0; // Z
+		const beta   = scope.deviceOrientation.beta  ? THREE.MathUtils.degToRad( scope.deviceOrientation.beta  ) : 0; // X'
+		const gamma  = scope.deviceOrientation.gamma ? THREE.MathUtils.degToRad( scope.deviceOrientation.gamma ) : 0; // Y''
+		const orient = scope.screenOrientation       ? THREE.MathUtils.degToRad( scope.screenOrientation       ) : 0; // O
 
 		setObjectQuaternion( scope.object, alpha, beta, gamma, orient );
 
