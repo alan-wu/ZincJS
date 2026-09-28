@@ -293,7 +293,8 @@ ZincObject.prototype.setMorphTime = function(time) {
     }
   }
   if (timeChanged) {
-    this.boundingBoxUpdateRequired = true;
+    if (this.hasMorphPositions())
+      this.boundingBoxUpdateRequired = true;
     this._lod.updateMorphColorAttribute(true);
     if (this.timeEnabled)
       this.markerUpdateRequired = true;
@@ -486,10 +487,8 @@ ZincObject.prototype.getClosestVertexIndex = function() {
       let currentDistance = 0;
       for (let i = 0; i < position.count; i++) {
         this._v2.fromArray(position.array, i * 3);
-        currentDistance = this._v2.distanceTo(this._v1);
-        if (distance == -1)
-          distance = currentDistance;
-        else if (distance > (currentDistance)) {
+        currentDistance = this._v2.distanceToSquared(this._v1);
+        if ((distance == -1) || (distance > currentDistance)) {
           distance = currentDistance;
           closestIndex = i;
         }
@@ -592,6 +591,44 @@ ZincObject.prototype.markerIsRequired = function(options) {
   return false;
 }
 
+//geometry -> whether its morph targets move the vertices
+const morphPositionsCache = new WeakMap();
+
+/**
+ * Check if the vertices positions change over time, only then will
+ * the bounding box change during playback.
+ *
+ * @return {Boolean}
+ */
+ZincObject.prototype.hasMorphPositions = function() {
+  const geometry = this.getMorph()?.geometry;
+  const morphPositions = geometry?.morphAttributes?.position;
+  if (!morphPositions || morphPositions.length === 0)
+    return false;
+  const cached = morphPositionsCache.get(geometry);
+  if (cached && cached.morphPositions === morphPositions)
+    return cached.result;
+  //Colour only morphs use placeholder targets identical to the base
+  //positions, these never move the vertices.
+  const basePositions = geometry.getAttribute('position')?.array;
+  let result = false;
+  for (let i = 0; i < morphPositions.length && !result; i++) {
+    const array = morphPositions[i].array;
+    if (!basePositions || array.length !== basePositions.length) {
+      result = true;
+    } else if (array !== basePositions) {
+      for (let j = 0; j < array.length; j++) {
+        if (array[j] !== basePositions[j]) {
+          result = true;
+          break;
+        }
+      }
+    }
+  }
+  morphPositionsCache.set(geometry, { morphPositions, result });
+  return result;
+}
+
 /**
  * Update the marker's position and size based on current viewport.
  */
@@ -637,7 +674,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
     if (this.marker && this.marker.isEnabled()) {
       this.marker.disable();
       this.group.remove(this.marker.morph);
-      if (options.markersList &&
+      if (options?.markersList &&
         (this.marker.uuid in options.markersList)) {
         options.markerCluster.markerUpdateRequired = true;
         delete options.markersList[this.marker.uuid];
@@ -733,7 +770,9 @@ ZincObject.prototype.render = function(delta, playAnimation,
     }
     //multilayers
     if (this.visible && delta != 0) {
-      this.boundingBoxUpdateRequired = true;
+      //Only vertices morphing can change the bounding box
+      if (this.hasMorphPositions())
+        this.boundingBoxUpdateRequired = true;
       if (this.morphColour == 1) {
         this._lod.updateMorphColorAttribute(true);
       }
