@@ -360,10 +360,27 @@ let Region = function (parentIn, sceneIn) {
   }
 
   /**
+   * Clear the pickable update flag for this region and its descendants,
+   * used when a region is hidden and none of its objects are pickable.
+   *
+   * @private
+   */
+  this.clearPickableUpdateRequired = (transverse) => {
+    this.pickableUpdateRequired = false;
+    if (transverse) {
+      children.forEach(childRegion => {
+        childRegion.clearPickableUpdateRequired(transverse);
+      });
+    }
+  }
+
+  /**
    * Get all pickable objects.
    */
   this.getPickableThreeJSObjects = (objectsList,  transverse) => {
-    if (group.visible) {
+    if (!group.visible) {
+      this.clearPickableUpdateRequired(transverse);
+    } else {
       zincObjects.forEach(zincObject => {
         if (zincObject.isPickable && zincObject.getGroup() && zincObject.getGroup().visible) {
           let marker = zincObject.marker;
@@ -730,7 +747,7 @@ let Region = function (parentIn, sceneIn) {
     });
     if (transverse) {
       children.forEach(childRegion => {
-        childRegion.setMorphTime(time);
+        childRegion.setMorphTime(time, transverse);
       });
     }
   }
