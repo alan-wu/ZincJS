@@ -749,7 +749,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 		if (typeof this.cameraObject !== "undefined")
 		{
       const height = rect.height;
-			const a = this.cameraObject.position.clone();
+			const a = _v.copy(this.cameraObject.position);
 			a.sub(this.cameraObject.target);
 			const dist = a.length();
 			const dy = 1.5 * delta_y/height;
@@ -1015,19 +1015,19 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 				const bottom_frame = time_frame[0];
 				const top_frame = time_frame[1];
 				const proportion = time_frame[2];
-				const bot_pos = [cameraPath[bottom_frame*3], cameraPath[bottom_frame*3+1], cameraPath[bottom_frame*3+2]];
-				const top_pos = [cameraPath[top_frame*3], cameraPath[top_frame*3+1], cameraPath[top_frame*3+2]];
-				const current_positions = [];
-				for (let i = 0; i < bot_pos.length; i++) {
-					current_positions.push(proportion * bot_pos[i] + (1.0 - proportion) * top_pos[i]);
-				}
-				this.cameraObject.position.set(current_positions[0], current_positions[1], current_positions[2]);
-				this.cameraObject.target.set(top_pos[0], top_pos[1], top_pos[2]);
+				const bottom = bottom_frame * 3;
+				const top = top_frame * 3;
+				const x = proportion * cameraPath[bottom] + (1.0 - proportion) * cameraPath[top];
+				const y = proportion * cameraPath[bottom + 1] + (1.0 - proportion) * cameraPath[top + 1];
+				const z = proportion * cameraPath[bottom + 2] + (1.0 - proportion) * cameraPath[top + 2];
+				this.cameraObject.position.set(x, y, z);
+				this.cameraObject.target.set(cameraPath[top], cameraPath[top + 1], cameraPath[top + 2]);
 				if (deviceOrientationControl)
 					this.cameraObject.lookAt( this.cameraObject.target );
 				if (updateLightWithPathFlag) {
-					this.directionalLight.position.set(current_positions[0], current_positions[1], current_positions[2]);
-					this.directionalLight.target.position.set(top_pos[0], top_pos[1], top_pos[2]);
+					this.directionalLight.position.set(x, y, z);
+					this.directionalLight.target.position.set(cameraPath[top], cameraPath[top + 1],
+						cameraPath[top + 2]);
 				}
 			}
 		}
@@ -1499,10 +1499,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 const SmoothCameraTransition = function(startingViewport, endingViewport, targetCameraIn, durationIn) {
 	const startingEyePosition = startingViewport.eyePosition;
 	const startingTargetPosition = startingViewport.targetPosition;
-	const startingUp = startingViewport.upVector;
 	const endingEyePosition = endingViewport.eyePosition;
 	const endingTargetPosition = endingViewport.targetPosition;
-	const endingUp = endingViewport.upVector;
 	const targetCamera = targetCameraIn;
 	let duration = durationIn;
 	let inbuildTime = 0;
@@ -1527,17 +1525,15 @@ const SmoothCameraTransition = function(startingViewport, endingViewport, target
 
 	const updateCameraSettings = () => {
 		const ratio = inbuildTime / duration;
-		const eyePosition = [startingEyePosition[0] * (1.0 - ratio) + endingEyePosition[0] * ratio,
-		                   startingEyePosition[1] * (1.0 - ratio) + endingEyePosition[1] * ratio,
-		                   startingEyePosition[2] * (1.0 - ratio) + endingEyePosition[2] * ratio];
-		const targetPosition = [startingTargetPosition[0] * (1.0 - ratio) + endingTargetPosition[0] * ratio,
-		                      startingTargetPosition[1] * (1.0 - ratio) + endingTargetPosition[1] * ratio,
-		                      startingTargetPosition[2] * (1.0 - ratio) + endingTargetPosition[2] * ratio];
-    const upVector = [startingUp[0] * (1.0 - ratio) + endingUp[0] * ratio,
-      startingUp[1] * (1.0 - ratio) + endingUp[1] * ratio,
-      startingUp[2] * (1.0 - ratio) + endingUp[2] * ratio];
-		targetCamera.cameraObject.position.set( eyePosition[0], eyePosition[1], eyePosition[2]);
-		targetCamera.cameraObject.target.set( targetPosition[0], targetPosition[1], targetPosition[2]  );
+		const start = 1.0 - ratio;
+		targetCamera.cameraObject.position.set(
+			startingEyePosition[0] * start + endingEyePosition[0] * ratio,
+			startingEyePosition[1] * start + endingEyePosition[1] * ratio,
+			startingEyePosition[2] * start + endingEyePosition[2] * ratio);
+		targetCamera.cameraObject.target.set(
+			startingTargetPosition[0] * start + endingTargetPosition[0] * ratio,
+			startingTargetPosition[1] * start + endingTargetPosition[1] * ratio,
+			startingTargetPosition[2] * start + endingTargetPosition[2] * ratio);
 	};
 
 	this.update = delta => {
@@ -1979,15 +1975,15 @@ const ModifiedDeviceOrientationControls = function ( object ) {
 
 		const q1 = new THREE.Quaternion( - Math.sqrt( 0.5 ), 0, 0, Math.sqrt( 0.5 ) ); // - PI/2 around the x-axis
 
-		return (cameraObject, alpha, beta, gamma, orient) => {
+		const vector = new THREE.Vector3();
 
-			const vector = new THREE.Vector3(0, 0, 1);
+		const quaternion = new THREE.Quaternion();
+
+		return (cameraObject, alpha, beta, gamma, orient) => {
 
 			vector.subVectors(cameraObject.target, cameraObject.position);
 
 			euler.set( beta, alpha, - gamma, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
-
-			const quaternion = new THREE.Quaternion();
 
 			quaternion.setFromEuler( euler );                               // orient the device
 

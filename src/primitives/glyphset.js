@@ -959,7 +959,7 @@ const Glyphset = function () {
     if (this.morph && this.ready && this.morph.visible) {
       if (glyphCompute && !boundsAreExact && allFramesBoundingBox) {
         this.cachedBoundingBox.copy(allFramesBoundingBox);
-        this.morph.updateWorldMatrix(true, true);
+        this.morph.updateWorldMatrix(true, false);
         this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
         return this.cachedBoundingBox;
       }
@@ -977,7 +977,7 @@ const Glyphset = function () {
         }
         if (_boundingBox3) {
           this.cachedBoundingBox.copy(_boundingBox3);
-          this.morph.updateWorldMatrix(true, true);
+          this.morph.updateWorldMatrix(true, false);
           this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
           this.boundingBoxUpdateRequired = false;
         } else

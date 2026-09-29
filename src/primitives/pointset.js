@@ -571,7 +571,7 @@ const Pointset = function () {
       if (this.boundingBoxUpdateRequired) {
         this._b1.setFromArray(mesh.pointPositions.subarray(0, this.drawRange * 3));
         this.cachedBoundingBox.copy(this._b1);
-        mesh.updateWorldMatrix(true, true);
+        mesh.updateWorldMatrix(true, false);
         this.cachedBoundingBox.applyMatrix4(mesh.matrixWorld);
         this.cachedBoundingBox.getCenter(this.center);
         this.radius = this.center.distanceTo(this.cachedBoundingBox.max);

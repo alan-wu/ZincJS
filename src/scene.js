@@ -50,6 +50,10 @@ const Scene = function (containerIn, rendererIn) {
   //Set when something has changed and the scene needs to be drawn,
   //used for render on demand.
   let needsRender = true;
+  //Set when the camera has been updated on the current frame
+  let cameraUpdated = false;
+  //Options passed to the objects on every frame
+  const renderOptions = {};
   //Values of the display properties on the last frame, changing them
   //requires the scene to be drawn.
   const lastDisplayState = {
@@ -613,19 +617,22 @@ const Scene = function (containerIn, rendererIn) {
    * Update geometries and glyphsets based on the calculated time.
    * @private
    */
-  this.renderGeometries = (playRate, delta, playAnimation) => {
+  this.renderGeometries = (playRate, delta, playAnimation, sharedCamera) => {
     //Anything requested since the last frame
     let changed = needsRender;
     needsRender = false;
-    // Let video dictates the progress if one is present
-    let options = {};
-    options.camera = zincCameraControls;
+    cameraUpdated = false;
+    //Additional active scenes are displayed with the current scene's camera
+    const cameraControls = sharedCamera ? sharedCamera.controls : zincCameraControls;
+    //Reused on every frame to avoid allocations
+    const options = renderOptions;
+    options.camera = cameraControls;
     //Global markers flag, marker can be set at individual zinc object level
     //overriding this flag.
     options.displayMarkers =  this.displayMarkers;
     options.markerCluster = markerCluster;
     options.markersList = markerCluster.markers;
-    options.ndcToBeUpdated = false;
+    options.ndcToBeUpdated = sharedCamera ? sharedCamera.updated : false;
     //Always set marker cluster update required when playAnimation is true
     //to make sure it is updated when it stops
     if (playAnimation) {
@@ -641,16 +648,18 @@ const Scene = function (containerIn, rendererIn) {
         const currentTime = videoHandler.video.currentTime /
           videoHandler.getVideoDuration() * duration;
 			  if (0 == sceneLoader.toBeDownloaded) {
-				  zincCameraControls.setTime(currentTime);
-				  options.ndcToBeUpdated = zincCameraControls.update(0);
-          if (options.ndcToBeUpdated) {
-            zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
+				  if (!sharedCamera) {
+				    zincCameraControls.setTime(currentTime);
+				    options.ndcToBeUpdated = zincCameraControls.update(0);
+            if (options.ndcToBeUpdated) {
+              zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
+            }
           }
           rootRegion.setMorphTime(currentTime, true);
-          rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, options, true);
-			  } else {
-				  if (zincCameraControls.update(0))
-				    changed = true;
+          rootRegion.renderGeometries(0, 0, playAnimation, cameraControls, options, true);
+			  } else if (!sharedCamera && zincCameraControls.update(0)) {
+				  changed = true;
+				  cameraUpdated = true;
 			  }
 			  //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 6000);
 		  }
@@ -659,14 +668,16 @@ const Scene = function (containerIn, rendererIn) {
 		    changed = true;
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded) {
-        options.ndcToBeUpdated = zincCameraControls.update(delta);
-        if (options.ndcToBeUpdated) {
-          zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
+        if (!sharedCamera) {
+          options.ndcToBeUpdated = zincCameraControls.update(delta);
+          if (options.ndcToBeUpdated) {
+            zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
+          }
         }
-        rootRegion.renderGeometries(playRate, delta, playAnimation, zincCameraControls, options, true);
-		  } else {
-			  if (zincCameraControls.update(0))
-			    changed = true;
+        rootRegion.renderGeometries(playRate, delta, playAnimation, cameraControls, options, true);
+		  } else if (!sharedCamera && zincCameraControls.update(0)) {
+			  changed = true;
+			  cameraUpdated = true;
 		  }
     }
     //These are plain properties, check if they have changed
@@ -685,6 +696,8 @@ const Scene = function (containerIn, rendererIn) {
       (this.displayMinimap || this.displayMiniAxes)) {
       changed = true;
     }
+    if (!sharedCamera && options.ndcToBeUpdated)
+      cameraUpdated = true;
     if (options.ndcToBeUpdated ||
       (playAnimation && this.isTimeVarying()) ||
       //Objects appear as they are loaded
@@ -708,6 +721,17 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.invalidate = () => {
     needsRender = true;
+  }
+
+  /**
+   * Check if the camera of this scene has been updated during the last
+   * call to renderGeometries.
+   *
+   * @return {Boolean}
+   * @private
+   */
+  this.isCameraUpdated = () => {
+    return cameraUpdated;
   }
 
   /**

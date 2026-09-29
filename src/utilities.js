@@ -62,7 +62,7 @@ function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
     cachedBox.setFromBufferAttribute(
       mesh.geometry.attributes.position);
   }
-  mesh.updateWorldMatrix(true, true);
+  mesh.updateWorldMatrix(true, false);
   cachedBox.applyMatrix4(mesh.matrixWorld);
 }
 

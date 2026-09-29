@@ -666,6 +666,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
         if (position) {
           this.marker.setPosition(position.x, position.y, position.z);
           this.markerUpdateRequired = false;
+          ndcToBeUpdated = true;
         }
       }
       if (!this.marker.isEnabled()) {
@@ -683,8 +684,9 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
       } else {
         this.marker.setDefaultSprite();
       }
-      if (options && options.camera && (ndcToBeUpdated ||
-        options.markerCluster.markerUpdateRequired)) {
+      //Only update the screen position when the camera or the
+      //marker has moved, or the marker has just been enabled.
+      if (options && options.camera && ndcToBeUpdated) {
         this.marker.updateNDC(options.camera.cameraObject);
         options.markerCluster.markerUpdateRequired = true;
       }

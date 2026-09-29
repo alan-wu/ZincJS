@@ -215,6 +215,45 @@ describe('Render on demand', () => {
     framesDrawn();
   });
 
+  it('only recomputes the minimap camera when the scene or camera changes', () => {
+    const zincGeometry = createGeometry(false);
+    scene.getRootRegion().addZincObject(zincGeometry);
+    const controls = scene.getZincCameraControls();
+    const viewport = vi.spyOn(controls, 'getViewportFromCentreAndRadius');
+    scene.displayMinimap = true;
+    for (let i = 0; i < 3; i++) {
+      renderer.invalidate();
+      renderer.render();
+    }
+    expect(viewport).toHaveBeenCalledTimes(1);
+    //Moving the camera requires an update
+    const camera = scene.camera;
+    camera.position.x += 1;
+    camera.updateMatrixWorld();
+    renderer.invalidate();
+    renderer.render();
+    expect(viewport).toHaveBeenCalledTimes(2);
+    viewport.mockRestore();
+    scene.displayMinimap = false;
+    scene.getRootRegion().removeZincObject(zincGeometry);
+    framesDrawn();
+  });
+
+  it('additional active scenes use the current scene camera', () => {
+    const additionalScene = renderer.createScene("additional");
+    const zincGeometry = createGeometry(false);
+    additionalScene.getRootRegion().addZincObject(zincGeometry);
+    renderer.addActiveScene(additionalScene);
+    const ownUpdate = vi.spyOn(additionalScene.getZincCameraControls(), 'update');
+    const objectRender = vi.spyOn(zincGeometry, 'render');
+    renderer.render();
+    expect(ownUpdate).not.toHaveBeenCalled();
+    expect(objectRender).toHaveBeenCalled();
+    expect(objectRender.mock.calls[0][2]).toBe(scene.getZincCameraControls());
+    renderer.removeActiveScene(additionalScene);
+    framesDrawn();
+  });
+
   it('draws every frame again once disabled', () => {
     renderer.setRenderOnDemand(false);
     expect(framesDrawn()).toBe(3);

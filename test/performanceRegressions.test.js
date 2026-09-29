@@ -186,3 +186,98 @@ describe('PrimitivesLoader', () => {
     expect(object.geometry.getAttribute('position').count).toBe(3);
   });
 });
+
+const createPlainGeometry = (offset = 0) => {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.Float32BufferAttribute(
+    [offset, 0, 0, offset + 1, 0, 0, offset + 1, 1, 0], 3));
+  const zincGeometry = new Geometry();
+  zincGeometry.createMesh(geometry, undefined, {
+    localTimeEnabled: false,
+    localMorphColour: false,
+    colour: 0xffffff,
+    opacity: 1,
+  });
+  return zincGeometry;
+};
+
+describe('Region tree walk', () => {
+  const createTree = () => {
+    const root = new Region(undefined, undefined);
+    const child = root.createChild('child');
+    const grandChild = child.createChild('grandChild');
+    const objects = [createPlainGeometry(0), createPlainGeometry(2),
+      createPlainGeometry(4), createPlainGeometry(6)];
+    root.addZincObject(objects[0]);
+    child.addZincObject(objects[1]);
+    child.addZincObject(objects[2]);
+    grandChild.addZincObject(objects[3]);
+    return { root, objects };
+  };
+
+  it('renders every object in the tree exactly once', () => {
+    const { root, objects } = createTree();
+    const spies = objects.map((object) => vi.spyOn(object, 'render'));
+    root.renderGeometries(1, 0, false, undefined, undefined, true);
+    spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+  });
+
+  it('only renders the region itself without transverse', () => {
+    const { root, objects } = createTree();
+    const spies = objects.map((object) => vi.spyOn(object, 'render'));
+    root.renderGeometries(1, 0, false, undefined, undefined, false);
+    expect(spies[0]).toHaveBeenCalledTimes(1);
+    spies.slice(1).forEach((spy) => expect(spy).not.toHaveBeenCalled());
+  });
+
+  it('getAllObjects returns the objects in tree order', () => {
+    const { root, objects } = createTree();
+    expect(root.getAllObjects(true)).toEqual(objects);
+    expect(root.getAllObjects(false)).toEqual([objects[0]]);
+  });
+
+  it('getBoundingBox is the union of the whole tree', () => {
+    const { root } = createTree();
+    const box = root.getBoundingBox(true);
+    expect(box.min.x).toBeCloseTo(0);
+    expect(box.max.x).toBeCloseTo(7);
+    expect(box.max.y).toBeCloseTo(1);
+    //Only the root object
+    expect(root.getBoundingBox(false).max.x).toBeCloseTo(1);
+    expect(new Region(undefined, undefined).getBoundingBox(true)).toBeUndefined();
+  });
+});
+
+describe('Marker screen position', () => {
+  it('is only recalculated when the camera or the marker moves', () => {
+    const zincGeometry = createPlainGeometry(0);
+    zincGeometry.groupName = 'marked';
+    const camera = new THREE.PerspectiveCamera();
+    const options = {
+      displayMarkers: true,
+      camera: { cameraObject: camera },
+      markerCluster: { markerUpdateRequired: false },
+      markersList: {},
+      ndcToBeUpdated: false,
+    };
+    //First update creates, positions and enables the marker
+    zincGeometry.updateMarker(false, options);
+    const updateNDC = vi.spyOn(zincGeometry.marker, 'updateNDC');
+    //Clustering pending but nothing has moved
+    options.markerCluster.markerUpdateRequired = true;
+    zincGeometry.updateMarker(false, options);
+    zincGeometry.updateMarker(false, options);
+    expect(updateNDC).not.toHaveBeenCalled();
+    //Camera has moved
+    options.ndcToBeUpdated = true;
+    options.markerCluster.markerUpdateRequired = false;
+    zincGeometry.updateMarker(false, options);
+    expect(updateNDC).toHaveBeenCalledTimes(1);
+    expect(options.markerCluster.markerUpdateRequired).toBe(true);
+    //Marker has moved
+    options.ndcToBeUpdated = false;
+    zincGeometry.markerUpdateRequired = true;
+    zincGeometry.updateMarker(false, options);
+    expect(updateNDC).toHaveBeenCalledTimes(2);
+  });
+});

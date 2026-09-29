@@ -56,6 +56,8 @@ const Renderer = function (containerIn) {
 	const requestRender = () => {
 		needsRender = true;
 	}
+	//Camera of the current scene shared with additional active scenes
+	const sharedCamera = { controls: undefined, updated: false };
 
 	this.getDrawingWidth = () => {
 		if (container) {
@@ -624,12 +626,17 @@ const Renderer = function (containerIn) {
     clock.update();
 		const delta = clock.getDelta();
 		let changed = currentScene.renderGeometries(playRate, delta, this.playAnimation);
+		if (additionalActiveScenes.length > 0) {
+			//Additional scenes are displayed with the current scene's camera
+			sharedCamera.controls = currentScene.getZincCameraControls();
+			sharedCamera.updated = currentScene.isCameraUpdated();
+		}
 	    for(let i = 0; i < additionalActiveScenes.length; i++) {
 	        const sceneItem = additionalActiveScenes[i];
-	        if (sceneItem.renderGeometries(playRate, delta, this.playAnimation))
+	        if (sceneItem.renderGeometries(playRate, delta, this.playAnimation, sharedCamera))
 	          changed = true;
 	    }
-    for (let key of Object.keys(preRenderCallbackFunctions)) {
+    for (let key in preRenderCallbackFunctions) {
       if (preRenderCallbackFunctions.hasOwnProperty(key)) {
         preRenderCallbackFunctions[key].call();
       }
@@ -644,7 +651,7 @@ const Renderer = function (containerIn) {
 			renderer.clearDepth();
 			renderer.render( sceneOrtho, cameraOrtho );
 		}
-    for (let key of Object.keys(postRenderCallbackFunctions)) {
+    for (let key in postRenderCallbackFunctions) {
       if (postRenderCallbackFunctions.hasOwnProperty(key)) {
         postRenderCallbackFunctions[key].call();
       }

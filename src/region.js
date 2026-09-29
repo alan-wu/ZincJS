@@ -437,30 +437,35 @@ let Region = function (parentIn, sceneIn) {
    * @returns {THREE.Box3}
    */
   this.getBoundingBox = transverse => {
-    let boundingBox1 = undefined, boundingBox2 = undefined;
-    zincObjects.forEach(zincObject => {
-      boundingBox2 = zincObject.getBoundingBox();
-      if (boundingBox2) {
-        if (boundingBox1 == undefined) {
-          boundingBox1 = boundingBox2.clone();
-        } else {
-          boundingBox1.union(boundingBox2);
-        }
-      }
-    });
-    if (transverse) {
-      children.forEach(childRegion => {
-        boundingBox2 = childRegion.getBoundingBox(transverse);
-        if (boundingBox2) {
-          if (boundingBox1 == undefined) {
-            boundingBox1 = boundingBox2.clone();
-          } else {
-            boundingBox1.union(boundingBox2);
-          }
-        }
-      });
+    const boundingBox = new THREE.Box3();
+    if (this.accumulateBoundingBox(boundingBox, transverse)) {
+      return boundingBox;
     }
-    return boundingBox1;
+    return undefined;
+  }
+
+  /**
+   * Expand the target by the bounding box of this region.
+   *
+   * @return {Boolean} - true if any bounding box has been found.
+   * @private
+   */
+  this.accumulateBoundingBox = (target, transverse) => {
+    let found = false;
+    for (let i = 0; i < zincObjects.length; i++) {
+      const boundingBox = zincObjects[i].getBoundingBox();
+      if (boundingBox) {
+        target.union(boundingBox);
+        found = true;
+      }
+    }
+    if (transverse) {
+      for (let i = 0; i < children.length; i++) {
+        if (children[i].accumulateBoundingBox(target, transverse))
+          found = true;
+      }
+    }
+    return found;
   }
 
   /**
@@ -696,13 +701,14 @@ let Region = function (parentIn, sceneIn) {
    * set to true.
    * @returns {Array}
    */
-  this.getAllObjects = transverse => {
-    const objectsArray = [...zincObjects];
+  this.getAllObjects = (transverse, objectsArray = []) => {
+    for (let i = 0; i < zincObjects.length; i++) {
+      objectsArray.push(zincObjects[i]);
+    }
     if (transverse) {
-      children.forEach(childRegion => {
-        let childObjects = childRegion.getAllObjects(transverse);
-        objectsArray.push(...childObjects);
-      });
+      for (let i = 0; i < children.length; i++) {
+        children[i].getAllObjects(transverse, objectsArray);
+      }
     }
     return objectsArray;
   }
@@ -784,14 +790,23 @@ let Region = function (parentIn, sceneIn) {
 
   /**
    * Update geometries and glyphsets based on the calculated time.
+   * Render the objects in this region and optionally its descendants,
+   * the tree is walked in place to avoid allocations on every frame.
    * @private
    */
+  this.renderObjects = (delta, playAnimation, cameraControls, options, transverse) => {
+    for (let i = 0; i < zincObjects.length; i++) {
+      zincObjects[i].render(delta, playAnimation, cameraControls, options);
+    }
+    if (transverse) {
+      for (let i = 0; i < children.length; i++) {
+        children[i].renderObjects(delta, playAnimation, cameraControls, options, transverse);
+      }
+    }
+  }
+
   this.renderGeometries = (playRate, delta, playAnimation, cameraControls, options, transverse) => {
-    // Let video dictates the progress if one is present
-    const allObjects = this.getAllObjects(transverse);
-    allObjects.forEach(zincObject => {
-      zincObject.render(playRate * delta, playAnimation, cameraControls, options);
-    });
+    this.renderObjects(playRate * delta, playAnimation, cameraControls, options, transverse);
     //process markers visibility and size, as long as there are more than
     //one entry in markersList is greater than 1, markers have been enabled.
     if (options && (playAnimation === false) &&
