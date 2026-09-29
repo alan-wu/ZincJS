@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { ResizeSensor } from 'css-element-queries';
 import { Scene } from './scene';
+import { onRenderRequest, offRenderRequest } from './renderRequests';
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
@@ -48,6 +49,13 @@ const Renderer = function (containerIn) {
 	const _this = this;
 	const currentSize = [0, 0];
 	const currentOffset = [0, 0];
+	//Render on demand is opt-in, when enabled the scene is only drawn when
+	//something has changed.
+	let renderOnDemand = false;
+	let needsRender = true;
+	const requestRender = () => {
+		needsRender = true;
+	}
 
 	this.getDrawingWidth = () => {
 		if (container) {
@@ -75,6 +83,7 @@ const Renderer = function (containerIn) {
 	 * Call this to resize the renderer, this is normally call automatically.
 	 */
 	this.onWindowResize = () => {
+		needsRender = true;
 		currentScene.onWindowResize();
 		//Give it a miniumum size of 1 x 1
 		const width = this.getDrawingWidth() || 1;
@@ -172,6 +181,7 @@ const Renderer = function (containerIn) {
 			renderer.autoClear = false;
 			const scene = this.createScene("default");
 			this.setCurrentScene(scene);
+			onRenderRequest(requestRender);
 			isInitialised = true;
 		}
 	}
@@ -218,6 +228,7 @@ const Renderer = function (containerIn) {
 			}
 			currentScene.setInteractiveControlEnable(true);
 			currentScene.setAdditionalScenesGroup(scenesGroup);
+			needsRender = true;
 			this.onWindowResize();
 		}
 	}
@@ -377,6 +388,7 @@ const Renderer = function (containerIn) {
     if (!isRendering) {
       clock.reset();
       isRendering = true;
+      needsRender = true;
       runAnimation();
     }
 	}
@@ -486,6 +498,41 @@ const Renderer = function (containerIn) {
 	 */
 	this.setPlayRate = playRateIn => {
 		playRate = playRateIn;
+		needsRender = true;
+	}
+
+	/**
+	 * Enable or disable render on demand, it is disabled by default.
+	 * When enabled, the scenes are only drawn when something has changed,
+	 * e.g. camera movement, animation, loading and changes made through
+	 * the Zinc APIs. Call {@link Renderer#invalidate} after modifying
+	 * THREE.js objects directly or after changing the THREE.js renderer,
+	 * e.g. setClearColor.
+	 * Pre-render callbacks are called on every frame, post-render callbacks
+	 * are only called when the scenes are drawn.
+	 *
+	 * @param {Boolean} flag - Enable or disable render on demand.
+	 */
+	this.setRenderOnDemand = flag => {
+		renderOnDemand = flag ? true : false;
+		needsRender = true;
+	}
+
+	/**
+	 * Check if render on demand is enabled.
+	 *
+	 * @return {Boolean}
+	 */
+	this.isRenderOnDemand = () => {
+		return renderOnDemand;
+	}
+
+	/**
+	 * Request the scenes to be drawn on the next frame, this is only
+	 * required when render on demand is enabled.
+	 */
+	this.invalidate = () => {
+		needsRender = true;
 	}
 
 	this.getCurrentTime = () => {
@@ -534,6 +581,7 @@ const Renderer = function (containerIn) {
 			cameraOrtho.position.z = 10;
 		}
 		sceneOrtho.add(object)
+		needsRender = true;
 	}
 
 	const createHUDSprites = logoSprite => {
@@ -575,16 +623,22 @@ const Renderer = function (containerIn) {
 		}
     clock.update();
 		const delta = clock.getDelta();
-		currentScene.renderGeometries(playRate, delta, this.playAnimation);
+		let changed = currentScene.renderGeometries(playRate, delta, this.playAnimation);
 	    for(let i = 0; i < additionalActiveScenes.length; i++) {
 	        const sceneItem = additionalActiveScenes[i];
-	        sceneItem.renderGeometries(playRate, delta, this.playAnimation);
+	        if (sceneItem.renderGeometries(playRate, delta, this.playAnimation))
+	          changed = true;
 	    }
     for (let key of Object.keys(preRenderCallbackFunctions)) {
       if (preRenderCallbackFunctions.hasOwnProperty(key)) {
         preRenderCallbackFunctions[key].call();
       }
     }
+		//Pre-render callbacks may have requested a frame
+		if (renderOnDemand && !changed && !needsRender) {
+			return;
+		}
+		needsRender = false;
     currentScene.render(renderer);
 		if (cameraOrtho != undefined && sceneOrtho != undefined) {
 			renderer.clearDepth();
@@ -639,6 +693,7 @@ const Renderer = function (containerIn) {
 		if (!this.isSceneActive(additionalScene)) {
 			additionalActiveScenes.push(additionalScene);
 			scenesGroup.add(additionalScene.getThreeJSScene());
+			needsRender = true;
 		}
 	}
 
@@ -653,6 +708,7 @@ const Renderer = function (containerIn) {
 			if (sceneItem === additionalScene) {
 				additionalActiveScenes.splice(i, 1);
 				scenesGroup.remove(additionalScene.getThreeJSScene());
+				needsRender = true;
 				return;
 			}
 		}
@@ -666,6 +722,7 @@ const Renderer = function (containerIn) {
 			scenesGroup.remove(additionalActiveScenes[i].getThreeJSScene());
 		}
 		additionalActiveScenes.splice(0,additionalActiveScenes.length);
+		needsRender = true;
 	}
 
   /**
@@ -686,7 +743,7 @@ const Renderer = function (containerIn) {
     preRenderCallbackFunctions = {};
     preRenderCallbackFunctions_id = 0;
     postRenderCallbackFunctions = {};
-    postRenderCallbackFunctions = 0;
+    postRenderCallbackFunctions_id = 0;
     contextLostCallbackFunctions = {};
     contextLostCallbackFunctions_id = 0;
     contextRestoredCallbackFunctions = {};
@@ -697,6 +754,7 @@ const Renderer = function (containerIn) {
     const scene = this.createScene("default");
     this.setCurrentScene(scene);
     sensor = undefined;
+    offRenderRequest(requestRender);
     renderer?.dispose();
   }
 

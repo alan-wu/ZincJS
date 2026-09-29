@@ -33,6 +33,10 @@ let Region = function (parentIn, sceneIn) {
   this.isRegion = true;
   this.uuid = getUniqueId();
 
+  //Ask the scene to draw the next frame, used by render on demand.
+  const requestRender = () => {
+    scene?.invalidate?.();
+  }
 
   /**
    * Hide all primitives belong to this region.
@@ -57,6 +61,7 @@ let Region = function (parentIn, sceneIn) {
    * @param {Boolean} flag - A flag indicating either the visibilty to be on/off.
    */
   this.setVisibility = (flag) => {
+    requestRender();
     if (flag != group.visible) {
       group.visible = flag;
       this.pickableUpdateRequired = true;
@@ -90,6 +95,7 @@ let Region = function (parentIn, sceneIn) {
    * used for the transformation.
    */
   this.setTransformation = transformation => {
+    requestRender();
     tMatrix.set(...transformation);
     group.matrix.copy(tMatrix);
     group.updateMatrixWorld();
@@ -178,6 +184,7 @@ let Region = function (parentIn, sceneIn) {
    * @return {Region}
    */
   this.createChild = (nameIn) => {
+    requestRender();
     let childRegion = new Region(this, scene);
     childRegion.setName(nameIn);
     children.push(childRegion);
@@ -306,6 +313,7 @@ let Region = function (parentIn, sceneIn) {
    * this region.
    */
   this.addZincObject = zincObject => {
+    requestRender();
     if (zincObject) {
       zincObject.setRegion(this);
       group.add(zincObject.getGroup());
@@ -325,6 +333,7 @@ let Region = function (parentIn, sceneIn) {
    * @param {ZincObject} zincObject - object to be removed from this region.
    */
   this.removeZincObject = zincObject => {
+    requestRender();
     for (let i = 0; i < zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
         group.remove(zincObject.getGroup());
@@ -461,6 +470,7 @@ let Region = function (parentIn, sceneIn) {
    * if this is set to true.
    */
   this.clear = transverse => {
+    requestRender();
     if (transverse) {
       children.forEach(childRegion => {
         childRegion.clear(transverse);

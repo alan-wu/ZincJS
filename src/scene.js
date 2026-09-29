@@ -47,6 +47,17 @@ const Scene = function (containerIn, rendererIn) {
   const container = containerIn;
   let cameraHelper = undefined;
   let videoHandler = undefined;
+  //Set when something has changed and the scene needs to be drawn,
+  //used for render on demand.
+  let needsRender = true;
+  //Values of the display properties on the last frame, changing them
+  //requires the scene to be drawn.
+  const lastDisplayState = {
+    displayMarkers: undefined,
+    displayMinimap: undefined,
+    displayMiniAxes: undefined,
+    playAnimation: undefined,
+  };
   let sceneLoader = new SceneLoader(this);
   let minimap = undefined;
   let zincObjectAddedCallbacks = {};
@@ -130,6 +141,7 @@ const Scene = function (containerIn, rendererIn) {
 
   //called from Renderer when panel has been resized
   this.onWindowResize = () => {
+    needsRender = true;
     const wHeight = getDrawingHeight();
     this.camera.aspect = getDrawingWidth() / wHeight;
     this.camera.updateProjectionMatrix();
@@ -142,6 +154,7 @@ const Scene = function (containerIn, rendererIn) {
    * Reset the viewport of this scene to its original state.
    */
   this.resetView = () => {
+    needsRender = true;
     this.onWindowResize();
     zincCameraControls.resetView();
   }
@@ -150,6 +163,7 @@ const Scene = function (containerIn, rendererIn) {
    * Set the zoom level by unit scroll rate
    */
   this.changeZoomByScrollRateUnit = unit => {
+    needsRender = true;
     zincCameraControls.changeZoomByScrollRateUnit(unit);
   }
 
@@ -178,6 +192,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Zinc.Viewport} viewData - Viewport data to be loaded.
    */
   this.loadView = settings => {
+    needsRender = true;
     const viewPort = new Viewport();
     viewPort.setFromObject(settings);
     zincCameraControls.setCurrentCameraSettings(viewPort);
@@ -214,6 +229,7 @@ const Scene = function (containerIn, rendererIn) {
    * which we the viewport should be displaying.
    */
   this.viewAllWithBoundingBox = boundingBox => {
+    needsRender = true;
     if (boundingBox) {
       const viewport = zincCameraControls.getViewportFromBoundingBox(boundingBox, 1.0);
       zincCameraControls.setCurrentCameraSettings(viewport);
@@ -226,6 +242,7 @@ const Scene = function (containerIn, rendererIn) {
    * Adjust zoom distance to include all primitives in scene only.
    */
   this.viewAll = () => {
+    needsRender = true;
     const boundingBox = this.getBoundingBox();
     this.viewAllWithBoundingBox(boundingBox);
     markerCluster.markerUpdateRequired = true;
@@ -400,6 +417,7 @@ const Scene = function (containerIn, rendererIn) {
    * @returns {THREE.Vector3}
    */
   this.addZincObject = zincObject => {
+    needsRender = true;
     if (zincObject) {
       rootRegion.addZincObject(zincObject);
       if (zincCameraControls)
@@ -530,6 +548,7 @@ const Scene = function (containerIn, rendererIn) {
 
   //Update the directional light for this scene.
   this.updateDirectionalLight = () => {
+    needsRender = true;
     zincCameraControls.updateDirectionalLight();
   }
 
@@ -538,6 +557,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {THREE.Object} object - to be addded into this scene.
    */
   this.addObject = object => {
+    needsRender = true;
     scene.add(object);
   }
 
@@ -546,6 +566,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {THREE.Object} object - to be removed from this scene.
    */
   this.removeObject = object => {
+    needsRender = true;
     scene.remove(object);
   }
 
@@ -569,6 +590,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Number} time  - Value to set the time to.
    */
   this.setMorphsTime = (time) => {
+    needsRender = true;
     if (videoHandler != undefined) {
       videoHandler.setMorphTime(time, duration);
     }
@@ -592,6 +614,9 @@ const Scene = function (containerIn, rendererIn) {
    * @private
    */
   this.renderGeometries = (playRate, delta, playAnimation) => {
+    //Anything requested since the last frame
+    let changed = needsRender;
+    needsRender = false;
     // Let video dictates the progress if one is present
     let options = {};
     options.camera = zincCameraControls;
@@ -624,10 +649,14 @@ const Scene = function (containerIn, rendererIn) {
           rootRegion.setMorphTime(currentTime, true);
           rootRegion.renderGeometries(0, 0, playAnimation, zincCameraControls, options, true);
 			  } else {
-				  zincCameraControls.update(0);
+				  if (zincCameraControls.update(0))
+				    changed = true;
 			  }
 			  //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 6000);
 		  }
+		  //The video texture changes while playing or loading
+		  if (playAnimation || !videoHandler.isReadyToPlay())
+		    changed = true;
 	  } else {
 		  if (0 == sceneLoader.toBeDownloaded) {
         options.ndcToBeUpdated = zincCameraControls.update(delta);
@@ -636,9 +665,49 @@ const Scene = function (containerIn, rendererIn) {
         }
         rootRegion.renderGeometries(playRate, delta, playAnimation, zincCameraControls, options, true);
 		  } else {
-			  zincCameraControls.update(0);
+			  if (zincCameraControls.update(0))
+			    changed = true;
 		  }
     }
+    //These are plain properties, check if they have changed
+    if (lastDisplayState.displayMarkers !== this.displayMarkers ||
+      lastDisplayState.displayMinimap !== this.displayMinimap ||
+      lastDisplayState.displayMiniAxes !== this.displayMiniAxes ||
+      lastDisplayState.playAnimation !== playAnimation) {
+      lastDisplayState.displayMarkers = this.displayMarkers;
+      lastDisplayState.displayMinimap = this.displayMinimap;
+      lastDisplayState.displayMiniAxes = this.displayMiniAxes;
+      lastDisplayState.playAnimation = playAnimation;
+      changed = true;
+    }
+    //The flag is only cleared when the minimap is drawn
+    if (this.minimapScissor.updateRequired &&
+      (this.displayMinimap || this.displayMiniAxes)) {
+      changed = true;
+    }
+    if (options.ndcToBeUpdated ||
+      (playAnimation && this.isTimeVarying()) ||
+      //Objects appear as they are loaded
+      sceneLoader.toBeDownloaded > 0 ||
+      //Clusters are recalculated on a later frame
+      (markerCluster.isEnabled() && markerCluster.markerUpdateRequired)) {
+      changed = true;
+    }
+    //Changes made during this frame, e.g. LOD switching
+    if (needsRender) {
+      changed = true;
+      needsRender = false;
+    }
+    return changed;
+  }
+
+  /**
+   * Request this scene to be drawn on the next frame, this is only
+   * required when render on demand is enabled on the renderer.
+   * See {@link Renderer#setRenderOnDemand}.
+   */
+  this.invalidate = () => {
+    needsRender = true;
   }
 
   /**
@@ -650,6 +719,7 @@ const Scene = function (containerIn, rendererIn) {
   }
 
   this.setVideoHandler = (videoHandlerIn) => {
+    needsRender = true;
     if (!videoHandler)
       videoHandler = videoHandlerIn;
   }
@@ -770,6 +840,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Number} durationIn - duration of the scene.
    */
   this.setDuration = durationIn => {
+    needsRender = true;
     rootRegion.setDuration(durationIn);
     duration = durationIn;
     zincCameraControls.setPathDuration(durationIn);
@@ -790,6 +861,7 @@ const Scene = function (containerIn, rendererIn) {
    * should be enabled or disabled.
    */
   this.setStereoEffectEnable = stereoFlag => {
+    needsRender = true;
     if (stereoFlag == true) {
       if (!stereoEffect) {
         stereoEffect = new StereoEffect(rendererIn);
@@ -819,6 +891,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Number} transitionTime - Duration to perform the transition.
    */
   this.alignBoundingBoxToCameraView = (boundingBox, transitionTime) => {
+    needsRender = true;
     if (boundingBox) {
       boundingBox.getCenter(_v3);
       const viewport = this.getZincCameraControls().getCurrentViewport();
@@ -886,6 +959,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {ZincObject} zincObject - the bounding box to target
    */
   this.setCameraTargetToObject = zincObject => {
+    needsRender = true;
     if (this.objectIsInScene(zincObject)) {
       const boundingBox = zincObject.getBoundingBox();
       const viewport = this.getZincCameraControls().getCurrentViewport();
@@ -923,6 +997,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Zinc.Object} zincObject - object to be removed from this scene.
    */
   this.removeZincObject = zincObject => {
+    needsRender = true;
     rootRegion.removeZincObject(zincObject);
     if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
@@ -1021,6 +1096,7 @@ const Scene = function (containerIn, rendererIn) {
    * This does not remove obejcts that are added using the addObject APIs.
    */
   this.clearAll = () => {
+    needsRender = true;
     markerCluster.clear();
     rootRegion.clear(true);
     this.clearZincObjectAddedCallbacks();
@@ -1259,6 +1335,7 @@ const Scene = function (containerIn, rendererIn) {
    * with clearTemporaryPrimitives method.
 	 */
   this.addTemporaryPoints = (coords, colour) => {
+    needsRender = true;
     const geometry = createPointQuadGeometry(coords.length);
     const material = createInstancedPointsMaterial(getCircularTexture());
     material.color.set(colour);
@@ -1284,6 +1361,7 @@ const Scene = function (containerIn, rendererIn) {
    * with clearTemporaryPrimitives method.
 	 */
   this.addTemporaryLines = (coords, colour) => {
+    needsRender = true;
     const geometry = createBufferGeometry(coords.length, coords);
     const material = new THREE.LineBasicMaterial({color:colour});
     const line = new LineSegments(geometry, material);
@@ -1296,6 +1374,7 @@ const Scene = function (containerIn, rendererIn) {
 	 * Display frustum
 	 */
   this.enableFrustumDisplay = () => {
+    needsRender = true;
     if (this.camera && !cameraHelper) {
       cameraHelper = new THREE.CameraHelper(this.camera);
       scene.add(cameraHelper);
@@ -1306,6 +1385,7 @@ const Scene = function (containerIn, rendererIn) {
 	 * Hide frustum
 	 */
   this.disableFrustumDisplay = () => {
+    needsRender = true;
     if (cameraHelper) {
       scene.remove(cameraHelper);
       cameraHelper.dispose();
@@ -1317,6 +1397,7 @@ const Scene = function (containerIn, rendererIn) {
 	 * Remove object from temporary objects list
 	 */
   this.removeTemporaryPrimitive = (object) => {
+    needsRender = true;
     tempGroup.remove(object);
     object.geometry.dispose();
     object.material.dispose();
@@ -1327,6 +1408,7 @@ const Scene = function (containerIn, rendererIn) {
    * Return number of primitives removed;
 	 */
   this.clearTemporaryPrimitives = () => {
+    needsRender = true;
     let i = 0;
     const children = tempGroup.children;
     children.forEach(child => {
@@ -1344,6 +1426,7 @@ const Scene = function (containerIn, rendererIn) {
 	 */
   this.addBoundingBoxPrimitive = (regionPath, group, colour, opacity,
     visibility, boundingBox = undefined) => {
+    needsRender = true;
     let region = rootRegion.findChildFromPath(regionPath);
     if (region === undefined) {
       region = rootRegion.createChildFromPath(regionPath);
@@ -1365,6 +1448,7 @@ const Scene = function (containerIn, rendererIn) {
 	 */
   this.addSlicesPrimitive = (regionPath, groups, colours, opacity,
     visibility, boundingBox = undefined) => {
+    needsRender = true;
     if (groups && groups.length >= 3 &&
       colours && colours.length >= 3) {
       let region = rootRegion.findChildFromPath(regionPath);
@@ -1418,6 +1502,7 @@ const Scene = function (containerIn, rendererIn) {
 	 * Enable marker cluster to work with markers
 	 */
   this.enableMarkerCluster = (flag) => {
+    needsRender = true;
     if (flag) {
       markerCluster.markerUpdateRequired = true;
       markerCluster.enable();
@@ -1432,6 +1517,7 @@ const Scene = function (containerIn, rendererIn) {
 	 * Destory static axis display object
 	 */
   this.destroyAxisDisplay = () => {
+    needsRender = true;
     this.displayMiniAxes = false;
     if (axisDisplay.main) {
       this.enableAxisDisplay(false, false);
@@ -1459,6 +1545,7 @@ const Scene = function (containerIn, rendererIn) {
 	 * Create static axis display object
 	 */
   this.createAxisDisplay = (fitBoundingBox = false) => {
+    needsRender = true;
     this.destroyAxisDisplay();
     const XYZ = [
       {
@@ -1511,6 +1598,7 @@ const Scene = function (containerIn, rendererIn) {
    * before the axis can be display.
 	 */
   this.enableAxisDisplay = (enable, miniaxes = false) => {
+    needsRender = true;
     if (miniaxes && axisDisplay?.mini?.length) {
       this.displayMiniAxes = enable;
       axisDisplay.mini.forEach(axis => {

@@ -70,6 +70,7 @@ const LOD = function (parent) {
         }
       }
       this.checkTransparentMesh();
+      this._parent?.requestRender?.();
     }
   }
 
@@ -384,6 +385,7 @@ const LOD = function (parent) {
       if (this._currentLevel != visibleIndex) {
         this._currentLevel = visibleIndex;
         this.checkTransparentMesh();
+        this._parent?.requestRender?.();
       }
     }
   }

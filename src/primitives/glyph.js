@@ -63,6 +63,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    * @param   {String} text - Label to be set for this instance
    */
   this.setLabel = text => {
+    parent?.requestRender?.();
     if (text && (typeof text === 'string' || text instanceof String)) {
       labelString = text;
       if (this.morph)
@@ -78,6 +79,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    * getColour()) - e.g. genuinely no colour data at all for this glyphset.
    */
   this.showLabel = (colour) => {
+    parent?.requestRender?.();
     if (label) {
       _position = label.getPosition();
       this.group.remove(label.getSprite());
@@ -99,6 +101,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    * Hide label with the choosen colour.
    */
   this.hideLabel = () => {
+    parent?.requestRender?.();
     if (label) {
       _position = label.getPosition();
       this.group.remove(label.getSprite());
@@ -135,6 +138,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    * transformation.
    */
   this.setTransformation = (position, axis1, axis2, axis3) => {
+    parent?.requestRender?.();
     if (this.morph) {
       this.morph.matrix.elements[0] = axis1[0];
       this.morph.matrix.elements[1] = axis1[1];
@@ -170,6 +174,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    * @param {THREE.Color} color - Colour to be set.
    */
   this.setColour = (color) => {
+    parent?.requestRender?.();
     _colour = color ? color.clone() : undefined;
     if (label)
       label.setColour(color);

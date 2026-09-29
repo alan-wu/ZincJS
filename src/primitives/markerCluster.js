@@ -1,10 +1,11 @@
 import * as THREE from 'three/webgpu';
 import { ZincObject } from './zincObject';
+import { requestRenderAll } from '../renderRequests';
 import mapMarkerOrange from '../assets/mapMarkerOrange.svg';
 import { createNewSpriteText } from '../utilities';
 
 const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load(mapMarkerOrange);
+const texture = textureLoader.load(mapMarkerOrange, requestRenderAll);
 texture.colorSpace = THREE.SRGBColorSpace;
 const size = [0.02, 0.03, 1];
 const spriteMaterial = new THREE.SpriteMaterial({
@@ -178,6 +179,7 @@ const MarkerCluster = function(sceneIn) {
         let clusters = [];
         getCluster({...this.markers}, clusters);
         drawClusters(clusters);
+        scene?.invalidate?.();
         start = Date.now();
         this.markerUpdateRequired = false;
       }

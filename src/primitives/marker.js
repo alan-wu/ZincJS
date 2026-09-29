@@ -2,9 +2,10 @@ import * as THREE from 'three/webgpu';
 import myImage from '../assets/mapMarker.svg';
 import { createNewSpriteText } from '../utilities';
 import { ZincObject } from './zincObject';
+import { requestRenderAll } from '../renderRequests';
 
 const textureLoader = new THREE.TextureLoader();
-const texture = textureLoader.load(myImage);
+const texture = textureLoader.load(myImage, requestRenderAll);
 texture.colorSpace = THREE.SRGBColorSpace;
 const size = [0.02, 0.03, 1];
 const spriteMaterial = new THREE.SpriteMaterial({
@@ -153,6 +154,7 @@ const Marker = function(zincObject) {
         userImage.crossOrigin = "anonymous"
         userImage.onload = () => {
           this.setImageForUserSprite(userImage, size);
+          this.parent?.requestRender?.();
         };
         userImage.src = url;
       } else {

@@ -47,6 +47,7 @@ const Lines2 = function () {
    * @param {Number} width - Width of the lines.
    */
 	this.setWidth = width => {
+		this.requestRender();
 		if (this.morph && this.morph.material) {
 			this.morph.material.linewidth = width;
 			this.morph.material.needsUpdate = true;
@@ -57,6 +58,7 @@ const Lines2 = function () {
    * Add new vertices into the array
    */
   this.addVertices = function(coords) {
+    this.requestRender();
     if (coords && coords.length) {
       let mesh = this.getMorph();
       if (!mesh) {
@@ -117,6 +119,7 @@ const Lines2 = function () {
    * Edit Vertice in index.
    */
   this.editVertices = function(coords, i) {
+    this.requestRender();
     if (coords && coords.length) {
       let mesh = this.getMorph();
       const maxIndex = i + coords.length - 1;
@@ -154,6 +157,7 @@ const Lines2 = function () {
    * @param {Number} colour - A hex value of the colour for the points
    */
 	this.addLines = (coords, colour)  => {
+    this.requestRender();
     if (coords && coords.length > 0) {
       this.addVertices(coords);
       let mesh = this.getMorph();

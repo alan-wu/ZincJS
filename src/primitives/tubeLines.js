@@ -44,6 +44,7 @@ const TubeLines = function () {
    * @param {Number} width - Width of the lines.
    */
 	this.setWidth = width => {
+		this.requestRender();
 		if (this.morph && this.morph.material) {
 			this.morph.material.linewidth = width;
 			this.morph.material.needsUpdate = true;
@@ -58,6 +59,7 @@ const TubeLines = function () {
      * can be any value between from 0 to 1.0.
      */
     this.setAlpha = function (alpha) {
+        this.requestRender();
         let mesh = this.getMorph();
         mesh.material.opacity = alpha;
         mesh.material.transparent = alpha < 1.0;
@@ -69,6 +71,7 @@ const TubeLines = function () {
      * @param {Boolean} wireframe
      */
     this.setWireframe = (wireframe) => {
+        this.requestRender();
         let mesh = this.getMorph();
         mesh.material.wireframe = wireframe;
     }
@@ -80,6 +83,7 @@ const TubeLines = function () {
      * @param {Integer} radialSegments The number of segments that make up the cross-section.
      */
     this.setTubeLines = (radius, radialSegments) => {
+        this.requestRender();
         if (radius && radialSegments) {
             const { geometryIn } = dataIn;
             let mesh = this.getMorph();

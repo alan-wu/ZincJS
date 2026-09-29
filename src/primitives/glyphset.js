@@ -446,6 +446,7 @@ const Glyphset = function () {
    * completely unchanged downstream.
    */
   const applyGlyphComputeResult = (result) => {
+    this.requestRender();
     const matrixArray = this.morph.instanceMatrix.array;
     const updateLabels = this.canShowLabel();
     for (let i = 0; i < numberOfVertices; i++) {
@@ -546,6 +547,7 @@ const Glyphset = function () {
    * all, bouding box will not be updated.
    */
   const dispatchGlyphComputeFast = (bottom_frame, top_frame, proportion) => {
+    this.requestRender();
     const renderer = this.region?.getScene?.()?.getRenderer?.();
     if (!renderer) return false;
     glyphCompute.uniforms.bottomFrame.value = bottom_frame;
@@ -721,6 +723,7 @@ const Glyphset = function () {
    * Display the label of the glyphs in the glyphset.
    */
   this.showLabel = () => {
+    this.requestRender();
     if (glyphList?.length) {
       labelsOn = true;
       for (let i = 0; i < glyphList.length; i++) {
@@ -733,6 +736,7 @@ const Glyphset = function () {
    * Hide label with the choosen colour.
    */
     this.hideLabel = () => {
+      this.requestRender();
       for (let i = 0; i < glyphList.length; i++) {
         glyphList[i].hideLabel();
       }
@@ -828,6 +832,7 @@ const Glyphset = function () {
    * @param {Glyph} Glyph to be added.
    */
   this.addCustomGlyph = glyph => {
+    this.requestRender();
     if (glyph.isGlyph)
       glyphList.push(glyph);
     this.ready = true;
@@ -841,6 +846,7 @@ const Glyphset = function () {
    * @param {Number} id of the mesh.
    */
   this.addMeshAsGlyph = (mesh, id) => {
+    this.requestRender();
     if (mesh.isMesh) {
       const glyph = new Glyph(undefined, undefined, id, this);
       glyph.fromMesh(mesh);
@@ -988,6 +994,7 @@ const Glyphset = function () {
    * @param {Number} time - Can be any value between 0 to duration.
    */
   this.setMorphTime = time => {
+    this.requestRender();
     if (time > this.duration)
       this.inbuildTime = this.duration;
     else if (0 > time)
@@ -1071,6 +1078,7 @@ const Glyphset = function () {
    * @return {THREE.Box3}.
    */
   this.setScaleAll = function(scale) {
+    this.requestRender();
     this.globalScale = scale;
     staticTransformationApplied = false;
     updateMorphGlyphsets(false);
@@ -1114,6 +1122,7 @@ const Glyphset = function () {
       if (renderer) {
         renderer.compute(glyphCompute.compute);
         renderBuffersInitialized = true;
+        this.requestRender();
       }
     }
     if (playAnimation == true) {

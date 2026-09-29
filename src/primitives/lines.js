@@ -53,6 +53,7 @@ const Lines = function () {
    * @param {Number} width - Width of the lines.
    */
 	this.setWidth = width => {
+		this.requestRender();
 		if (this.morph && this.morph.material) {
 			this.morph.material.linewidth = width;
 			this.morph.material.needsUpdate = true;
@@ -67,6 +68,7 @@ const Lines = function () {
    * @param {Number} colour - A hex value of the colour for the points
    */
 	this.addLines = (coords, colour)  => {
+    this.requestRender();
     if (coords && coords.length > 0) {
       const geometry = this.addVertices(coords);
       let mesh = this.getMorph();

@@ -261,6 +261,7 @@ const Pointset = function () {
    * @param {Number} colour - A hex value of the colour for the points
    */
   this.addPoints = (coords, labels, colour) => {
+    this.requestRender();
     if (coords && coords.length > 0) {
       let mesh = this.getMorph();
       let current = this.drawRange;
@@ -311,6 +312,7 @@ const Pointset = function () {
    * @param {Number} hex - hex value of color to be set
    */
   this.setColourHex = function(hex) {
+    this.requestRender();
     this._lod._material.color.setHex(hex);
     if (this._lod._secondaryMaterial) {
       this._lod._secondaryMaterial.color.setHex(hex);
@@ -328,6 +330,7 @@ const Pointset = function () {
    * @param {THREE.Color} colour - colour to be set
    */
   this.setColour = (colour) => {
+    this.requestRender();
     this._lod.setColour(colour);
     for (let i = 0; i < labelSets.length; i++) {
       if (labelSets[i]) {
@@ -343,6 +346,7 @@ const Pointset = function () {
    * should be on or off.
    */
   this.setLabelDepthTest = (flag) => {
+    this.requestRender();
     labelDepthTest = flag;
     for (let i = 0; i < labelSets.length; i++) {
       if (labelSets[i]) {
@@ -357,6 +361,7 @@ const Pointset = function () {
    * @param {Number} fontWeightIn - Default value is 700
    */
   this.setLabelFontWeight = (fontWeightIn) => {
+    this.requestRender();
     fontWeight = fontWeightIn;
     for (let i = 0; i < labelSets.length; i++) {
       if (labelSets[i]) {
@@ -372,6 +377,7 @@ const Pointset = function () {
    * value is 1.
    */
   this.setLabelSize = (size) => {
+    this.requestRender();
     labelSize = size;
     for (let i = 0; i < labelSets.length; i++) {
       if (labelSets[i]) {
@@ -386,6 +392,7 @@ const Pointset = function () {
    * @param {boolean} flag - default value is true
    */
     this.displayLabels = (flag) => {
+      this.requestRender();
       labelVisibility = flag;
       for (let i = 0; i < labelSets.length; i++) {
         if (labelSets[i]) {
@@ -399,6 +406,7 @@ const Pointset = function () {
    * @param {Number} size - size to be set.
    */
   this.setSize = size => {
+    this.requestRender();
     if (this.morph && this.morph.material) {
       this.morph.material.size = size;
       this.morph.material.userData.uniforms.pointSize.value = size;
@@ -413,6 +421,7 @@ const Pointset = function () {
    * should be on or off.
    */
   this.setSizeAttenuation = flag => {
+    this.requestRender();
     if (this.morph && this.morph.material) {
       this.morph.material.sizeAttenuation = flag;
       this.morph.material.userData.uniforms.sizeAttenuation.value = flag ? 1 : 0;
@@ -438,6 +447,7 @@ const Pointset = function () {
    * Edit Vertice in index.
    */
   this.editVertices = function(coords, i) {
+    this.requestRender();
     if (coords && coords.length) {
       const mesh = this.getMorph();
       const maxIndex = i + coords.length - 1;
@@ -474,6 +484,7 @@ const Pointset = function () {
    * Delete a vertex in index.
    */
     this.deleteVertices = function(index) {
+      this.requestRender();
       const mesh = this.getMorph();
       if (!mesh || 0 > index || index >= this.drawRange) {
         return this.drawRange;
@@ -586,6 +597,7 @@ const Pointset = function () {
    * @param {Number} time - Can be any value between 0 to duration.
    */
   this.setMorphTime = time => {
+    this.requestRender();
     if (time > this.duration) {
       this.inbuildTime = this.duration;
     } else if (0 > time) {

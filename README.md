@@ -55,6 +55,16 @@ renderer.animate();
 
 `initialiseVisualisation` is asynchronous and must finish before any scene is used. Other formats can be loaded with `scene.loadGLTF`, `scene.loadOBJ` and `scene.loadSTL`, and NIfTI images with `Zinc.createPrimitivesFromNIFTI`.
 
+### Render on demand
+
+By default the renderer draws every animation frame. To only draw when something has changed, which saves GPU time and battery on idle pages, enable render on demand:
+
+```javascript
+renderer.setRenderOnDemand(true);
+```
+
+Camera movement, playback, loading, changes made through the ZincJS APIs and changes to scene properties such as `displayMinimap`, `displayMiniAxes` or `displayMarkers` request a frame automatically. Call `renderer.invalidate()` after changing three.js objects directly, or after changing the three.js renderer from `getThreeJSRenderer()`, e.g. `setClearColor`. Pre-render callbacks still run every frame and can call `invalidate()`; post-render callbacks only run when a frame is drawn.
+
 Useful links:
 
 * [Examples](https://github.com/alan-wu/ZincJS-Examples/)

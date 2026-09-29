@@ -655,7 +655,7 @@ function checkScene() {
         assert.isUndefined(scene.setCameraTargetToObject(testGeometry), 'setCameraTargetToObject is successfully called');
       });
       it('renderGeometries', function(){
-        assert.isUndefined(scene.renderGeometries(500, 0.3, true), 'renderGeometries is successfully called');
+        assert.isBoolean(scene.renderGeometries(500, 0.3, true), 'renderGeometries reports whether the scene changed');
       });
       it('removeZincObject', function(){
         assert.isUndefined(scene.removeZincObject(testGeometry), 'removeZincGeometry is successfully called');

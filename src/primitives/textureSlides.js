@@ -73,6 +73,7 @@ const TextureSlides = function (textureIn) {
    * @param {SLIDE_SETTINGS} slideSettings - An array to each slide settings.
    */
   this.createSlides = slideSettings => {
+    this.requestRender();
     slideSettings.forEach(slide => this.createSlide(slide));
   }
 
@@ -123,6 +124,7 @@ const TextureSlides = function (textureIn) {
    * @param {SLIDE_SETTINGS} settings - s.
    */
   this.modifySlideSettings = (settings) => {
+    this.requestRender();
     if (settings && settings.id &&
       settings.id in idTextureMap &&
       idTextureMap[settings.id]) {
@@ -139,6 +141,7 @@ const TextureSlides = function (textureIn) {
    * created mesh's id.
    */
   this.createSlide = settings => {
+    this.requestRender();
     if (this.texture && this.texture.isTextureArray && this.texture.isReady()) {
       if (settings && settings.direction && settings.value !== undefined) {
         const geometry = new THREE.PlaneGeometry(1, 1);
@@ -238,6 +241,7 @@ const TextureSlides = function (textureIn) {
    * @param {Slide} slide - Slide to be remvoed
    */
   this.removeSlide = slide => {
+    this.requestRender();
     if (slide) {
       this.removeSlideWithId(slide.id);
     }
@@ -249,6 +253,7 @@ const TextureSlides = function (textureIn) {
     * @param {Number} id - id of slide to be remvoed
     */
   this.removeSlideWithId = id => {
+    this.requestRender();
     if (this.morph && id in idTextureMap && idTextureMap[id]) {
       if (this.morph.getObjectById(id)) {
         const slide = idTextureMap[id];
@@ -341,6 +346,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.applyTransformation = (rotation, position, scale) => {
+    this.requestRender();
     const matrix = new THREE.Matrix4();
     matrix.set(
       rotation[0],
@@ -369,6 +375,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setRenderOrder = (order) => {
+    this.requestRender();
     //multiilayers
     this.morph.renderOrder = order;
   }
@@ -394,6 +401,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.showEdges = (color) => {
+    this.requestRender();
     if (!edgesLine) {
       const geometry = new THREE.BoxGeometry( 1, 1, 1 );
       geometry.translate(0.5, 0.5, 0.5);
@@ -408,6 +416,7 @@ const TextureSlides = function (textureIn) {
 
 
   this.setUniformsValue = (name, val) => {
+    this.requestRender();
     this.morph.children.forEach((mesh) => {
       const material = mesh.material;
       if (material.userData.uniforms) {
@@ -422,6 +431,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.discardAlphaPixel = (flag) => {
+    this.requestRender();
     discardAlpha = flag;
     this.setUniformsValue("discardAlpha", discardAlpha);
   }
@@ -431,6 +441,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setBrightness = (brightnessIn) => {
+    this.requestRender();
     brightness = brightnessIn;
     this.setUniformsValue("brightness", brightness);
   }
@@ -440,6 +451,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setContrast = (contrastIn) => {
+    this.requestRender();
     if (contrast >= 0 ) {
       contrast = contrastIn;
       this.setUniformsValue("contrast", contrast);
@@ -451,6 +463,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setNumberOfChannels = (numbersIn) => {
+    this.requestRender();
     nChannels = numbersIn;
     this.setUniformsValue("nChannels", nChannels);
   }
@@ -460,6 +473,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setMask = (maskTextureIn) => {
+    this.requestRender();
     maskTexture = maskTextureIn;
     maskEnabled = maskTexture ? true : false;
     this.morph.children.forEach((mesh) => {
@@ -475,6 +489,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.hideEdges = () => {
+    this.requestRender();
     if (edgesLine) {
       edgesLine.visible = false;
     }
@@ -513,6 +528,7 @@ const TextureSlides = function (textureIn) {
    * Update the glyphsets if required the render.
    */
   this.setMorphTime = (time) => {
+    this.requestRender();
     let newTime = time;
     if (time > this.duration)
       newTime = this.duration;

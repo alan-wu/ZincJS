@@ -115,7 +115,15 @@ ZincObject.prototype.getRegion = function() {
  *
  * @return {Object}
  */
- ZincObject.prototype.getMorph = function() {
+ /**
+ * Request the scene to draw the next frame, this is used when render on
+ * demand is enabled. See {@link Renderer#setRenderOnDemand}.
+ */
+ZincObject.prototype.requestRender = function() {
+  this.region?.getScene?.()?.invalidate?.();
+}
+
+ZincObject.prototype.getMorph = function() {
   const morph =  this._lod.getCurrentMorph();
   return morph ? morph : this.morph;
 }
@@ -159,6 +167,7 @@ ZincObject.prototype.checkTransparentMesh = function() {
  * time dependent.
  */
 ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour) {
+  this.requestRender();
   //Note: we assume all layers are consistent with time frame
   //Thus adding them to the same animation group should work.
   //This step is only required for the primary (level 0) mesh.
@@ -267,6 +276,7 @@ ZincObject.prototype.getCurrentTime = function() {
  * @param {Number} time - Can be any value between 0 to duration.
  */
 ZincObject.prototype.setMorphTime = function(time) {
+  this.requestRender();
   let timeChanged = false;
   if (this.clipAction) {
     const ratio = time / this.duration;
@@ -326,6 +336,7 @@ ZincObject.prototype.getVisibility = function() {
  * @param {Boolean} visible - a boolean flag indicate the visibility to be set
  */
 ZincObject.prototype.setVisibility = function(visible) {
+  this.requestRender();
   if (visible !== this.visible) {
     this.visible = visible;
     this.group.visible = visible;
@@ -341,6 +352,7 @@ ZincObject.prototype.setVisibility = function(visible) {
  * can be any value between from 0 to 1.0.
  */
 ZincObject.prototype.setAlpha = function(alpha) {
+  this.requestRender();
   const material = this._lod._material;
   let isTransparent = false;
   if (alpha  < 1.0)
@@ -358,6 +370,7 @@ ZincObject.prototype.setAlpha = function(alpha) {
  * @param {Boolean} flag - Set frustrum culling on/off based on this flag.
  */
 ZincObject.prototype.setFrustumCulled = function(flag) {
+  this.requestRender();
   //multilayers - set for all layers
   this._lod.setFrustumCulled(flag);
 }
@@ -369,6 +382,7 @@ ZincObject.prototype.setFrustumCulled = function(flag) {
  * @param {Boolean} vertexColors - Set display with vertex color on/off.
  */
 ZincObject.prototype.setVertexColors = function(vertexColors) {
+  this.requestRender();
   //multilayers - set for all
   this._lod.setVertexColors(vertexColors);
 
@@ -391,6 +405,7 @@ ZincObject.prototype.getColour = function() {
  * @param {THREE.Color} colour - Colour to be set for this geometry.
  */
 ZincObject.prototype.setColour = function(colour) {
+  this.requestRender();
   this._lod.setColour(colour);
 }
 
@@ -400,6 +415,7 @@ ZincObject.prototype.setColour = function(colour) {
  * @param {THREE.Color} colour - Colour to be set for this geometry.
  */
 ZincObject.prototype.setGreyScale = function(flag) {
+  this.requestRender();
   if (flag) {
     if (!this.origColour) {
       if (this._lod._material) {
@@ -440,6 +456,7 @@ ZincObject.prototype.getColourHex = function() {
  * @param {String} hex - The colour value in hex form.
  */
 ZincObject.prototype.setColourHex = function(hex) {
+  this.requestRender();
   this._lod._material.color.setHex(hex);
   if (this._lod._secondaryMaterial) {
     this._lod._secondaryMaterial.color.setHex(hex);
@@ -452,6 +469,7 @@ ZincObject.prototype.setColourHex = function(hex) {
  * @param {String} colour - The colour value in rgb form.
  */
 ZincObject.prototype.setEmissiveRGB = function(colour) {
+  this.requestRender();
   if (this._lod._material && this._lod._material.emissive) {
     this._lod._material.emissive.setRGB(...colour);
   }
@@ -467,6 +485,7 @@ ZincObject.prototype.setEmissiveRGB = function(colour) {
  * @param {THREE.Material} material - Material to be set for this geometry.
  */
 ZincObject.prototype.setMaterial = function(material) {
+  this.requestRender();
   this._lod.setMaterial(material);
 }
 
@@ -698,6 +717,7 @@ ZincObject.prototype.initiateMorphColor = function() {
 }
 
 ZincObject.prototype.setRenderOrder = function(renderOrder) {
+  this.requestRender();
   //multiilayers
   this._lod.setRenderOrder(renderOrder);
 }
@@ -736,6 +756,7 @@ ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
  * @return {Boolean}
  */
  ZincObject.prototype.setMarkerMode = function(mode, options) {
+  this.requestRender();
   if (mode !== this.markerMode) {
     if (mode === "on" || mode === "off") {
       this.markerMode = mode;
@@ -792,6 +813,7 @@ ZincObject.prototype.addLOD = function(loader, level, url, index, preload) {
  * Add lod from an url into the lod object.
  */
 ZincObject.prototype.addVertices = function(coords) {
+  this.requestRender();
   let mesh = this.getMorph();
   let geometry = undefined;
   if (!mesh) {
@@ -819,6 +841,7 @@ ZincObject.prototype.addVertices = function(coords) {
  * Add lod from an url into the lod object.
  */
 ZincObject.prototype.deleteVertices = function(index) {
+  this.requestRender();
   let mesh = this.getMorph();
   if (mesh?.geometry && this.drawRange >= index) {
     if (removeVertexAtIndex(mesh.geometry, index, true)) {
@@ -837,6 +860,7 @@ ZincObject.prototype.deleteVertices = function(index) {
  * Set the objects position.
  */
 ZincObject.prototype.setPosition = function(x, y, z) {
+  this.requestRender();
   const group = this.getGroup();
   if (group) {
     group.position.set(x, y, z);
@@ -856,6 +880,7 @@ ZincObject.prototype.loadAdditionalSources = function(primitivesLoader, sources)
  * Set the objects scale.
  */
 ZincObject.prototype.setScaleAll = function(scale) {
+  this.requestRender();
   const group = this.getGroup();
   if (group) {
     group.scale.set(scale, scale, scale);

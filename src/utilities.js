@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import SpriteTextModule from 'three-spritetext';
 const SpriteText = SpriteTextModule.default || SpriteTextModule;
 import discPNG from './assets/disc.png';
+import { requestRenderAll } from './renderRequests';
 
 function createNewURL(target, reference) {
   const getNewURL = (target, reference) => {
@@ -718,10 +719,17 @@ function createBufferGeometry(length, coords) {
 
 function getCircularTexture() {
   const image = new Image();
-  image.src = discPNG;
   const texture = new THREE.Texture();
   texture.image = image;
-  texture.needsUpdate = true;
+  //Only upload once the image is available
+  image.onload = () => {
+    texture.needsUpdate = true;
+    requestRenderAll();
+  };
+  image.src = discPNG;
+  if (image.complete && image.naturalWidth > 0) {
+    texture.needsUpdate = true;
+  }
   return texture;
 }
 

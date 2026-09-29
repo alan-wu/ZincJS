@@ -99,6 +99,7 @@ const Geometry = function () {
 	 * @param {Boolean} wireframe - Flag to turn on/off wireframe display.
 	 */
 	this.setWireframe = wireframe => {
+		this.requestRender();
 		this.morph.material.wireframe = wireframe;
 	}
 
@@ -106,6 +107,7 @@ const Geometry = function () {
    * Edit Vertice in index.
    */
   this.editVertices = function(coords, i) {
+    this.requestRender();
     if (coords && coords.length) {
       let mesh = this.getMorph();
       const attribute = mesh.geometry.getAttribute("position");

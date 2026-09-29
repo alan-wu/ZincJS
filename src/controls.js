@@ -259,6 +259,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   }
 
 	this.onResize = () => {
+		hasUpdated = true;
 		if (rect)
 			rect = undefined;
     if (ndcControl)
@@ -355,6 +356,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   }
 
   const translateViewport = translation => {
+		hasUpdated = true;
     _tempEye.copy(this.cameraObject.position).add(translation);
     if (checkTravelDistance()) {
       this.cameraObject.target.add(translation);
@@ -666,6 +668,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {Number} Angle - Specify how much the camera shoudl rotate by.
    */
 	this.rotateAboutLookAtpoint = (axis, angle) => {
+		hasUpdated = true;
 	  const returned_values = this.getVectorsFromRotateAboutLookAtPoints(axis, angle);
 	  this.cameraObject.position.copy(returned_values.position);
 	  this.updateDirectionalLight();
@@ -789,6 +792,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * Force an update to the position of the directional light.
    */
 	this.updateDirectionalLight = () => {
+		hasUpdated = true;
 		if (this.directionalLight != 0) {
 			this.directionalLight.position.set(this.cameraObject.position.x,
 					this.cameraObject.position.y,
@@ -988,6 +992,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {Number} targetTimeFrame - bottom frame, top frame and the proportion.
    */
 	this.setCurrentTimeFrame = targetTimeFrame => {
+		hasUpdated = true;
 	   if (numberOfCameraPoint > 2) {
   		inbuildTime = duration * targetTimeFrame / (numberOfCameraPoint - 1);
   		if (inbuildTime < 0.0)
@@ -1032,6 +1037,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * Force recalculation of the current path.
    */
 	this.calculatePathNow = () => {
+		hasUpdated = true;
 	  updatePath(0.0);
 	}
 
@@ -1187,6 +1193,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * Reset the viewport settings to the one provided by default viewport.
    */
 	this.resetView = () => {
+		hasUpdated = true;
     const viewport = viewports[defaultViewport];
 		this.cameraObject.near = viewport.nearPlane;
 		this.cameraObject.far = viewport.farPlane;
@@ -1674,6 +1681,8 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
 				}
 			}
 			callbackFunction(pickedObjects, x, y);
+			//The callback may have changed what is displayed
+			hostScene?.invalidate?.();
 		}
   }
 
@@ -1690,6 +1699,8 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
         lastHoveredEmpty = false;
       }
       hoverCallbackFunction(pickedObjects, x, y);
+      //The callback may have changed what is displayed
+      hostScene?.invalidate?.();
     }
   }
 
