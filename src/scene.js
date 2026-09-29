@@ -1367,13 +1367,11 @@ const Scene = function (containerIn, rendererIn) {
     material.userData.uniforms.pointSize.value = 15;
     material.alphaTest = 0.5;
     const point = new InstancedPoints(geometry, material, coords.length);
-    point.pointPositions = new Float32Array(coords.length * 3);
     const instancePosition = geometry.getAttribute('instancePosition');
+    //Share the array with the instance positions
+    point.pointPositions = instancePosition.array;
     coords.forEach((coord, index) => {
       instancePosition.setXYZ(index, coord[0], coord[1], coord[2]);
-      point.pointPositions[index * 3] = coord[0];
-      point.pointPositions[index * 3 + 1] = coord[1];
-      point.pointPositions[index * 3 + 2] = coord[2];
     });
     instancePosition.needsUpdate = true;
     tempGroup.add(point);

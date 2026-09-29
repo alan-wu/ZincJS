@@ -124,27 +124,26 @@ const Pointset = function () {
     if (morphVertices) {
       const bottomPositions = positionFrames[bottomFrame];
       const topPositions = positionFrames[topFrame];
+      //pointPositions shares its array with instancePosition
       const positions = mesh.pointPositions;
       const length = activeCount * 3;
       for (let i = 0; i < length; i++) {
         positions[i] = proportion * bottomPositions[i] + (1 - proportion) * topPositions[i];
       }
-      const instancePosition = mesh.geometry.getAttribute('instancePosition');
-      instancePosition.array.set(positions.subarray(0, length));
-      instancePosition.needsUpdate = true;
+      mesh.geometry.getAttribute('instancePosition').needsUpdate = true;
       this.boundingBoxUpdateRequired = true;
     }
     if (morphColours && colorFrames) {
       const bottomColors = colorFrames[Math.min(bottomFrame, colorFrames.length - 1)];
       const topColors = colorFrames[Math.min(topFrame, colorFrames.length - 1)];
-      for (let i = 0; i < activeCount; i++) {
-        const index = i * 3;
-        _tempColor.setRGB(
-          proportion * bottomColors[index] + (1 - proportion) * topColors[index],
-          proportion * bottomColors[index + 1] + (1 - proportion) * topColors[index + 1],
-          proportion * bottomColors[index + 2] + (1 - proportion) * topColors[index + 2],
-        );
-        mesh.setColorAt(i, _tempColor);
+      if (!mesh.instanceColor) {
+        mesh.setColorAt(0, _tempColor);
+      }
+      //Write the blended colours straight into the instance colours
+      const colors = mesh.instanceColor.array;
+      const length = activeCount * 3;
+      for (let i = 0; i < length; i++) {
+        colors[i] = proportion * bottomColors[i] + (1 - proportion) * topColors[i];
       }
       mesh.instanceColor.needsUpdate = true;
     }
@@ -188,14 +187,13 @@ const Pointset = function () {
 
     const mesh = new InstancedPoints(quadGeometry, material, numberOfPoints);
     mesh.count = numberOfPoints;
-    mesh.pointPositions = new Float32Array(numberOfPoints * 3);
-    mesh.pointPositions.set(positionFrames[0]);
-    mesh.userData = this;
-    this.drawRange = numberOfPoints;
-
     const instancePosition = quadGeometry.getAttribute('instancePosition');
     instancePosition.array.set(positionFrames[0]);
     instancePosition.needsUpdate = true;
+    //Share the array to avoid keeping and updating two copies
+    mesh.pointPositions = instancePosition.array;
+    mesh.userData = this;
+    this.drawRange = numberOfPoints;
 
     const initialColorFrame = colorFrames ? colorFrames[0] : extractStaticColorFrame(geometry);
     if (initialColorFrame) {
@@ -273,7 +271,7 @@ const Pointset = function () {
         material.color.set(colour);
         material.alphaTest = 0.5;
         mesh = new InstancedPoints(quadGeometry, material, DEFAULT_CAPACITY);
-        mesh.pointPositions = new Float32Array(DEFAULT_CAPACITY * 3);
+        mesh.pointPositions = quadGeometry.getAttribute('instancePosition').array;
         mesh.count = 0;
         mesh.userData = this;
         this.setMorph(mesh);
@@ -282,9 +280,6 @@ const Pointset = function () {
       coords.forEach(coord => {
         if (this.drawRange < DEFAULT_CAPACITY) {
           instancePosition.setXYZ(this.drawRange, coord[0], coord[1], coord[2]);
-          mesh.pointPositions[this.drawRange * 3] = coord[0];
-          mesh.pointPositions[this.drawRange * 3 + 1] = coord[1];
-          mesh.pointPositions[this.drawRange * 3 + 2] = coord[2];
           this.drawRange++;
         }
       });
@@ -462,9 +457,6 @@ const Pointset = function () {
             label.setPosition(coord[0], coord[1], coord[2]);
           }
           instancePosition.setXYZ(index, coord[0], coord[1], coord[2]);
-          mesh.pointPositions[index * 3] = coord[0];
-          mesh.pointPositions[index * 3 + 1] = coord[1];
-          mesh.pointPositions[index * 3 + 2] = coord[2];
           //Keep the base frame consistent for any pointset that also
           //happens to be time varying.
           if (positionFrames[0]) {
@@ -492,7 +484,8 @@ const Pointset = function () {
       const instancePosition = mesh.geometry.getAttribute('instancePosition');
       const end = this.drawRange - 1;
       instancePosition.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
-      mesh.pointPositions.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
+      if (mesh.pointPositions !== instancePosition.array)
+        mesh.pointPositions.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
       if (mesh.instanceColor) {
         mesh.instanceColor.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
         mesh.instanceColor.needsUpdate = true;

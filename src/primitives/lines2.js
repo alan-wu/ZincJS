@@ -16,7 +16,70 @@ import { LineSegmentsGeometry } from '../three/line/LineSegmentsGeometry';
 const Lines2 = function () {
   Lines.call(this);
 	this.isLines2 = true;
-  let positions = new Array(300);
+  //Shared with the GPU buffer of the mesh, edits are made in place
+  let positions = new Float32Array(300);
+
+  //Grow the positions array if required, returns true if it has
+  //been reallocated.
+  const ensureCapacity = (length) => {
+    if (length > positions.length) {
+      //Each segment has two vertices, six values
+      const capacity = Math.ceil(Math.max(positions.length * 2, length) / 6) * 6;
+      const newPositions = new Float32Array(capacity);
+      newPositions.set(positions);
+      positions = newPositions;
+      return true;
+    }
+    return false;
+  }
+
+  //Fill the unused part of the array with degenerate segments at coord
+  const fillUnused = (start, coord) => {
+    for (let index = start; index + 2 < positions.length; index += 3) {
+      positions[index] = coord[0];
+      positions[index + 1] = coord[1];
+      positions[index + 2] = coord[2];
+    }
+  }
+
+  //Update the line distances without allocating new buffers
+  const updateLineDistances = (mesh) => {
+    const geometry = mesh.geometry;
+    const distanceStart = geometry.attributes.instanceDistanceStart;
+    const instanceStart = geometry.attributes.instanceStart;
+    if (!distanceStart || distanceStart.data.array.length !== instanceStart.count * 2) {
+      mesh.computeLineDistances();
+      return;
+    }
+    const distances = distanceStart.data.array;
+    let total = 0;
+    for (let i = 0; i < instanceStart.count; i++) {
+      const offset = i * 6;
+      const dx = positions[offset + 3] - positions[offset];
+      const dy = positions[offset + 4] - positions[offset + 1];
+      const dz = positions[offset + 5] - positions[offset + 2];
+      distances[i * 2] = total;
+      total += Math.sqrt(dx * dx + dy * dy + dz * dz);
+      distances[i * 2 + 1] = total;
+    }
+    distanceStart.data.needsUpdate = true;
+  }
+
+  //Upload the positions after they have been changed
+  const updatePositions = (mesh, reallocated) => {
+    const instanceStart = mesh.geometry.getAttribute('instanceStart');
+    if (reallocated || !instanceStart || instanceStart.data.array !== positions) {
+      //Only happens when the capacity has been increased
+      mesh.geometry.setPositions(positions);
+      mesh.computeLineDistances();
+    } else {
+      instanceStart.data.needsUpdate = true;
+      updateLineDistances(mesh);
+      mesh.geometry.computeBoundingBox();
+      mesh.geometry.computeBoundingSphere();
+    }
+    this.boundingBoxUpdateRequired = true;
+  }
 
   /**
    * Create the line segements using geometry and material.
@@ -65,6 +128,7 @@ const Lines2 = function () {
         this.drawRange = 0;
       }
       let index = this.drawRange * 3;
+      const reallocated = ensureCapacity(index + coords.length * 3);
       coords.forEach(coord => {
         positions[index++] = coord[0];
         positions[index++] = coord[1];
@@ -73,19 +137,12 @@ const Lines2 = function () {
       });
       //fill the rest of the array.
       if (!mesh) {
-        while (index < 300) {
-          positions[index++] = coords[0][0];
-          positions[index++] = coords[0][1];
-          positions[index++] = coords[0][2];
+        fillUnused(index, coords[0]);
+      } else {
+        if (reallocated) {
+          fillUnused(index, coords[0]);
         }
-      }
-
-      if (mesh) {
-        mesh.geometry.setPositions(positions);
-        mesh.computeLineDistances();
-        mesh.geometry.computeBoundingBox();
-        mesh.geometry.computeBoundingSphere();
-        this.boundingBoxUpdateRequired = true;
+        updatePositions(mesh, reallocated);
       }
     }
     return positions;
@@ -133,17 +190,8 @@ const Lines2 = function () {
           positions[index++] = coord[1];
           positions[index++] = coord[2];
         });
-        index = this.drawRange * 3;
-        while (index < 300) {
-          positions[index++] = coords[0][0];
-          positions[index++] = coords[0][1];
-          positions[index++] = coords[0][2];
-        }
-        mesh.geometry.setPositions(positions);
-        mesh.computeLineDistances();
-        mesh.geometry.computeBoundingBox();
-        mesh.geometry.computeBoundingSphere();
-        this.boundingBoxUpdateRequired = true;
+        fillUnused(this.drawRange * 3, coords[0]);
+        updatePositions(mesh, false);
       }
     }
     return positions;
