@@ -195,6 +195,10 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    * Clear and free its memory.
    */
   this.dispose = () => {
+    if (label) {
+      label.dispose();
+      label = undefined;
+    }
     if (this.material)
       this.material.dispose();
     this.morph = undefined;
