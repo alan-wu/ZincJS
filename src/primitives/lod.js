@@ -289,10 +289,13 @@ const LOD = function (parent) {
         this._material = material;
         if (this._secondaryMaterial) {
           this._secondaryMaterial.dispose();
+          this._secondaryMaterial = undefined;
         }
-        this._secondaryMaterial = material.clone()
-        this._secondaryMaterial.side = THREE.FrontSide;
-        this._secondaryMaterial.transparent = true;
+        if (material.transparent || this.levels.some((level) => level.secondaryMesh)) {
+          this._secondaryMaterial = material.clone()
+          this._secondaryMaterial.side = THREE.FrontSide;
+          this._secondaryMaterial.transparent = true;
+        }
         this.levels.forEach((level) => {
           if (level.morph) {
             level.morph.material = this._material;
