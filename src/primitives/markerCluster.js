@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { ZincObject } from './zincObject';
 import { requestRenderAll } from '../renderRequests';
+import { releaseTextSprite } from '../textSprite';
 import mapMarkerOrange from '../assets/mapMarkerOrange.svg';
 import { createNewSpriteText } from '../utilities';
 
@@ -97,6 +98,7 @@ const MarkerCluster = function(sceneIn) {
     if (sprite.label === undefined || (number !== sprite.number)) {
       if (sprite.label) {
         sprite.group.remove(sprite.label);
+        releaseTextSprite(sprite.label);
         sprite.label.material.map.dispose();
         sprite.label.material.dispose();
       }

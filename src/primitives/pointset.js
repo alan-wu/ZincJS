@@ -228,7 +228,8 @@ const Pointset = function () {
       label.setPosition(coord[0], coord[1], coord[2]);
       const sprite = label.getSprite();
       sprite.material.sizeAttenuation = false;
-      sprite.material.alphaTest = 0.5;
+      //Only discard fully transparent pixels to keep the smooth edges
+      sprite.material.alphaTest = 0.05;
       sprite.material.transparent = true;
       sprite.material.depthWrite = false;
       sprite.material.depthTest = labelDepthTest;

@@ -90,7 +90,8 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
       label = new Label(labelString, _colour || colour);
       label.setPosition(_position[0], _position[1], _position[2]);
       const sprite = label.getSprite();
-      sprite.material.alphaTest = 0.5;
+      //Only discard fully transparent pixels to keep the smooth edges
+      sprite.material.alphaTest = 0.05;
       sprite.material.transparent = true;
       sprite.material.depthWrite = false;
       this.group.add(label.getSprite());

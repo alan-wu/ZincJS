@@ -3,6 +3,7 @@ import myImage from '../assets/mapMarker.svg';
 import { createNewSpriteText } from '../utilities';
 import { ZincObject } from './zincObject';
 import { requestRenderAll } from '../renderRequests';
+import { releaseTextSprite } from '../textSprite';
 
 const textureLoader = new THREE.TextureLoader();
 const texture = textureLoader.load(myImage, requestRenderAll);
@@ -175,6 +176,7 @@ const Marker = function(zincObject) {
       sprite = undefined;
     }
     if (label) {
+      releaseTextSprite(label);
       label.material.map.dispose();
       label.material.dispose();
       label = undefined;
@@ -190,6 +192,7 @@ const Marker = function(zincObject) {
       //remove label
       if (label) {
         this.morph.remove(label);
+        releaseTextSprite(label);
         label.material.map.dispose();
         label.material.dispose();
         label = undefined;

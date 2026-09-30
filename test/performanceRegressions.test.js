@@ -4,8 +4,10 @@ import { JSONLoader } from '../src/loaders/JSONLoader';
 import { PrimitivesLoader } from '../src/loaders/primitivesLoader';
 import { Geometry } from '../src/primitives/geometry';
 import { Region } from '../src/region';
-import { updateMorphColorAttribute, getCircularTexture, setSpriteTextFont,
+import { updateMorphColorAttribute, getCircularTexture,
   removeVertexAtIndex } from '../src/utilities';
+import { fontSizeForHeight, getTextPixelsPerUnit, registerTextSprite,
+  releaseTextSprite, setTextPixelsPerUnit } from '../src/textSprite';
 import { Pointset } from '../src/primitives/pointset';
 import { Lines2 } from '../src/primitives/lines2';
 
@@ -350,14 +352,49 @@ describe('Pointset buffers', () => {
   });
 });
 
-describe('Sprite text font', () => {
-  it('redraws the canvas once for all font properties', () => {
-    const sprite = { _fontFace: 'a', _fontSize: 1, _fontWeight: 1, _genCanvas: vi.fn() };
-    setSpriteTextFont(sprite, 'Asap', 90, 500);
+describe('Text sprite resolution', () => {
+  //A stand-in for SpriteText, which needs a real canvas
+  const createFakeSprite = (textHeight) => {
+    const sprite = {
+      _textHeight: textHeight, _fontFace: 'Asap', _fontSize: 1, _fontWeight: 500,
+      get textHeight() { return this._textHeight; },
+      get fontFace() { return this._fontFace; },
+      get fontSize() { return this._fontSize; },
+      get fontWeight() { return this._fontWeight; },
+      material: { map: {} },
+    };
+    sprite._genCanvas = vi.fn(() => { sprite.material.map = {}; });
+    return sprite;
+  };
+
+  it('chooses the font size from the size of the text on screen', () => {
+    const original = getTextPixelsPerUnit();
+    setTextPixelsPerUnit(1000);
+    //0.012 units -> 12 pixels on screen, oversampled by 1.5
+    expect(fontSizeForHeight(0.012)).toBe(18);
+    //Clamped to a readable minimum and a sensible maximum
+    expect(fontSizeForHeight(0.0001)).toBe(16);
+    expect(fontSizeForHeight(10)).toBe(256);
+    setTextPixelsPerUnit(original);
+  });
+
+  it('redraws registered sprites only when the scale changes significantly', () => {
+    const original = getTextPixelsPerUnit();
+    setTextPixelsPerUnit(1000);
+    const sprite = createFakeSprite(0.1);
+    registerTextSprite(sprite);
+    //Within the threshold, nothing to redraw
+    setTextPixelsPerUnit(1050);
+    expect(sprite._genCanvas).not.toHaveBeenCalled();
+    setTextPixelsPerUnit(1500);
     expect(sprite._genCanvas).toHaveBeenCalledTimes(1);
-    expect(sprite._fontFace).toBe('Asap');
-    expect(sprite._fontSize).toBe(90);
-    expect(sprite._fontWeight).toBe(500);
+    expect(sprite._fontSize).toBe(fontSizeForHeight(0.1));
+    //Mipmaps would blur text drawn at screen resolution
+    expect(sprite.material.map.generateMipmaps).toBe(false);
+    releaseTextSprite(sprite);
+    setTextPixelsPerUnit(3000);
+    expect(sprite._genCanvas).toHaveBeenCalledTimes(1);
+    setTextPixelsPerUnit(original);
   });
 });
 

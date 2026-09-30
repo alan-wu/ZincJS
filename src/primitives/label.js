@@ -1,7 +1,9 @@
-import * as THREE from 'three/webgpu';
-import SpriteTextModule from 'three-spritetext';
-import { setSpriteTextFont, replaceSpriteTextMaterial } from '../utilities';
-const SpriteText = SpriteTextModule.default || SpriteTextModule;
+import {
+  applyTextSpriteTextureSettings,
+  createTextSprite,
+  releaseTextSprite,
+  setTextSpriteHeight,
+} from '../textSprite';
 
 /**
  * Bitmap labels, this is used with {@link Glyph} to
@@ -22,27 +24,16 @@ const Label = function (textIn, colourIn) {
   let size = 1.0;
   let fontWeight = 500;
   const textHeight = 0.012;
-  if (colourIn)
-    sprite = new SpriteText(text, textHeight, colourIn.getStyle());
-  else
-    sprite = new SpriteText(text, textHeight);
-  setSpriteTextFont(sprite, "Asap", 90, fontWeight);
-  replaceSpriteTextMaterial(sprite);
-  sprite.material.sizeAttenuation = false;
+  //The canvas resolution is chosen from the size of the text on screen
+  sprite = createTextSprite(text, textHeight,
+    colourIn ? colourIn.getStyle() : undefined, "Asap", fontWeight);
   sprite.center.x = -0.05;
   sprite.center.y = 0;
   //SpriteText replaces the texture whenever the text, colour or size
   //changes, the settings need to be re-applied to the new texture.
   const applyTextureSettings = () => {
-    const texture = sprite.material.map;
-    if (texture) {
-      texture.generateMipmaps = true;
-      texture.anisotropy = 4;
-      texture.minFilter = THREE.LinearMipmapLinearFilter; // Smooth downscaling
-      texture.magFilter = THREE.LinearFilter;
-    }
+    applyTextSpriteTextureSettings(sprite);
   }
-  applyTextureSettings();
 
 
   /**
@@ -120,8 +111,8 @@ const Label = function (textIn, colourIn) {
    */
   this.setSize = sizeIn => {
     if (sizeIn > 0.0) {
-      sprite.textHeight = textHeight * sizeIn;
-      applyTextureSettings();
+      //Redraw at the resolution matching the new size
+      setTextSpriteHeight(sprite, textHeight * sizeIn);
       size = sizeIn;
     }
   }
@@ -160,7 +151,7 @@ const Label = function (textIn, colourIn) {
         sprite._canvas.height = 1;
       }
       sprite.text = textIn;
-      sprite.textHeight = textHeight * size;
+      setTextSpriteHeight(sprite, textHeight * size);
       text = textIn;
       if (sprite.material && sprite.material.map) {
         applyTextureSettings();
@@ -183,6 +174,7 @@ const Label = function (textIn, colourIn) {
    */
   this.dispose = () => {
     if (sprite) {
+      releaseTextSprite(sprite);
       sprite.removeFromParent();
       if (sprite.material) {
         sprite.material.map?.dispose();

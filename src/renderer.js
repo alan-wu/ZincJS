@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import { ResizeSensor } from 'css-element-queries';
 import { Scene } from './scene';
 import { onRenderRequest, offRenderRequest } from './renderRequests';
+import { setTextPixelsPerUnit } from './textSprite';
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
@@ -114,6 +115,12 @@ const Renderer = function (containerIn) {
 			renderer.getSize(target);
 			currentSize[0] = target.x;
 			currentSize[1] = target.y;
+			//Text sprites are drawn at the resolution they occupy on screen
+			const fov = currentScene?.camera?.fov;
+			if (fov) {
+				setTextPixelsPerUnit(currentSize[1] * renderer.getPixelRatio() /
+					(2 * Math.tan(fov * Math.PI / 360)));
+			}
 		}
 	}
 
