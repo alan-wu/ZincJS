@@ -4,7 +4,10 @@ import { JSONLoader } from '../src/loaders/JSONLoader';
 import { PrimitivesLoader } from '../src/loaders/primitivesLoader';
 import { Geometry } from '../src/primitives/geometry';
 import { Region } from '../src/region';
-import { updateMorphColorAttribute } from '../src/utilities';
+import { updateMorphColorAttribute, getCircularTexture, setSpriteTextFont,
+  removeVertexAtIndex } from '../src/utilities';
+import { Pointset } from '../src/primitives/pointset';
+import { Lines2 } from '../src/primitives/lines2';
 
 const bit = (...positions) => positions.reduce((v, p) => v | (1 << p), 0);
 
@@ -279,5 +282,136 @@ describe('Marker screen position', () => {
     zincGeometry.markerUpdateRequired = true;
     zincGeometry.updateMarker(false, options);
     expect(updateNDC).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('Pointset buffers', () => {
+  const createPointset = (morphing) => {
+    const json = {
+      metadata: { formatVersion: 3 },
+      vertices: [0, 0, 0, 1, 0, 0, 2, 0, 0],
+      colors: [0xff0000, 0x00ff00, 0x0000ff],
+      faces: [],
+      materials: [{ colorDiffuse: [1, 1, 1], opacity: 1 }],
+    };
+    if (morphing) {
+      json.morphTargets = [
+        { name: 'anim_000', vertices: [0, 0, 0, 1, 0, 0, 2, 0, 0] },
+        { name: 'anim_001', vertices: [10, 0, 0, 11, 0, 0, 12, 0, 0] },
+      ];
+      json.morphColors = [
+        { name: 'anim_000', colors: [1, 0, 0, 0, 1, 0, 0, 0, 1] },
+        { name: 'anim_001', colors: [0, 0, 1, 1, 0, 0, 0, 1, 0] },
+      ];
+    }
+    const { geometry } = new JSONLoader().parse(json, '');
+    const colorFrames = geometry.morphAttributes.color?.map((attribute) =>
+      Array.from(attribute.array));
+    const pointset = new Pointset();
+    pointset.createMesh(geometry, new THREE.PointsMaterial({ color: 0xffffff }),
+      { localTimeEnabled: morphing, localMorphColour: morphing });
+    pointset.colorFrames = colorFrames;
+    return pointset;
+  };
+
+  it('shares the CPU positions with the instance positions', () => {
+    const mesh = createPointset(false).getMorph();
+    expect(mesh.pointPositions).toBe(mesh.geometry.getAttribute('instancePosition').array);
+  });
+
+  it('blends positions and colours straight into the instance attributes', () => {
+    const pointset = createPointset(true);
+    pointset.duration = 10;
+    const mesh = pointset.getMorph();
+    pointset.setMorphTime(5);
+    const instancePosition = mesh.geometry.getAttribute('instancePosition');
+    expect(instancePosition.getX(0)).toBeCloseTo(5);
+    expect(mesh.pointPositions[0]).toBeCloseTo(5);
+    //Halfway between the two colour frames loaded from the file
+    const [bottom, top] = pointset.colorFrames;
+    for (let i = 0; i < 9; i++) {
+      expect(mesh.instanceColor.array[i]).toBeCloseTo(0.5 * bottom[i] + 0.5 * top[i]);
+    }
+    //Make sure the frames differ so the blend is meaningful
+    expect(bottom.slice(0, 9)).not.toEqual(top.slice(0, 9));
+  });
+
+  it('deletes a vertex once when the arrays are shared', () => {
+    const pointset = createPointset(false);
+    const mesh = pointset.getMorph();
+    pointset.deleteVertices(0);
+    expect(pointset.drawRange).toBe(2);
+    expect(mesh.pointPositions[0]).toBeCloseTo(1);
+    expect(mesh.pointPositions[3]).toBeCloseTo(2);
+  });
+
+  it('uses one circular texture for all pointsets', () => {
+    expect(getCircularTexture()).toBe(getCircularTexture());
+  });
+});
+
+describe('Sprite text font', () => {
+  it('redraws the canvas once for all font properties', () => {
+    const sprite = { _fontFace: 'a', _fontSize: 1, _fontWeight: 1, _genCanvas: vi.fn() };
+    setSpriteTextFont(sprite, 'Asap', 90, 500);
+    expect(sprite._genCanvas).toHaveBeenCalledTimes(1);
+    expect(sprite._fontFace).toBe('Asap');
+    expect(sprite._fontSize).toBe(90);
+    expect(sprite._fontWeight).toBe(500);
+  });
+});
+
+describe('LOD secondary material', () => {
+  it('is only created for transparent objects', () => {
+    const zincGeometry = createPlainGeometry(0);
+    expect(zincGeometry._lod._secondaryMaterial).toBeUndefined();
+    zincGeometry.setAlpha(0.5);
+    expect(zincGeometry._lod._secondaryMaterial).toBeDefined();
+    //Colour changes still reach the transparent front faces
+    zincGeometry.setColourHex(0xff0000);
+    expect(zincGeometry._lod._secondaryMaterial.color.getHex()).toBe(0xff0000);
+  });
+});
+
+describe('Lines2 buffers', () => {
+  it('edits the positions in place', () => {
+    const lines = new Lines2();
+    lines.addLines([[0, 0, 0], [1, 0, 0]], 0xffffff);
+    const geometry = lines.getMorph().geometry;
+    const buffer = geometry.getAttribute('instanceStart').data;
+    const version = buffer.version;
+    lines.editVertices([[0, 5, 0]], 1);
+    expect(geometry.getAttribute('instanceStart').data).toBe(buffer);
+    expect(buffer.version).toBeGreaterThan(version);
+    expect(lines.getVerticesByFaceIndex(0)[1]).toEqual([0, 5, 0]);
+    lines.addLines([[2, 0, 0], [3, 0, 0]], 0xffffff);
+    expect(geometry.getAttribute('instanceStart').data).toBe(buffer);
+    expect(lines.getVerticesByFaceIndex(1)).toEqual([[2, 0, 0], [3, 0, 0]]);
+  });
+
+  it('grows beyond the initial capacity', () => {
+    const lines = new Lines2();
+    const coords = [];
+    for (let i = 0; i < 120; i++) {
+      coords.push([i, 0, 0]);
+    }
+    lines.addLines(coords.slice(0, 2), 0xffffff);
+    lines.addLines(coords.slice(2), 0xffffff);
+    expect(lines.drawRange).toBe(120);
+    expect(lines.getVerticesByFaceIndex(59)).toEqual([[118, 0, 0], [119, 0, 0]]);
+  });
+});
+
+describe('removeVertexAtIndex', () => {
+  it('keeps the attribute when maintaining the length', () => {
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(
+      [0, 0, 0, 1, 1, 1, 2, 2, 2], 3));
+    const attribute = geometry.getAttribute('position');
+    expect(removeVertexAtIndex(geometry, 0, true)).toBe(true);
+    expect(geometry.getAttribute('position')).toBe(attribute);
+    expect(Array.from(attribute.array)).toEqual([1, 1, 1, 2, 2, 2, 0, 0, 0]);
+    expect(removeVertexAtIndex(geometry, 0, false)).toBe(true);
+    expect(Array.from(geometry.getAttribute('position').array)).toEqual([2, 2, 2, 0, 0, 0]);
   });
 });
