@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { toBufferGeometry, updateMorphColorAttribute } from '../utilities';
+import { keepIndexType, toBufferGeometry, updateMorphColorAttribute } from '../utilities';
 import { LineSegments } from '../three/line/LineSegments';
 
 /**
@@ -34,6 +34,7 @@ const LOD = function (parent) {
    */
   this.addLevel = (object, distanceIn) => {
     if (object) {
+      keepIndexType(object.geometry);
       const distance = Math.abs(distanceIn);
       let l;
       for (l = 0; l < this.levels.length; l++) {
@@ -59,6 +60,7 @@ const LOD = function (parent) {
    */
   this.levelLoaded = (object, distanceIn) => {
     if (object) {
+      keepIndexType(object.geometry);
       const distance = Math.abs(distanceIn);
       for (let l = 0; l < this.levels.length; l++) {
         if (distance === this.levels[l].distance) {

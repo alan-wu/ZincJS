@@ -1,5 +1,6 @@
 import { BufferAttribute } from 'three/webgpu';
 import { GLTFExporter } from 'three/examples/jsm/exporters/GLTFExporter';
+import { useStandardIndexType } from './utilities';
 
 /*
  * GLTFExporter only writes POSITION and NORMAL morph targets. glTF allows
@@ -89,6 +90,8 @@ const SceneExporter = function (sceneIn) {
         glyphsetsToRestore.push(zincObject);
       }
     }
+    //GLTFExporter only accepts plain typed arrays
+    const restoreIndexType = useStandardIndexType(scene.getThreeJSScene());
     const exporter = new GLTFExporter();
     exporter.register(writer => new GLTFMorphColourPlugin(writer));
     const options = { binary, animations, onlyVisible: true };
@@ -106,6 +109,7 @@ const SceneExporter = function (sceneIn) {
           options );
       });
     } finally {
+      restoreIndexType();
       glyphsetsToRestore.forEach(zincObject => zincObject.clearColorExportState());
     }
 	}

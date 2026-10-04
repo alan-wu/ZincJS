@@ -254,6 +254,35 @@ describe('Render on demand', () => {
     framesDrawn();
   });
 
+  it('keeps 16 bit indices when they are uploaded', async () => {
+    const zincGeometry = createGeometry(false);
+    const index = zincGeometry.getMorph().geometry.index;
+    const values = Array.from(index.array);
+    expect(index.array).toBeInstanceOf(Uint16Array);
+    scene.getRootRegion().addZincObject(zincGeometry);
+    renderer.invalidate();
+    renderer.render();
+    //WebGPURenderer would otherwise replace it with a Uint32Array copy
+    const uploaded = zincGeometry.getMorph().geometry.index;
+    expect(uploaded.array).toBeInstanceOf(Uint16Array);
+    expect(uploaded.normalized).toBe(false);
+    //Values read by raycasting and other CPU code are unchanged
+    expect(values.map((v, i) => uploaded.getX(i))).toEqual(values);
+    //Picking still hits the triangle
+    const mesh = zincGeometry.getMorph();
+    mesh.updateMatrixWorld(true);
+    const raycaster = new Zinc.THREE.Raycaster(
+      new Zinc.THREE.Vector3(0.75, 0.25, 10), new Zinc.THREE.Vector3(0, 0, -1));
+    expect(raycaster.intersectObject(mesh, false).length).toBeGreaterThan(0);
+    //GLTFExporter only accepts plain typed arrays, the export must succeed
+    //and the indices stay 16 bit afterwards.
+    const gltf = await scene.exportGLTF(false);
+    expect(gltf.accessors.some((accessor) => accessor.componentType === 5123)).toBe(true);
+    expect(uploaded.array.constructor).not.toBe(Uint16Array);
+    scene.getRootRegion().removeZincObject(zincGeometry);
+    framesDrawn();
+  });
+
   it('draws every frame again once disabled', () => {
     renderer.setRenderOnDemand(false);
     expect(framesDrawn()).toBe(3);

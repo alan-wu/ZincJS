@@ -716,6 +716,50 @@ function createBufferGeometry(length, coords) {
   return undefined;
 };
 
+/*
+ * WebGPURenderer converts 16 bit index buffers to 32 bit and keeps the
+ * converted array, doubling the memory used by indices. WebGPU supports 16
+ * bit indices natively, three.js only converts arrays whose constructor is
+ * exactly Uint16Array while the index format is chosen with
+ * instanceof Uint16Array. Indices are viewed through this subclass so they
+ * stay 16 bit, the values and getX() are unchanged.
+ */
+class IndexUint16Array extends Uint16Array {}
+
+function keepIndexType(geometry) {
+  const index = geometry?.index;
+  if (index && index.array.constructor === Uint16Array) {
+    const array = index.array;
+    //A view of the same buffer, no copy is made
+    index.array = new IndexUint16Array(array.buffer, array.byteOffset, array.length);
+  }
+}
+
+/*
+ * Temporarily view the indices of the object and its descendants as plain
+ * Uint16Array, for code which checks the exact array type such as
+ * GLTFExporter. Returns a function which undoes the change.
+ */
+function useStandardIndexType(object) {
+  const changed = [];
+  object.traverse((child) => {
+    const index = child.geometry?.index;
+    if (index && index.array instanceof IndexUint16Array) {
+      const array = index.array;
+      index.array = new Uint16Array(array.buffer, array.byteOffset, array.length);
+      changed.push([index, array, index.array]);
+    }
+  });
+  return () => {
+    changed.forEach(([index, original, replacement]) => {
+      //Only restore if nothing else has replaced the array since
+      if (index.array === replacement) {
+        index.array = original;
+      }
+    });
+  };
+}
+
 //Shared by all pointsets
 let circularTexture = undefined;
 
@@ -905,6 +949,9 @@ export {
   createNewURL,
   getBoundingBox,
   getCircularTexture,
+  keepIndexType,
+  useStandardIndexType,
+  IndexUint16Array,
   getColorsRGB,
   isRegionGroup,
   loadExternalFile,
