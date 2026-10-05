@@ -29,6 +29,7 @@
             <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
 import { Glyph } from './glyph';
 import { ZincObject } from './zincObject';
+import { updateWorldMatrixFromAncestors } from '../utilities';
 import { JSONLoader } from '../loaders/JSONLoader';
 import { createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, readbackGlyphTransform } from '../tsl/glyphTransform';
 import { createGlyphInstancedMaterial } from '../tsl/glyphRenderMaterial';
@@ -99,6 +100,9 @@ const Glyphset = function () {
   // for ACCURATE_RESYNC_DEBOUNCE_MS of quiet.
   let accurateResyncTimer = undefined;
   const ACCURATE_RESYNC_DEBOUNCE_MS = 500;
+  //Set to false when the static (non morphing) transformation needs to be
+  //re-applied, e.g. after a scale change.
+  let staticTransformationApplied = false;
   for (let i = 0; i &lt; 8; i++) {
     _points[i] = new THREE.Vector3();
   }
@@ -471,6 +475,7 @@ const Glyphset = function () {
    * completely unchanged downstream.
    */
   const applyGlyphComputeResult = (result) => {
+    this.requestRender();
     const matrixArray = this.morph.instanceMatrix.array;
     const updateLabels = this.canShowLabel();
     for (let i = 0; i &lt; numberOfVertices; i++) {
@@ -571,6 +576,7 @@ const Glyphset = function () {
    * all, bouding box will not be updated.
    */
   const dispatchGlyphComputeFast = (bottom_frame, top_frame, proportion) => {
+    this.requestRender();
     const renderer = this.region?.getScene?.()?.getRenderer?.();
     if (!renderer) return false;
     glyphCompute.uniforms.bottomFrame.value = bottom_frame;
@@ -694,8 +700,13 @@ const Glyphset = function () {
       current_axis3s = axis3s["0"];
       current_scales = scales["0"];
     }
-    updateGlyphsetTransformation(current_positions, current_axis1s, current_axis2s, current_axis3s,
-      current_scales);
+    //Colour only morphing does not change the transformation, skip it
+    //unless it is out of date.
+    if (morphVertices || !staticTransformationApplied) {
+      updateGlyphsetTransformation(current_positions, current_axis1s, current_axis2s, current_axis3s,
+        current_scales);
+      staticTransformationApplied = !morphVertices;
+    }
     if (colors != undefined) {
       if (morphColours) {
         const bottom_colors = colors[bottom_frame.toString()];
@@ -741,6 +752,7 @@ const Glyphset = function () {
    * Display the label of the glyphs in the glyphset.
    */
   this.showLabel = () => {
+    this.requestRender();
     if (glyphList?.length) {
       labelsOn = true;
       for (let i = 0; i &lt; glyphList.length; i++) {
@@ -753,6 +765,7 @@ const Glyphset = function () {
    * Hide label with the choosen colour.
    */
     this.hideLabel = () => {
+      this.requestRender();
       for (let i = 0; i &lt; glyphList.length; i++) {
         glyphList[i].hideLabel();
       }
@@ -832,6 +845,7 @@ const Glyphset = function () {
     //Update the transformation of the glyphs.
     updateGlyphsetTransformation(positions["0"], axis1s["0"],
       axis2s["0"], axis3s["0"], scales["0"]);
+    staticTransformationApplied = true;
     if (colors != undefined) {
       updateGlyphsetHexColors(colors["0"], !!(glyphCompute &amp;&amp; glyphCompute.outputs.color));
     }
@@ -847,6 +861,7 @@ const Glyphset = function () {
    * @param {Glyph} Glyph to be added.
    */
   this.addCustomGlyph = glyph => {
+    this.requestRender();
     if (glyph.isGlyph)
       glyphList.push(glyph);
     this.ready = true;
@@ -860,6 +875,7 @@ const Glyphset = function () {
    * @param {Number} id of the mesh.
    */
   this.addMeshAsGlyph = (mesh, id) => {
+    this.requestRender();
     if (mesh.isMesh) {
       const glyph = new Glyph(undefined, undefined, id, this);
       glyph.fromMesh(mesh);
@@ -972,8 +988,7 @@ const Glyphset = function () {
     if (this.morph &amp;&amp; this.ready &amp;&amp; this.morph.visible) {
       if (glyphCompute &amp;&amp; !boundsAreExact &amp;&amp; allFramesBoundingBox) {
         this.cachedBoundingBox.copy(allFramesBoundingBox);
-        this.morph.updateWorldMatrix(true, true);
-        this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
+        this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(this.morph));
         return this.cachedBoundingBox;
       }
       if (this.boundingBoxUpdateRequired) {
@@ -990,8 +1005,7 @@ const Glyphset = function () {
         }
         if (_boundingBox3) {
           this.cachedBoundingBox.copy(_boundingBox3);
-          this.morph.updateWorldMatrix(true, true);
-          this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
+          this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(this.morph));
           this.boundingBoxUpdateRequired = false;
         } else
           return undefined;
@@ -1007,6 +1021,7 @@ const Glyphset = function () {
    * @param {Number} time - Can be any value between 0 to duration.
    */
   this.setMorphTime = time => {
+    this.requestRender();
     if (time > this.duration)
       this.inbuildTime = this.duration;
     else if (0 > time)
@@ -1090,7 +1105,9 @@ const Glyphset = function () {
    * @return {THREE.Box3}.
    */
   this.setScaleAll = function(scale) {
+    this.requestRender();
     this.globalScale = scale;
+    staticTransformationApplied = false;
     updateMorphGlyphsets(false);
   }
 
@@ -1126,12 +1143,13 @@ const Glyphset = function () {
   /**
    * Update the glyphsets if required the render.
    */
-  this.render = (delta, playAnimation, options) => {
+  this.render = (delta, playAnimation, cameraControls, options) => {
     if (glyphCompute &amp;&amp; !renderBuffersInitialized) {
       const renderer = this.region?.getScene?.()?.getRenderer?.();
       if (renderer) {
         renderer.compute(glyphCompute.compute);
         renderBuffersInitialized = true;
+        this.requestRender();
       }
     }
     if (playAnimation == true) {
@@ -1180,13 +1198,13 @@ export { Glyphset };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Sep 25 2026 15:21:43 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Oct 05 2026 16:04:17 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

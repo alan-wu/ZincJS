@@ -30,7 +30,7 @@
 import { Label } from './label';
 import { InstancedPoints } from '../three/InstancedPoints';
 import { ZincObject } from './zincObject';
-import { getCircularTexture, toBufferGeometry } from '../utilities';
+import { getCircularTexture, toBufferGeometry, updateWorldMatrixFromAncestors } from '../utilities';
 import { createInstancedPointsMaterial } from '../tsl/pointsMaterial';
 
 //Maximum number of points a programmatically built (addPoints) Pointset can
@@ -152,27 +152,26 @@ const Pointset = function () {
     if (morphVertices) {
       const bottomPositions = positionFrames[bottomFrame];
       const topPositions = positionFrames[topFrame];
+      //pointPositions shares its array with instancePosition
       const positions = mesh.pointPositions;
       const length = activeCount * 3;
       for (let i = 0; i &lt; length; i++) {
         positions[i] = proportion * bottomPositions[i] + (1 - proportion) * topPositions[i];
       }
-      const instancePosition = mesh.geometry.getAttribute('instancePosition');
-      instancePosition.array.set(positions.subarray(0, length));
-      instancePosition.needsUpdate = true;
+      mesh.geometry.getAttribute('instancePosition').needsUpdate = true;
       this.boundingBoxUpdateRequired = true;
     }
     if (morphColours &amp;&amp; colorFrames) {
       const bottomColors = colorFrames[Math.min(bottomFrame, colorFrames.length - 1)];
       const topColors = colorFrames[Math.min(topFrame, colorFrames.length - 1)];
-      for (let i = 0; i &lt; activeCount; i++) {
-        const index = i * 3;
-        _tempColor.setRGB(
-          proportion * bottomColors[index] + (1 - proportion) * topColors[index],
-          proportion * bottomColors[index + 1] + (1 - proportion) * topColors[index + 1],
-          proportion * bottomColors[index + 2] + (1 - proportion) * topColors[index + 2],
-        );
-        mesh.setColorAt(i, _tempColor);
+      if (!mesh.instanceColor) {
+        mesh.setColorAt(0, _tempColor);
+      }
+      //Write the blended colours straight into the instance colours
+      const colors = mesh.instanceColor.array;
+      const length = activeCount * 3;
+      for (let i = 0; i &lt; length; i++) {
+        colors[i] = proportion * bottomColors[i] + (1 - proportion) * topColors[i];
       }
       mesh.instanceColor.needsUpdate = true;
     }
@@ -216,14 +215,13 @@ const Pointset = function () {
 
     const mesh = new InstancedPoints(quadGeometry, material, numberOfPoints);
     mesh.count = numberOfPoints;
-    mesh.pointPositions = new Float32Array(numberOfPoints * 3);
-    mesh.pointPositions.set(positionFrames[0]);
-    mesh.userData = this;
-    this.drawRange = numberOfPoints;
-
     const instancePosition = quadGeometry.getAttribute('instancePosition');
     instancePosition.array.set(positionFrames[0]);
     instancePosition.needsUpdate = true;
+    //Share the array to avoid keeping and updating two copies
+    mesh.pointPositions = instancePosition.array;
+    mesh.userData = this;
+    this.drawRange = numberOfPoints;
 
     const initialColorFrame = colorFrames ? colorFrames[0] : extractStaticColorFrame(geometry);
     if (initialColorFrame) {
@@ -258,7 +256,8 @@ const Pointset = function () {
       label.setPosition(coord[0], coord[1], coord[2]);
       const sprite = label.getSprite();
       sprite.material.sizeAttenuation = false;
-      sprite.material.alphaTest = 0.5;
+      //Only discard fully transparent pixels to keep the smooth edges
+      sprite.material.alphaTest = 0.05;
       sprite.material.transparent = true;
       sprite.material.depthWrite = false;
       sprite.material.depthTest = labelDepthTest;
@@ -289,6 +288,7 @@ const Pointset = function () {
    * @param {Number} colour - A hex value of the colour for the points
    */
   this.addPoints = (coords, labels, colour) => {
+    this.requestRender();
     if (coords &amp;&amp; coords.length > 0) {
       let mesh = this.getMorph();
       let current = this.drawRange;
@@ -300,7 +300,7 @@ const Pointset = function () {
         material.color.set(colour);
         material.alphaTest = 0.5;
         mesh = new InstancedPoints(quadGeometry, material, DEFAULT_CAPACITY);
-        mesh.pointPositions = new Float32Array(DEFAULT_CAPACITY * 3);
+        mesh.pointPositions = quadGeometry.getAttribute('instancePosition').array;
         mesh.count = 0;
         mesh.userData = this;
         this.setMorph(mesh);
@@ -309,9 +309,6 @@ const Pointset = function () {
       coords.forEach(coord => {
         if (this.drawRange &lt; DEFAULT_CAPACITY) {
           instancePosition.setXYZ(this.drawRange, coord[0], coord[1], coord[2]);
-          mesh.pointPositions[this.drawRange * 3] = coord[0];
-          mesh.pointPositions[this.drawRange * 3 + 1] = coord[1];
-          mesh.pointPositions[this.drawRange * 3 + 2] = coord[2];
           this.drawRange++;
         }
       });
@@ -339,6 +336,7 @@ const Pointset = function () {
    * @param {Number} hex - hex value of color to be set
    */
   this.setColourHex = function(hex) {
+    this.requestRender();
     this._lod._material.color.setHex(hex);
     if (this._lod._secondaryMaterial) {
       this._lod._secondaryMaterial.color.setHex(hex);
@@ -356,6 +354,7 @@ const Pointset = function () {
    * @param {THREE.Color} colour - colour to be set
    */
   this.setColour = (colour) => {
+    this.requestRender();
     this._lod.setColour(colour);
     for (let i = 0; i &lt; labelSets.length; i++) {
       if (labelSets[i]) {
@@ -371,6 +370,7 @@ const Pointset = function () {
    * should be on or off.
    */
   this.setLabelDepthTest = (flag) => {
+    this.requestRender();
     labelDepthTest = flag;
     for (let i = 0; i &lt; labelSets.length; i++) {
       if (labelSets[i]) {
@@ -385,6 +385,7 @@ const Pointset = function () {
    * @param {Number} fontWeightIn - Default value is 700
    */
   this.setLabelFontWeight = (fontWeightIn) => {
+    this.requestRender();
     fontWeight = fontWeightIn;
     for (let i = 0; i &lt; labelSets.length; i++) {
       if (labelSets[i]) {
@@ -400,6 +401,7 @@ const Pointset = function () {
    * value is 1.
    */
   this.setLabelSize = (size) => {
+    this.requestRender();
     labelSize = size;
     for (let i = 0; i &lt; labelSets.length; i++) {
       if (labelSets[i]) {
@@ -414,6 +416,7 @@ const Pointset = function () {
    * @param {boolean} flag - default value is true
    */
     this.displayLabels = (flag) => {
+      this.requestRender();
       labelVisibility = flag;
       for (let i = 0; i &lt; labelSets.length; i++) {
         if (labelSets[i]) {
@@ -427,6 +430,7 @@ const Pointset = function () {
    * @param {Number} size - size to be set.
    */
   this.setSize = size => {
+    this.requestRender();
     if (this.morph &amp;&amp; this.morph.material) {
       this.morph.material.size = size;
       this.morph.material.userData.uniforms.pointSize.value = size;
@@ -441,6 +445,7 @@ const Pointset = function () {
    * should be on or off.
    */
   this.setSizeAttenuation = flag => {
+    this.requestRender();
     if (this.morph &amp;&amp; this.morph.material) {
       this.morph.material.sizeAttenuation = flag;
       this.morph.material.userData.uniforms.sizeAttenuation.value = flag ? 1 : 0;
@@ -466,6 +471,7 @@ const Pointset = function () {
    * Edit Vertice in index.
    */
   this.editVertices = function(coords, i) {
+    this.requestRender();
     if (coords &amp;&amp; coords.length) {
       const mesh = this.getMorph();
       const maxIndex = i + coords.length - 1;
@@ -480,9 +486,6 @@ const Pointset = function () {
             label.setPosition(coord[0], coord[1], coord[2]);
           }
           instancePosition.setXYZ(index, coord[0], coord[1], coord[2]);
-          mesh.pointPositions[index * 3] = coord[0];
-          mesh.pointPositions[index * 3 + 1] = coord[1];
-          mesh.pointPositions[index * 3 + 2] = coord[2];
           //Keep the base frame consistent for any pointset that also
           //happens to be time varying.
           if (positionFrames[0]) {
@@ -502,6 +505,7 @@ const Pointset = function () {
    * Delete a vertex in index.
    */
     this.deleteVertices = function(index) {
+      this.requestRender();
       const mesh = this.getMorph();
       if (!mesh || 0 > index || index >= this.drawRange) {
         return this.drawRange;
@@ -509,7 +513,8 @@ const Pointset = function () {
       const instancePosition = mesh.geometry.getAttribute('instancePosition');
       const end = this.drawRange - 1;
       instancePosition.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
-      mesh.pointPositions.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
+      if (mesh.pointPositions !== instancePosition.array)
+        mesh.pointPositions.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
       if (mesh.instanceColor) {
         mesh.instanceColor.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
         mesh.instanceColor.needsUpdate = true;
@@ -588,8 +593,7 @@ const Pointset = function () {
       if (this.boundingBoxUpdateRequired) {
         this._b1.setFromArray(mesh.pointPositions.subarray(0, this.drawRange * 3));
         this.cachedBoundingBox.copy(this._b1);
-        mesh.updateWorldMatrix(true, true);
-        this.cachedBoundingBox.applyMatrix4(mesh.matrixWorld);
+        this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(mesh));
         this.cachedBoundingBox.getCenter(this.center);
         this.radius = this.center.distanceTo(this.cachedBoundingBox.max);
         this.boundingBoxUpdateRequired = false;
@@ -614,6 +618,7 @@ const Pointset = function () {
    * @param {Number} time - Can be any value between 0 to duration.
    */
   this.setMorphTime = time => {
+    this.requestRender();
     if (time > this.duration) {
       this.inbuildTime = this.duration;
     } else if (0 > time) {
@@ -662,13 +667,13 @@ export { Pointset, createPointQuadGeometry };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Fri Sep 25 2026 15:21:43 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Mon Oct 05 2026 16:04:17 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>
