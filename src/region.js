@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 import { Pointset } from './primitives/pointset';
 import { Lines2 } from './primitives/lines2';
 import { Geometry } from './primitives/geometry';
+import { updateWorldMatrixFromAncestors } from './utilities';
 
 let uniqueiId = 0;
 
@@ -98,7 +99,14 @@ let Region = function (parentIn, sceneIn) {
     requestRender();
     tMatrix.set(...transformation);
     group.matrix.copy(tMatrix);
-    group.updateMatrixWorld();
+    //The group does not update its matrix automatically, compute its world
+    //matrix from the ancestors and update the descendants.
+    updateWorldMatrixFromAncestors(group);
+    group.updateMatrixWorld(true);
+    //Bounding boxes of everything in this region have moved
+    this.getAllObjects(true).forEach((zincObject) => {
+      zincObject.boundingBoxUpdateRequired = true;
+    });
   }
 
   /**

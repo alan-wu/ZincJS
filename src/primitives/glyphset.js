@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { Glyph } from './glyph';
 import { ZincObject } from './zincObject';
+import { updateWorldMatrixFromAncestors } from '../utilities';
 import { JSONLoader } from '../loaders/JSONLoader';
 import { createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, readbackGlyphTransform } from '../tsl/glyphTransform';
 import { createGlyphInstancedMaterial } from '../tsl/glyphRenderMaterial';
@@ -959,8 +960,7 @@ const Glyphset = function () {
     if (this.morph && this.ready && this.morph.visible) {
       if (glyphCompute && !boundsAreExact && allFramesBoundingBox) {
         this.cachedBoundingBox.copy(allFramesBoundingBox);
-        this.morph.updateWorldMatrix(true, false);
-        this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
+        this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(this.morph));
         return this.cachedBoundingBox;
       }
       if (this.boundingBoxUpdateRequired) {
@@ -977,8 +977,7 @@ const Glyphset = function () {
         }
         if (_boundingBox3) {
           this.cachedBoundingBox.copy(_boundingBox3);
-          this.morph.updateWorldMatrix(true, false);
-          this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
+          this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(this.morph));
           this.boundingBoxUpdateRequired = false;
         } else
           return undefined;

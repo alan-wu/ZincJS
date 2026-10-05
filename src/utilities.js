@@ -32,6 +32,29 @@ function createNewURL(target, reference) {
 }
 
 /*
+ * Compute the world matrix of an object from its ancestors and return it.
+ * three.js only recomputes world matrices flagged by matrixWorldNeedsUpdate,
+ * which objects with matrixAutoUpdate set to false (zinc meshes and region
+ * groups) never set, they would otherwise stay stale until the next render.
+ */
+function updateWorldMatrixFromAncestors(object) {
+  if (object.parent) {
+    updateWorldMatrixFromAncestors(object.parent);
+  }
+  if (object.matrixAutoUpdate) {
+    object.updateMatrix();
+  }
+  if (object.matrixWorldAutoUpdate !== false) {
+    if (object.parent) {
+      object.matrixWorld.multiplyMatrices(object.parent.matrixWorld, object.matrix);
+    } else {
+      object.matrixWorld.copy(object.matrix);
+    }
+  }
+  return object.matrixWorld;
+}
+
+/*
  * Calculate the bounding box of a mesh, values will be
  * set for cachedBox, b1, v1 and v2 and they need to be
  * defined.
@@ -61,8 +84,7 @@ function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
     cachedBox.setFromBufferAttribute(
       mesh.geometry.attributes.position);
   }
-  mesh.updateWorldMatrix(true, false);
-  cachedBox.applyMatrix4(mesh.matrixWorld);
+  cachedBox.applyMatrix4(updateWorldMatrixFromAncestors(mesh));
 }
 
 
@@ -950,6 +972,7 @@ export {
   getBoundingBox,
   getCircularTexture,
   keepIndexType,
+  updateWorldMatrixFromAncestors,
   useStandardIndexType,
   IndexUint16Array,
   getColorsRGB,

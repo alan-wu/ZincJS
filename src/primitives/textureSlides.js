@@ -2,6 +2,7 @@ import * as THREE from 'three/webgpu';
 //import * as shader from '../shaders/textureSlide.js';
 import { createWebGPUMaterial } from '../tsl/textureSlides.js';
 import { TexturePrimitive } from './texturePrimitive';
+import { updateWorldMatrixFromAncestors } from '../utilities';
 
 
 const cloneData3DTexture = (sourceTex) => {
@@ -338,8 +339,7 @@ const TextureSlides = function (textureIn) {
         expandBoxWithSettings(this.cachedBoundingBox, slide.material.userData.uniforms,
           vector);
       });
-      this.morph.updateMatrixWorld (true, true);
-      this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
+      this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(this.morph));
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;

@@ -253,6 +253,28 @@ describe('Region tree walk', () => {
   });
 });
 
+describe('Region transformation', () => {
+  it('is included in bounding boxes before anything is rendered', () => {
+    const root = new Region(undefined, undefined);
+    const child = root.createChild('child');
+    const grandChild = child.createChild('grandChild');
+    const zincGeometry = createPlainGeometry(0);
+    grandChild.addZincObject(zincGeometry);
+    //Translate by 10 in x on the child, scale by 2 on the grandchild
+    child.setTransformation([1, 0, 0, 10, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+    grandChild.setTransformation([2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 2, 0, 0, 0, 0, 1]);
+    const box = root.getBoundingBox(true);
+    expect(box.min.x).toBeCloseTo(10);
+    expect(box.max.x).toBeCloseTo(12);
+    expect(box.max.y).toBeCloseTo(2);
+    //Moving a parent region updates the boxes of nested objects
+    child.setTransformation([1, 0, 0, 20, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1]);
+    const moved = root.getBoundingBox(true);
+    expect(moved.min.x).toBeCloseTo(20);
+    expect(moved.max.x).toBeCloseTo(22);
+  });
+});
+
 describe('Marker screen position', () => {
   it('is only recalculated when the camera or the marker moves', () => {
     const zincGeometry = createPlainGeometry(0);

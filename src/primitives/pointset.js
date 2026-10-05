@@ -2,7 +2,7 @@ import * as THREE from 'three/webgpu';
 import { Label } from './label';
 import { InstancedPoints } from '../three/InstancedPoints';
 import { ZincObject } from './zincObject';
-import { getCircularTexture, toBufferGeometry } from '../utilities';
+import { getCircularTexture, toBufferGeometry, updateWorldMatrixFromAncestors } from '../utilities';
 import { createInstancedPointsMaterial } from '../tsl/pointsMaterial';
 
 //Maximum number of points a programmatically built (addPoints) Pointset can
@@ -565,8 +565,7 @@ const Pointset = function () {
       if (this.boundingBoxUpdateRequired) {
         this._b1.setFromArray(mesh.pointPositions.subarray(0, this.drawRange * 3));
         this.cachedBoundingBox.copy(this._b1);
-        mesh.updateWorldMatrix(true, false);
-        this.cachedBoundingBox.applyMatrix4(mesh.matrixWorld);
+        this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(mesh));
         this.cachedBoundingBox.getCenter(this.center);
         this.radius = this.center.distanceTo(this.cachedBoundingBox.max);
         this.boundingBoxUpdateRequired = false;
