@@ -1042,8 +1042,7 @@ const Glyphset = function () {
     const renderer = this.region?.getScene?.()?.getRenderer?.();
     if (!renderer) return;
     renderer.compute(glyphCompute.compute);
-    const colorResult = new Float32Array(
-      await renderer.getArrayBufferAsync(glyphCompute.outputs.color.value));
+    const colorResult = (await readbackGlyphTransform(renderer, glyphCompute)).color;
     // setColorAt(0, ...) is only here to lazily allocate instanceColor the
     // same way the stock InstancedMesh API would; the loop below overwrites
     // every instance (including 0) with the real snapshot right after.

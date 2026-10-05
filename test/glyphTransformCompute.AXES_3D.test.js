@@ -25,9 +25,8 @@ beforeAll(async () => {
   Object.assign(globalThis, gpuGlobals);
   const gpu = createGPU([]);
   const adapter = await gpu.requestAdapter();
-  //This compute pass binds 11 storage buffers, above the default
-  //maxStorageBuffersPerShaderStage (8) - request the adapter's actual max,
-  //matching the fix in src/renderer.js.
+  //Request the adapter's maximum storage buffers per stage, matching
+  //src/renderer.js. The compute pass itself only binds two.
   const device = await adapter.requestDevice({
     requiredLimits: { maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage },
   });

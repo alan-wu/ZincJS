@@ -25,9 +25,8 @@ beforeAll(async () => {
   Object.assign(globalThis, gpuGlobals);
   const gpu = createGPU([]);
   const adapter = await gpu.requestAdapter();
-  //This compute pass binds 11 storage buffers, above the default
-  //maxStorageBuffersPerShaderStage (8) - request the adapter's actual max,
-  //matching the fix in src/renderer.js.
+  //Request the adapter's maximum storage buffers per stage, matching
+  //src/renderer.js. The compute pass itself only binds two.
   const device = await adapter.requestDevice({
     requiredLimits: { maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage },
   });
@@ -36,6 +35,19 @@ beforeAll(async () => {
 });
 
 describe('glyph transform compute (NONE)', () => {
+  it('binds only two storage buffers, within every device limit', () => {
+    const n = 2;
+    const data = new Float32Array(n * 3 * 2).fill(1);
+    //Colours included, the case which used to need 11 storage buffers
+    const glyphCompute = createGlyphTransformCompute({ baseCount: n, outputCount: n,
+      repeat_mode: 'NONE', positionsData: data, axis1Data: data, axis2Data: data,
+      axis3Data: data, scaleData: data, colorData: data, baseSize: [1, 1, 1],
+      offset: [0, 0, 0], scaleFactors: [1, 1, 1], globalScale: 1 });
+    //Build the shader only, no dispatch
+    const shader = webgpuRenderer._nodes.getForCompute(glyphCompute.compute).computeShader;
+    expect((shader.match(/var<storage/g) || []).length).toBe(2);
+  });
+
   it('matches the CPU resolve_glyph_axes reference for a blended frame', async () => {
     await runRepeatModeCheck(webgpuRenderer, "NONE", createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, expect);
   });

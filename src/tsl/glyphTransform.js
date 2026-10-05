@@ -7,6 +7,7 @@ import {
   int,
   float,
   vec3,
+  vec4,
   uniform,
   mix,
   select,
@@ -27,6 +28,9 @@ const repeatModeToInt = (repeat_mode) => {
     default: return REPEAT_MODE.NONE;
   }
 }
+
+//Order of the vec4 fields of each glyph instance in the output buffer
+const OUTPUT_FIELDS = { position: 0, axis1: 1, axis2: 2, axis3: 3, color: 4 };
 
 const multiplierForRepeatMode = (repeat_mode) => {
   if (repeat_mode == "AXES_2D" || repeat_mode == "MIRROR") return 2;
@@ -66,9 +70,10 @@ const multiplierForRepeatMode = (repeat_mode) => {
  * @param {Array<number>} params.scaleFactors
  * @returns {Object} { uniforms, compute, outputs } - update
  *   uniforms.bottomFrame/topFrame/proportion.value then pass `compute` to
- *   renderer.compute()/computeAsync(); read results back from
- *   outputs.position/axis1/axis2/axis3/color (each a StorageBufferNode -
- *   the raw attribute to read back is `outputs.position.value` etc).
+ *   renderer.compute()/computeAsync(); read results back with
+ *   readbackGlyphTransform(). outputs.buffer is the interleaved storage
+ *   buffer (outputs.stride vec4 per instance), outputs.position/axis1/
+ *   axis2/axis3/color provide element(index) accessors for materials.
  */
 function createGlyphTransformCompute({
   baseCount,
@@ -87,18 +92,38 @@ function createGlyphTransformCompute({
 }) {
   const multiplier = multiplierForRepeatMode(repeat_mode);
 
-  const positionsBuffer = attributeArray(positionsData, 'vec3');
-  const axis1Buffer = attributeArray(axis1Data, 'vec3');
-  const axis2Buffer = attributeArray(axis2Data, 'vec3');
-  const axis3Buffer = attributeArray(axis3Data, 'vec3');
-  const scaleBuffer = attributeArray(scaleData, 'vec3');
-  const colorBuffer = colorData ? attributeArray(colorData, 'vec3') : undefined;
+  // All inputs are interleaved into a single storage buffer and all outputs
+  // into another, one vec4 per field. Separate buffers per field needed up
+  // to 11 storage buffers in the compute stage, more than some devices
+  // support (e.g. 10 on iOS). vec4 also avoids three.js padding vec3
+  // storage data into an extra copy.
+  const hasColor = !!colorData;
+  const inputSources = [positionsData, axis1Data, axis2Data, axis3Data, scaleData];
+  if (hasColor) inputSources.push(colorData);
+  const inputStride = inputSources.length;
+  const outputStride = hasColor ? OUTPUT_FIELDS.color + 1 : OUTPUT_FIELDS.axis3 + 1;
+  const recordCount = positionsData.length / 3;
+  const inputData = new Float32Array(recordCount * inputStride * 4);
+  for (let record = 0; record < recordCount; record++) {
+    for (let field = 0; field < inputStride; field++) {
+      const source = inputSources[field];
+      const target = (record * inputStride + field) * 4;
+      inputData[target] = source[record * 3];
+      inputData[target + 1] = source[record * 3 + 1];
+      inputData[target + 2] = source[record * 3 + 2];
+    }
+  }
+  const inputBuffer = attributeArray(inputData, 'vec4');
+  const outputBuffer = attributeArray(outputCount * outputStride, 'vec4');
 
-  const outPosition = attributeArray(outputCount, 'vec3');
-  const outAxis1 = attributeArray(outputCount, 'vec3');
-  const outAxis2 = attributeArray(outputCount, 'vec3');
-  const outAxis3 = attributeArray(outputCount, 'vec3');
-  const outColor = colorData ? attributeArray(outputCount, 'vec3') : undefined;
+  const readInput = (recordIdx, field) =>
+    inputBuffer.element(recordIdx.mul(int(inputStride)).add(int(field))).xyz;
+  const writeOutput = (outIdx, field, value) =>
+    outputBuffer.element(outIdx.mul(int(outputStride)).add(int(field))).assign(vec4(value, 0));
+  //Accessor used by the render material to read an output field
+  const outputField = (field) => ({
+    element: (idx) => outputBuffer.element(int(idx).mul(int(outputStride)).add(int(field))).xyz,
+  });
 
   const uniforms = {
     bottomFrame: uniform(0, 'int'),
@@ -121,11 +146,11 @@ function createGlyphTransformCompute({
     const topIdx = uniforms.topFrame.mul(int(baseCount)).add(inputIdx);
 
     // Matches updateMorphGlyphsets(): bottom*proportion + top*(1-proportion).
-    const point = mix(positionsBuffer.element(topIdx), positionsBuffer.element(bottomIdx), uniforms.proportion);
-    const axis1 = mix(axis1Buffer.element(topIdx), axis1Buffer.element(bottomIdx), uniforms.proportion);
-    const axis2 = mix(axis2Buffer.element(topIdx), axis2Buffer.element(bottomIdx), uniforms.proportion);
-    const axis3 = mix(axis3Buffer.element(topIdx), axis3Buffer.element(bottomIdx), uniforms.proportion);
-    const scale = mix(scaleBuffer.element(topIdx), scaleBuffer.element(bottomIdx), uniforms.proportion);
+    const point = mix(readInput(topIdx, 0), readInput(bottomIdx, 0), uniforms.proportion);
+    const axis1 = mix(readInput(topIdx, 1), readInput(bottomIdx, 1), uniforms.proportion);
+    const axis2 = mix(readInput(topIdx, 2), readInput(bottomIdx, 2), uniforms.proportion);
+    const axis3 = mix(readInput(topIdx, 3), readInput(bottomIdx, 3), uniforms.proportion);
+    const scale = mix(readInput(topIdx, 4), readInput(bottomIdx, 4), uniforms.proportion);
 
     // NOTE: each branch below assigns straight into the output storage
     // buffer elements (outPosition.element(outIdx).assign(...) etc.),
@@ -175,10 +200,10 @@ function createGlyphTransformCompute({
         a3.assign(a3.negate());
       });
 
-      outPosition.element(outIdx).assign(p);
-      outAxis1.element(outIdx).assign(a1);
-      outAxis2.element(outIdx).assign(a2);
-      outAxis3.element(outIdx).assign(a3);
+      writeOutput(outIdx, OUTPUT_FIELDS.position, p);
+      writeOutput(outIdx, OUTPUT_FIELDS.axis1, a1);
+      writeOutput(outIdx, OUTPUT_FIELDS.axis2, a2);
+      writeOutput(outIdx, OUTPUT_FIELDS.axis3, a3);
 
     }).Else(() => {
 
@@ -220,16 +245,16 @@ function createGlyphTransformCompute({
         .div(max(mag2, 1e-8));
       const finalAxis2 = select(mag2.greaterThan(0), axis2Raw.mul(scaling2), axis2Raw);
 
-      outPosition.element(outIdx).assign(finalPoint);
-      outAxis1.element(outIdx).assign(finalAxis1);
-      outAxis2.element(outIdx).assign(finalAxis2);
-      outAxis3.element(outIdx).assign(finalAxis3);
+      writeOutput(outIdx, OUTPUT_FIELDS.position, finalPoint);
+      writeOutput(outIdx, OUTPUT_FIELDS.axis1, finalAxis1);
+      writeOutput(outIdx, OUTPUT_FIELDS.axis2, finalAxis2);
+      writeOutput(outIdx, OUTPUT_FIELDS.axis3, finalAxis3);
 
     });
 
-    if (colorBuffer) {
-      const color = mix(colorBuffer.element(topIdx), colorBuffer.element(bottomIdx), uniforms.proportion);
-      outColor.element(outIdx).assign(color);
+    if (hasColor) {
+      const color = mix(readInput(topIdx, 5), readInput(bottomIdx, 5), uniforms.proportion);
+      writeOutput(outIdx, OUTPUT_FIELDS.color, color);
     }
 
   } )().compute( outputCount );
@@ -238,11 +263,14 @@ function createGlyphTransformCompute({
     uniforms,
     compute: computeFn,
     outputs: {
-      position: outPosition,
-      axis1: outAxis1,
-      axis2: outAxis2,
-      axis3: outAxis3,
-      color: outColor,
+      buffer: outputBuffer,
+      stride: outputStride,
+      count: outputCount,
+      position: outputField(OUTPUT_FIELDS.position),
+      axis1: outputField(OUTPUT_FIELDS.axis1),
+      axis2: outputField(OUTPUT_FIELDS.axis2),
+      axis3: outputField(OUTPUT_FIELDS.axis3),
+      color: hasColor ? outputField(OUTPUT_FIELDS.color) : undefined,
     },
   };
 }
@@ -264,27 +292,30 @@ function createGlyphTransformCompute({
  * @param {THREE.WebGPURenderer} renderer
  * @param {Object} glyphCompute - return value of createGlyphTransformCompute().
  * @returns {Promise<Object>} { position, axis1, axis2, axis3, color } -
- *   plain Float32Arrays, one vec3 per output glyph instance (color only
- *   present when the glyphset has colours).
+ *   plain Float32Arrays with a 4 float stride per output glyph instance
+ *   (color only present when the glyphset has colours).
  */
 async function readbackGlyphTransform(renderer, glyphCompute) {
-  const { position, axis1, axis2, axis3, color } = glyphCompute.outputs;
-  // Read sequentially rather than Promise.all-ing these - concurrent
-  // getArrayBufferAsync() calls against the same device have been observed
-  // to crash the (Node-only, test-time) WebGPU native backend; one at a
-  // time is the safe pattern here.
-  const positionResult = new Float32Array(await renderer.getArrayBufferAsync(position.value));
-  const axis1Result = new Float32Array(await renderer.getArrayBufferAsync(axis1.value));
-  const axis2Result = new Float32Array(await renderer.getArrayBufferAsync(axis2.value));
-  const axis3Result = new Float32Array(await renderer.getArrayBufferAsync(axis3.value));
-  const colorResult = color ? new Float32Array(await renderer.getArrayBufferAsync(color.value)) : undefined;
-
+  const { buffer, stride, count, color } = glyphCompute.outputs;
+  //A single readback of the interleaved output buffer
+  const data = new Float32Array(await renderer.getArrayBufferAsync(buffer.value));
+  //Split into one array per field, each with a 4 float stride per instance
+  const extract = (field) => {
+    const result = new Float32Array(count * 4);
+    for (let i = 0; i < count; i++) {
+      const source = (i * stride + field) * 4;
+      result[i * 4] = data[source];
+      result[i * 4 + 1] = data[source + 1];
+      result[i * 4 + 2] = data[source + 2];
+    }
+    return result;
+  };
   return {
-    position: positionResult,
-    axis1: axis1Result,
-    axis2: axis2Result,
-    axis3: axis3Result,
-    color: colorResult,
+    position: extract(OUTPUT_FIELDS.position),
+    axis1: extract(OUTPUT_FIELDS.axis1),
+    axis2: extract(OUTPUT_FIELDS.axis2),
+    axis3: extract(OUTPUT_FIELDS.axis3),
+    color: color ? extract(OUTPUT_FIELDS.color) : undefined,
   };
 }
 
