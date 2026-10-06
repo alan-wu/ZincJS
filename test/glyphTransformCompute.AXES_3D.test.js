@@ -20,10 +20,13 @@ import { runRepeatModeCheck } from './glyphTransformReference';
 // reliably survives.
 
 let webgpuRenderer;
+//Keep the Dawn instance referenced for the whole file - if it is garbage
+//collected, the webgpu package's pending event processing segfaults.
+let gpu;
 
 beforeAll(async () => {
   Object.assign(globalThis, gpuGlobals);
-  const gpu = createGPU([]);
+  gpu = createGPU([]);
   const adapter = await gpu.requestAdapter();
   //Request the adapter's maximum storage buffers per stage, matching
   //src/renderer.js. The compute pass itself only binds two.
