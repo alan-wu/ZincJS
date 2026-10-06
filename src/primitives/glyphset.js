@@ -3,7 +3,8 @@ import { Glyph } from './glyph';
 import { ZincObject } from './zincObject';
 import { updateWorldMatrixFromAncestors } from '../utilities';
 import { JSONLoader } from '../loaders/JSONLoader';
-import { createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, readbackGlyphTransform } from '../tsl/glyphTransform';
+import { createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, isGlyphComputeSupported,
+  readbackGlyphTransform } from '../tsl/glyphTransform';
 import { createGlyphInstancedMaterial } from '../tsl/glyphRenderMaterial';
 
 /**
@@ -176,7 +177,9 @@ const Glyphset = function () {
     offset = glyphsetData.metadata.offset;
     scaleFactors = glyphsetData.metadata.scale_factors;
     glyphCompute = undefined;
-    if (morphVertices && numberOfTimeSteps > 1 && positions && positions["0"]) {
+    //The CPU path is used when the backend does not support GPU compute
+    if (morphVertices && numberOfTimeSteps > 1 && positions && positions["0"] &&
+      isGlyphComputeSupported()) {
       const baseCount = positions["0"].length / 3;
       try {
         glyphCompute = createGlyphTransformCompute({
@@ -698,6 +701,15 @@ const Glyphset = function () {
       updateGlyphsetHexColors(current_colors, false);
     }
   };
+
+  /**
+   * Check if the glyph transforms are animated on the GPU.
+   *
+   * @return {Boolean}
+   */
+  this.isUsingGPUCompute = () => {
+    return glyphCompute !== undefined;
+  }
 
   /**
    * Get the assigned label for instance at index

@@ -334,4 +334,25 @@ async function dispatchAndReadbackGlyphTransform(renderer, glyphCompute) {
   return readbackGlyphTransform(renderer, glyphCompute);
 }
 
-export { createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, readbackGlyphTransform, REPEAT_MODE };
+/*
+ * The GPU glyph transforms read storage buffers at arbitrary indices, which
+ * the WebGL fallback backend of WebGPURenderer does not support (it turns
+ * them into plain vertex attributes). The renderer sets this when it is
+ * initialised, glyphsets use the CPU animation path when it is false.
+ */
+let glyphComputeSupported = true;
+
+const setGlyphComputeSupported = (flag) => {
+  glyphComputeSupported = flag ? true : false;
+}
+
+const isGlyphComputeSupported = () => glyphComputeSupported;
+
+export {
+  createGlyphTransformCompute,
+  dispatchAndReadbackGlyphTransform,
+  isGlyphComputeSupported,
+  readbackGlyphTransform,
+  setGlyphComputeSupported,
+  REPEAT_MODE,
+};

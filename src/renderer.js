@@ -3,6 +3,7 @@ import { ResizeSensor } from 'css-element-queries';
 import { Scene } from './scene';
 import { onRenderRequest, offRenderRequest } from './renderRequests';
 import { setTextPixelsPerUnit } from './textSprite';
+import { setGlyphComputeSupported } from './tsl/glyphTransform';
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
@@ -173,6 +174,9 @@ const Renderer = function (containerIn) {
       }
 			renderer = new THREE.WebGPURenderer(parameters);
       await renderer.init();
+      //GPU glyph animation requires the WebGPU backend, the WebGL fallback
+      //cannot index storage buffers freely.
+      setGlyphComputeSupported(renderer.backend?.isWebGPUBackend === true);
 
       //renderer = new THREE.WebGLRenderer(parameters);
 			if (container !== undefined) {
