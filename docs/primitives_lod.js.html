@@ -26,8 +26,8 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import * as THREE from 'three';
-import { toBufferGeometry, updateMorphColorAttribute } from '../utilities';
+            <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
+import { keepIndexType, toBufferGeometry, updateMorphColorAttribute } from '../utilities';
 import { LineSegments } from '../three/line/LineSegments';
 
 /**
@@ -54,12 +54,15 @@ const LOD = function (parent) {
   this._loader = undefined;
   //The owning Zinc Object
   this._parent = parent;
+  //Levels loaded after dispose are discarded
+  this._disposed = false;
 
   /*
    * Add a level of LOD at the specified distance
    */
   this.addLevel = (object, distanceIn) => {
     if (object) {
+      keepIndexType(object.geometry);
       const distance = Math.abs(distanceIn);
       let l;
       for (l = 0; l &lt; this.levels.length; l++) {
@@ -85,6 +88,7 @@ const LOD = function (parent) {
    */
   this.levelLoaded = (object, distanceIn) => {
     if (object) {
+      keepIndexType(object.geometry);
       const distance = Math.abs(distanceIn);
       for (let l = 0; l &lt; this.levels.length; l++) {
         if (distance === this.levels[l].distance) {
@@ -96,6 +100,7 @@ const LOD = function (parent) {
         }
       }
       this.checkTransparentMesh();
+      this._parent?.requestRender?.();
     }
   }
 
@@ -210,6 +215,7 @@ const LOD = function (parent) {
   }
 
   this.dispose = () => {
+    this._disposed = true;
     this.levels.forEach((level) => {
       if (level.morph &amp;&amp; level.morph.geometry) {
         level.morph.geometry.dispose();
@@ -240,10 +246,15 @@ const LOD = function (parent) {
  */
   this.lodLoader = function (distance) {
     return (geometryIn) => {
+      if (this._disposed) {
+        geometryIn.dispose();
+        return;
+      }
       const material = this._material;
       const options = {
         localTimeEnabled: this._parent.timeEnabled,
         localMorphColour: this._parent.morphColour,
+        isLines: this._parent.isLines,
       }
       const geometry = toBufferGeometry(geometryIn, options);
       let mesh = undefined;
@@ -262,8 +273,13 @@ const LOD = function (parent) {
   this.updateMorphColorAttribute = (currentOnly) => {
     //Multilayers - set all
     if (this._material) {
-      if ((this._material.vertexColors == THREE.VertexColors) ||
-        (this._material.vertexColors == true)) {
+      //Gate on our own morphColorMix uniform rather than
+      //material.vertexColors - that flag is deliberately left false for
+      //morph colour materials now (see applyMorphColorNode's callers), so
+      //NodeMaterial doesn't multiply the blend by the static 'color'
+      //attribute on top of it.
+      if (this._material.userData &amp;&amp; this._material.userData.uniforms &amp;&amp;
+        this._material.userData.uniforms.morphColorMix) {
         if (currentOnly) {
           const morph = this.getCurrentMorph();
           updateMorphColorAttribute(morph.geometry, morph);
@@ -303,10 +319,13 @@ const LOD = function (parent) {
         this._material = material;
         if (this._secondaryMaterial) {
           this._secondaryMaterial.dispose();
+          this._secondaryMaterial = undefined;
         }
-        this._secondaryMaterial = material.clone()
-        this._secondaryMaterial.side = THREE.FrontSide;
-        this._secondaryMaterial.transparent = true;
+        if (material.transparent || this.levels.some((level) => level.secondaryMesh)) {
+          this._secondaryMaterial = material.clone()
+          this._secondaryMaterial.side = THREE.FrontSide;
+          this._secondaryMaterial.transparent = true;
+        }
         this.levels.forEach((level) => {
           if (level.morph) {
             level.morph.material = this._material;
@@ -399,6 +418,7 @@ const LOD = function (parent) {
       if (this._currentLevel != visibleIndex) {
         this._currentLevel = visibleIndex;
         this.checkTransparentMesh();
+        this._parent?.requestRender?.();
       }
     }
   }
@@ -435,13 +455,13 @@ export { LOD };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Oct 06 2026 13:58:16 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

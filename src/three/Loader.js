@@ -18,7 +18,7 @@ import {
   MaterialLoader,
   TextureLoader,
   Color
-} from 'three';
+} from 'three/webgpu';
 
 /**
  * @author alteredq / http://alteredqualia.com/

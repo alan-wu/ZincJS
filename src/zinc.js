@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import PACKAGE from '../package.json';
 
 // Import all internal primitives and modules

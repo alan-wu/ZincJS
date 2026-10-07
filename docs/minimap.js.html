@@ -26,7 +26,7 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import * as THREE from 'three';
+            <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
 import { copyVector3sArray } from "./utilities";
 
 /**
@@ -61,12 +61,34 @@ const Minimap = function (sceneIn) {
   this.mask = new THREE.Mesh( geometry, material );
   let _box = new THREE.Box3();
   let _center = new THREE.Vector3();
+  const _coord = new THREE.Vector3();
+  const _lookAt = new THREE.Vector3();
+  const _target = new THREE.Vector3();
+  const _corners = [new THREE.Vector3(), new THREE.Vector3(),
+    new THREE.Vector3(), new THREE.Vector3()];
+  const _boundaryVertices = [_corners[0], _corners[1], _corners[2],
+    _corners[2], _corners[3], _corners[0]];
+  //State the minimap was last computed from, it only needs to be updated
+  //when the scene or the main camera changes.
+  const _lastBoundingBox = new THREE.Box3();
+  const _lastMatrixWorld = new THREE.Matrix4();
+  const _lastProjectionMatrix = new THREE.Matrix4();
+  let _lastNear = undefined;
+  let _cameraUpdated = false;
+  //Matrix4.equals treats NaN as different, e.g. with a zero sized canvas
+  const matrixEquals = (a, b) => {
+    for (let i = 0; i &lt; 16; i++) {
+      if (!Object.is(a.elements[i], b.elements[i]))
+        return false;
+    }
+    return true;
+  }
 
   this.getDiffFromNormalised = (x, y) => {
     _box.setFromBufferAttribute(positionAttributes).getCenter(_center);
-    let coord = _center.clone().project(this.camera);
-    let new_coord = new THREE.Vector3(x, y, coord.z).unproject(this.camera);
-    return new_coord.sub(_center);
+    _coord.copy(_center).project(this.camera);
+    //Returns a new vector, the caller may keep it
+    return new THREE.Vector3(x, y, _coord.z).unproject(this.camera).sub(_center);
   }
 
   let setCurrentCameraSettings = (diameter, newViewport)  => {
@@ -81,28 +103,41 @@ const Minimap = function (sceneIn) {
       this.camera.up.set(newViewport.upVector[0], newViewport.upVector[1],
         newViewport.upVector[2]);
     if (newViewport.targetPosition)
-      this.camera.lookAt(new THREE.Vector3(newViewport.targetPosition[0],
+      this.camera.lookAt(_lookAt.set(newViewport.targetPosition[0],
         newViewport.targetPosition[1], newViewport.targetPosition[2]));
     this.camera.zoom = 1 / diameter;
     this.camera.updateProjectionMatrix();
   }
 
   this.getBoundary = () => {
-    let target = new THREE.Vector3().copy(
-      targetScene.camera.target).project(targetScene.camera);
-    let v1 = new THREE.Vector3(-1, -1, target.z).unproject(targetScene.camera);
-    let v2 = new THREE.Vector3(1, -1, target.z).unproject(targetScene.camera);
-    let v3 = new THREE.Vector3(1, 1, target.z).unproject(targetScene.camera);
-    let v4 = new THREE.Vector3(-1, 1, target.z).unproject(targetScene.camera);
-    let array = [v1, v2, v3, v3, v4, v1];
-    copyVector3sArray(positionAttributes, array);
+    const camera = targetScene.camera;
+    _target.copy(camera.target).project(camera);
+    _corners[0].set(-1, -1, _target.z).unproject(camera);
+    _corners[1].set(1, -1, _target.z).unproject(camera);
+    _corners[2].set(1, 1, _target.z).unproject(camera);
+    _corners[3].set(-1, 1, _target.z).unproject(camera);
+    copyVector3sArray(positionAttributes, _boundaryVertices);
   }
 
   this.updateCamera = () => {
-    this.getBoundary();
-    let cameraControl = targetScene.getZincCameraControls();
+    const camera = targetScene.camera;
     let boundingBox = targetScene.getBoundingBox();
+    //Nothing has changed since the last update
+    if (_cameraUpdated &amp;&amp; boundingBox &amp;&amp; boundingBox.equals(_lastBoundingBox) &amp;&amp;
+      _lastNear === camera.near &amp;&amp;
+      matrixEquals(_lastMatrixWorld, camera.matrixWorld) &amp;&amp;
+      matrixEquals(_lastProjectionMatrix, camera.projectionMatrix)) {
+      return;
+    }
+    this.getBoundary();
+    _lastMatrixWorld.copy(camera.matrixWorld);
+    _lastProjectionMatrix.copy(camera.projectionMatrix);
+    _lastNear = camera.near;
+    _cameraUpdated = false;
+    let cameraControl = targetScene.getZincCameraControls();
     if (boundingBox) {
+      _lastBoundingBox.copy(boundingBox);
+      _cameraUpdated = true;
       // enlarge radius to keep image within edge of window
       const diameter = boundingBox.min.distanceTo(boundingBox.max);
       const radius = diameter / 2.0;
@@ -127,13 +162,13 @@ export { Minimap };</code></pre>
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Oct 06 2026 13:58:16 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

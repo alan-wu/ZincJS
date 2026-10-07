@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import {
   createBufferGeometry,
   getBoundingBox,
@@ -115,7 +115,15 @@ ZincObject.prototype.getRegion = function() {
  *
  * @return {Object}
  */
- ZincObject.prototype.getMorph = function() {
+ /**
+ * Request the scene to draw the next frame, this is used when render on
+ * demand is enabled. See {@link Renderer#setRenderOnDemand}.
+ */
+ZincObject.prototype.requestRender = function() {
+  this.region?.getScene?.()?.invalidate?.();
+}
+
+ZincObject.prototype.getMorph = function() {
   const morph =  this._lod.getCurrentMorph();
   return morph ? morph : this.morph;
 }
@@ -159,6 +167,7 @@ ZincObject.prototype.checkTransparentMesh = function() {
  * time dependent.
  */
 ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour) {
+  this.requestRender();
   //Note: we assume all layers are consistent with time frame
   //Thus adding them to the same animation group should work.
   //This step is only required for the primary (level 0) mesh.
@@ -183,6 +192,10 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
         this.clipAction.loop = THREE.LoopRepeat;
         this.clipAction.clampWhenFinished = true;
         this.clipAction.play();
+        //Evaluate the clip immediately so morphTargetInfluences reflects
+        //time 0 right away, rather than staying at its all-zero default
+        //until the first mixer.update() from playback/setMorphTime.
+        this.mixer.update(0);
       }
     }
   }
@@ -199,6 +212,14 @@ ZincObject.prototype.setMesh = function(mesh, localTimeEnabled, localMorphColour
       geometry.setAttribute('morphTarget0', geometry.getAttribute( 'position' ) );
       geometry.setAttribute('morphTarget1', geometry.getAttribute( 'position' ) );
     }
+  }
+  if (this.morphColour) {
+    //Make sure morphColor0/morphColor1 exist before this mesh is ever
+    //rendered. WebGPU builds its pipeline against whatever attributes the
+    //geometry has at first render, and adding these two afterwards doesn't
+    //get picked up by an already-built pipeline - the object would render
+    //black forever after, since the colour shader can no longer see them.
+    this.initiateMorphColor();
   }
   this.boundingBoxUpdateRequired = true;
 }
@@ -255,6 +276,7 @@ ZincObject.prototype.getCurrentTime = function() {
  * @param {Number} time - Can be any value between 0 to duration.
  */
 ZincObject.prototype.setMorphTime = function(time) {
+  this.requestRender();
   let timeChanged = false;
   if (this.clipAction) {
     const ratio = time / this.duration;
@@ -281,7 +303,8 @@ ZincObject.prototype.setMorphTime = function(time) {
     }
   }
   if (timeChanged) {
-    this.boundingBoxUpdateRequired = true;
+    if (this.hasMorphPositions())
+      this.boundingBoxUpdateRequired = true;
     this._lod.updateMorphColorAttribute(true);
     if (this.timeEnabled)
       this.markerUpdateRequired = true;
@@ -313,6 +336,7 @@ ZincObject.prototype.getVisibility = function() {
  * @param {Boolean} visible - a boolean flag indicate the visibility to be set
  */
 ZincObject.prototype.setVisibility = function(visible) {
+  this.requestRender();
   if (visible !== this.visible) {
     this.visible = visible;
     this.group.visible = visible;
@@ -328,6 +352,7 @@ ZincObject.prototype.setVisibility = function(visible) {
  * can be any value between from 0 to 1.0.
  */
 ZincObject.prototype.setAlpha = function(alpha) {
+  this.requestRender();
   const material = this._lod._material;
   let isTransparent = false;
   if (alpha  < 1.0)
@@ -345,6 +370,7 @@ ZincObject.prototype.setAlpha = function(alpha) {
  * @param {Boolean} flag - Set frustrum culling on/off based on this flag.
  */
 ZincObject.prototype.setFrustumCulled = function(flag) {
+  this.requestRender();
   //multilayers - set for all layers
   this._lod.setFrustumCulled(flag);
 }
@@ -356,6 +382,7 @@ ZincObject.prototype.setFrustumCulled = function(flag) {
  * @param {Boolean} vertexColors - Set display with vertex color on/off.
  */
 ZincObject.prototype.setVertexColors = function(vertexColors) {
+  this.requestRender();
   //multilayers - set for all
   this._lod.setVertexColors(vertexColors);
 
@@ -378,6 +405,7 @@ ZincObject.prototype.getColour = function() {
  * @param {THREE.Color} colour - Colour to be set for this geometry.
  */
 ZincObject.prototype.setColour = function(colour) {
+  this.requestRender();
   this._lod.setColour(colour);
 }
 
@@ -387,6 +415,7 @@ ZincObject.prototype.setColour = function(colour) {
  * @param {THREE.Color} colour - Colour to be set for this geometry.
  */
 ZincObject.prototype.setGreyScale = function(flag) {
+  this.requestRender();
   if (flag) {
     if (!this.origColour) {
       if (this._lod._material) {
@@ -427,6 +456,7 @@ ZincObject.prototype.getColourHex = function() {
  * @param {String} hex - The colour value in hex form.
  */
 ZincObject.prototype.setColourHex = function(hex) {
+  this.requestRender();
   this._lod._material.color.setHex(hex);
   if (this._lod._secondaryMaterial) {
     this._lod._secondaryMaterial.color.setHex(hex);
@@ -439,6 +469,7 @@ ZincObject.prototype.setColourHex = function(hex) {
  * @param {String} colour - The colour value in rgb form.
  */
 ZincObject.prototype.setEmissiveRGB = function(colour) {
+  this.requestRender();
   if (this._lod._material && this._lod._material.emissive) {
     this._lod._material.emissive.setRGB(...colour);
   }
@@ -454,6 +485,7 @@ ZincObject.prototype.setEmissiveRGB = function(colour) {
  * @param {THREE.Material} material - Material to be set for this geometry.
  */
 ZincObject.prototype.setMaterial = function(material) {
+  this.requestRender();
   this._lod.setMaterial(material);
 }
 
@@ -474,10 +506,8 @@ ZincObject.prototype.getClosestVertexIndex = function() {
       let currentDistance = 0;
       for (let i = 0; i < position.count; i++) {
         this._v2.fromArray(position.array, i * 3);
-        currentDistance = this._v2.distanceTo(this._v1);
-        if (distance == -1)
-          distance = currentDistance;
-        else if (distance > (currentDistance)) {
+        currentDistance = this._v2.distanceToSquared(this._v1);
+        if ((distance == -1) || (distance > currentDistance)) {
           distance = currentDistance;
           closestIndex = i;
         }
@@ -553,6 +583,10 @@ ZincObject.prototype.getBoundingBox = function() {
 ZincObject.prototype.dispose = function() {
   //multilayyers
   this._lod.dispose();
+  if (this.marker) {
+    this.marker.dispose();
+    this.marker = undefined;
+  }
   this.animationGroup = undefined;
   this.mixer = undefined;
   this.morph = undefined;
@@ -576,6 +610,44 @@ ZincObject.prototype.markerIsRequired = function(options) {
   return false;
 }
 
+//geometry -> whether its morph targets move the vertices
+const morphPositionsCache = new WeakMap();
+
+/**
+ * Check if the vertices positions change over time, only then will
+ * the bounding box change during playback.
+ *
+ * @return {Boolean}
+ */
+ZincObject.prototype.hasMorphPositions = function() {
+  const geometry = this.getMorph()?.geometry;
+  const morphPositions = geometry?.morphAttributes?.position;
+  if (!morphPositions || morphPositions.length === 0)
+    return false;
+  const cached = morphPositionsCache.get(geometry);
+  if (cached && cached.morphPositions === morphPositions)
+    return cached.result;
+  //Colour only morphs use placeholder targets identical to the base
+  //positions, these never move the vertices.
+  const basePositions = geometry.getAttribute('position')?.array;
+  let result = false;
+  for (let i = 0; i < morphPositions.length && !result; i++) {
+    const array = morphPositions[i].array;
+    if (!basePositions || array.length !== basePositions.length) {
+      result = true;
+    } else if (array !== basePositions) {
+      for (let j = 0; j < array.length; j++) {
+        if (array[j] !== basePositions[j]) {
+          result = true;
+          break;
+        }
+      }
+    }
+  }
+  morphPositionsCache.set(geometry, { morphPositions, result });
+  return result;
+}
+
 /**
  * Update the marker's position and size based on current viewport.
  */
@@ -594,6 +666,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
         if (position) {
           this.marker.setPosition(position.x, position.y, position.z);
           this.markerUpdateRequired = false;
+          ndcToBeUpdated = true;
         }
       }
       if (!this.marker.isEnabled()) {
@@ -611,8 +684,9 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
       } else {
         this.marker.setDefaultSprite();
       }
-      if (options && options.camera && (ndcToBeUpdated ||
-        options.markerCluster.markerUpdateRequired)) {
+      //Only update the screen position when the camera or the
+      //marker has moved, or the marker has just been enabled.
+      if (options && options.camera && ndcToBeUpdated) {
         this.marker.updateNDC(options.camera.cameraObject);
         options.markerCluster.markerUpdateRequired = true;
       }
@@ -621,7 +695,7 @@ ZincObject.prototype.updateMarker = function(playAnimation, options) {
     if (this.marker && this.marker.isEnabled()) {
       this.marker.disable();
       this.group.remove(this.marker.morph);
-      if (options.markersList &&
+      if (options?.markersList &&
         (this.marker.uuid in options.markersList)) {
         options.markerCluster.markerUpdateRequired = true;
         delete options.markersList[this.marker.uuid];
@@ -645,6 +719,7 @@ ZincObject.prototype.initiateMorphColor = function() {
 }
 
 ZincObject.prototype.setRenderOrder = function(renderOrder) {
+  this.requestRender();
   //multiilayers
   this._lod.setRenderOrder(renderOrder);
 }
@@ -683,6 +758,7 @@ ZincObject.prototype.getClosestVertexDOMElementCoords = function(scene) {
  * @return {Boolean}
  */
  ZincObject.prototype.setMarkerMode = function(mode, options) {
+  this.requestRender();
   if (mode !== this.markerMode) {
     if (mode === "on" || mode === "off") {
       this.markerMode = mode;
@@ -717,7 +793,9 @@ ZincObject.prototype.render = function(delta, playAnimation,
     }
     //multilayers
     if (this.visible && delta != 0) {
-      this.boundingBoxUpdateRequired = true;
+      //Only vertices morphing can change the bounding box
+      if (this.hasMorphPositions())
+        this.boundingBoxUpdateRequired = true;
       if (this.morphColour == 1) {
         this._lod.updateMorphColorAttribute(true);
       }
@@ -737,6 +815,7 @@ ZincObject.prototype.addLOD = function(loader, level, url, index, preload) {
  * Add lod from an url into the lod object.
  */
 ZincObject.prototype.addVertices = function(coords) {
+  this.requestRender();
   let mesh = this.getMorph();
   let geometry = undefined;
   if (!mesh) {
@@ -764,6 +843,7 @@ ZincObject.prototype.addVertices = function(coords) {
  * Add lod from an url into the lod object.
  */
 ZincObject.prototype.deleteVertices = function(index) {
+  this.requestRender();
   let mesh = this.getMorph();
   if (mesh?.geometry && this.drawRange >= index) {
     if (removeVertexAtIndex(mesh.geometry, index, true)) {
@@ -782,6 +862,7 @@ ZincObject.prototype.deleteVertices = function(index) {
  * Set the objects position.
  */
 ZincObject.prototype.setPosition = function(x, y, z) {
+  this.requestRender();
   const group = this.getGroup();
   if (group) {
     group.position.set(x, y, z);
@@ -801,6 +882,7 @@ ZincObject.prototype.loadAdditionalSources = function(primitivesLoader, sources)
  * Set the objects scale.
  */
 ZincObject.prototype.setScaleAll = function(scale) {
+  this.requestRender();
   const group = this.getGroup();
   if (group) {
     group.scale.set(scale, scale, scale);

@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import * as shader from '../shaders/volumeRender.js';
 import { TexturePrimitive } from './texturePrimitive.js';
 
@@ -17,6 +17,8 @@ const TextureSlides = function (textureIn) {
   TexturePrimitive.call(this, textureIn);
   this.isTextureVolume = true;
   const textureSettings = [];
+  //Map of mesh id to slide mesh
+  const idTextureMap = {};
   this.morph = new THREE.Group();
   this.group = this.morph;
   this.morph.userData = this;

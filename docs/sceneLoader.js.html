@@ -26,7 +26,7 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import * as THREE from 'three';
+            <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
 import { GLTFToZincJSLoader } from './loaders/GLTFToZincJSLoader';
 import { OBJLoader } from './loaders/OBJLoader';
 import { PrimitivesLoader } from './loaders/primitivesLoader';
@@ -55,7 +55,28 @@ const SceneLoader = function (sceneIn) {
   this.progressMap = {};
   let viewLoaded = false;
   let errorDownload = false;
+  let generation = 0;
   const primitivesLoader = new PrimitivesLoader();
+
+  /**
+   * Cancel all pending downloads, objects from the cancelled downloads
+   * will be discarded instead of being added into the scene once they
+   * arrive.
+   */
+  this.cancelPendingLoads = () => {
+    generation++;
+    this.toBeDownloaded = 0;
+    this.progressMap = {};
+    viewLoaded = false;
+    errorDownload = false;
+  }
+
+  //Return a function which returns true if the loads requested before
+  //this call have been cancelled.
+  const createStaleCheck = () => {
+    const requestGeneration = generation;
+    return () => requestGeneration !== generation;
+  }
   /**
    * This function returns a three component array, which contains
    * [totalsize, totalLoaded and errorDownload] of all the downloads happening
@@ -90,7 +111,9 @@ const SceneLoader = function (sceneIn) {
   }
 
   this.onError = finishCallback => {
+    const isStale = createStaleCheck();
     return xhr => {
+      if (isStale()) return;
       this.toBeDownloaded = this.toBeDownloaded - 1;
       errorDownload = true;
       console.error(`There is an issue with external resource ${xhr?.responseURL ? ": " +  xhr?.responseURL: ""}.`);
@@ -144,6 +167,7 @@ const SceneLoader = function (sceneIn) {
   this.loadViewURL = (url, finishCallback) => {
     this.toBeDownloaded += 1;
     const requestURL = url;
+    const isStale = createStaleCheck();
     fetch(requestURL)
       .then((response) => {
         if (!response.ok) {
@@ -152,6 +176,7 @@ const SceneLoader = function (sceneIn) {
         return response.json();
       })
       .then((viewData) => {
+        if (isStale()) return;
         scene.setupMultipleViews("default", { "default" : viewData });
         scene.resetView();
         viewLoaded = true;
@@ -204,6 +229,7 @@ const SceneLoader = function (sceneIn) {
    */
   this.loadFromViewURL = (targetRegion, jsonFilePrefix, finishCallback) => {
     const requestURL = jsonFilePrefix + "_view.json";
+    const isStale = createStaleCheck();
     fetch(requestURL)
     .then((response) => {
       if (!response.ok) {
@@ -212,6 +238,7 @@ const SceneLoader = function (sceneIn) {
       return response.json();
     })
     .then((viewData) => {
+      if (isStale()) return;
       scene.loadView(viewData);
       const urls = [];
       const filename_prefix = jsonFilePrefix + "_";
@@ -237,7 +264,12 @@ const SceneLoader = function (sceneIn) {
   //Internal loader for a regular zinc geometry.
   const linesloader = (region, localTimeEnabled, localMorphColour, groupName,
     anatomicalId, renderOrder, lod, tubeLines, finishCallback) => {
+      const isStale = createStaleCheck();
       return (geometry, materials) => {
+      if (isStale()) {
+        geometry.dispose();
+        return;
+      }
       const newLines = tubeLines ? new TubeLines() : new Lines();
       let material = undefined;
       if (materials &amp;&amp; materials[0]) {
@@ -304,7 +336,9 @@ const SceneLoader = function (sceneIn) {
   }
 
   const glyphsetloader = (region, glyphurl, groupName, finishCallback, options) => {
+    const isStale = createStaleCheck();
     return (data) => {
+      if (isStale()) return;
       let glyphsetData = data;
       if (typeof glyphsetData === 'string' || glyphsetData instanceof String) {
         glyphsetData = JSON.parse(data);
@@ -320,6 +354,7 @@ const SceneLoader = function (sceneIn) {
       newGlyphset.setDuration(scene.getDuration());
       newGlyphset.groupName = groupName;
       let myCallback = () => {
+        if (isStale()) return;
         --this.toBeDownloaded;
         if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function'))
           finishCallback(newGlyphset);
@@ -386,7 +421,12 @@ const SceneLoader = function (sceneIn) {
 
   //Internal loader for zinc pointset.
   const pointsetloader = (region, localTimeEnabled, localMorphColour, groupName, anatomicalId, renderOrder, finishCallback) => {
+    const isStale = createStaleCheck();
     return (geometry, materials) => {
+      if (isStale()) {
+        geometry.dispose();
+        return;
+      }
       const newPointset = new Pointset();
       let material = new THREE.PointsMaterial(
         {
@@ -436,7 +476,8 @@ const SceneLoader = function (sceneIn) {
     const loader = new STLLoader();
     loader.crossOrigin = "Anonymous";
     loader.load(url, meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined, undefined, finishCallback));
+      false, groupName, undefined, undefined, {}, finishCallback),
+      this.onProgress(url), this.onError(finishCallback));
   }
 
   /**
@@ -454,8 +495,9 @@ const SceneLoader = function (sceneIn) {
     const opacity = Zinc.defaultOpacity;
     const loader = new OBJLoader();
     loader.crossOrigin = "Anonymous";
-    loader.load(url, meshloader(region, colour, opacity, false,
-      false, groupName, undefined, undefined, undefined, finishCallback));
+    loader.load(url, objloader(region, colour, opacity, false,
+      false, groupName, undefined, undefined, {}, finishCallback),
+      this.onProgress(url), this.onError(finishCallback));
   }
 
   /**
@@ -486,17 +528,14 @@ const SceneLoader = function (sceneIn) {
     if (morphColour != undefined)
       localMorphColour = morphColour ? true : false;
     let loader = primitivesLoader;
-    if (fileFormat !== undefined) {
-      if (fileFormat == "STL") {
-        loader = new STLLoader();
-      } else if (fileFormat == "OBJ") {
-        loader = new OBJLoader();
-        loader.crossOrigin = "Anonymous";
-        loader.load(url, objloader(region, colour, opacity, localTimeEnabled,
-          localMorphColour, groupName, anatomicalId, finishCallback), this.onProgress(url), this.onError,
-          options.loaderOptions);
-        return;
-      }
+    if (fileFormat == "STL" || fileFormat == "OBJ") {
+      const typedLoader = fileFormat == "STL" ? meshloader : objloader;
+      loader = fileFormat == "STL" ? new STLLoader() : new OBJLoader();
+      loader.crossOrigin = "Anonymous";
+      loader.load(url, typedLoader(region, colour, opacity, localTimeEnabled,
+        localMorphColour, groupName, anatomicalId, renderOrder, options ? options : {},
+        finishCallback), this.onProgress(url), this.onError(finishCallback));
+      return;
     }
     if (isInline) {
       const object = primitivesLoader.parse( url );
@@ -582,7 +621,12 @@ const SceneLoader = function (sceneIn) {
       }
       if (newTexture) {
         newTexture.groupName = groupName;
+        const isStale = createStaleCheck();
         let myCallback = () => {
+          if (isStale()) {
+            newTexture.dispose();
+            return;
+          }
           //Add zincObject after it has sort out all the required download
           region.addZincObject(newTexture);
           --this.toBeDownloaded;
@@ -610,6 +654,7 @@ const SceneLoader = function (sceneIn) {
       loadTexture(region, undefined, url, groupName, finishCallback, options);
     } else {
       const requestURL = url;
+      const isStale = createStaleCheck();
       fetch(requestURL)
       .then((response) => {
         if (!response.ok) {
@@ -619,6 +664,7 @@ const SceneLoader = function (sceneIn) {
         return response.json().then((textureData) => ({ textureData, referenceURL }));
       })
       .then(({textureData, referenceURL}) => {
+        if (isStale()) return;
         loadTexture(region, referenceURL, textureData, groupName, finishCallback, options);
       })
       .catch((error) => {
@@ -690,14 +736,19 @@ const SceneLoader = function (sceneIn) {
     options,
     finishCallback
   ) => {
+    const isStale = createStaleCheck();
     return (geometry, materials) => {
+      if (isStale()) {
+        geometry.dispose();
+        return;
+      }
       let material = undefined;
       if (materials &amp;&amp; materials[0]) {
         material = materials[0];
       }
       const zincGeometry = addZincGeometry(region, geometry, colour, opacity,
         localTimeEnabled, localMorphColour, undefined, material, groupName, renderOrder, anatomicalId);
-      if (options.lod &amp;&amp; options.lod.levels) {
+      if (options?.lod?.levels) {
         for (const [key, value] of Object.entries(options.lod.levels)) {
           zincGeometry.addLOD(primitivesLoader, key, value.URL, value.Index, options.lod.preload);
         }
@@ -707,6 +758,48 @@ const SceneLoader = function (sceneIn) {
       if (finishCallback != undefined &amp;&amp; (typeof finishCallback == 'function')) {
         finishCallback(zincGeometry);
       }
+    };
+  }
+
+  //Internal loader for OBJ files, OBJLoader returns a group and each mesh
+  //in it is added as a separate zinc geometry.
+  const objloader = (
+    region,
+    colour,
+    opacity,
+    localTimeEnabled,
+    localMorphColour,
+    groupName,
+    anatomicalId,
+    renderOrder,
+    options,
+    finishCallback
+  ) => {
+    const isStale = createStaleCheck();
+    const onMeshLoaded = meshloader(region, colour, opacity, localTimeEnabled,
+      localMorphColour, groupName, anatomicalId, renderOrder, options, finishCallback);
+    return (group) => {
+      const meshes = [];
+      group.traverse((child) => {
+        if (child.isMesh &amp;&amp; child.geometry) {
+          meshes.push(child);
+        }
+        if (child.material) {
+          const materials = Array.isArray(child.material) ? child.material : [child.material];
+          materials.forEach((material) => material.dispose());
+        }
+      });
+      if (isStale()) {
+        meshes.forEach((mesh) => mesh.geometry.dispose());
+        return;
+      }
+      if (meshes.length === 0) {
+        --this.toBeDownloaded;
+        return;
+      }
+      //meshloader decrements the counter once per mesh
+      this.toBeDownloaded += meshes.length - 1;
+      meshes.forEach((mesh) => onMeshLoaded(mesh.geometry));
     };
   }
 
@@ -859,7 +952,8 @@ const SceneLoader = function (sceneIn) {
    */
   this.loadGLTF = (region, url, finishCallback, allCompletedCallback, options) => {
     const loader = new GLTFToZincJSLoader();
-    loader.load(scene, region, url, finishCallback, allCompletedCallback, options);
+    loader.load(scene, region, url, finishCallback, allCompletedCallback, options,
+      createStaleCheck());
   }
 
   let loadRegions = (currentRegion, referenceURL, regions, callback) => {
@@ -990,9 +1084,9 @@ const SceneLoader = function (sceneIn) {
     // view file does not receive callback
     let callback = new metaFinishCallback(numberOfObjects, finishCallback, allCompletedCallback);
     // Prioritise the view file and settings before loading anything else
-    for (let i = 0; i &lt; metadata.length; i++)
+    for (let i = 0; i &lt; filteredMetada.length; i++)
       readViewAndSettingsItem(referenceURL, filteredMetada[i], callback);
-    for (let i = 0; i &lt; metadata.length; i++) {
+    for (let i = 0; i &lt; filteredMetada.length; i++) {
       readVersionOneRegionPath(targetRegion, referenceURL, filteredMetada[i], i, callback);
     }
   }
@@ -1021,6 +1115,7 @@ const SceneLoader = function (sceneIn) {
     */
   this.loadMetadataURL = (targetRegion, url, finishCallback, allCompletedCallback, options) => {
     const requestURL = url;
+    const isStale = createStaleCheck();
     fetch(requestURL)
       .then((response) => {
         if (!response.ok) {
@@ -1030,6 +1125,7 @@ const SceneLoader = function (sceneIn) {
         return response.json().then((metadata) => ({ metadata, referenceURL }));
       })
       .then(({metadata, referenceURL}) => {
+        if (isStale()) return;
         scene.resetMetadata();
         scene.resetDuration();
         viewLoaded = false;
@@ -1058,13 +1154,13 @@ export { SceneLoader };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Oct 06 2026 13:58:16 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

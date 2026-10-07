@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 
 /**
  * Base texture object for importing images and turning them into
@@ -68,6 +68,16 @@ Texture.prototype.imageToUint8Array = async function (instance, img, src, canvas
 
 Texture.prototype.loadFromImages = async function (srcArrays) {
   return
+}
+
+/**
+ * Free the memory allocated for this texture.
+ */
+Texture.prototype.dispose = function () {
+  if (this.impl) {
+    this.impl.dispose();
+    this.impl = undefined;
+  }
 }
 
 /**

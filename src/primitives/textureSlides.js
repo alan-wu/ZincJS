@@ -1,6 +1,29 @@
-import * as THREE from 'three';
-import * as shader from '../shaders/textureSlide.js';
+import * as THREE from 'three/webgpu';
+//import * as shader from '../shaders/textureSlide.js';
+import { createWebGPUMaterial } from '../tsl/textureSlides.js';
 import { TexturePrimitive } from './texturePrimitive';
+import { updateWorldMatrixFromAncestors } from '../utilities';
+
+
+const cloneData3DTexture = (sourceTex) => {
+  const image = sourceTex.image;
+  const width = image.width;
+  const height = image.height;
+  const depth = image.depth;
+  const clonedData = image.data;
+  const targetTex = new THREE.Data3DTexture(clonedData, width, height, depth);
+  targetTex.format = sourceTex.format;
+  targetTex.type = sourceTex.type;
+  targetTex.minFilter = sourceTex.minFilter;
+  targetTex.magFilter = sourceTex.magFilter;
+  targetTex.wrapS = sourceTex.wrapS;
+  targetTex.wrapT = sourceTex.wrapT;
+  targetTex.wrapR = sourceTex.wrapR;
+  targetTex.colorSpace = sourceTex.colorSpace;
+  targetTex.anisotropy = sourceTex.anisotropy;
+  targetTex.needsUpdate = true;
+  return targetTex;
+}
 
 /**
  * Provides a class which create a texture stacks in a block
@@ -51,6 +74,7 @@ const TextureSlides = function (textureIn) {
    * @param {SLIDE_SETTINGS} slideSettings - An array to each slide settings.
    */
   this.createSlides = slideSettings => {
+    this.requestRender();
     slideSettings.forEach(slide => this.createSlide(slide));
   }
 
@@ -63,7 +87,7 @@ const TextureSlides = function (textureIn) {
    */
   const setUniformSlideSettingsOfMesh = (mesh, settings) => {
     const material = mesh.material;
-    const uniforms = material.uniforms;
+    const uniforms = material.userData.uniforms;
     mesh.rotation.x = 0;
     mesh.rotation.y = 0;
     mesh.rotation.z = 0;
@@ -92,7 +116,6 @@ const TextureSlides = function (textureIn) {
       default:
         break;
     }
-    material.needsUpdate = true;
     this.boundingBoxUpdateRequired = true;
   }
 
@@ -102,6 +125,7 @@ const TextureSlides = function (textureIn) {
    * @param {SLIDE_SETTINGS} settings - s.
    */
   this.modifySlideSettings = (settings) => {
+    this.requestRender();
     if (settings && settings.id &&
       settings.id in idTextureMap &&
       idTextureMap[settings.id]) {
@@ -118,10 +142,12 @@ const TextureSlides = function (textureIn) {
    * created mesh's id.
    */
   this.createSlide = settings => {
+    this.requestRender();
     if (this.texture && this.texture.isTextureArray && this.texture.isReady()) {
       if (settings && settings.direction && settings.value !== undefined) {
         const geometry = new THREE.PlaneGeometry(1, 1);
         geometry.translate(0.5, 0.5, 0);
+        /*
         const uniforms = shader.getUniforms();
         uniforms.brightness.value = brightness;
         uniforms.contrast.value = contrast;
@@ -142,8 +168,23 @@ const TextureSlides = function (textureIn) {
           side: THREE.DoubleSide,
           transparent: false
         };
-        const material = this.texture.getMaterial(options);
-        material.needsUpdate = true;
+
+        //const material = this.texture.getMaterial(options);
+        */
+        const material = createWebGPUMaterial();
+        material.userData.uniforms.brightness.value = brightness;
+        material.userData.uniforms.contrast.value = contrast;
+        material.userData.uniforms.diffuse0.value = cloneData3DTexture(this.texture.impl);
+        material.userData.uniforms.diffuse1.value = cloneData3DTexture(this.texture.impl);
+        material.userData.uniforms.discardAlpha.value = discardAlpha;
+        material.userData.uniforms.depth.value = this.texture.size.depth;
+        material.userData.uniforms.flipY.value = flipY;
+        material.userData.uniforms.flipZ.value = flipZ;
+        if (maskTexture) {
+          material.userData.uniforms.mask.value = maskTexture;
+        }
+        material.userData.uniforms.maskEnabled.value = maskEnabled;
+        material.userData.uniforms.nChannels.value = nChannels;
         const mesh = new THREE.Mesh(geometry, material);
         mesh.name = this.groupName;
         mesh.userData = this;
@@ -201,6 +242,7 @@ const TextureSlides = function (textureIn) {
    * @param {Slide} slide - Slide to be remvoed
    */
   this.removeSlide = slide => {
+    this.requestRender();
     if (slide) {
       this.removeSlideWithId(slide.id);
     }
@@ -212,6 +254,7 @@ const TextureSlides = function (textureIn) {
     * @param {Number} id - id of slide to be remvoed
     */
   this.removeSlideWithId = id => {
+    this.requestRender();
     if (this.morph && id in idTextureMap && idTextureMap[id]) {
       if (this.morph.getObjectById(id)) {
         const slide = idTextureMap[id];
@@ -240,6 +283,11 @@ const TextureSlides = function (textureIn) {
       if (slide.material)
         slide.material.dispose();
     });
+    if (maskTexture) {
+      maskTexture.dispose();
+      maskTexture = undefined;
+      maskEnabled = false;
+    }
     TexturePrimitive.prototype.dispose.call(this);
     this.boundingBoxUpdateRequired = true;
   }
@@ -288,17 +336,17 @@ const TextureSlides = function (textureIn) {
       this.cachedBoundingBox.makeEmpty();
       const vector = new THREE.Vector3(0, 0, 0);
       this.morph.children.forEach(slide => {
-        expandBoxWithSettings(this.cachedBoundingBox, slide.material.uniforms,
+        expandBoxWithSettings(this.cachedBoundingBox, slide.material.userData.uniforms,
           vector);
       });
-      this.morph.updateMatrixWorld (true, true);
-      this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
+      this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(this.morph));
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;
   }
 
   this.applyTransformation = (rotation, position, scale) => {
+    this.requestRender();
     const matrix = new THREE.Matrix4();
     matrix.set(
       rotation[0],
@@ -327,6 +375,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setRenderOrder = (order) => {
+    this.requestRender();
     //multiilayers
     this.morph.renderOrder = order;
   }
@@ -352,6 +401,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.showEdges = (color) => {
+    this.requestRender();
     if (!edgesLine) {
       const geometry = new THREE.BoxGeometry( 1, 1, 1 );
       geometry.translate(0.5, 0.5, 0.5);
@@ -366,12 +416,12 @@ const TextureSlides = function (textureIn) {
 
 
   this.setUniformsValue = (name, val) => {
+    this.requestRender();
     this.morph.children.forEach((mesh) => {
       const material = mesh.material;
-      if (material.type === "ShaderMaterial") {
-        const uniforms = material.uniforms;
+      if (material.userData.uniforms) {
+        const uniforms = material.userData.uniforms;
         uniforms[name].value = val;
-        material.needsUpdate = true;
       }
     });
   }
@@ -381,6 +431,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.discardAlphaPixel = (flag) => {
+    this.requestRender();
     discardAlpha = flag;
     this.setUniformsValue("discardAlpha", discardAlpha);
   }
@@ -390,6 +441,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setBrightness = (brightnessIn) => {
+    this.requestRender();
     brightness = brightnessIn;
     this.setUniformsValue("brightness", brightness);
   }
@@ -399,6 +451,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setContrast = (contrastIn) => {
+    this.requestRender();
     if (contrast >= 0 ) {
       contrast = contrastIn;
       this.setUniformsValue("contrast", contrast);
@@ -410,6 +463,7 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setNumberOfChannels = (numbersIn) => {
+    this.requestRender();
     nChannels = numbersIn;
     this.setUniformsValue("nChannels", nChannels);
   }
@@ -419,13 +473,23 @@ const TextureSlides = function (textureIn) {
   }
 
   this.setMask = (maskTextureIn) => {
+    this.requestRender();
     maskTexture = maskTextureIn;
     maskEnabled = maskTexture ? true : false;
-    this.setUniformsValue("mask", maskTexture);
+    this.morph.children.forEach((mesh) => {
+      const material = mesh.material;
+      if (material.userData.uniforms) {
+      const uniforms = material.userData.uniforms;
+        if (maskTexture) {
+          uniforms.mask.value = maskTexture;
+        }
+      }
+    });
     this.setUniformsValue("maskEnabled", maskEnabled);
   }
 
   this.hideEdges = () => {
+    this.requestRender();
     if (edgesLine) {
       edgesLine.visible = false;
     }
@@ -441,16 +505,17 @@ const TextureSlides = function (textureIn) {
       const ratio = iTime - t0;
       this.morph.children.forEach((mesh) => {
         const material = mesh.material;
-        if (material.type === "ShaderMaterial") {
-          const uniforms = material.uniforms;
+        if (material.userData.uniforms)  {
+          const uniforms = material.userData.uniforms;
           if (lt0 !== t0) {
-            uniforms.diffuse0.value = this.textureList[t0].impl;
+            uniforms.diffuse0.value.image.data = this.textureList[t0].imageData;
+            uniforms.diffuse0.value.needsUpdate = true;
           }
           if (lt1 !== t1) {
-            uniforms.diffuse1.value = this.textureList[t1].impl;
+            uniforms.diffuse1.value.image.data = this.textureList[t1].imageData;
+            uniforms.diffuse1.value.needsUpdate = true;
           }
           uniforms.time.value = ratio;
-          material.needsUpdate = true;
         }
       });
       lt0 = t0;
@@ -463,6 +528,7 @@ const TextureSlides = function (textureIn) {
    * Update the glyphsets if required the render.
    */
   this.setMorphTime = (time) => {
+    this.requestRender();
     let newTime = time;
     if (time > this.duration)
       newTime = this.duration;
@@ -479,7 +545,7 @@ const TextureSlides = function (textureIn) {
   /**
    * Update the glyphsets if required the render.
    */
-  this.render = (delta, playAnimation, options) => {
+  this.render = (delta, playAnimation, cameraControls, options) => {
    //console.log("render", delta, playAnimation, this.textureList)
     if (playAnimation == true && this.timeEnabled &&
         this.textureList.length > 1) {

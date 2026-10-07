@@ -1,6 +1,9 @@
-import * as THREE from 'three';
-import SpriteTextModule from 'three-spritetext';
-const SpriteText = SpriteTextModule.default || SpriteTextModule;
+import {
+  applyTextSpriteTextureSettings,
+  createTextSprite,
+  releaseTextSprite,
+  setTextSpriteHeight,
+} from '../textSprite';
 
 /**
  * Bitmap labels, this is used with {@link Glyph} to
@@ -21,21 +24,16 @@ const Label = function (textIn, colourIn) {
   let size = 1.0;
   let fontWeight = 500;
   const textHeight = 0.012;
-  if (colourIn)
-    sprite = new SpriteText(text, textHeight, colourIn.getStyle());
-  else
-    sprite = new SpriteText(text, textHeight);
-  sprite.fontFace = "Asap";
-  sprite.fontSize = 90;
-  sprite.fontWeight = fontWeight;
-  sprite.material.map.generateMipmaps = true;
-  sprite.material.map.anisotropy = 4;
-  sprite.material.minFilter = THREE.LinearMipmapLinearFilter; // Smooth downscaling
-  sprite.material.magFilter = THREE.LinearFilter;
-  sprite.material.sizeAttenuation = false;
+  //The canvas resolution is chosen from the size of the text on screen
+  sprite = createTextSprite(text, textHeight,
+    colourIn ? colourIn.getStyle() : undefined, "Asap", fontWeight);
   sprite.center.x = -0.05;
   sprite.center.y = 0;
-
+  //SpriteText replaces the texture whenever the text, colour or size
+  //changes, the settings need to be re-applied to the new texture.
+  const applyTextureSettings = () => {
+    applyTextSpriteTextureSettings(sprite);
+  }
 
 
   /**
@@ -74,7 +72,13 @@ const Label = function (textIn, colourIn) {
    */
   this.setColour = colourIn => {
     if (colourIn) {
-      sprite.color = colourIn.getStyle();
+      //Changing the colour redraws the canvas and creates a new texture,
+      //only do it when the colour has changed.
+      const style = colourIn.getStyle();
+      if (style !== sprite.color) {
+        sprite.color = style;
+        applyTextureSettings();
+      }
       colour = colourIn;
     }
   }
@@ -107,7 +111,8 @@ const Label = function (textIn, colourIn) {
    */
   this.setSize = sizeIn => {
     if (sizeIn > 0.0) {
-      sprite.textHeight = textHeight * sizeIn;
+      //Redraw at the resolution matching the new size
+      setTextSpriteHeight(sprite, textHeight * sizeIn);
       size = sizeIn;
     }
   }
@@ -120,6 +125,7 @@ const Label = function (textIn, colourIn) {
   this.setFontWeight = fontWeightIn => {
     if (fontWeightIn && fontWeightIn !== fontWeight) {
       sprite.fontWeight = fontWeightIn;
+      applyTextureSettings();
       fontWeight = fontWeightIn;
     }
   }
@@ -145,9 +151,10 @@ const Label = function (textIn, colourIn) {
         sprite._canvas.height = 1;
       }
       sprite.text = textIn;
-      sprite.textHeight = textHeight * size;
+      setTextSpriteHeight(sprite, textHeight * size);
       text = textIn;
       if (sprite.material && sprite.material.map) {
+        applyTextureSettings();
         sprite.material.map.needsUpdate = true;
       }
     }
@@ -166,7 +173,19 @@ const Label = function (textIn, colourIn) {
    * Free up the memory
    */
   this.dispose = () => {
-    //sprite.dispose();
+    if (sprite) {
+      releaseTextSprite(sprite);
+      sprite.removeFromParent();
+      if (sprite.material) {
+        sprite.material.map?.dispose();
+        sprite.material.dispose();
+      }
+      //Release the canvas memory
+      if (sprite._canvas) {
+        sprite._canvas.width = 0;
+        sprite._canvas.height = 0;
+      }
+    }
   }
 
   /**

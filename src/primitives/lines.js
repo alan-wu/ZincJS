@@ -1,6 +1,6 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { toBufferGeometry } from '../utilities';
-import { augmentMorphColor } from './augmentShader';
+import { applyMorphColorNode } from '../tsl/morphColorMaterial';
 import { LineSegments } from '../three/line/LineSegments';
 import { ZincObject } from './zincObject';
 
@@ -30,10 +30,17 @@ const Lines = function () {
    */
 	this.createLineSegment = (geometryIn, materialIn, options) => {
 		if (geometryIn && materialIn) {
-			let geometry = toBufferGeometry(geometryIn, options);
+			let geometry = toBufferGeometry(geometryIn, options );
 			if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
-        materialIn.vertexColors = true;
-				materialIn.onBeforeCompile = augmentMorphColor;
+        //Force vertexColors off (even if the caller/material already set
+        //it true from the file's declared material) - NodeMaterial would
+        //otherwise multiply our morph colour blend by the static,
+        //non-morph 'color' attribute (vertexColor() in setupDiffuseColor),
+        //zeroing out whatever channel that static colour never needed and
+        //turning parts of the blend black instead of the intended hue.
+        //applyMorphColorNode's colorNode fully replaces vertex colouring.
+        materialIn.vertexColors = false;
+				materialIn = applyMorphColorNode(materialIn);
       }
       let line = new LineSegments(geometry, materialIn);
       this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
@@ -46,6 +53,7 @@ const Lines = function () {
    * @param {Number} width - Width of the lines.
    */
 	this.setWidth = width => {
+		this.requestRender();
 		if (this.morph && this.morph.material) {
 			this.morph.material.linewidth = width;
 			this.morph.material.needsUpdate = true;
@@ -60,6 +68,7 @@ const Lines = function () {
    * @param {Number} colour - A hex value of the colour for the points
    */
 	this.addLines = (coords, colour)  => {
+    this.requestRender();
     if (coords && coords.length > 0) {
       const geometry = this.addVertices(coords);
       let mesh = this.getMorph();

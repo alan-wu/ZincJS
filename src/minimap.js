@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { copyVector3sArray } from "./utilities";
 
 /**
@@ -33,12 +33,34 @@ const Minimap = function (sceneIn) {
   this.mask = new THREE.Mesh( geometry, material );
   let _box = new THREE.Box3();
   let _center = new THREE.Vector3();
+  const _coord = new THREE.Vector3();
+  const _lookAt = new THREE.Vector3();
+  const _target = new THREE.Vector3();
+  const _corners = [new THREE.Vector3(), new THREE.Vector3(),
+    new THREE.Vector3(), new THREE.Vector3()];
+  const _boundaryVertices = [_corners[0], _corners[1], _corners[2],
+    _corners[2], _corners[3], _corners[0]];
+  //State the minimap was last computed from, it only needs to be updated
+  //when the scene or the main camera changes.
+  const _lastBoundingBox = new THREE.Box3();
+  const _lastMatrixWorld = new THREE.Matrix4();
+  const _lastProjectionMatrix = new THREE.Matrix4();
+  let _lastNear = undefined;
+  let _cameraUpdated = false;
+  //Matrix4.equals treats NaN as different, e.g. with a zero sized canvas
+  const matrixEquals = (a, b) => {
+    for (let i = 0; i < 16; i++) {
+      if (!Object.is(a.elements[i], b.elements[i]))
+        return false;
+    }
+    return true;
+  }
 
   this.getDiffFromNormalised = (x, y) => {
     _box.setFromBufferAttribute(positionAttributes).getCenter(_center);
-    let coord = _center.clone().project(this.camera);
-    let new_coord = new THREE.Vector3(x, y, coord.z).unproject(this.camera);
-    return new_coord.sub(_center);
+    _coord.copy(_center).project(this.camera);
+    //Returns a new vector, the caller may keep it
+    return new THREE.Vector3(x, y, _coord.z).unproject(this.camera).sub(_center);
   }
 
   let setCurrentCameraSettings = (diameter, newViewport)  => {
@@ -53,28 +75,41 @@ const Minimap = function (sceneIn) {
       this.camera.up.set(newViewport.upVector[0], newViewport.upVector[1],
         newViewport.upVector[2]);
     if (newViewport.targetPosition)
-      this.camera.lookAt(new THREE.Vector3(newViewport.targetPosition[0],
+      this.camera.lookAt(_lookAt.set(newViewport.targetPosition[0],
         newViewport.targetPosition[1], newViewport.targetPosition[2]));
     this.camera.zoom = 1 / diameter;
     this.camera.updateProjectionMatrix();
   }
 
   this.getBoundary = () => {
-    let target = new THREE.Vector3().copy(
-      targetScene.camera.target).project(targetScene.camera);
-    let v1 = new THREE.Vector3(-1, -1, target.z).unproject(targetScene.camera);
-    let v2 = new THREE.Vector3(1, -1, target.z).unproject(targetScene.camera);
-    let v3 = new THREE.Vector3(1, 1, target.z).unproject(targetScene.camera);
-    let v4 = new THREE.Vector3(-1, 1, target.z).unproject(targetScene.camera);
-    let array = [v1, v2, v3, v3, v4, v1];
-    copyVector3sArray(positionAttributes, array);
+    const camera = targetScene.camera;
+    _target.copy(camera.target).project(camera);
+    _corners[0].set(-1, -1, _target.z).unproject(camera);
+    _corners[1].set(1, -1, _target.z).unproject(camera);
+    _corners[2].set(1, 1, _target.z).unproject(camera);
+    _corners[3].set(-1, 1, _target.z).unproject(camera);
+    copyVector3sArray(positionAttributes, _boundaryVertices);
   }
 
   this.updateCamera = () => {
-    this.getBoundary();
-    let cameraControl = targetScene.getZincCameraControls();
+    const camera = targetScene.camera;
     let boundingBox = targetScene.getBoundingBox();
+    //Nothing has changed since the last update
+    if (_cameraUpdated && boundingBox && boundingBox.equals(_lastBoundingBox) &&
+      _lastNear === camera.near &&
+      matrixEquals(_lastMatrixWorld, camera.matrixWorld) &&
+      matrixEquals(_lastProjectionMatrix, camera.projectionMatrix)) {
+      return;
+    }
+    this.getBoundary();
+    _lastMatrixWorld.copy(camera.matrixWorld);
+    _lastProjectionMatrix.copy(camera.projectionMatrix);
+    _lastNear = camera.near;
+    _cameraUpdated = false;
+    let cameraControl = targetScene.getZincCameraControls();
     if (boundingBox) {
+      _lastBoundingBox.copy(boundingBox);
+      _cameraUpdated = true;
       // enlarge radius to keep image within edge of window
       const diameter = boundingBox.min.distanceTo(boundingBox.max);
       const radius = diameter / 2.0;

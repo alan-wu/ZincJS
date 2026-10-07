@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Label } from './label';
 import { ZincObject } from './zincObject';
 
@@ -27,6 +27,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   let labelString = undefined;
   this.isGlyph = true;
   let _position = [0, 0, 0];
+  let _colour = undefined;
 
   /**
    * Create a glyph using mesh
@@ -62,6 +63,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    * @param   {String} text - Label to be set for this instance
    */
   this.setLabel = text => {
+    parent?.requestRender?.();
     if (text && (typeof text === 'string' || text instanceof String)) {
       labelString = text;
       if (this.morph)
@@ -72,9 +74,12 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   /**
    * Display label with the choosen colour. It will replace the current
    * label.
-   * @param   {THREE.Color} colour - Colour for the label.
+   * @param   {THREE.Color} colour - Colour to fall back to for the label if
+   * this glyph doesn't already have its own colour (see setColour()/
+   * getColour()) - e.g. genuinely no colour data at all for this glyphset.
    */
   this.showLabel = (colour) => {
+    parent?.requestRender?.();
     if (label) {
       _position = label.getPosition();
       this.group.remove(label.getSprite());
@@ -82,10 +87,11 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
       label = undefined;
     }
     if (labelString && (typeof labelString === 'string' || labelString instanceof String)) {
-      label = new Label(labelString, colour);
+      label = new Label(labelString, _colour || colour);
       label.setPosition(_position[0], _position[1], _position[2]);
       const sprite = label.getSprite();
-      sprite.material.alphaTest = 0.5;
+      //Only discard fully transparent pixels to keep the smooth edges
+      sprite.material.alphaTest = 0.05;
       sprite.material.transparent = true;
       sprite.material.depthWrite = false;
       this.group.add(label.getSprite());
@@ -96,6 +102,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    * Hide label with the choosen colour.
    */
   this.hideLabel = () => {
+    parent?.requestRender?.();
     if (label) {
       _position = label.getPosition();
       this.group.remove(label.getSprite());
@@ -132,6 +139,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    * transformation.
    */
   this.setTransformation = (position, axis1, axis2, axis3) => {
+    parent?.requestRender?.();
     if (this.morph) {
       this.morph.matrix.elements[0] = axis1[0];
       this.morph.matrix.elements[1] = axis1[1];
@@ -158,24 +166,40 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   }
 
   /**
-   * Set the color of the glyph and its label.
+   * Set the color of the glyph and its label. Remembered (see showLabel())
+   * so a label created/recreated later - e.g. by Glyphset.showLabel(),
+   * which otherwise only has a single shared material colour to fall back
+   * on - starts out with this glyph's own correct colour rather than that
+   * shared one.
    *
    * @param {THREE.Color} color - Colour to be set.
    */
   this.setColour = (color) => {
+    parent?.requestRender?.();
+    _colour = color ? color.clone() : undefined;
     if (label)
       label.setColour(color);
     if (this.secondaryMesh && this.secondaryMesh.material)
-      this.secondaryMesh.material.color = colour;
+      this.secondaryMesh.material.color = color;
     if (this.geometry) {
       this.geometry.colorsNeedUpdate = true;
     }
   }
 
   /**
+   * Get the last colour set via setColour(), if any.
+   * @return {THREE.Color|undefined}
+   */
+  this.getColour = () => _colour;
+
+  /**
    * Clear and free its memory.
    */
   this.dispose = () => {
+    if (label) {
+      label.dispose();
+      label = undefined;
+    }
     if (this.material)
       this.material.dispose();
     this.morph = undefined;

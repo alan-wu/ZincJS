@@ -1,8 +1,7 @@
-import * as THREE from 'three';
-import { Geometry as THREEGeometry } from './three/Geometry';
-import SpriteTextModule from 'three-spritetext';
-const SpriteText = SpriteTextModule.default || SpriteTextModule;
+import * as THREE from 'three/webgpu';
 import discPNG from './assets/disc.png';
+import { requestRenderAll } from './renderRequests';
+import { createTextSprite } from './textSprite';
 
 function createNewURL(target, reference) {
   const getNewURL = (target, reference) => {
@@ -30,6 +29,29 @@ function createNewURL(target, reference) {
     });
     return urls;
   }
+}
+
+/*
+ * Compute the world matrix of an object from its ancestors and return it.
+ * three.js only recomputes world matrices flagged by matrixWorldNeedsUpdate,
+ * which objects with matrixAutoUpdate set to false (zinc meshes and region
+ * groups) never set, they would otherwise stay stale until the next render.
+ */
+function updateWorldMatrixFromAncestors(object) {
+  if (object.parent) {
+    updateWorldMatrixFromAncestors(object.parent);
+  }
+  if (object.matrixAutoUpdate) {
+    object.updateMatrix();
+  }
+  if (object.matrixWorldAutoUpdate !== false) {
+    if (object.parent) {
+      object.matrixWorld.multiplyMatrices(object.parent.matrixWorld, object.matrix);
+    } else {
+      object.matrixWorld.copy(object.matrix);
+    }
+  }
+  return object.matrixWorld;
 }
 
 /*
@@ -62,8 +84,7 @@ function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
     cachedBox.setFromBufferAttribute(
       mesh.geometry.attributes.position);
   }
-  mesh.updateWorldMatrix(true, true);
-  cachedBox.applyMatrix4(mesh.matrixWorld);
+  cachedBox.applyMatrix4(updateWorldMatrixFromAncestors(mesh));
 }
 
 
@@ -129,96 +150,94 @@ const getColorsRGB = (colors, index) => {
     return [mycolor.r, mycolor.g, mycolor.b];
 }
 
+//morphColor0/morphColor1 attribute -> morph colour target last copied into it
+const morphColorSources = new WeakMap();
+
 const updateMorphColorAttribute = function(targetGeometry, morph) {
   if (morph && targetGeometry && targetGeometry.morphAttributes &&
     targetGeometry.morphAttributes[ "color" ]) {
     const morphColors = targetGeometry.morphAttributes[ "color" ];
     const influences = morph.morphTargetInfluences;
     const length = influences.length;
-    targetGeometry.deleteAttribute( 'morphColor0' );
-    targetGeometry.deleteAttribute( 'morphColor1' );
-    let bound = 0;
-    let morphArray = [];
-    for (let i = 0; (1 > bound) || (i < length); i++) {
+    //Find the first two morph targets with non-zero influence
+    let found = 0;
+    let index0 = 0;
+    let index1 = 0;
+    let weight0 = 0;
+    let weight1 = 0;
+    for (let i = 0; i < length && found < 2; i++) {
       if (influences[i] > 0) {
-        bound++;
-        morphArray.push([i, influences[i]]);
+        if (found === 0) {
+          index0 = index1 = i;
+          weight0 = influences[i];
+        } else {
+          index1 = i;
+          weight1 = influences[i];
+        }
+        found++;
       }
     }
-    if (morphArray.length == 2) {
-      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[1][0] ] );
-    } else if (morphArray.length == 1) {
-      targetGeometry.setAttribute('morphColor0', morphColors[ morphArray[0][0] ] );
-      targetGeometry.setAttribute('morphColor1', morphColors[ morphArray[0][0] ] );
+    //morphColorMix (0 = fully morphColor0, 1 = fully morphColor1) drives the
+    //TSL colorNode set up by applyMorphColorNode - keep it in sync with
+    //whichever two morph targets currently have non-zero influence.
+    let mix = 0;
+    if (found >= 2) {
+      const total = weight0 + weight1;
+      mix = total > 0 ? weight1 / total : 0;
+    }
+    //Keep morphColor0/morphColor1 as two persistent attributes and mutate
+    //their contents in place (array.set + needsUpdate) rather than
+    //swapping which BufferAttribute object is bound under those names
+    //every call. WebGPU's pipeline is built once against whichever
+    //attribute object first occupies a given slot; a brand new object
+    //bound in later (as deleteAttribute/setAttribute would do every frame)
+    //isn't guaranteed to be picked up by an already-built pipeline, which
+    //silently renders black. Mutating a single long-lived attribute is the
+    //standard, well tested update path both the WebGL and WebGPU
+    //backends use everywhere else.
+    let attribute0 = targetGeometry.getAttribute('morphColor0');
+    let attribute1 = targetGeometry.getAttribute('morphColor1');
+    if (!attribute0 || !attribute1) {
+      attribute0 = new THREE.Float32BufferAttribute(
+        new Float32Array(morphColors[0].array.length), morphColors[0].itemSize);
+      attribute1 = new THREE.Float32BufferAttribute(
+        new Float32Array(morphColors[0].array.length), morphColors[0].itemSize);
+      attribute0.setUsage(THREE.DynamicDrawUsage);
+      attribute1.setUsage(THREE.DynamicDrawUsage);
+      targetGeometry.setAttribute('morphColor0', attribute0);
+      targetGeometry.setAttribute('morphColor1', attribute1);
+    }
+    //Only copy and upload when the pair of keyframes changes, between
+    //keyframes only morphColorMix changes.
+    const source0 = morphColors[index0];
+    const source1 = morphColors[index1];
+    if (morphColorSources.get(attribute0) !== source0) {
+      attribute0.array.set(source0.array);
+      attribute0.needsUpdate = true;
+      morphColorSources.set(attribute0, source0);
+    }
+    if (morphColorSources.get(attribute1) !== source1) {
+      attribute1.array.set(source1.array);
+      attribute1.needsUpdate = true;
+      morphColorSources.set(attribute1, source1);
+    }
+    const morphColorMix = morph.material && morph.material.userData &&
+      morph.material.userData.uniforms && morph.material.userData.uniforms.morphColorMix;
+    if (morphColorMix) {
+      morphColorMix.value = mix;
     }
   }
 }
 
 
-const toBufferGeometry = (geometryIn, options) => {
-  let geometry = undefined;
-  if (geometryIn instanceof THREEGeometry) {
-    if (options.localTimeEnabled && !geometryIn.morphNormalsReady &&
-      (geometryIn.morphNormals == undefined || geometryIn.morphNormals.length == 0))
-      geometryIn.computeMorphNormals();
-    geometry = geometryIn.toIndexedBufferGeometry();
-    if (options.localMorphColour) {
-      copyMorphColorsToIndexedBufferGeometry(geometryIn, geometry);
-    }
-  } else if (geometryIn instanceof THREE.BufferGeometry) {
-    geometry = geometryIn.clone();
-  }
+const toBufferGeometry = (geometryIn) => {
+  const geometry = geometryIn.clone();
   geometry.colorsNeedUpdate = true;
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
   if (geometryIn._video)
     geometry._video = geometryIn._video;
   return geometry;
-}
-
-const copyMorphColorsToBufferGeometry = (geometry, bufferGeometry) => {
-  if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
-    let array = [];
-    let morphColors = geometry.morphColors;
-    for ( var i = 0, l = morphColors.length; i < l; i ++ ) {
-      let morphColor = morphColors[ i ];
-      let colorArray = [];
-      for ( var j = 0; j < geometry.faces.length; j ++ ) {
-        let face = geometry.faces[j];
-        let color = getColorsRGB(morphColor.colors, face.a);
-        colorArray.push(color[0], color[1], color[2]);
-        color = getColorsRGB(morphColor.colors, face.b);
-        colorArray.push(color[0], color[1], color[2]);
-        color = getColorsRGB(morphColor.colors, face.c);
-        colorArray.push(color[0], color[1], color[2]);
-      }
-      var attribute = new THREE.Float32BufferAttribute( geometry.faces.length * 3 * 3, 3 );
-      attribute.name = morphColor.name;
-      array.push( attribute.copyArray( colorArray ) );
-    }
-    bufferGeometry.morphAttributes[ "color" ] = array;
-  }
-}
-
-
-const copyMorphColorsToIndexedBufferGeometry = (geometry, bufferGeometry) => {
-  if (geometry && geometry.morphColors && geometry.morphColors.length > 0 ) {
-    let array = [];
-    let morphColors = geometry.morphColors;
-    for ( let i = 0, l = morphColors.length; i < l; i ++ ) {
-      const morphColor = morphColors[ i ];
-      const colorArray = [];
-      for ( let j = 0; j < morphColor.colors.length * 3; j ++ ) {
-        let color = getColorsRGB(morphColor.colors, j);
-        colorArray.push(color[0], color[1], color[2]);
-      }
-      const attribute = new THREE.Float32BufferAttribute( colorArray, 3 );
-      attribute.name = morphColor.name;
-      array.push( attribute );
-    }
-    bufferGeometry.morphAttributes[ "color" ] = array;
-  }
 }
 
 /**
@@ -719,25 +738,81 @@ function createBufferGeometry(length, coords) {
   return undefined;
 };
 
+/*
+ * WebGPURenderer converts 16 bit index buffers to 32 bit and keeps the
+ * converted array, doubling the memory used by indices. WebGPU supports 16
+ * bit indices natively, three.js only converts arrays whose constructor is
+ * exactly Uint16Array while the index format is chosen with
+ * instanceof Uint16Array. Indices are viewed through this subclass so they
+ * stay 16 bit, the values and getX() are unchanged.
+ */
+class IndexUint16Array extends Uint16Array {}
+
+function keepIndexType(geometry) {
+  const index = geometry?.index;
+  if (index && index.array.constructor === Uint16Array) {
+    const array = index.array;
+    //A view of the same buffer, no copy is made
+    index.array = new IndexUint16Array(array.buffer, array.byteOffset, array.length);
+  }
+}
+
+/*
+ * Temporarily view the indices of the object and its descendants as plain
+ * Uint16Array, for code which checks the exact array type such as
+ * GLTFExporter. Returns a function which undoes the change.
+ */
+function useStandardIndexType(object) {
+  const changed = [];
+  object.traverse((child) => {
+    const index = child.geometry?.index;
+    if (index && index.array instanceof IndexUint16Array) {
+      const array = index.array;
+      index.array = new Uint16Array(array.buffer, array.byteOffset, array.length);
+      changed.push([index, array, index.array]);
+    }
+  });
+  return () => {
+    changed.forEach(([index, original, replacement]) => {
+      //Only restore if nothing else has replaced the array since
+      if (index.array === replacement) {
+        index.array = original;
+      }
+    });
+  };
+}
+
+//Shared by all pointsets
+let circularTexture = undefined;
+
 function getCircularTexture() {
+  if (circularTexture) {
+    return circularTexture;
+  }
   const image = new Image();
-  image.src = discPNG;
   const texture = new THREE.Texture();
   texture.image = image;
-  texture.needsUpdate = true;
+  //Only upload once the image is available
+  image.onload = () => {
+    texture.needsUpdate = true;
+    requestRenderAll();
+  };
+  image.src = discPNG;
+  if (image.complete && image.naturalWidth > 0) {
+    texture.needsUpdate = true;
+  }
+  circularTexture = texture;
   return texture;
 }
 
+/*
+ * Create a text sprite, e.g. marker numbers. The canvas resolution is chosen
+ * from the size of the text on screen, pixel is no longer used.
+ */
 function createNewSpriteText(text, height, colour, font, pixel, weight) {
-  const sprite = new SpriteText(text, height, colour, font, pixel, weight);
-  sprite.canvasScale = 4;
-  sprite.fontFace = font;
-  sprite.fontSize = pixel;
-  sprite.fontWeight = weight;
-  sprite.material.map.generateMipmaps = true;
-  sprite.material.map.anisotropy = 4;
-  sprite.material.sizeAttenuation = false;
-  sprite.material.alphaTest = 0.5;
+  const sprite = createTextSprite(text, height, colour, font, weight);
+  //Only discard fully transparent pixels to keep the smooth edges
+  sprite.material.alphaTest = 0.05;
   sprite.material.transparent = true;
   sprite.material.depthWrite = false;
   sprite.material.depthTest = false;
@@ -793,21 +868,24 @@ function removeVertexAtIndex(geometry, index, maintainLength) {
 
   // Helper to remove elements from a typed array
   const removeElements = (attribute, name) => {
-    let removed = false;
-    const array = Array.from(attribute.array);
-    if (array.length >= (start + deleteCount)) {
-      array.splice(start, deleteCount); // Use splice for removal
-      if (maintainLength) {
-        array.concat(new Array(deleteCount).fill(0));
-      }
-      removed = true;
-      const newArray = new Float32Array(array);
+    const array = attribute.array;
+    if (array.length < (start + deleteCount)) {
+      return false;
+    }
+    if (maintainLength) {
+      //Shift the remaining values in place and clear the end, this keeps
+      //the attribute and its GPU buffer.
+      array.copyWithin(start, start + deleteCount);
+      array.fill(0, array.length - deleteCount);
+      attribute.needsUpdate = true;
+    } else {
+      const newArray = new array.constructor(array.length - deleteCount);
+      newArray.set(array.subarray(0, start));
+      newArray.set(array.subarray(start + deleteCount), start);
       geometry.setAttribute(name, new THREE.BufferAttribute(newArray, itemSize));
       geometry.getAttribute(name).needsUpdate = true;
     }
-    // Create new BufferAttribute with the modified array
-
-    return removed;
+    return true;
   };
 
   removed = removeElements(positionAttribute, 'position');
@@ -884,7 +962,6 @@ function copyColorsArray(attribute, colors) {
 }
 
 export {
-  copyMorphColorsToBufferGeometry,
   copyColorsArray,
   copyVector2sArray,
   copyVector3sArray,
@@ -894,6 +971,10 @@ export {
   createNewURL,
   getBoundingBox,
   getCircularTexture,
+  keepIndexType,
+  updateWorldMatrixFromAncestors,
+  useStandardIndexType,
+  IndexUint16Array,
   getColorsRGB,
   isRegionGroup,
   loadExternalFile,

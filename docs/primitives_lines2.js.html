@@ -26,11 +26,12 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import * as THREE from 'three';
+            <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
 import { Lines } from './lines';
 import { LineSegments2 } from '../three/line/LineSegments2';
-import { LineMaterial } from '../three/line/LineMaterial';
+//import { LineMaterial } from '../three/line/LineMaterial';
 import { LineSegmentsGeometry } from '../three/line/LineSegmentsGeometry';
+
 /**
  * Provides an object which stores lines.
  * This is created when a valid json file containing lines is read into a {@link Zinc.Scene}
@@ -43,7 +44,70 @@ import { LineSegmentsGeometry } from '../three/line/LineSegmentsGeometry';
 const Lines2 = function () {
   Lines.call(this);
 	this.isLines2 = true;
-  let positions = new Array(300);
+  //Shared with the GPU buffer of the mesh, edits are made in place
+  let positions = new Float32Array(300);
+
+  //Grow the positions array if required, returns true if it has
+  //been reallocated.
+  const ensureCapacity = (length) => {
+    if (length > positions.length) {
+      //Each segment has two vertices, six values
+      const capacity = Math.ceil(Math.max(positions.length * 2, length) / 6) * 6;
+      const newPositions = new Float32Array(capacity);
+      newPositions.set(positions);
+      positions = newPositions;
+      return true;
+    }
+    return false;
+  }
+
+  //Fill the unused part of the array with degenerate segments at coord
+  const fillUnused = (start, coord) => {
+    for (let index = start; index + 2 &lt; positions.length; index += 3) {
+      positions[index] = coord[0];
+      positions[index + 1] = coord[1];
+      positions[index + 2] = coord[2];
+    }
+  }
+
+  //Update the line distances without allocating new buffers
+  const updateLineDistances = (mesh) => {
+    const geometry = mesh.geometry;
+    const distanceStart = geometry.attributes.instanceDistanceStart;
+    const instanceStart = geometry.attributes.instanceStart;
+    if (!distanceStart || distanceStart.data.array.length !== instanceStart.count * 2) {
+      mesh.computeLineDistances();
+      return;
+    }
+    const distances = distanceStart.data.array;
+    let total = 0;
+    for (let i = 0; i &lt; instanceStart.count; i++) {
+      const offset = i * 6;
+      const dx = positions[offset + 3] - positions[offset];
+      const dy = positions[offset + 4] - positions[offset + 1];
+      const dz = positions[offset + 5] - positions[offset + 2];
+      distances[i * 2] = total;
+      total += Math.sqrt(dx * dx + dy * dy + dz * dz);
+      distances[i * 2 + 1] = total;
+    }
+    distanceStart.data.needsUpdate = true;
+  }
+
+  //Upload the positions after they have been changed
+  const updatePositions = (mesh, reallocated) => {
+    const instanceStart = mesh.geometry.getAttribute('instanceStart');
+    if (reallocated || !instanceStart || instanceStart.data.array !== positions) {
+      //Only happens when the capacity has been increased
+      mesh.geometry.setPositions(positions);
+      mesh.computeLineDistances();
+    } else {
+      instanceStart.data.needsUpdate = true;
+      updateLineDistances(mesh);
+      mesh.geometry.computeBoundingBox();
+      mesh.geometry.computeBoundingSphere();
+    }
+    this.boundingBoxUpdateRequired = true;
+  }
 
   /**
    * Create the line segements using geometry and material.
@@ -74,6 +138,7 @@ const Lines2 = function () {
    * @param {Number} width - Width of the lines.
    */
 	this.setWidth = width => {
+		this.requestRender();
 		if (this.morph &amp;&amp; this.morph.material) {
 			this.morph.material.linewidth = width;
 			this.morph.material.needsUpdate = true;
@@ -84,12 +149,14 @@ const Lines2 = function () {
    * Add new vertices into the array
    */
   this.addVertices = function(coords) {
+    this.requestRender();
     if (coords &amp;&amp; coords.length) {
       let mesh = this.getMorph();
       if (!mesh) {
         this.drawRange = 0;
       }
       let index = this.drawRange * 3;
+      const reallocated = ensureCapacity(index + coords.length * 3);
       coords.forEach(coord => {
         positions[index++] = coord[0];
         positions[index++] = coord[1];
@@ -98,19 +165,12 @@ const Lines2 = function () {
       });
       //fill the rest of the array.
       if (!mesh) {
-        while (index &lt; 300) {
-          positions[index++] = coords[0][0];
-          positions[index++] = coords[0][1];
-          positions[index++] = coords[0][2];
+        fillUnused(index, coords[0]);
+      } else {
+        if (reallocated) {
+          fillUnused(index, coords[0]);
         }
-      }
-
-      if (mesh) {
-        mesh.geometry.setPositions(positions);
-        mesh.computeLineDistances();
-        mesh.geometry.computeBoundingBox();
-        mesh.geometry.computeBoundingSphere();
-        this.boundingBoxUpdateRequired = true;
+        updatePositions(mesh, reallocated);
       }
     }
     return positions;
@@ -144,6 +204,7 @@ const Lines2 = function () {
    * Edit Vertice in index.
    */
   this.editVertices = function(coords, i) {
+    this.requestRender();
     if (coords &amp;&amp; coords.length) {
       let mesh = this.getMorph();
       const maxIndex = i + coords.length - 1;
@@ -157,17 +218,8 @@ const Lines2 = function () {
           positions[index++] = coord[1];
           positions[index++] = coord[2];
         });
-        index = this.drawRange * 3;
-        while (index &lt; 300) {
-          positions[index++] = coords[0][0];
-          positions[index++] = coords[0][1];
-          positions[index++] = coords[0][2];
-        }
-        mesh.geometry.setPositions(positions);
-        mesh.computeLineDistances();
-        mesh.geometry.computeBoundingBox();
-        mesh.geometry.computeBoundingSphere();
-        this.boundingBoxUpdateRequired = true;
+        fillUnused(this.drawRange * 3, coords[0]);
+        updatePositions(mesh, false);
       }
     }
     return positions;
@@ -181,17 +233,17 @@ const Lines2 = function () {
    * @param {Number} colour - A hex value of the colour for the points
    */
 	this.addLines = (coords, colour)  => {
+    this.requestRender();
     if (coords &amp;&amp; coords.length > 0) {
       this.addVertices(coords);
       let mesh = this.getMorph();
       if (!mesh) {
-        const material = new LineMaterial( {
+        const material = new THREE.Line2NodeMaterial( {
           color: colour,
           linewidth:1,
           vertexColors: false,
           worldUnits: false,
         });
-        material.resolution.set( window.innerWidth, window.innerHeight );
         const options = { localTimeEnabled: false, localMorphColour: false};
         this.createLineSegment(positions, material, options);
       }
@@ -199,10 +251,6 @@ const Lines2 = function () {
     }
 	}
 
-  this.render = (delta, playAnimation, cameraControls, options) => {
-    const material = this.getMorph().material;
-    material.resolution.set( window.innerWidth, window.innerHeight );
-  }
 }
 
 Lines2.prototype = Object.create(Lines.prototype);
@@ -218,13 +266,13 @@ export { Lines2 };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Oct 06 2026 13:58:16 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

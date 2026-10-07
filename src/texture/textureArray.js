@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Texture } from './texture';
 
 /**
@@ -12,7 +12,14 @@ import { Texture } from './texture';
 const TextureArray = function () {
   Texture.call(this);
   this.isTextureArray = true;
+  this.imageData = undefined;
 
+
+  this.setDataTexture = (dataTexture) => {
+    this.impl = dataTexture;
+    console.log("setDataTexture", dataTexture);
+    this.imageData = dataTexture.image.data;
+  }
 
   /**
    * Read images from an array containg src locations.
@@ -48,7 +55,7 @@ const TextureArray = function () {
         length += data.length;
       });
 
-      this.impl = new THREE.DataArrayTexture(fullArray, w, h, d);
+      this.impl = new THREE.Data3DTexture(fullArray, w, h, d);
       this.size = {
         width: w,
         height: h,
@@ -114,4 +121,13 @@ const TextureArray = function () {
 }
 
 TextureArray.prototype = Object.create(Texture.prototype);
+
+/**
+ * Free the memory allocated for this texture array.
+ */
+TextureArray.prototype.dispose = function () {
+  Texture.prototype.dispose.call(this);
+  this.imageData = undefined;
+}
+
 export { TextureArray };

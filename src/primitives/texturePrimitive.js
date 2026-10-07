@@ -70,4 +70,16 @@ const TexturePrimitive = function (textureIn) {
 
 TexturePrimitive.prototype = Object.create(ZincObject.prototype);
 TexturePrimitive.prototype.constructor = TexturePrimitive;
+
+/**
+ * Free the textures and the other allocated memory.
+ */
+TexturePrimitive.prototype.dispose = function() {
+  const textures = new Set(this.textureList);
+  if (this.texture) textures.add(this.texture);
+  textures.forEach(texture => texture.dispose());
+  this.texture = undefined;
+  this.textureList = [];
+  ZincObject.prototype.dispose.call(this);
+}
 export { TexturePrimitive };

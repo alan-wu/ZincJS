@@ -1,7 +1,9 @@
-import * as THREE from 'three';
-//import { WebGPURenderer } from 'three/webgpu';
+import * as THREE from 'three/webgpu';
 import { ResizeSensor } from 'css-element-queries';
 import { Scene } from './scene';
+import { onRenderRequest, offRenderRequest } from './renderRequests';
+import { setTextPixelsPerUnit } from './textSprite';
+import { setGlyphComputeSupported } from './tsl/glyphTransform';
 /**
  * Create a Zinc 3D renderer in the container provided.
  * The primary function of a Zinc 3D renderer is to display the current
@@ -24,7 +26,7 @@ const Renderer = function (containerIn) {
 	let currentScene = undefined;
 
 	//myGezincGeometriestains a tuple of the threejs mesh, timeEnabled, morphColour flag, unique id and morph
-	const clock = new THREE.Clock(false);
+	const clock = new THREE.Timer();
 	this.playAnimation = true;
   /* default animation update rate, rate is 1000 and duration
     is default to 6000, 6s to finish a full animation */
@@ -49,6 +51,15 @@ const Renderer = function (containerIn) {
 	const _this = this;
 	const currentSize = [0, 0];
 	const currentOffset = [0, 0];
+	//Render on demand is opt-in, when enabled the scene is only drawn when
+	//something has changed.
+	let renderOnDemand = false;
+	let needsRender = true;
+	const requestRender = () => {
+		needsRender = true;
+	}
+	//Camera of the current scene shared with additional active scenes
+	const sharedCamera = { controls: undefined, updated: false };
 
 	this.getDrawingWidth = () => {
 		if (container) {
@@ -76,9 +87,11 @@ const Renderer = function (containerIn) {
 	 * Call this to resize the renderer, this is normally call automatically.
 	 */
 	this.onWindowResize = () => {
+		needsRender = true;
 		currentScene.onWindowResize();
-		const width = this.getDrawingWidth();
-		const height = this.getDrawingHeight();
+		//Give it a miniumum size of 1 x 1
+		const width = this.getDrawingWidth() || 1;
+		const height = this.getDrawingHeight() || 1;
 		if (renderer != undefined) {
 			let localRect = undefined;
 			if (container) {
@@ -103,13 +116,19 @@ const Renderer = function (containerIn) {
 			renderer.getSize(target);
 			currentSize[0] = target.x;
 			currentSize[1] = target.y;
+			//Text sprites are drawn at the resolution they occupy on screen
+			const fov = currentScene?.camera?.fov;
+			if (fov) {
+				setTextPixelsPerUnit(currentSize[1] * renderer.getPixelRatio() /
+					(2 * Math.tan(fov * Math.PI / 360)));
+			}
 		}
 	}
 
 	/**
 	 * Initialise the renderer and its visualisations.
 	 */
-	this.initialiseVisualisation = parameters => {
+	this.initialiseVisualisation = async (parameters) => {
 		if (!isInitialised) {
 			parameters = parameters || {};
 			if (parameters['antialias'] === undefined) {
@@ -131,11 +150,35 @@ const Renderer = function (containerIn) {
 				container = undefined;
 				canvas = parameters["canvas"];
 			}
-      //parameters["forceWebGL"] = true;
-			//renderer = new WebGPURenderer(parameters);
-      //await renderer.init();
+      //WebGPURenderer otherwise requests a device with the default
+      //maxTextureArrayLayers (256 on many adapters), which is too low for
+      //some currnetly sypported scaffold, and the default
+      //maxStorageBuffersPerShaderStage (8 on many adapters). The glyph
+      //transform compute pass only needs two storage buffers, the higher
+      //limit is kept as headroom. We will request the highest possible on
+      //the device for both.
+      if (parameters.device === undefined && parameters.requiredLimits === undefined &&
+        typeof navigator !== 'undefined' && navigator.gpu) {
+        try {
+          const adapter = await navigator.gpu.requestAdapter({ powerPreference: parameters.powerPreference });
+          if (adapter) {
+            parameters.requiredLimits = {
+              maxTextureArrayLayers: adapter.limits.maxTextureArrayLayers,
+              maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage,
+            };
+          }
+        } catch (err) {
+          //Fall through and let WebGPURenderer's own adapter/device request
+          //use its defaults.
+        }
+      }
+			renderer = new THREE.WebGPURenderer(parameters);
+      await renderer.init();
+      //GPU glyph animation requires the WebGPU backend, the WebGL fallback
+      //cannot index storage buffers freely.
+      setGlyphComputeSupported(renderer.backend?.isWebGPUBackend === true);
 
-      renderer = new THREE.WebGLRenderer(parameters);
+      //renderer = new THREE.WebGLRenderer(parameters);
 			if (container !== undefined) {
 				container.appendChild( renderer.domElement );
 			}
@@ -151,6 +194,7 @@ const Renderer = function (containerIn) {
 			renderer.autoClear = false;
 			const scene = this.createScene("default");
 			this.setCurrentScene(scene);
+			onRenderRequest(requestRender);
 			isInitialised = true;
 		}
 	}
@@ -197,6 +241,7 @@ const Renderer = function (containerIn) {
 			}
 			currentScene.setInteractiveControlEnable(true);
 			currentScene.setAdditionalScenesGroup(scenesGroup);
+			needsRender = true;
 			this.onWindowResize();
 		}
 	}
@@ -208,10 +253,10 @@ const Renderer = function (containerIn) {
 	 * @return {Zinc.Scene}
 	 */
 	this.getSceneByName = name => {
-		return sceneMap[name];
-	}
+    return sceneMap[name];
+  }
 
-	/**
+  /*
 	 * Create a new scene with the provided name if scene with the same name exists,
 	 * return undefined.
 	 *
@@ -244,6 +289,10 @@ const Renderer = function (containerIn) {
 				logoSprite.position.set(calculatedWidth, calculatedHeight, 1 );
 			}
 		}
+		return sceneMap[name];
+	}
+
+	/**
 	};
 
 	const updateOrthoCamera = () => {
@@ -341,7 +390,6 @@ const Renderer = function (containerIn) {
 	 */
 	this.stopAnimate = () => {
     if (isRendering) {
-      clock.stop();
       isRendering = false;
     }
 	}
@@ -351,8 +399,9 @@ const Renderer = function (containerIn) {
 	 */
 	this.animate = () => {
     if (!isRendering) {
-      clock.start();
+      clock.reset();
       isRendering = true;
+      needsRender = true;
       runAnimation();
     }
 	}
@@ -462,6 +511,41 @@ const Renderer = function (containerIn) {
 	 */
 	this.setPlayRate = playRateIn => {
 		playRate = playRateIn;
+		needsRender = true;
+	}
+
+	/**
+	 * Enable or disable render on demand, it is disabled by default.
+	 * When enabled, the scenes are only drawn when something has changed,
+	 * e.g. camera movement, animation, loading and changes made through
+	 * the Zinc APIs. Call {@link Renderer#invalidate} after modifying
+	 * THREE.js objects directly or after changing the THREE.js renderer,
+	 * e.g. setClearColor.
+	 * Pre-render callbacks are called on every frame, post-render callbacks
+	 * are only called when the scenes are drawn.
+	 *
+	 * @param {Boolean} flag - Enable or disable render on demand.
+	 */
+	this.setRenderOnDemand = flag => {
+		renderOnDemand = flag ? true : false;
+		needsRender = true;
+	}
+
+	/**
+	 * Check if render on demand is enabled.
+	 *
+	 * @return {Boolean}
+	 */
+	this.isRenderOnDemand = () => {
+		return renderOnDemand;
+	}
+
+	/**
+	 * Request the scenes to be drawn on the next frame, this is only
+	 * required when render on demand is enabled.
+	 */
+	this.invalidate = () => {
+		needsRender = true;
 	}
 
 	this.getCurrentTime = () => {
@@ -510,6 +594,7 @@ const Renderer = function (containerIn) {
 			cameraOrtho.position.z = 10;
 		}
 		sceneOrtho.add(object)
+		needsRender = true;
 	}
 
 	const createHUDSprites = logoSprite => {
@@ -549,23 +634,35 @@ const Renderer = function (containerIn) {
 					sensor = new ResizeSensor(canvas, this.onWindowResize);
 			}
 		}
+    clock.update();
 		const delta = clock.getDelta();
-		currentScene.renderGeometries(playRate, delta, this.playAnimation);
+		let changed = currentScene.renderGeometries(playRate, delta, this.playAnimation);
+		if (additionalActiveScenes.length > 0) {
+			//Additional scenes are displayed with the current scene's camera
+			sharedCamera.controls = currentScene.getZincCameraControls();
+			sharedCamera.updated = currentScene.isCameraUpdated();
+		}
 	    for(let i = 0; i < additionalActiveScenes.length; i++) {
 	        const sceneItem = additionalActiveScenes[i];
-	        sceneItem.renderGeometries(playRate, delta, this.playAnimation);
+	        if (sceneItem.renderGeometries(playRate, delta, this.playAnimation, sharedCamera))
+	          changed = true;
 	    }
-		if (cameraOrtho != undefined && sceneOrtho != undefined) {
-			renderer.clearDepth();
-			renderer.render( sceneOrtho, cameraOrtho );
-		}
-    for (let key of Object.keys(preRenderCallbackFunctions)) {
+    for (let key in preRenderCallbackFunctions) {
       if (preRenderCallbackFunctions.hasOwnProperty(key)) {
         preRenderCallbackFunctions[key].call();
       }
     }
+		//Pre-render callbacks may have requested a frame
+		if (renderOnDemand && !changed && !needsRender) {
+			return;
+		}
+		needsRender = false;
     currentScene.render(renderer);
-    for (let key of Object.keys(postRenderCallbackFunctions)) {
+		if (cameraOrtho != undefined && sceneOrtho != undefined) {
+			renderer.clearDepth();
+			renderer.render( sceneOrtho, cameraOrtho );
+		}
+    for (let key in postRenderCallbackFunctions) {
       if (postRenderCallbackFunctions.hasOwnProperty(key)) {
         postRenderCallbackFunctions[key].call();
       }
@@ -573,11 +670,11 @@ const Renderer = function (containerIn) {
 	}
 
 	this.forceContextLoss = () => {
-		renderer.forceContextLoss();
+	//	renderer.forceContextLoss();
 	}
 
 	this.forceContextRestore= () => {
-		renderer.forceContextRestore();
+	//	renderer.forceContextRestore();
 	}
 
 	/**
@@ -614,6 +711,7 @@ const Renderer = function (containerIn) {
 		if (!this.isSceneActive(additionalScene)) {
 			additionalActiveScenes.push(additionalScene);
 			scenesGroup.add(additionalScene.getThreeJSScene());
+			needsRender = true;
 		}
 	}
 
@@ -628,6 +726,7 @@ const Renderer = function (containerIn) {
 			if (sceneItem === additionalScene) {
 				additionalActiveScenes.splice(i, 1);
 				scenesGroup.remove(additionalScene.getThreeJSScene());
+				needsRender = true;
 				return;
 			}
 		}
@@ -641,6 +740,7 @@ const Renderer = function (containerIn) {
 			scenesGroup.remove(additionalActiveScenes[i].getThreeJSScene());
 		}
 		additionalActiveScenes.splice(0,additionalActiveScenes.length);
+		needsRender = true;
 	}
 
   /**
@@ -661,7 +761,7 @@ const Renderer = function (containerIn) {
     preRenderCallbackFunctions = {};
     preRenderCallbackFunctions_id = 0;
     postRenderCallbackFunctions = {};
-    postRenderCallbackFunctions = 0;
+    postRenderCallbackFunctions_id = 0;
     contextLostCallbackFunctions = {};
     contextLostCallbackFunctions_id = 0;
     contextRestoredCallbackFunctions = {};
@@ -672,6 +772,7 @@ const Renderer = function (containerIn) {
     const scene = this.createScene("default");
     this.setCurrentScene(scene);
     sensor = undefined;
+    offRenderRequest(requestRender);
     renderer?.dispose();
   }
 
@@ -700,10 +801,23 @@ const Renderer = function (containerIn) {
 		}
 	}
 
+  /**
+   * Check if the renderer is running on the WebGL 2 fallback backend.
+   * WebGPURenderer never uses WebGL 1, so this is false when WebGPU is used.
+   *
+   * @return {Boolean}
+   */
   this.isWebGL2 = () => {
-    if (renderer)
-      return renderer.capabilities.isWebGL2;
-    return false;
+    return renderer?.backend?.isWebGLBackend === true;
+  }
+
+  /**
+   * Check if the renderer is running on the WebGPU backend.
+   *
+   * @return {Boolean}
+   */
+  this.isWebGPU = () => {
+    return renderer?.backend?.isWebGPUBackend === true;
   }
 };
 

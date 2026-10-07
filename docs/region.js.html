@@ -26,10 +26,11 @@
     
     <section>
         <article>
-            <pre class="prettyprint source linenums"><code>import * as THREE from 'three';
+            <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
 import { Pointset } from './primitives/pointset';
 import { Lines2 } from './primitives/lines2';
 import { Geometry } from './primitives/geometry';
+import { updateWorldMatrixFromAncestors } from './utilities';
 
 let uniqueiId = 0;
 
@@ -61,6 +62,10 @@ let Region = function (parentIn, sceneIn) {
   this.isRegion = true;
   this.uuid = getUniqueId();
 
+  //Ask the scene to draw the next frame, used by render on demand.
+  const requestRender = () => {
+    scene?.invalidate?.();
+  }
 
   /**
    * Hide all primitives belong to this region.
@@ -85,6 +90,7 @@ let Region = function (parentIn, sceneIn) {
    * @param {Boolean} flag - A flag indicating either the visibilty to be on/off.
    */
   this.setVisibility = (flag) => {
+    requestRender();
     if (flag != group.visible) {
       group.visible = flag;
       this.pickableUpdateRequired = true;
@@ -118,9 +124,17 @@ let Region = function (parentIn, sceneIn) {
    * used for the transformation.
    */
   this.setTransformation = transformation => {
+    requestRender();
     tMatrix.set(...transformation);
     group.matrix.copy(tMatrix);
-    group.updateMatrixWorld();
+    //The group does not update its matrix automatically, compute its world
+    //matrix from the ancestors and update the descendants.
+    updateWorldMatrixFromAncestors(group);
+    group.updateMatrixWorld(true);
+    //Bounding boxes of everything in this region have moved
+    this.getAllObjects(true).forEach((zincObject) => {
+      zincObject.boundingBoxUpdateRequired = true;
+    });
   }
 
   /**
@@ -151,6 +165,15 @@ let Region = function (parentIn, sceneIn) {
    */
   this.getParent = () => {
     return parent;
+  }
+
+  /**
+   * Get the {@link Scene} this region belongs to.
+   *
+   * @return {Scene}
+   */
+  this.getScene = () => {
+    return scene;
   }
 
   /**
@@ -197,6 +220,7 @@ let Region = function (parentIn, sceneIn) {
    * @return {Region}
    */
   this.createChild = (nameIn) => {
+    requestRender();
     let childRegion = new Region(this, scene);
     childRegion.setName(nameIn);
     children.push(childRegion);
@@ -325,6 +349,7 @@ let Region = function (parentIn, sceneIn) {
    * this region.
    */
   this.addZincObject = zincObject => {
+    requestRender();
     if (zincObject) {
       zincObject.setRegion(this);
       group.add(zincObject.getGroup());
@@ -344,6 +369,7 @@ let Region = function (parentIn, sceneIn) {
    * @param {ZincObject} zincObject - object to be removed from this region.
    */
   this.removeZincObject = zincObject => {
+    requestRender();
     for (let i = 0; i &lt; zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
         group.remove(zincObject.getGroup());
@@ -379,10 +405,27 @@ let Region = function (parentIn, sceneIn) {
   }
 
   /**
+   * Clear the pickable update flag for this region and its descendants,
+   * used when a region is hidden and none of its objects are pickable.
+   *
+   * @private
+   */
+  this.clearPickableUpdateRequired = (transverse) => {
+    this.pickableUpdateRequired = false;
+    if (transverse) {
+      children.forEach(childRegion => {
+        childRegion.clearPickableUpdateRequired(transverse);
+      });
+    }
+  }
+
+  /**
    * Get all pickable objects.
    */
   this.getPickableThreeJSObjects = (objectsList,  transverse) => {
-    if (group.visible) {
+    if (!group.visible) {
+      this.clearPickableUpdateRequired(transverse);
+    } else {
       zincObjects.forEach(zincObject => {
         if (zincObject.isPickable &amp;&amp; zincObject.getGroup() &amp;&amp; zincObject.getGroup().visible) {
           let marker = zincObject.marker;
@@ -430,30 +473,35 @@ let Region = function (parentIn, sceneIn) {
    * @returns {THREE.Box3}
    */
   this.getBoundingBox = transverse => {
-    let boundingBox1 = undefined, boundingBox2 = undefined;
-    zincObjects.forEach(zincObject => {
-      boundingBox2 = zincObject.getBoundingBox();
-      if (boundingBox2) {
-        if (boundingBox1 == undefined) {
-          boundingBox1 = boundingBox2.clone();
-        } else {
-          boundingBox1.union(boundingBox2);
-        }
-      }
-    });
-    if (transverse) {
-      children.forEach(childRegion => {
-        boundingBox2 = childRegion.getBoundingBox(transverse);
-        if (boundingBox2) {
-          if (boundingBox1 == undefined) {
-            boundingBox1 = boundingBox2.clone();
-          } else {
-            boundingBox1.union(boundingBox2);
-          }
-        }
-      });
+    const boundingBox = new THREE.Box3();
+    if (this.accumulateBoundingBox(boundingBox, transverse)) {
+      return boundingBox;
     }
-    return boundingBox1;
+    return undefined;
+  }
+
+  /**
+   * Expand the target by the bounding box of this region.
+   *
+   * @return {Boolean} - true if any bounding box has been found.
+   * @private
+   */
+  this.accumulateBoundingBox = (target, transverse) => {
+    let found = false;
+    for (let i = 0; i &lt; zincObjects.length; i++) {
+      const boundingBox = zincObjects[i].getBoundingBox();
+      if (boundingBox) {
+        target.union(boundingBox);
+        found = true;
+      }
+    }
+    if (transverse) {
+      for (let i = 0; i &lt; children.length; i++) {
+        if (children[i].accumulateBoundingBox(target, transverse))
+          found = true;
+      }
+    }
+    return found;
   }
 
   /**
@@ -463,14 +511,20 @@ let Region = function (parentIn, sceneIn) {
    * if this is set to true.
    */
   this.clear = transverse => {
+    requestRender();
     if (transverse) {
-      children.forEach(childRegion => childRegion.clear(transverse));
+      children.forEach(childRegion => {
+        childRegion.clear(transverse);
+        group.remove(childRegion.getGroup());
+      });
     }
     zincObjects.forEach(zincObject => {
       group.remove(zincObject.getGroup());
       zincObject.dispose();
     });
-    children = [];
+    if (transverse) {
+      children = [];
+    }
     zincObjects = [];
   }
 
@@ -683,13 +737,14 @@ let Region = function (parentIn, sceneIn) {
    * set to true.
    * @returns {Array}
    */
-  this.getAllObjects = transverse => {
-    const objectsArray = [...zincObjects];
+  this.getAllObjects = (transverse, objectsArray = []) => {
+    for (let i = 0; i &lt; zincObjects.length; i++) {
+      objectsArray.push(zincObjects[i]);
+    }
     if (transverse) {
-      children.forEach(childRegion => {
-        let childObjects = childRegion.getAllObjects(transverse);
-        objectsArray.push(...childObjects);
-      });
+      for (let i = 0; i &lt; children.length; i++) {
+        children[i].getAllObjects(transverse, objectsArray);
+      }
     }
     return objectsArray;
   }
@@ -744,7 +799,7 @@ let Region = function (parentIn, sceneIn) {
     });
     if (transverse) {
       children.forEach(childRegion => {
-        childRegion.setMorphTime(time);
+        childRegion.setMorphTime(time, transverse);
       });
     }
   }
@@ -771,14 +826,23 @@ let Region = function (parentIn, sceneIn) {
 
   /**
    * Update geometries and glyphsets based on the calculated time.
+   * Render the objects in this region and optionally its descendants,
+   * the tree is walked in place to avoid allocations on every frame.
    * @private
    */
+  this.renderObjects = (delta, playAnimation, cameraControls, options, transverse) => {
+    for (let i = 0; i &lt; zincObjects.length; i++) {
+      zincObjects[i].render(delta, playAnimation, cameraControls, options);
+    }
+    if (transverse) {
+      for (let i = 0; i &lt; children.length; i++) {
+        children[i].renderObjects(delta, playAnimation, cameraControls, options, transverse);
+      }
+    }
+  }
+
   this.renderGeometries = (playRate, delta, playAnimation, cameraControls, options, transverse) => {
-    // Let video dictates the progress if one is present
-    const allObjects = this.getAllObjects(transverse);
-    allObjects.forEach(zincObject => {
-      zincObject.render(playRate * delta, playAnimation, cameraControls, options);
-    });
+    this.renderObjects(playRate * delta, playAnimation, cameraControls, options, transverse);
     //process markers visibility and size, as long as there are more than
     //one entry in markersList is greater than 1, markers have been enabled.
     if (options &amp;&amp; (playAnimation === false) &amp;&amp;
@@ -875,13 +939,13 @@ export { Region };
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Oct 06 2026 13:58:16 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>

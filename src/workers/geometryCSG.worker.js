@@ -1,7 +1,7 @@
 
 import { Geometry } from '../primitives/geometry';
 import { GeometryCSGInternal } from './geometryCSGInternal';
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 
 const JSONLoader = THREE.BufferGeometryLoader;
 let core = undefined;

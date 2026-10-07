@@ -1,5 +1,5 @@
-import * as THREE from 'three';
-import { toBufferGeometry, updateMorphColorAttribute } from '../utilities';
+import * as THREE from 'three/webgpu';
+import { keepIndexType, toBufferGeometry, updateMorphColorAttribute } from '../utilities';
 import { LineSegments } from '../three/line/LineSegments';
 
 /**
@@ -26,12 +26,15 @@ const LOD = function (parent) {
   this._loader = undefined;
   //The owning Zinc Object
   this._parent = parent;
+  //Levels loaded after dispose are discarded
+  this._disposed = false;
 
   /*
    * Add a level of LOD at the specified distance
    */
   this.addLevel = (object, distanceIn) => {
     if (object) {
+      keepIndexType(object.geometry);
       const distance = Math.abs(distanceIn);
       let l;
       for (l = 0; l < this.levels.length; l++) {
@@ -57,6 +60,7 @@ const LOD = function (parent) {
    */
   this.levelLoaded = (object, distanceIn) => {
     if (object) {
+      keepIndexType(object.geometry);
       const distance = Math.abs(distanceIn);
       for (let l = 0; l < this.levels.length; l++) {
         if (distance === this.levels[l].distance) {
@@ -68,6 +72,7 @@ const LOD = function (parent) {
         }
       }
       this.checkTransparentMesh();
+      this._parent?.requestRender?.();
     }
   }
 
@@ -182,6 +187,7 @@ const LOD = function (parent) {
   }
 
   this.dispose = () => {
+    this._disposed = true;
     this.levels.forEach((level) => {
       if (level.morph && level.morph.geometry) {
         level.morph.geometry.dispose();
@@ -212,10 +218,15 @@ const LOD = function (parent) {
  */
   this.lodLoader = function (distance) {
     return (geometryIn) => {
+      if (this._disposed) {
+        geometryIn.dispose();
+        return;
+      }
       const material = this._material;
       const options = {
         localTimeEnabled: this._parent.timeEnabled,
         localMorphColour: this._parent.morphColour,
+        isLines: this._parent.isLines,
       }
       const geometry = toBufferGeometry(geometryIn, options);
       let mesh = undefined;
@@ -234,8 +245,13 @@ const LOD = function (parent) {
   this.updateMorphColorAttribute = (currentOnly) => {
     //Multilayers - set all
     if (this._material) {
-      if ((this._material.vertexColors == THREE.VertexColors) ||
-        (this._material.vertexColors == true)) {
+      //Gate on our own morphColorMix uniform rather than
+      //material.vertexColors - that flag is deliberately left false for
+      //morph colour materials now (see applyMorphColorNode's callers), so
+      //NodeMaterial doesn't multiply the blend by the static 'color'
+      //attribute on top of it.
+      if (this._material.userData && this._material.userData.uniforms &&
+        this._material.userData.uniforms.morphColorMix) {
         if (currentOnly) {
           const morph = this.getCurrentMorph();
           updateMorphColorAttribute(morph.geometry, morph);
@@ -275,10 +291,13 @@ const LOD = function (parent) {
         this._material = material;
         if (this._secondaryMaterial) {
           this._secondaryMaterial.dispose();
+          this._secondaryMaterial = undefined;
         }
-        this._secondaryMaterial = material.clone()
-        this._secondaryMaterial.side = THREE.FrontSide;
-        this._secondaryMaterial.transparent = true;
+        if (material.transparent || this.levels.some((level) => level.secondaryMesh)) {
+          this._secondaryMaterial = material.clone()
+          this._secondaryMaterial.side = THREE.FrontSide;
+          this._secondaryMaterial.transparent = true;
+        }
         this.levels.forEach((level) => {
           if (level.morph) {
             level.morph.material = this._material;
@@ -371,6 +390,7 @@ const LOD = function (parent) {
       if (this._currentLevel != visibleIndex) {
         this._currentLevel = visibleIndex;
         this.checkTransparentMesh();
+        this._parent?.requestRender?.();
       }
     }
   }

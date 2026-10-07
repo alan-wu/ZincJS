@@ -1,6 +1,6 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { toBufferGeometry } from '../utilities';
-import { augmentMorphColor } from './augmentShader';
+import { applyMorphColorNode } from '../tsl/morphColorMaterial';
 import { ZincObject} from './zincObject';
 
 const createMeshForGeometry =  (geometryIn, materialIn, options) => {
@@ -24,10 +24,16 @@ const createMeshForGeometry =  (geometryIn, materialIn, options) => {
         side : THREE.DoubleSide
       });
     }
-    //material = PhongToToon(material);
     if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
-      material.vertexColors = true;
-      material.onBeforeCompile = augmentMorphColor;
+      //Force vertexColors off (even if materialIn already had it true) -
+      //NodeMaterial would otherwise multiply our morph colour blend by
+      //the static, non-morph 'color' attribute (vertexColor() in
+      //setupDiffuseColor), which zeroes out whatever channel that static
+      //colour never needed (e.g. blue on an originally pure-red vertex),
+      //turning parts of the blend black instead of the intended hue.
+      //applyMorphColorNode's colorNode fully replaces vertex colouring.
+      material.vertexColors = false;
+      material = applyMorphColorNode(material);
     }
   } else {
     let videoTexture = geometry._video.createCanvasVideoTexture();
@@ -80,30 +86,6 @@ const Geometry = function () {
 	}
 
   /**
-   * Calculate the UV for texture rendering.
-   */
-	this.calculateUVs = () => {
-    //Multilayers
-		this.geometry.computeBoundingBox();
-		const max = this.geometry.boundingBox.max, min = this.geometry.boundingBox.min;
-		const offset = new THREE.Vector2(0 - min.x, 0 - min.y);
-		const range = new THREE.Vector2(max.x - min.x, max.y - min.y);
-		this.geometry.faceVertexUvs[0] = [];
-		for (let i = 0; i < this.geometry.faces.length ; i++) {
-		    const v1 = this.geometry.vertices[this.geometry.faces[i].a];
-		    const v2 = this.geometry.vertices[this.geometry.faces[i].b];
-		    const v3 = this.geometry.vertices[this.geometry.faces[i].c];
-		    geometry.faceVertexUvs[0].push(
-		        [
-		            new THREE.Vector2((v1.x + offset.x)/range.x ,(v1.y + offset.y)/range.y),
-		            new THREE.Vector2((v2.x + offset.x)/range.x ,(v2.y + offset.y)/range.y),
-		            new THREE.Vector2((v3.x + offset.x)/range.x ,(v3.y + offset.y)/range.y)
-		        ]);
-		}
-		geometry.uvsNeedUpdate = true;
-	}
-
-  /**
    * Handle transparent mesh, create a clone for backside rendering if it is
    * transparent.
    */
@@ -117,6 +99,7 @@ const Geometry = function () {
 	 * @param {Boolean} wireframe - Flag to turn on/off wireframe display.
 	 */
 	this.setWireframe = wireframe => {
+		this.requestRender();
 		this.morph.material.wireframe = wireframe;
 	}
 
@@ -124,6 +107,7 @@ const Geometry = function () {
    * Edit Vertice in index.
    */
   this.editVertices = function(coords, i) {
+    this.requestRender();
     if (coords && coords.length) {
       let mesh = this.getMorph();
       const attribute = mesh.geometry.getAttribute("position");

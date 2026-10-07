@@ -1,7 +1,8 @@
-import * as THREE from 'three';
+import * as THREE from 'three/webgpu';
 import { Pointset } from './primitives/pointset';
 import { Lines2 } from './primitives/lines2';
 import { Geometry } from './primitives/geometry';
+import { updateWorldMatrixFromAncestors } from './utilities';
 
 let uniqueiId = 0;
 
@@ -33,6 +34,10 @@ let Region = function (parentIn, sceneIn) {
   this.isRegion = true;
   this.uuid = getUniqueId();
 
+  //Ask the scene to draw the next frame, used by render on demand.
+  const requestRender = () => {
+    scene?.invalidate?.();
+  }
 
   /**
    * Hide all primitives belong to this region.
@@ -57,6 +62,7 @@ let Region = function (parentIn, sceneIn) {
    * @param {Boolean} flag - A flag indicating either the visibilty to be on/off.
    */
   this.setVisibility = (flag) => {
+    requestRender();
     if (flag != group.visible) {
       group.visible = flag;
       this.pickableUpdateRequired = true;
@@ -90,9 +96,17 @@ let Region = function (parentIn, sceneIn) {
    * used for the transformation.
    */
   this.setTransformation = transformation => {
+    requestRender();
     tMatrix.set(...transformation);
     group.matrix.copy(tMatrix);
-    group.updateMatrixWorld();
+    //The group does not update its matrix automatically, compute its world
+    //matrix from the ancestors and update the descendants.
+    updateWorldMatrixFromAncestors(group);
+    group.updateMatrixWorld(true);
+    //Bounding boxes of everything in this region have moved
+    this.getAllObjects(true).forEach((zincObject) => {
+      zincObject.boundingBoxUpdateRequired = true;
+    });
   }
 
   /**
@@ -123,6 +137,15 @@ let Region = function (parentIn, sceneIn) {
    */
   this.getParent = () => {
     return parent;
+  }
+
+  /**
+   * Get the {@link Scene} this region belongs to.
+   *
+   * @return {Scene}
+   */
+  this.getScene = () => {
+    return scene;
   }
 
   /**
@@ -169,6 +192,7 @@ let Region = function (parentIn, sceneIn) {
    * @return {Region}
    */
   this.createChild = (nameIn) => {
+    requestRender();
     let childRegion = new Region(this, scene);
     childRegion.setName(nameIn);
     children.push(childRegion);
@@ -297,6 +321,7 @@ let Region = function (parentIn, sceneIn) {
    * this region.
    */
   this.addZincObject = zincObject => {
+    requestRender();
     if (zincObject) {
       zincObject.setRegion(this);
       group.add(zincObject.getGroup());
@@ -316,6 +341,7 @@ let Region = function (parentIn, sceneIn) {
    * @param {ZincObject} zincObject - object to be removed from this region.
    */
   this.removeZincObject = zincObject => {
+    requestRender();
     for (let i = 0; i < zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
         group.remove(zincObject.getGroup());
@@ -351,10 +377,27 @@ let Region = function (parentIn, sceneIn) {
   }
 
   /**
+   * Clear the pickable update flag for this region and its descendants,
+   * used when a region is hidden and none of its objects are pickable.
+   *
+   * @private
+   */
+  this.clearPickableUpdateRequired = (transverse) => {
+    this.pickableUpdateRequired = false;
+    if (transverse) {
+      children.forEach(childRegion => {
+        childRegion.clearPickableUpdateRequired(transverse);
+      });
+    }
+  }
+
+  /**
    * Get all pickable objects.
    */
   this.getPickableThreeJSObjects = (objectsList,  transverse) => {
-    if (group.visible) {
+    if (!group.visible) {
+      this.clearPickableUpdateRequired(transverse);
+    } else {
       zincObjects.forEach(zincObject => {
         if (zincObject.isPickable && zincObject.getGroup() && zincObject.getGroup().visible) {
           let marker = zincObject.marker;
@@ -402,30 +445,35 @@ let Region = function (parentIn, sceneIn) {
    * @returns {THREE.Box3}
    */
   this.getBoundingBox = transverse => {
-    let boundingBox1 = undefined, boundingBox2 = undefined;
-    zincObjects.forEach(zincObject => {
-      boundingBox2 = zincObject.getBoundingBox();
-      if (boundingBox2) {
-        if (boundingBox1 == undefined) {
-          boundingBox1 = boundingBox2.clone();
-        } else {
-          boundingBox1.union(boundingBox2);
-        }
-      }
-    });
-    if (transverse) {
-      children.forEach(childRegion => {
-        boundingBox2 = childRegion.getBoundingBox(transverse);
-        if (boundingBox2) {
-          if (boundingBox1 == undefined) {
-            boundingBox1 = boundingBox2.clone();
-          } else {
-            boundingBox1.union(boundingBox2);
-          }
-        }
-      });
+    const boundingBox = new THREE.Box3();
+    if (this.accumulateBoundingBox(boundingBox, transverse)) {
+      return boundingBox;
     }
-    return boundingBox1;
+    return undefined;
+  }
+
+  /**
+   * Expand the target by the bounding box of this region.
+   *
+   * @return {Boolean} - true if any bounding box has been found.
+   * @private
+   */
+  this.accumulateBoundingBox = (target, transverse) => {
+    let found = false;
+    for (let i = 0; i < zincObjects.length; i++) {
+      const boundingBox = zincObjects[i].getBoundingBox();
+      if (boundingBox) {
+        target.union(boundingBox);
+        found = true;
+      }
+    }
+    if (transverse) {
+      for (let i = 0; i < children.length; i++) {
+        if (children[i].accumulateBoundingBox(target, transverse))
+          found = true;
+      }
+    }
+    return found;
   }
 
   /**
@@ -435,14 +483,20 @@ let Region = function (parentIn, sceneIn) {
    * if this is set to true.
    */
   this.clear = transverse => {
+    requestRender();
     if (transverse) {
-      children.forEach(childRegion => childRegion.clear(transverse));
+      children.forEach(childRegion => {
+        childRegion.clear(transverse);
+        group.remove(childRegion.getGroup());
+      });
     }
     zincObjects.forEach(zincObject => {
       group.remove(zincObject.getGroup());
       zincObject.dispose();
     });
-    children = [];
+    if (transverse) {
+      children = [];
+    }
     zincObjects = [];
   }
 
@@ -655,13 +709,14 @@ let Region = function (parentIn, sceneIn) {
    * set to true.
    * @returns {Array}
    */
-  this.getAllObjects = transverse => {
-    const objectsArray = [...zincObjects];
+  this.getAllObjects = (transverse, objectsArray = []) => {
+    for (let i = 0; i < zincObjects.length; i++) {
+      objectsArray.push(zincObjects[i]);
+    }
     if (transverse) {
-      children.forEach(childRegion => {
-        let childObjects = childRegion.getAllObjects(transverse);
-        objectsArray.push(...childObjects);
-      });
+      for (let i = 0; i < children.length; i++) {
+        children[i].getAllObjects(transverse, objectsArray);
+      }
     }
     return objectsArray;
   }
@@ -716,7 +771,7 @@ let Region = function (parentIn, sceneIn) {
     });
     if (transverse) {
       children.forEach(childRegion => {
-        childRegion.setMorphTime(time);
+        childRegion.setMorphTime(time, transverse);
       });
     }
   }
@@ -743,14 +798,23 @@ let Region = function (parentIn, sceneIn) {
 
   /**
    * Update geometries and glyphsets based on the calculated time.
+   * Render the objects in this region and optionally its descendants,
+   * the tree is walked in place to avoid allocations on every frame.
    * @private
    */
+  this.renderObjects = (delta, playAnimation, cameraControls, options, transverse) => {
+    for (let i = 0; i < zincObjects.length; i++) {
+      zincObjects[i].render(delta, playAnimation, cameraControls, options);
+    }
+    if (transverse) {
+      for (let i = 0; i < children.length; i++) {
+        children[i].renderObjects(delta, playAnimation, cameraControls, options, transverse);
+      }
+    }
+  }
+
   this.renderGeometries = (playRate, delta, playAnimation, cameraControls, options, transverse) => {
-    // Let video dictates the progress if one is present
-    const allObjects = this.getAllObjects(transverse);
-    allObjects.forEach(zincObject => {
-      zincObject.render(playRate * delta, playAnimation, cameraControls, options);
-    });
+    this.renderObjects(playRate * delta, playAnimation, cameraControls, options, transverse);
     //process markers visibility and size, as long as there are more than
     //one entry in markersList is greater than 1, markers have been enabled.
     if (options && (playAnimation === false) &&

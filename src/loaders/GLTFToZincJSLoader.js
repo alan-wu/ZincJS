@@ -1,12 +1,62 @@
-import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Geometry } from '../primitives/geometry';
 import { Lines } from '../primitives/lines';
 import { Pointset } from '../primitives/pointset';
+import { applyMorphColorNode } from '../tsl/morphColorMaterial';
 
 const GLTFToZincJSLoader = function () {
 
   const _this = this;
+
+  /*
+   * glTF stores morph targets as offsets from the base attribute and
+   * GLTFLoader keeps them that way (morphTargetsRelative), but zinc expects
+   * absolute morph targets. GLTFLoader also only keeps the target names in
+   * morphTargetDictionary, while zinc builds its animation clip from the
+   * attribute names, so copy the names back onto the attributes.
+   */
+  const convertMorphTargets = (object) => {
+    const geometry = object.geometry;
+    if (!geometry || !geometry.morphAttributes) return;
+    const names = [];
+    if (object.morphTargetDictionary) {
+      for (const key in object.morphTargetDictionary) {
+        names[object.morphTargetDictionary[key]] = key;
+      }
+    }
+    for (const attributeName in geometry.morphAttributes) {
+      const base = geometry.attributes[attributeName];
+      geometry.morphAttributes[attributeName].forEach((attribute, i) => {
+        if (geometry.morphTargetsRelative && base) {
+          const array = attribute.array;
+          const baseArray = base.array;
+          const length = Math.min(array.length, baseArray.length);
+          for (let j = 0; j < length; j++) {
+            array[j] += baseArray[j];
+          }
+          attribute.needsUpdate = true;
+        }
+        if (names[i] !== undefined) attribute.name = names[i];
+      });
+    }
+    geometry.morphTargetsRelative = false;
+  }
+
+  /*
+   * Zinc renders colour morphs with its own colorNode (see geometry.js and
+   * lines.js), so swap it into the materials GLTFLoader created. Without it
+   * the colours stay at the first frame.
+   */
+  const applyMorphColourMaterial = (object) => {
+    const setup = (material) => {
+      //Same as geometry.js - vertexColors would multiply the blend by the
+      //static colour attribute.
+      material.vertexColors = false;
+      return applyMorphColorNode(material);
+    };
+    object.material = Array.isArray(object.material) ?
+      object.material.map(setup) : setup(object.material);
+  }
 
   this.parseGLTFObjects = (object, region, depth, finishCallback) => {
     let childRegion = region;
@@ -36,10 +86,14 @@ const GLTFToZincJSLoader = function () {
           let localTimeEnabled = false;
           let localMorphColour = false;
           if (object.geometry && object.geometry.morphAttributes) {
+            convertMorphTargets(object);
             localTimeEnabled = object.geometry.morphAttributes.position ? true : false;
             localMorphColour = object.geometry.morphAttributes.color ? true : false;
           }
-          zincGeometry.setMesh(object.clone(), localTimeEnabled, localMorphColour);
+          const mesh = object.clone();
+          if (localMorphColour && !zincGeometry.isPointset)
+            applyMorphColourMaterial(mesh);
+          zincGeometry.setMesh(mesh, localTimeEnabled, localMorphColour);
           const morph = zincGeometry.getMorph();
           zincGeometry.groupName = morph.name;
           morph.matrixAutoUpdate = true;
@@ -69,13 +123,16 @@ const GLTFToZincJSLoader = function () {
    * @param {String} url - URL to the GLTF file
    * @param {Function} finishCallback - Callback function which will be called
    * once the glyphset is succssfully load in.
+   * @param {Function} isCancelled - Optional function returning true if this
+   * load has been cancelled, the loaded content will be discarded.
    */
-  this.load = (scene, region, url, finishCallback, allCompletedCallback, options) => {
+  this.load = (scene, region, url, finishCallback, allCompletedCallback, options, isCancelled) => {
     const path = url.substring(0, url.lastIndexOf("/") + 1);
     const filename = url.substring(url.lastIndexOf("/") + 1, url.length);
     const loader = new GLTFLoader().setPath(path);
 
     loader.load( filename, function ( gltf ) {
+      if (isCancelled && isCancelled()) return;
       console.log(gltf)
       _this.parseGLTFObjects(gltf.scene, region, 0, finishCallback);
       _this.setCamera(scene);

@@ -322,7 +322,7 @@ geometry and transformation of the glyph.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line178">line 178</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line198">line 198</a>
     </li></ul></dd>
     
 
@@ -459,7 +459,7 @@ geometry and transformation of the glyph.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line37">line 37</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line38">line 38</a>
     </li></ul></dd>
     
 
@@ -500,6 +500,115 @@ geometry and transformation of the glyph.
     <dd>
         
 <span class="param-type">Boolean</span>
+
+
+    </dd>
+</dl>
+
+    
+
+
+
+
+
+        
+            
+
+    
+
+    
+    <h4 class="name" id="getColour"><span class="type-signature"></span>getColour<span class="signature">()</span><span class="type-signature"> &rarr; {THREE.Color|undefined}</span></h4>
+    
+
+    
+
+
+
+<div class="description">
+    Get the last colour set via setColour(), if any.
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+<dl class="details">
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <dt class="tag-source">Source:</dt>
+    <dd class="tag-source"><ul class="dummy"><li>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line193">line 193</a>
+    </li></ul></dd>
+    
+
+    
+
+    
+
+    
+</dl>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h5>Returns:</h5>
+
+        
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type">THREE.Color</span>
+|
+
+<span class="param-type">undefined</span>
 
 
     </dd>
@@ -569,7 +678,7 @@ geometry and transformation of the glyph.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line56">line 56</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line57">line 57</a>
     </li></ul></dd>
     
 
@@ -679,7 +788,7 @@ geometry and transformation of the glyph.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line111">line 111</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line118">line 118</a>
     </li></ul></dd>
     
 
@@ -785,7 +894,7 @@ geometry and transformation of the glyph.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line119">line 119</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line126">line 126</a>
     </li></ul></dd>
     
 
@@ -891,7 +1000,7 @@ geometry and transformation of the glyph.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line98">line 98</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line104">line 104</a>
     </li></ul></dd>
     
 
@@ -935,7 +1044,11 @@ geometry and transformation of the glyph.
 
 
 <div class="description">
-    Set the color of the glyph and its label.
+    Set the color of the glyph and its label. Remembered (see showLabel())
+so a label created/recreated later - e.g. by Glyphset.showLabel(),
+which otherwise only has a single shared material colour to fall back
+on - starts out with this glyph's own correct colour rather than that
+shared one.
 </div>
 
 
@@ -1028,7 +1141,7 @@ geometry and transformation of the glyph.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line165">line 165</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line177">line 177</a>
     </li></ul></dd>
     
 
@@ -1165,7 +1278,7 @@ geometry and transformation of the glyph.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line64">line 64</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line65">line 65</a>
     </li></ul></dd>
     
 
@@ -1375,7 +1488,7 @@ transformation.</td>
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line134">line 134</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line141">line 141</a>
     </li></ul></dd>
     
 
@@ -1472,7 +1585,9 @@ label.
 
             
 
-            <td class="description last">Colour for the label.</td>
+            <td class="description last">Colour to fall back to for the label if
+this glyph doesn't already have its own colour (see setColour()/
+getColour()) - e.g. genuinely no colour data at all for this glyphset.</td>
         </tr>
 
     
@@ -1513,7 +1628,7 @@ label.
     
     <dt class="tag-source">Source:</dt>
     <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line77">line 77</a>
+        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line81">line 81</a>
     </li></ul></dd>
     
 
@@ -1559,13 +1674,13 @@ label.
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#augmentMorphColor">augmentMorphColor</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Sep 09 2026 15:29:28 GMT+1200 (New Zealand Standard Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Tue Oct 06 2026 13:58:16 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>
