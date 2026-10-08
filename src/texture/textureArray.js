@@ -14,12 +14,11 @@ const TextureArray = function () {
   this.isTextureArray = true;
   this.imageData = undefined;
 
-
   this.setDataTexture = (dataTexture) => {
     this.impl = dataTexture;
-    console.log("setDataTexture", dataTexture);
+    console.log('setDataTexture', dataTexture);
     this.imageData = dataTexture.image.data;
-  }
+  };
 
   /**
    * Read images from an array containg src locations.
@@ -34,8 +33,8 @@ const TextureArray = function () {
     if (srcArrays && srcArrays.length) {
       this.isLoading = true;
       const image = new Image();
-      image.crossOrigin = "Anonymous";
-      const canvas = document.createElement("canvas");
+      image.crossOrigin = 'Anonymous';
+      const canvas = document.createElement('canvas');
       let length = 0;
       const dataStacks = new Array(srcArrays.length);
       for (let i = 0; i < srcArrays.length; i++) {
@@ -50,7 +49,7 @@ const TextureArray = function () {
       }
       const fullArray = new Uint8Array(length);
       length = 0;
-      dataStacks.forEach(data => {
+      dataStacks.forEach((data) => {
         fullArray.set(data, length);
         length += data.length;
       });
@@ -59,12 +58,12 @@ const TextureArray = function () {
       this.size = {
         width: w,
         height: h,
-        depth: d
+        depth: d,
       };
       this.isLoading = false;
       this.impl.needsUpdate = true;
     }
-  }
+  };
 
   /**
    * Get and create the material containing shaders and the textures.
@@ -86,18 +85,17 @@ const TextureArray = function () {
       if (options) {
         if (options.vs && options.fs) {
           let transparent = true;
-          if ("transparent" in options) {
+          if ('transparent' in options) {
             transparent = options.transparent;
           }
           let side = THREE.FrontSide;
-          if (options.side)
-            side = options.side;
+          if (options.side) side = options.side;
           material = new THREE.ShaderMaterial({
             transparent,
             uniforms: options.uniforms,
             vertexShader: options.vs,
             fragmentShader: options.fs,
-            side
+            side,
           });
           if (options.glslVersion) {
             material.glslVersion = options.glslVersion;
@@ -109,7 +107,7 @@ const TextureArray = function () {
           transparent: false,
           opacity: 1.0,
           map: this.impl,
-          side: THREE.DoubleSide
+          side: THREE.DoubleSide,
         });
       }
       if (material) {
@@ -117,8 +115,8 @@ const TextureArray = function () {
         return material;
       }
     }
-  }
-}
+  };
+};
 
 TextureArray.prototype = Object.create(Texture.prototype);
 
@@ -128,6 +126,6 @@ TextureArray.prototype = Object.create(Texture.prototype);
 TextureArray.prototype.dispose = function () {
   Texture.prototype.dispose.call(this);
   this.imageData = undefined;
-}
+};
 
 export { TextureArray };

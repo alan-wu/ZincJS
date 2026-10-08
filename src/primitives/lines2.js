@@ -15,7 +15,7 @@ import { LineSegmentsGeometry } from '../three/line/LineSegmentsGeometry';
  */
 const Lines2 = function () {
   Lines.call(this);
-	this.isLines2 = true;
+  this.isLines2 = true;
   //Shared with the GPU buffer of the mesh, edits are made in place
   let positions = new Float32Array(300);
 
@@ -31,7 +31,7 @@ const Lines2 = function () {
       return true;
     }
     return false;
-  }
+  };
 
   //Fill the unused part of the array with degenerate segments at coord
   const fillUnused = (start, coord) => {
@@ -40,7 +40,7 @@ const Lines2 = function () {
       positions[index + 1] = coord[1];
       positions[index + 2] = coord[2];
     }
-  }
+  };
 
   //Update the line distances without allocating new buffers
   const updateLineDistances = (mesh) => {
@@ -63,7 +63,7 @@ const Lines2 = function () {
       distances[i * 2 + 1] = total;
     }
     distanceStart.data.needsUpdate = true;
-  }
+  };
 
   //Upload the positions after they have been changed
   const updatePositions = (mesh, reallocated) => {
@@ -79,7 +79,7 @@ const Lines2 = function () {
       mesh.geometry.computeBoundingSphere();
     }
     this.boundingBoxUpdateRequired = true;
-  }
+  };
 
   /**
    * Create the line segements using geometry and material.
@@ -92,8 +92,8 @@ const Lines2 = function () {
    * @param {Boolean} options.localMorphColour - A flag to indicate either the colour is
    * time dependent.
    */
-	this.createLineSegment = (arrayIn, materialIn, options) => {
-		if (arrayIn && materialIn) {
+  this.createLineSegment = (arrayIn, materialIn, options) => {
+    if (arrayIn && materialIn) {
       const linesGeometry = new LineSegmentsGeometry();
       linesGeometry.setPositions(arrayIn);
       linesGeometry.colorsNeedUpdate = true;
@@ -101,26 +101,26 @@ const Lines2 = function () {
       line.scale.set(1, 1, 1);
       line.computeLineDistances();
       this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
-		}
-	}
+    }
+  };
 
   /**
    * Set the width for the lines.
    *
    * @param {Number} width - Width of the lines.
    */
-	this.setWidth = width => {
-		this.requestRender();
-		if (this.morph && this.morph.material) {
-			this.morph.material.linewidth = width;
-			this.morph.material.needsUpdate = true;
-		}
-	}
+  this.setWidth = (width) => {
+    this.requestRender();
+    if (this.morph && this.morph.material) {
+      this.morph.material.linewidth = width;
+      this.morph.material.needsUpdate = true;
+    }
+  };
 
   /**
    * Add new vertices into the array
    */
-  this.addVertices = function(coords) {
+  this.addVertices = function (coords) {
     this.requestRender();
     if (coords && coords.length) {
       let mesh = this.getMorph();
@@ -129,7 +129,7 @@ const Lines2 = function () {
       }
       let index = this.drawRange * 3;
       const reallocated = ensureCapacity(index + coords.length * 3);
-      coords.forEach(coord => {
+      coords.forEach((coord) => {
         positions[index++] = coord[0];
         positions[index++] = coord[1];
         positions[index++] = coord[2];
@@ -146,22 +146,18 @@ const Lines2 = function () {
       }
     }
     return positions;
-  }
+  };
 
   /**
    * Get the vertices by face index
    */
-  this.getVerticesByFaceIndex = function(faceIndex) {
+  this.getVerticesByFaceIndex = function (faceIndex) {
     let vIndex = faceIndex * 2 * 3;
     const mesh = this.getMorph();
-    if (mesh && (this.drawRange * 3) > vIndex) {
-      const position = mesh.geometry.getAttribute( 'instanceStart' );
+    if (mesh && this.drawRange * 3 > vIndex) {
+      const position = mesh.geometry.getAttribute('instanceStart');
       return [
-        [
-          position.data.array[vIndex],
-          position.data.array[++vIndex],
-          position.data.array[++vIndex],
-        ],
+        [position.data.array[vIndex], position.data.array[++vIndex], position.data.array[++vIndex]],
         [
           position.data.array[++vIndex],
           position.data.array[++vIndex],
@@ -170,12 +166,12 @@ const Lines2 = function () {
       ];
     }
     return [];
-  }
+  };
 
   /**
    * Edit Vertice in index.
    */
-  this.editVertices = function(coords, i) {
+  this.editVertices = function (coords, i) {
     this.requestRender();
     if (coords && coords.length) {
       let mesh = this.getMorph();
@@ -183,9 +179,8 @@ const Lines2 = function () {
       if (!mesh || 0 > i || maxIndex >= this.drawRange) {
         return;
       } else {
-
         let index = i * 3;
-        coords.forEach(coord => {
+        coords.forEach((coord) => {
           positions[index++] = coord[0];
           positions[index++] = coord[1];
           positions[index++] = coord[2];
@@ -195,7 +190,7 @@ const Lines2 = function () {
       }
     }
     return positions;
-  }
+  };
 
   /**
    * Add new lines to existing lines if it exists, otherwise
@@ -204,26 +199,25 @@ const Lines2 = function () {
 
    * @param {Number} colour - A hex value of the colour for the points
    */
-	this.addLines = (coords, colour)  => {
+  this.addLines = (coords, colour) => {
     this.requestRender();
     if (coords && coords.length > 0) {
       this.addVertices(coords);
       let mesh = this.getMorph();
       if (!mesh) {
-        const material = new THREE.Line2NodeMaterial( {
+        const material = new THREE.Line2NodeMaterial({
           color: colour,
-          linewidth:1,
+          linewidth: 1,
           vertexColors: false,
           worldUnits: false,
         });
-        const options = { localTimeEnabled: false, localMorphColour: false};
+        const options = { localTimeEnabled: false, localMorphColour: false };
         this.createLineSegment(positions, material, options);
       }
       if (this.region) this.region.pickableUpdateRequired = true;
     }
-	}
-
-}
+  };
+};
 
 Lines2.prototype = Object.create(Lines.prototype);
 Lines2.prototype.constructor = Lines2;

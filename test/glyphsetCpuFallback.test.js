@@ -13,7 +13,8 @@ afterEach(() => {
   setGlyphComputeSupported(true);
 });
 
-const lerp3 = (a, b, proportion) => [0, 1, 2].map((j) => proportion * a[j] + (1 - proportion) * b[j]);
+const lerp3 = (a, b, proportion) =>
+  [0, 1, 2].map((j) => proportion * a[j] + (1 - proportion) * b[j]);
 
 // resolve_glyph_axes()'s NONE branch for this fixture (repeat_mode "NONE")
 const expectedPoint = (record, bottomFrame, topFrame, proportion) => {
@@ -26,9 +27,16 @@ const expectedPoint = (record, bottomFrame, topFrame, proportion) => {
   const a2 = lerp3(pick(axis2, bottomFrame), pick(axis2, topFrame), proportion);
   const a3 = lerp3(pick(axis3, bottomFrame), pick(axis3, topFrame), proportion);
   const sc = lerp3(pick(scale, bottomFrame), pick(scale, topFrame), proportion);
-  const axisScale = [0, 1, 2].map((j) => (sc[j] < 0 ? -1 : 1) * baseSize[j] + sc[j] * scaleFactors[j]);
-  return [0, 1, 2].map((j) => point[j] + offset[0] * a1[j] * axisScale[0] +
-    offset[1] * a2[j] * axisScale[1] + offset[2] * a3[j] * axisScale[2]);
+  const axisScale = [0, 1, 2].map(
+    (j) => (sc[j] < 0 ? -1 : 1) * baseSize[j] + sc[j] * scaleFactors[j],
+  );
+  return [0, 1, 2].map(
+    (j) =>
+      point[j] +
+      offset[0] * a1[j] * axisScale[0] +
+      offset[1] * a2[j] * axisScale[1] +
+      offset[2] * a3[j] * axisScale[2],
+  );
 };
 
 const loadGlyphset = () => {

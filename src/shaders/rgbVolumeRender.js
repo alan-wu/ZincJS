@@ -1,8 +1,7 @@
 import * as THREE from 'three/webgpu';
 const glslVersion = null;
 
-const fs =
-`
+const fs = `
 uniform sampler3D texture0;
 uniform sampler3D texture1;
 uniform vec4 lookup_offsets, lookup_scales;
@@ -75,8 +74,7 @@ void main()
 }
 `;
 
-const vs =
-`
+const vs = `
 varying vec4 diffuse, ambientGlobal, ambient;
 uniform vec4 texture_scaling;
 
@@ -100,20 +98,15 @@ void main()
 }
 `;
 
-const getUniforms = function() {
+const getUniforms = function () {
   return {
-		u_size: { value: new THREE.Vector3( 1, 1, 1 ) },
-		u_renderstyle: { value: 0 },
-		u_renderthreshold: { value: 0.5 },
-		u_clim: { value: new THREE.Vector2( 1, 1 ) },
-		u_data: { value: null },
-		u_cmdata: { value: null },
-  }
+    u_size: { value: new THREE.Vector3(1, 1, 1) },
+    u_renderstyle: { value: 0 },
+    u_renderthreshold: { value: 0.5 },
+    u_clim: { value: new THREE.Vector2(1, 1) },
+    u_data: { value: null },
+    u_cmdata: { value: null },
+  };
 };
 
-export {
-  fs,
-  vs,
-  glslVersion,
-  getUniforms
-}
+export { fs, vs, glslVersion, getUniforms };

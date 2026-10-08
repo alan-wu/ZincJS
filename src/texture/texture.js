@@ -15,9 +15,9 @@ const Texture = function () {
   this.size = {
     width: 1,
     height: 1,
-    depth: 0
+    depth: 0,
   };
-}
+};
 
 /**
  * Read an image from src.
@@ -33,8 +33,8 @@ Texture.prototype.loadImage = function (img, src) {
     img.onload = () => resolve(img);
     img.onerror = reject;
     img.src = src;
-  })
-}
+  });
+};
 
 /**
   @typedef IMAGE_UINT8_RETURN
@@ -57,18 +57,18 @@ Texture.prototype.imageToUint8Array = async function (instance, img, src, canvas
   await instance.loadImage(img, src);
   canvas.width = img.width;
   canvas.height = img.height;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
   return {
     array: new Uint8Array(ctx.getImageData(0, 0, canvas.width, canvas.height).data.buffer),
     width: canvas.width,
-    height: canvas.height
+    height: canvas.height,
   };
-}
+};
 
 Texture.prototype.loadFromImages = async function (srcArrays) {
-  return
-}
+  return;
+};
 
 /**
  * Free the memory allocated for this texture.
@@ -78,7 +78,7 @@ Texture.prototype.dispose = function () {
     this.impl.dispose();
     this.impl = undefined;
   }
-}
+};
 
 /**
  * Return true if the texture is ready for consumption.
@@ -86,10 +86,9 @@ Texture.prototype.dispose = function () {
  * @return {Boolean}
  */
 Texture.prototype.isReady = function () {
-  if (this.impl && !this.isLoading)
-    return true;
+  if (this.impl && !this.isLoading) return true;
   return false;
-}
+};
 
 /**
  * Return true if  the texture is ready for consumption, otherwise false.
@@ -103,9 +102,9 @@ Texture.prototype.getMaterial = function () {
       transparent: false,
       opacity: 1.0,
       map: this.impl,
-      side: THREE.DoubleSide
+      side: THREE.DoubleSide,
     });
   }
-}
+};
 
 export { Texture };

@@ -14,24 +14,24 @@ export default defineConfig({
     },
     rollupOptions: {
       external(id) {
-        if (id.includes("nifti-reader-js")) {
-          return false
+        if (id.includes('nifti-reader-js')) {
+          return false;
         }
-        return !id.startsWith('.') && !path.isAbsolute(id) && !id.includes('package.json')
+        return !id.startsWith('.') && !path.isAbsolute(id) && !id.includes('package.json');
       },
       output: {
         extend: true,
         globals: {
           'css-element-queries': 'cssElememtQueries',
-          'three': 'THREE',
+          three: 'THREE',
           'three/tsl': 'THREE',
           'three/webgpu': 'THREE',
           'three-spritetext': 'SpriteText',
           'three/examples/jsm/exporters/GLTFExporter': 'GLTFExporter',
           'three/examples/jsm/loaders/GLTFLoader': 'GLTFLoader',
-          'fflate': 'fflate'
-        }
-      }
+          fflate: 'fflate',
+        },
+      },
     },
     assetsInlineLimit: 8192,
   },

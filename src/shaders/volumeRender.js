@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 const glslVersion = null;
 
-const fs =
-`
+const fs = `
   precision highp float;
   precision highp sampler2DArray;
   precision highp sampler2D;
@@ -236,8 +235,7 @@ const fs =
   }
 `;
 
-const vs =
-`
+const vs = `
   varying vec4 v_nearpos;
   varying vec4 v_farpos;
   varying vec3 v_position;
@@ -269,20 +267,15 @@ const vs =
   }
 `;
 
-const getUniforms = function() {
+const getUniforms = function () {
   return {
-		u_size: { value: new THREE.Vector3( 1, 1, 1 ) },
-		u_renderstyle: { value: 0 },
-		u_renderthreshold: { value: 0.5 },
-		u_clim: { value: new THREE.Vector2( 1, 1 ) },
-		u_data: { value: null },
-		u_cmdata: { value: null },
-  }
+    u_size: { value: new THREE.Vector3(1, 1, 1) },
+    u_renderstyle: { value: 0 },
+    u_renderthreshold: { value: 0.5 },
+    u_clim: { value: new THREE.Vector2(1, 1) },
+    u_data: { value: null },
+    u_cmdata: { value: null },
+  };
 };
 
-export {
-  fs,
-  vs,
-  glslVersion,
-  getUniforms
-}
+export { fs, vs, glslVersion, getUniforms };

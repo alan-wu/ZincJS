@@ -23,7 +23,7 @@ const RESCALE_THRESHOLD = 0.1;
  * is viewportHeight * pixelRatio / (2 * tan(fov / 2)). Default to a 1000
  * pixels viewport with the 40 degrees field of view used by the scenes.
  */
-let pixelsPerUnit = 1000 / (2 * Math.tan(20 * Math.PI / 180));
+let pixelsPerUnit = 1000 / (2 * Math.tan((20 * Math.PI) / 180));
 
 //Weak references to every live text sprite, so they can be redrawn
 const sprites = new Set();
@@ -32,7 +32,7 @@ let fontListenerAdded = false;
 const fontSizeForHeight = (textHeight) => {
   const size = Math.round(textHeight * pixelsPerUnit * OVERSAMPLE);
   return Math.min(Math.max(size, MIN_FONT_SIZE), MAX_FONT_SIZE);
-}
+};
 
 /*
  * The canvas matches the on screen size so mipmaps are not required,
@@ -46,7 +46,7 @@ const applyTextureSettings = (sprite) => {
     texture.magFilter = THREE.LinearFilter;
     texture.anisotropy = 1;
   }
-}
+};
 
 /*
  * SpriteText redraws its canvas and creates a new texture in every setter,
@@ -63,7 +63,7 @@ const setFont = (sprite, fontFace, fontSize, fontWeight) => {
     sprite.fontSize = fontSize;
     sprite.fontWeight = fontWeight;
   }
-}
+};
 
 /*
  * Redraw the sprite at the resolution required for its current height.
@@ -74,7 +74,7 @@ const refreshTextSprite = (sprite, force = false) => {
     setFont(sprite, sprite.fontFace, fontSize, sprite.fontWeight);
     applyTextureSettings(sprite);
   }
-}
+};
 
 const forEachSprite = (callback) => {
   sprites.forEach((ref) => {
@@ -85,12 +85,12 @@ const forEachSprite = (callback) => {
       sprites.delete(ref);
     }
   });
-}
+};
 
 const redrawAll = () => {
   forEachSprite((sprite) => refreshTextSprite(sprite, true));
   requestRenderAll();
-}
+};
 
 /*
  * The canvas is drawn with a fallback font if a web font has not been
@@ -108,19 +108,22 @@ const waitForFont = (sprite) => {
   const font = `${sprite.fontWeight} ${sprite.fontSize}px ${sprite.fontFace}`;
   try {
     if (!document.fonts.check(font)) {
-      document.fonts.load(font).then(() => {
-        refreshTextSprite(sprite, true);
-        requestRenderAll();
-      }).catch(() => {});
+      document.fonts
+        .load(font)
+        .then(() => {
+          refreshTextSprite(sprite, true);
+          requestRenderAll();
+        })
+        .catch(() => {});
     }
   } catch {
     //Invalid font string, keep the fallback font
   }
-}
+};
 
 const registerTextSprite = (sprite) => {
   sprites.add(new WeakRef(sprite));
-}
+};
 
 /**
  * Stop tracking a text sprite, call this when it is disposed.
@@ -132,7 +135,7 @@ const releaseTextSprite = (sprite) => {
       sprites.delete(ref);
     }
   });
-}
+};
 
 /**
  * Create a text sprite rendered with a node material, the canvas resolution
@@ -146,8 +149,9 @@ const releaseTextSprite = (sprite) => {
  * @return {SpriteText}
  */
 const createTextSprite = (text, textHeight, colour, fontFace, fontWeight) => {
-  const sprite = colour ? new SpriteText(text, textHeight, colour) :
-    new SpriteText(text, textHeight);
+  const sprite = colour
+    ? new SpriteText(text, textHeight, colour)
+    : new SpriteText(text, textHeight);
   setFont(sprite, fontFace, fontSizeForHeight(textHeight), fontWeight);
   //Replace the SpriteMaterial created by SpriteText with a node material
   //using the same canvas texture.
@@ -162,7 +166,7 @@ const createTextSprite = (text, textHeight, colour, fontFace, fontWeight) => {
   registerTextSprite(sprite);
   waitForFont(sprite);
   return sprite;
-}
+};
 
 /**
  * Set the height of a text sprite and redraw it once at the matching
@@ -176,7 +180,7 @@ const setTextSpriteHeight = (sprite, textHeight) => {
     sprite.textHeight = textHeight;
     refreshTextSprite(sprite);
   }
-}
+};
 
 /**
  * Update the number of screen pixels per unit of text height, e.g. when the
@@ -194,7 +198,7 @@ const setTextPixelsPerUnit = (value) => {
     forEachSprite((sprite) => refreshTextSprite(sprite));
     requestRenderAll();
   }
-}
+};
 
 const getTextPixelsPerUnit = () => pixelsPerUnit;
 

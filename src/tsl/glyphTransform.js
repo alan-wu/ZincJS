@@ -22,21 +22,25 @@ const REPEAT_MODE = { NONE: 0, MIRROR: 1, AXES_2D: 2, AXES_3D: 3 };
 
 const repeatModeToInt = (repeat_mode) => {
   switch (repeat_mode) {
-    case "MIRROR": return REPEAT_MODE.MIRROR;
-    case "AXES_2D": return REPEAT_MODE.AXES_2D;
-    case "AXES_3D": return REPEAT_MODE.AXES_3D;
-    default: return REPEAT_MODE.NONE;
+    case 'MIRROR':
+      return REPEAT_MODE.MIRROR;
+    case 'AXES_2D':
+      return REPEAT_MODE.AXES_2D;
+    case 'AXES_3D':
+      return REPEAT_MODE.AXES_3D;
+    default:
+      return REPEAT_MODE.NONE;
   }
-}
+};
 
 //Order of the vec4 fields of each glyph instance in the output buffer
 const OUTPUT_FIELDS = { position: 0, axis1: 1, axis2: 2, axis3: 3, color: 4 };
 
 const multiplierForRepeatMode = (repeat_mode) => {
-  if (repeat_mode == "AXES_2D" || repeat_mode == "MIRROR") return 2;
-  if (repeat_mode == "AXES_3D") return 3;
+  if (repeat_mode == 'AXES_2D' || repeat_mode == 'MIRROR') return 2;
+  if (repeat_mode == 'AXES_3D') return 3;
   return 1;
-}
+};
 
 /**
  * GPU port of Glyphset's resolve_glyph_axes() + the per-frame keyframe
@@ -137,7 +141,6 @@ function createGlyphTransformCompute({
   };
 
   const computeFn = Fn(() => {
-
     const outIdx = int(instanceIndex);
     const inputIdx = outIdx.div(int(multiplier));
     const copyIdx = outIdx.mod(int(multiplier));
@@ -162,18 +165,21 @@ function createGlyphTransformCompute({
     // test/glyphTransformCompute.test.js's development). Writing directly
     // to the output buffer inside each branch avoids it.
 
-    const isNoneOrMirror = uniforms.repeatMode.equal(int(REPEAT_MODE.NONE))
+    const isNoneOrMirror = uniforms.repeatMode
+      .equal(int(REPEAT_MODE.NONE))
       .or(uniforms.repeatMode.equal(int(REPEAT_MODE.MIRROR)));
 
     If(isNoneOrMirror, () => {
-
       // resolve_glyph_axes(): NONE / MIRROR branch.
       const signVec = vec3(
         select(scale.x.lessThan(0), float(-1), float(1)),
         select(scale.y.lessThan(0), float(-1), float(1)),
         select(scale.z.lessThan(0), float(-1), float(1)),
       );
-      const axisScale = signVec.mul(uniforms.baseSize).add(scale.mul(uniforms.scaleFactors)).mul(uniforms.globalScale);
+      const axisScale = signVec
+        .mul(uniforms.baseSize)
+        .add(scale.mul(uniforms.scaleFactors))
+        .mul(uniforms.globalScale);
       const baseAxis1 = axis1.mul(axisScale.x);
       const baseAxis2 = axis2.mul(axisScale.y);
       const baseAxis3 = axis3.mul(axisScale.z);
@@ -182,7 +188,9 @@ function createGlyphTransformCompute({
         .add(baseAxis2.mul(uniforms.offset.y))
         .add(baseAxis3.mul(uniforms.offset.z));
 
-      const isMirrorCopy = uniforms.repeatMode.equal(int(REPEAT_MODE.MIRROR)).and(copyIdx.equal(int(1)));
+      const isMirrorCopy = uniforms.repeatMode
+        .equal(int(REPEAT_MODE.MIRROR))
+        .and(copyIdx.equal(int(1)));
 
       const a1 = select(isMirrorCopy, baseAxis1.negate(), baseAxis1).toVar();
       const a2 = select(isMirrorCopy, baseAxis2.negate(), baseAxis2).toVar();
@@ -204,44 +212,60 @@ function createGlyphTransformCompute({
       writeOutput(outIdx, OUTPUT_FIELDS.axis1, a1);
       writeOutput(outIdx, OUTPUT_FIELDS.axis2, a2);
       writeOutput(outIdx, OUTPUT_FIELDS.axis3, a3);
-
     }).Else(() => {
-
       // resolve_glyph_axes(): AXES_2D / AXES_3D branch.
       const signVec = vec3(
         select(scale.x.lessThan(0), float(-1), float(1)),
         select(scale.y.lessThan(0), float(-1), float(1)),
         select(scale.z.lessThan(0), float(-1), float(1)),
       );
-      const axisScale = signVec.mul(uniforms.baseSize.x).add(scale.mul(uniforms.scaleFactors.x)).mul(uniforms.globalScale);
+      const axisScale = signVec
+        .mul(uniforms.baseSize.x)
+        .add(scale.mul(uniforms.scaleFactors.x))
+        .mul(uniforms.globalScale);
       const finalPoint = point
         .add(axis1.mul(axisScale.x).mul(uniforms.offset.x))
         .add(axis2.mul(axisScale.y).mul(uniforms.offset.y))
         .add(axis3.mul(axisScale.z).mul(uniforms.offset.z));
 
-      const useScale = select(copyIdx.equal(int(0)), scale.x,
-        select(copyIdx.equal(int(1)), scale.y, scale.z));
+      const useScale = select(
+        copyIdx.equal(int(0)),
+        scale.x,
+        select(copyIdx.equal(int(1)), scale.y, scale.z),
+      );
 
       const isAxes2D = uniforms.repeatMode.equal(int(REPEAT_MODE.AXES_2D));
 
-      const useAxis1 = select(copyIdx.equal(int(0)), axis1,
-        select(copyIdx.equal(int(1)), axis2, axis3));
-      const useAxis2 = select(copyIdx.equal(int(0)), axis2,
-        select(copyIdx.equal(int(1)), select(isAxes2D, axis1, axis3), axis1));
+      const useAxis1 = select(
+        copyIdx.equal(int(0)),
+        axis1,
+        select(copyIdx.equal(int(1)), axis2, axis3),
+      );
+      const useAxis2 = select(
+        copyIdx.equal(int(0)),
+        axis2,
+        select(copyIdx.equal(int(1)), select(isAxes2D, axis1, axis3), axis1),
+      );
 
-      const finalScale1 = uniforms.baseSize.x.add(useScale.mul(uniforms.scaleFactors.x)).mul(uniforms.globalScale);
+      const finalScale1 = uniforms.baseSize.x
+        .add(useScale.mul(uniforms.scaleFactors.x))
+        .mul(uniforms.globalScale);
       const finalAxis1 = useAxis1.mul(finalScale1);
 
       const axis3Raw = finalAxis1.cross(useAxis2);
       const mag1 = axis3Raw.length();
-      let scaling1 = uniforms.baseSize.z.add(useScale.mul(uniforms.scaleFactors.z)).mul(uniforms.globalScale)
+      let scaling1 = uniforms.baseSize.z
+        .add(useScale.mul(uniforms.scaleFactors.z))
+        .mul(uniforms.globalScale)
         .div(max(mag1, 1e-8));
       scaling1 = select(isAxes2D.and(copyIdx.greaterThan(int(0))), scaling1.mul(-1), scaling1);
       const finalAxis3 = select(mag1.greaterThan(0), axis3Raw.mul(scaling1), axis3Raw);
 
       const axis2Raw = finalAxis3.cross(finalAxis1);
       const mag2 = axis2Raw.length();
-      const scaling2 = uniforms.baseSize.y.add(useScale.mul(uniforms.scaleFactors.y)).mul(uniforms.globalScale)
+      const scaling2 = uniforms.baseSize.y
+        .add(useScale.mul(uniforms.scaleFactors.y))
+        .mul(uniforms.globalScale)
         .div(max(mag2, 1e-8));
       const finalAxis2 = select(mag2.greaterThan(0), axis2Raw.mul(scaling2), axis2Raw);
 
@@ -249,15 +273,13 @@ function createGlyphTransformCompute({
       writeOutput(outIdx, OUTPUT_FIELDS.axis1, finalAxis1);
       writeOutput(outIdx, OUTPUT_FIELDS.axis2, finalAxis2);
       writeOutput(outIdx, OUTPUT_FIELDS.axis3, finalAxis3);
-
     });
 
     if (hasColor) {
       const color = mix(readInput(topIdx, 5), readInput(bottomIdx, 5), uniforms.proportion);
       writeOutput(outIdx, OUTPUT_FIELDS.color, color);
     }
-
-  } )().compute( outputCount );
+  })().compute(outputCount);
 
   return {
     uniforms,
@@ -344,7 +366,7 @@ let glyphComputeSupported = true;
 
 const setGlyphComputeSupported = (flag) => {
   glyphComputeSupported = flag ? true : false;
-}
+};
 
 const isGlyphComputeSupported = () => glyphComputeSupported;
 

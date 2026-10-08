@@ -1,8 +1,7 @@
 import * as THREE from 'three/webgpu';
 const glslVersion = THREE.GLSL3;
 
-const fs =
-`
+const fs = `
 precision highp float;
 precision highp int;
 precision highp sampler2DArray;
@@ -41,8 +40,7 @@ void main() {
 }
 `;
 
-const vs =
-`
+const vs = `
 out vec3 vUw;
 uniform float depth;
 uniform vec3 slide;
@@ -72,12 +70,12 @@ void main() {
 }
 `;
 
-const getUniforms = function() {
+const getUniforms = function () {
   return {
-    brightness: { value: 0},
-    contrast: { value: 1},
+    brightness: { value: 0 },
+    contrast: { value: 1 },
     depth: { value: 1 },
-    discardAlpha: {value: true},
+    discardAlpha: { value: true },
     diffuse0: { value: undefined },
     diffuse1: { value: undefined },
     direction: { value: 1 },
@@ -86,14 +84,9 @@ const getUniforms = function() {
     nChannels: { value: 1 },
     mask: { value: undefined },
     maskEnabled: { value: false },
-    slide: { value: new THREE.Vector3( 0, 0, 1 ) },
-    time: { value: 0 }
+    slide: { value: new THREE.Vector3(0, 0, 1) },
+    time: { value: 0 },
   };
-}
+};
 
-export {
-  fs,
-  vs,
-  glslVersion,
-  getUniforms
-}
+export { fs, vs, glslVersion, getUniforms };

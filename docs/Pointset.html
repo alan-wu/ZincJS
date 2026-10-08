@@ -1,2945 +1,1083 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
+  <head>
+    <meta charset="utf-8" />
     <title>JSDoc: Class: Pointset</title>
 
-    <script src="scripts/prettify/prettify.js"> </script>
-    <script src="scripts/prettify/lang-css.js"> </script>
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
-</head>
-
-<body>
-
-<div id="main">
-
-    <h1 class="page-title">Class: Pointset</h1>
-
-    
-
-
-
-
-<section>
-
-<header>
-    
-        <h2><span class="attribs"><span class="type-signature"></span></span>Pointset<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Pointset.html">Pointset</a>}</span></h2>
-        
-    
-</header>
-
-<article>
-    <div class="container-overview">
-    
-        
-
-    
-
-    
-    <h4 class="name" id="Pointset"><span class="type-signature"></span>new Pointset<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Pointset.html">Pointset</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Provides an object which stores points and provides method which controls its position.
-This is created when a valid json file containing point is read into a Zinc.Scene
-object.
-
-Points are rendered as an instanced mesh - every point is one instance of a
-small quad billboarded towards the camera and kept at a constant size in
-pixels on the GPU. Time varying vertex colour and morph vertex positions
-are supported by blending between per time step position/colour arrays on
-the CPU and writing the result into the instance attributes every frame.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-author">Author:</dt>
-    <dd class="tag-author">
-        <ul>
-            <li>Alan Wu</li>
-        </ul>
-    </dd>
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line90">line 90</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Pointset.html">Pointset</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-    
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css" />
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css" />
+  </head>
+
+  <body>
+    <div id="main">
+      <h1 class="page-title">Class: Pointset</h1>
+
+      <section>
+        <header>
+          <h2>
+            <span class="attribs"><span class="type-signature"></span></span>
+            Pointset
+            <span class="signature">()</span>
+            <span class="type-signature">
+              &rarr; {
+              <a href="Pointset.html">Pointset</a>
+              }
+            </span>
+          </h2>
+        </header>
+
+        <article>
+          <div class="container-overview">
+            <h4 class="name" id="Pointset">
+              <span class="type-signature"></span>
+              new Pointset
+              <span class="signature">()</span>
+              <span class="type-signature">
+                &rarr; {
+                <a href="Pointset.html">Pointset</a>
+                }
+              </span>
+            </h4>
+
+            <div class="description">
+              Provides an object which stores points and provides method which controls its
+              position. This is created when a valid json file containing point is read into a
+              Zinc.Scene object. Points are rendered as an instanced mesh - every point is one
+              instance of a small quad billboarded towards the camera and kept at a constant size in
+              pixels on the GPU. Time varying vertex colour and morph vertex positions are supported
+              by blending between per time step position/colour arrays on the CPU and writing the
+              result into the instance attributes every frame.
+            </div>
+
+            <dl class="details">
+              <dt class="tag-author">Author:</dt>
+              <dd class="tag-author">
+                <ul>
+                  <li>Alan Wu</li>
+                </ul>
+              </dd>
+
+              <dt class="tag-source">Source:</dt>
+              <dd class="tag-source">
+                <ul class="dummy">
+                  <li>
+                    <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                    ,
+                    <a href="primitives_pointset.js.html#line90">line 90</a>
+                  </li>
+                </ul>
+              </dd>
+            </dl>
+
+            <h5>Returns:</h5>
+
+            <dl>
+              <dt>Type</dt>
+              <dd>
+                <span class="param-type"><a href="Pointset.html">Pointset</a></span>
+              </dd>
+            </dl>
+          </div>
+
+          <h3 class="subsection-title">Methods</h3>
+
+          <h4 class="name" id="addPoints">
+            <span class="type-signature"></span>
+            addPoints
+            <span class="signature">(coords, labels, colour)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">
+            Add points to existing mesh if it exists, otherwise create a new one and add to it.
+          </div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>coords</code></td>
+
+                <td class="type">
+                  <span class="param-type">Array</span>
+                </td>
+
+                <td class="description last">An array of three components coordinates.</td>
+              </tr>
+
+              <tr>
+                <td class="name"><code>labels</code></td>
+
+                <td class="type">
+                  <span class="param-type">Array</span>
+                  |
+
+                  <span class="param-type">String</span>
+                </td>
+
+                <td class="description last">
+                  An array of strings, these are only added if the number of coords equals to the
+                  number labels provided.
+                </td>
+              </tr>
+
+              <tr>
+                <td class="name"><code>colour</code></td>
+
+                <td class="type">
+                  <span class="param-type">Number</span>
+                </td>
+
+                <td class="description last">A hex value of the colour for the points</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line262">line 262</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="createMesh">
+            <span class="type-signature"></span>
+            createMesh
+            <span class="signature">(geometryIn, materialIn, options)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Create the pointset using geometry and material.</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>geometryIn</code></td>
+
+                <td class="type">
+                  <span class="param-type">THREE.Geomtry</span>
+                </td>
+
+                <td class="description last">Geometry of points to be rendered.</td>
+              </tr>
+
+              <tr>
+                <td class="name"><code>materialIn</code></td>
+
+                <td class="type">
+                  <span class="param-type">THREE.Material</span>
+                </td>
+
+                <td class="description last">
+                  Material to be set for the points, only its colour/opacity/alphaTest are used.
+                </td>
+              </tr>
+
+              <tr>
+                <td class="name"><code>options</code></td>
+
+                <td class="type">
+                  <span class="param-type">Object</span>
+                </td>
+
+                <td class="description last">
+                  Provide various options
+                  <h6>Properties</h6>
+
+                  <table class="params">
+                    <thead>
+                      <tr>
+                        <th>Name</th>
+
+                        <th>Type</th>
+
+                        <th class="last">Description</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      <tr>
+                        <td class="name"><code>localTimeEnabled</code></td>
+
+                        <td class="type">
+                          <span class="param-type">Boolean</span>
+                        </td>
+
+                        <td class="description last">
+                          A flag to indicate either the points' positions are time dependent.
+                        </td>
+                      </tr>
+
+                      <tr>
+                        <td class="name"><code>localMorphColour</code></td>
+
+                        <td class="type">
+                          <span class="param-type">Boolean</span>
+                        </td>
+
+                        <td class="description last">
+                          A flag to indicate either the colour is time dependent.
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line164">line 164</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="deleteVertices">
+            <span class="type-signature"></span>
+            deleteVertices
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Delete a vertex in index.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line479">line 479</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="displayLabels">
+            <span class="type-signature"></span>
+            displayLabels
+            <span class="signature">(flag)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Set visibility of Labels</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>flag</code></td>
+
+                <td class="type">
+                  <span class="param-type">boolean</span>
+                </td>
+
+                <td class="description last">default value is true</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line390">line 390</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="editVertices">
+            <span class="type-signature"></span>
+            editVertices
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Edit Vertice in index.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line445">line 445</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="getBoundingBox">
+            <span class="type-signature"></span>
+            getBoundingBox
+            <span class="signature">()</span>
+            <span class="type-signature">&rarr; {THREE.Box3}</span>
+          </h4>
+
+          <div class="description">Get the bounding box for the whole set of points.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line562">line 562</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h5>Returns:</h5>
+
+          <dl>
+            <dt>Type</dt>
+            <dd>
+              <span class="param-type">THREE.Box3</span>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="getClosestVertex">
+            <span class="type-signature"></span>
+            getClosestVertex
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Get the closest vertex to centroid.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line542">line 542</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="getClosestVertexIndex">
+            <span class="type-signature"></span>
+            getClosestVertexIndex
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Get the index of the closest vertex to centroid.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line520">line 520</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="getVerticesByIndex">
+            <span class="type-signature"></span>
+            getVerticesByIndex
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Get vertices at index</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line430">line 430</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="isTimeVarying">
+            <span class="type-signature"></span>
+            isTimeVarying
+            <span class="signature">()</span>
+            <span class="type-signature">&rarr; {Boolean}</span>
+          </h4>
+
+          <div class="description">Check if the pointset is time varying.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line583">line 583</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h5>Returns:</h5>
+
+          <dl>
+            <dt>Type</dt>
+            <dd>
+              <span class="param-type">Boolean</span>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="render">
+            <span class="type-signature"></span>
+            render
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">
+            Update the geometry and colours depending on the internal time and refresh the
+            marker/LOD state for the render.
+          </div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line610">line 610</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setColour">
+            <span class="type-signature"></span>
+            setColour
+            <span class="signature">(colour)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Set the colour of the pointset and its label</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>colour</code></td>
+
+                <td class="type">
+                  <span class="param-type">THREE.Color</span>
+                </td>
+
+                <td class="description last">colour to be set</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line328">line 328</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setColourHex">
+            <span class="type-signature"></span>
+            setColourHex
+            <span class="signature">(hex)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">
+            Set the colour of the pointset and its label using the hex value
+          </div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>hex</code></td>
+
+                <td class="type">
+                  <span class="param-type">Number</span>
+                </td>
+
+                <td class="description last">hex value of color to be set</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line310">line 310</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setLabelDepthTest">
+            <span class="type-signature"></span>
+            setLabelDepthTest
+            <span class="signature">(flag)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Turn size attenuation on/off based on the flag.</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>flag</code></td>
+
+                <td class="type">
+                  <span class="param-type">Boolean</span>
+                </td>
+
+                <td class="description last">
+                  Determin either size attenuation should be on or off.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line344">line 344</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setLabelFontWeight">
+            <span class="type-signature"></span>
+            setLabelFontWeight
+            <span class="signature">(fontWeightIn)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Turn size attenuation on/off based on the flag.</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>fontWeightIn</code></td>
+
+                <td class="type">
+                  <span class="param-type">Number</span>
+                </td>
+
+                <td class="description last">Default value is 700</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line359">line 359</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setLabelSize">
+            <span class="type-signature"></span>
+            setLabelSize
+            <span class="signature">(size)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Set the size of the label</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>size</code></td>
+
+                <td class="type">
+                  <span class="param-type">Number</span>
+                </td>
+
+                <td class="description last">Size to set, default value is 1.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line375">line 375</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setMesh">
+            <span class="type-signature"></span>
+            setMesh
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">
+            Adapt a plain THREE.Points object (e.g. one parsed from a GLTF file) into this
+            Pointset's instanced mesh representation.
+          </div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line215">line 215</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setMorphTime">
+            <span class="type-signature"></span>
+            setMorphTime
+            <span class="signature">(time)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Set the local time of this pointset.</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>time</code></td>
+
+                <td class="type">
+                  <span class="param-type">Number</span>
+                </td>
+
+                <td class="description last">Can be any value between 0 to duration.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line592">line 592</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setName">
+            <span class="type-signature"></span>
+            setName
+            <span class="signature">(groupNameIn)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Set the name for this ZincObject.</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>groupNameIn</code></td>
+
+                <td class="type">
+                  <span class="param-type">String</span>
+                </td>
+
+                <td class="description last">Name to be set.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line507">line 507</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setSize">
+            <span class="type-signature"></span>
+            setSize
+            <span class="signature">(size)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Set the size of the points in pixels.</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>size</code></td>
+
+                <td class="type">
+                  <span class="param-type">Number</span>
+                </td>
+
+                <td class="description last">size to be set.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line404">line 404</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setSizeAttenuation">
+            <span class="type-signature"></span>
+            setSizeAttenuation
+            <span class="signature">(flag)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Turn size attenuation on/off based on the flag.</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>flag</code></td>
+
+                <td class="type">
+                  <span class="param-type">Boolean</span>
+                </td>
+
+                <td class="description last">
+                  Determin either size attenuation should be on or off.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line419">line 419</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="~updateMorphPointset">
+            <span class="type-signature">(inner)</span>
+            updateMorphPointset
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">
+            Blend positionFrames/colorFrames based on the current inbuildTime and write the result
+            into the instancePosition/instanceColor attributes.
+          </div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_pointset.js.html">primitives/pointset.js</a>
+                  ,
+                  <a href="primitives_pointset.js.html#line108">line 108</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+        </article>
+      </section>
     </div>
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="addPoints"><span class="type-signature"></span>addPoints<span class="signature">(coords, labels, colour)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Add points to existing mesh if it exists, otherwise
-create a new one and add to it.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>coords</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">An array of three components coordinates.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>labels</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array</span>
-|
-
-<span class="param-type">String</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">An array of strings, these are only added
-if the number of coords equals to the number labels provided.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>colour</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">A hex value of the colour for the points</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line262">line 262</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="createMesh"><span class="type-signature"></span>createMesh<span class="signature">(geometryIn, materialIn, options)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Create the pointset using geometry and material.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>geometryIn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Geomtry</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Geometry of points to be rendered.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>materialIn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Material</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Material to be set for the points,
-only its colour/opacity/alphaTest are used.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>options</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Object</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Provide various options
-                <h6>Properties</h6>
-                
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>localTimeEnabled</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">A flag to indicate either the points'
-positions are time dependent.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>localMorphColour</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">A flag to indicate either the colour is
-time dependent.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-            </td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line164">line 164</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="deleteVertices"><span class="type-signature"></span>deleteVertices<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Delete a vertex in index.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line479">line 479</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="displayLabels"><span class="type-signature"></span>displayLabels<span class="signature">(flag)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set visibility of Labels
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>flag</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">default value is true</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line390">line 390</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="editVertices"><span class="type-signature"></span>editVertices<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Edit Vertice in index.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line445">line 445</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getBoundingBox"><span class="type-signature"></span>getBoundingBox<span class="signature">()</span><span class="type-signature"> &rarr; {THREE.Box3}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Get the bounding box for the whole set of points.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line562">line 562</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">THREE.Box3</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getClosestVertex"><span class="type-signature"></span>getClosestVertex<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Get the closest vertex to centroid.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line542">line 542</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getClosestVertexIndex"><span class="type-signature"></span>getClosestVertexIndex<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Get the index of the closest vertex to centroid.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line520">line 520</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getVerticesByIndex"><span class="type-signature"></span>getVerticesByIndex<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Get vertices at index
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line430">line 430</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="isTimeVarying"><span class="type-signature"></span>isTimeVarying<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Check if the pointset is time varying.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line583">line 583</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Boolean</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="render"><span class="type-signature"></span>render<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Update the geometry and colours depending on the internal time and
-refresh the marker/LOD state for the render.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line610">line 610</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setColour"><span class="type-signature"></span>setColour<span class="signature">(colour)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set the colour of the pointset and its label
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>colour</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Color</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">colour to be set</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line328">line 328</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setColourHex"><span class="type-signature"></span>setColourHex<span class="signature">(hex)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set the colour of the pointset and its label using the hex value
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>hex</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">hex value of color to be set</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line310">line 310</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setLabelDepthTest"><span class="type-signature"></span>setLabelDepthTest<span class="signature">(flag)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Turn size attenuation on/off based on the flag.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>flag</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Determin either size attenuation
-should be on or off.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line344">line 344</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setLabelFontWeight"><span class="type-signature"></span>setLabelFontWeight<span class="signature">(fontWeightIn)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Turn size attenuation on/off based on the flag.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>fontWeightIn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Default value is 700</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line359">line 359</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setLabelSize"><span class="type-signature"></span>setLabelSize<span class="signature">(size)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set the size of the label
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>size</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Size to set, default
-value is 1.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line375">line 375</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setMesh"><span class="type-signature"></span>setMesh<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Adapt a plain THREE.Points object (e.g. one parsed from a GLTF file)
-into this Pointset's instanced mesh representation.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line215">line 215</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setMorphTime"><span class="type-signature"></span>setMorphTime<span class="signature">(time)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set the local time of this pointset.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>time</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Can be any value between 0 to duration.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line592">line 592</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setName"><span class="type-signature"></span>setName<span class="signature">(groupNameIn)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set the name for this ZincObject.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>groupNameIn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Name to be set.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line507">line 507</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setSize"><span class="type-signature"></span>setSize<span class="signature">(size)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set the size of the points in pixels.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>size</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">size to be set.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line404">line 404</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setSizeAttenuation"><span class="type-signature"></span>setSizeAttenuation<span class="signature">(flag)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Turn size attenuation on/off based on the flag.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>flag</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Boolean</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Determin either size attenuation
-should be on or off.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line419">line 419</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="~updateMorphPointset"><span class="type-signature">(inner) </span>updateMorphPointset<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Blend positionFrames/colorFrames based on the current inbuildTime and
-write the result into the instancePosition/instanceColor attributes.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_pointset.js.html">primitives/pointset.js</a>, <a href="primitives_pointset.js.html#line108">line 108</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-    
-
-    
-
-    
-</article>
-
-</section>
-
-
-
-
-</div>
-
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
-</nav>
-
-<br class="clear">
-
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Oct 07 2026 19:51:27 GMT+1300 (New Zealand Daylight Time)
-</footer>
-
-<script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"> </script>
-</body>
+    <nav>
+      <h2><a href="index.html">Home</a></h2>
+      <h3>Namespaces</h3>
+      <ul>
+        <li><a href="Zinc.html">Zinc</a></li>
+      </ul>
+      <h3>Classes</h3>
+      <ul>
+        <li><a href="CameraControls.html">CameraControls</a></li>
+        <li><a href="Geometry.html">Geometry</a></li>
+        <li><a href="Glyph.html">Glyph</a></li>
+        <li><a href="Glyphset.html">Glyphset</a></li>
+        <li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li>
+        <li><a href="LOD.html">LOD</a></li>
+        <li><a href="Label.html">Label</a></li>
+        <li><a href="Lines.html">Lines</a></li>
+        <li><a href="Lines2.html">Lines2</a></li>
+        <li><a href="Marker.html">Marker</a></li>
+        <li><a href="MarkerCluster.html">MarkerCluster</a></li>
+        <li><a href="Minimap.html">Minimap</a></li>
+        <li><a href="Pointset.html">Pointset</a></li>
+        <li><a href="Region.html">Region</a></li>
+        <li><a href="Renderer.html">Renderer</a></li>
+        <li><a href="Scene.html">Scene</a></li>
+        <li><a href="SceneExporter.html">SceneExporter</a></li>
+        <li><a href="SceneLoader.html">SceneLoader</a></li>
+        <li><a href="Texture.html">Texture</a></li>
+        <li><a href="TextureArray.html">TextureArray</a></li>
+        <li><a href="TexturePrimitive.html">TexturePrimitive</a></li>
+        <li><a href="TextureSlides.html">TextureSlides</a></li>
+        <li><a href="TubeLines.html">TubeLines</a></li>
+        <li><a href="VideoHandler.html">VideoHandler</a></li>
+        <li><a href="Viewport.html">Viewport</a></li>
+        <li><a href="ZincObject.html">ZincObject</a></li>
+      </ul>
+      <h3>Global</h3>
+      <ul>
+        <li>
+          <a href="global.html#ModifiedDeviceOrientationControls">
+            ModifiedDeviceOrientationControls
+          </a>
+        </li>
+        <li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li>
+        <li><a href="global.html#StereoEffect">StereoEffect</a></li>
+        <li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li>
+        <li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li>
+        <li><a href="global.html#createTextSprite">createTextSprite</a></li>
+        <li><a href="global.html#extractColorFrames">extractColorFrames</a></li>
+        <li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li>
+        <li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li>
+        <li><a href="global.html#mergeAttributes">mergeAttributes</a></li>
+        <li><a href="global.html#mergeGeometries">mergeGeometries</a></li>
+        <li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li>
+        <li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li>
+        <li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li>
+      </ul>
+    </nav>
+
+    <br class="clear" />
+
+    <footer>
+      Documentation generated by
+      <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a>
+      on Wed Oct 07 2026 19:51:27 GMT+1300 (New Zealand Daylight Time)
+    </footer>
+
+    <script>
+      prettyPrint();
+    </script>
+    <script src="scripts/linenumber.js"></script>
+  </body>
 </html>

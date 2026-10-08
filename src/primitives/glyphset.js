@@ -3,8 +3,12 @@ import { Glyph } from './glyph';
 import { ZincObject } from './zincObject';
 import { updateWorldMatrixFromAncestors } from '../utilities';
 import { JSONLoader } from '../loaders/JSONLoader';
-import { createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, isGlyphComputeSupported,
-  readbackGlyphTransform } from '../tsl/glyphTransform';
+import {
+  createGlyphTransformCompute,
+  dispatchAndReadbackGlyphTransform,
+  isGlyphComputeSupported,
+  readbackGlyphTransform,
+} from '../tsl/glyphTransform';
 import { createGlyphInstancedMaterial } from '../tsl/glyphRenderMaterial';
 
 /**
@@ -35,7 +39,7 @@ const Glyphset = function () {
   let offset = [0, 0, 0];
   let labelsOn = false;
   let scaleFactors = [0, 0, 0];
-  let repeat_mode = "NONE";
+  let repeat_mode = 'NONE';
   this.ready = false;
   let morphColours = false;
   let morphVertices = false;
@@ -102,7 +106,7 @@ const Glyphset = function () {
     matrix.elements[13] = arrayTuple[0][1];
     matrix.elements[14] = arrayTuple[0][2];
     matrix.elements[15] = 1.0;
-  }
+  };
 
   /**
    * Flattens a { "0": [x,y,z,...], "1": [...], ... } per-keyframe object
@@ -118,7 +122,7 @@ const Glyphset = function () {
       }
     }
     return out;
-  }
+  };
 
   /**
    * Same as flattenVec3Frames but for the colours object, whose per-frame
@@ -142,7 +146,7 @@ const Glyphset = function () {
       }
     }
     return out;
-  }
+  };
 
   /**
    * Copy glyphset data into this glyphset then load the glyph's geoemtry
@@ -169,18 +173,22 @@ const Glyphset = function () {
     numberOfTimeSteps = glyphsetData.metadata.number_of_time_steps;
     repeat_mode = glyphsetData.metadata.repeat_mode;
     numberOfVertices = glyphsetData.metadata.number_of_vertices;
-    if (repeat_mode == "AXES_2D" || repeat_mode == "MIRROR")
+    if (repeat_mode == 'AXES_2D' || repeat_mode == 'MIRROR')
       numberOfVertices = numberOfVertices * 2;
-    else if (repeat_mode == "AXES_3D")
-      numberOfVertices = numberOfVertices * 3;
+    else if (repeat_mode == 'AXES_3D') numberOfVertices = numberOfVertices * 3;
     baseSize = glyphsetData.metadata.base_size;
     offset = glyphsetData.metadata.offset;
     scaleFactors = glyphsetData.metadata.scale_factors;
     glyphCompute = undefined;
     //The CPU path is used when the backend does not support GPU compute
-    if (morphVertices && numberOfTimeSteps > 1 && positions && positions["0"] &&
-      isGlyphComputeSupported()) {
-      const baseCount = positions["0"].length / 3;
+    if (
+      morphVertices &&
+      numberOfTimeSteps > 1 &&
+      positions &&
+      positions['0'] &&
+      isGlyphComputeSupported()
+    ) {
+      const baseCount = positions['0'].length / 3;
       try {
         glyphCompute = createGlyphTransformCompute({
           baseCount,
@@ -191,14 +199,20 @@ const Glyphset = function () {
           axis2Data: flattenVec3Frames(axis2s, numberOfTimeSteps, baseCount),
           axis3Data: flattenVec3Frames(axis3s, numberOfTimeSteps, baseCount),
           scaleData: flattenVec3Frames(scales, numberOfTimeSteps, baseCount),
-          colorData: (morphColours && colors) ? flattenColorFrames(colors, numberOfTimeSteps, baseCount) : undefined,
+          colorData:
+            morphColours && colors
+              ? flattenColorFrames(colors, numberOfTimeSteps, baseCount)
+              : undefined,
           baseSize,
           offset,
           scaleFactors,
           globalScale: this.globalScale,
         });
       } catch (err) {
-        console.error("Failed to set up GPU glyph transform compute, falling back to CPU animation.", err);
+        console.error(
+          'Failed to set up GPU glyph transform compute, falling back to CPU animation.',
+          err,
+        );
         glyphCompute = undefined;
       }
     }
@@ -208,13 +222,13 @@ const Glyphset = function () {
     this.setMorph(instancedMesh);
     if (isInline) {
       var object = loader.parse(glyphURL);
-      (meshloader(finishCallback, displayLabels))(object.geometry, object.materials);
+      meshloader(finishCallback, displayLabels)(object.geometry, object.materials);
       object.geometry.dispose();
     } else {
-      loader.crossOrigin = "Anonymous";
+      loader.crossOrigin = 'Anonymous';
       loader.load(glyphURL, meshloader(finishCallback, displayLabels));
     }
-  }
+  };
 
   /**
    * Calculate the actual transformation value that can be applied
@@ -223,7 +237,7 @@ const Glyphset = function () {
    * @returns {Array}
    */
   const resolve_glyph_axes = (point, axis1, axis2, axis3, scale, return_arrays) => {
-    if (repeat_mode == "NONE" || repeat_mode == "MIRROR") {
+    if (repeat_mode == 'NONE' || repeat_mode == 'MIRROR') {
       let axis_scale = [0.0, 0.0, 0.0];
       let final_axis1 = [0.0, 0.0, 0.0];
       let final_axis2 = [0.0, 0.0, 0.0];
@@ -234,18 +248,19 @@ const Glyphset = function () {
       const mirrored_axis3 = [0.0, 0.0, 0.0];
       const mirrored_point = [0.0, 0.0, 0.0];
       for (var j = 0; j < 3; j++) {
-        var sign = (scale[j] < 0.0) ? -1.0 : 1.0;
+        var sign = scale[j] < 0.0 ? -1.0 : 1.0;
         axis_scale[j] = (sign * baseSize[j] + scale[j] * scaleFactors[j]) * this.globalScale;
       }
       for (var j = 0; j < 3; j++) {
         final_axis1[j] = axis1[j] * axis_scale[0];
         final_axis2[j] = axis2[j] * axis_scale[1];
         final_axis3[j] = axis3[j] * axis_scale[2];
-        final_point[j] = point[j]
-          + offset[0] * final_axis1[j]
-          + offset[1] * final_axis2[j]
-          + offset[2] * final_axis3[j];
-        if (repeat_mode == "MIRROR") {
+        final_point[j] =
+          point[j] +
+          offset[0] * final_axis1[j] +
+          offset[1] * final_axis2[j] +
+          offset[2] * final_axis3[j];
+        if (repeat_mode == 'MIRROR') {
           mirrored_axis1[j] = -final_axis1[j];
           mirrored_axis2[j] = -final_axis2[j];
           mirrored_axis3[j] = -final_axis3[j];
@@ -258,47 +273,48 @@ const Glyphset = function () {
         }
       }
       /* if required, reverse axis3 to maintain right-handed coordinate system */
-      if (0.0 > (
-        final_axis3[0] * (final_axis1[1] * final_axis2[2] -
-          final_axis1[2] * final_axis2[1]) +
-        final_axis3[1] * (final_axis1[2] * final_axis2[0] -
-          final_axis1[0] * final_axis2[2]) +
-        final_axis3[2] * (final_axis1[0] * final_axis2[1] -
-          final_axis1[1] * final_axis2[0]))) {
+      if (
+        0.0 >
+        final_axis3[0] * (final_axis1[1] * final_axis2[2] - final_axis1[2] * final_axis2[1]) +
+          final_axis3[1] * (final_axis1[2] * final_axis2[0] - final_axis1[0] * final_axis2[2]) +
+          final_axis3[2] * (final_axis1[0] * final_axis2[1] - final_axis1[1] * final_axis2[0])
+      ) {
         final_axis3[0] = -final_axis3[0];
         final_axis3[1] = -final_axis3[1];
         final_axis3[2] = -final_axis3[2];
       }
       return_arrays[0] = [final_point, final_axis1, final_axis2, final_axis3];
-      if (repeat_mode == "MIRROR") {
-        if (0.0 > (
-          mirrored_axis3[0] * (mirrored_axis1[1] * mirrored_axis2[2] -
-            mirrored_axis1[2] * mirrored_axis2[1]) +
-          mirrored_axis3[1] * (mirrored_axis1[2] * mirrored_axis2[0] -
-            mirrored_axis1[0] * mirrored_axis2[2]) +
-          mirrored_axis3[2] * (mirrored_axis1[0] * mirrored_axis2[1] -
-            mirrored_axis1[1] * mirrored_axis2[0]))) {
+      if (repeat_mode == 'MIRROR') {
+        if (
+          0.0 >
+          mirrored_axis3[0] *
+            (mirrored_axis1[1] * mirrored_axis2[2] - mirrored_axis1[2] * mirrored_axis2[1]) +
+            mirrored_axis3[1] *
+              (mirrored_axis1[2] * mirrored_axis2[0] - mirrored_axis1[0] * mirrored_axis2[2]) +
+            mirrored_axis3[2] *
+              (mirrored_axis1[0] * mirrored_axis2[1] - mirrored_axis1[1] * mirrored_axis2[0])
+        ) {
           mirrored_axis3[0] = -mirrored_axis3[0];
           mirrored_axis3[1] = -mirrored_axis3[1];
           mirrored_axis3[2] = -mirrored_axis3[2];
         }
         return_arrays[1] = [mirrored_point, mirrored_axis1, mirrored_axis2, mirrored_axis3];
       }
-    }
-    else if (repeat_mode == "AXES_2D" || repeat_mode == "AXES_3D") {
+    } else if (repeat_mode == 'AXES_2D' || repeat_mode == 'AXES_3D') {
       let axis_scale = [0.0, 0.0, 0.0];
       let final_point = [0.0, 0.0, 0.0];
       for (var j = 0; j < 3; j++) {
-        var sign = (scale[j] < 0.0) ? -1.0 : 1.0;
+        var sign = scale[j] < 0.0 ? -1.0 : 1.0;
         axis_scale[j] = (sign * baseSize[0] + scale[j] * scaleFactors[0]) * this.globalScale;
       }
       for (var j = 0; j < 3; j++) {
-        final_point[j] = point[j]
-          + offset[0] * axis_scale[0] * axis1[j]
-          + offset[1] * axis_scale[1] * axis2[j]
-          + offset[2] * axis_scale[2] * axis3[j];
+        final_point[j] =
+          point[j] +
+          offset[0] * axis_scale[0] * axis1[j] +
+          offset[1] * axis_scale[1] * axis2[j] +
+          offset[2] * axis_scale[2] * axis3[j];
       }
-      const number_of_glyphs = (repeat_mode == "AXES_2D") ? 2 : 3;
+      const number_of_glyphs = repeat_mode == 'AXES_2D' ? 2 : 3;
       for (let k = 0; k < number_of_glyphs; k++) {
         let use_axis1, use_axis2;
         const use_scale = scale[k];
@@ -308,12 +324,10 @@ const Glyphset = function () {
         if (k == 0) {
           use_axis1 = axis1;
           use_axis2 = axis2;
-        }
-        else if (k == 1) {
+        } else if (k == 1) {
           use_axis1 = axis2;
-          use_axis2 = (repeat_mode == "AXES_2D") ? axis1 : axis3;
-        }
-        else // if (k == 2)
+          use_axis2 = repeat_mode == 'AXES_2D' ? axis1 : axis3;
+        } else // if (k == 2)
         {
           use_axis1 = axis3;
           use_axis2 = axis1;
@@ -325,10 +339,15 @@ const Glyphset = function () {
         final_axis3[0] = final_axis1[1] * use_axis2[2] - use_axis2[1] * final_axis1[2];
         final_axis3[1] = final_axis1[2] * use_axis2[0] - use_axis2[2] * final_axis1[0];
         final_axis3[2] = final_axis1[0] * use_axis2[1] - final_axis1[1] * use_axis2[0];
-        let magnitude = Math.sqrt(final_axis3[0] * final_axis3[0] + final_axis3[1] * final_axis3[1] + final_axis3[2] * final_axis3[2]);
+        let magnitude = Math.sqrt(
+          final_axis3[0] * final_axis3[0] +
+            final_axis3[1] * final_axis3[1] +
+            final_axis3[2] * final_axis3[2],
+        );
         if (0.0 < magnitude) {
-          let scaling = (baseSize[2] + use_scale * scaleFactors[2]) * this.globalScale / magnitude;
-          if ((repeat_mode == "AXES_2D") && (k > 0)) {
+          let scaling =
+            ((baseSize[2] + use_scale * scaleFactors[2]) * this.globalScale) / magnitude;
+          if (repeat_mode == 'AXES_2D' && k > 0) {
             scaling *= -1.0;
           }
           final_axis3[0] *= scaling;
@@ -339,9 +358,14 @@ const Glyphset = function () {
         final_axis2[0] = final_axis3[1] * final_axis1[2] - final_axis1[1] * final_axis3[2];
         final_axis2[1] = final_axis3[2] * final_axis1[0] - final_axis1[2] * final_axis3[0];
         final_axis2[2] = final_axis3[0] * final_axis1[1] - final_axis3[1] * final_axis1[0];
-        magnitude = Math.sqrt(final_axis2[0] * final_axis2[0] + final_axis2[1] * final_axis2[1] + final_axis2[2] * final_axis2[2]);
+        magnitude = Math.sqrt(
+          final_axis2[0] * final_axis2[0] +
+            final_axis2[1] * final_axis2[1] +
+            final_axis2[2] * final_axis2[2],
+        );
         if (0.0 < magnitude) {
-          var scaling = (baseSize[1] + use_scale * scaleFactors[1]) * this.globalScale / magnitude;
+          var scaling =
+            ((baseSize[1] + use_scale * scaleFactors[1]) * this.globalScale) / magnitude;
           final_axis2[0] *= scaling;
           final_axis2[1] *= scaling;
           final_axis2[2] *= scaling;
@@ -360,38 +384,56 @@ const Glyphset = function () {
     current_axis1s,
     current_axis2s,
     current_axis3s,
-    current_scales
+    current_scales,
   ) => {
     let numberOfGlyphs = 1;
-    if (repeat_mode == "AXES_2D" || repeat_mode == "MIRROR")
-      numberOfGlyphs = 2;
-    else if (repeat_mode == "AXES_3D")
-      numberOfGlyphs = 3;
+    if (repeat_mode == 'AXES_2D' || repeat_mode == 'MIRROR') numberOfGlyphs = 2;
+    else if (repeat_mode == 'AXES_3D') numberOfGlyphs = 3;
     const numberOfPositions = current_positions.length / 3;
     let current_glyph_index = 0;
     _glyph_axis_array.length = numberOfGlyphs;
     for (let i = 0; i < numberOfPositions; i++) {
       const current_index = i * 3;
-      const current_position = [current_positions[current_index], current_positions[current_index + 1],
-      current_positions[current_index + 2]];
-      const current_axis1 = [current_axis1s[current_index], current_axis1s[current_index + 1],
-      current_axis1s[current_index + 2]];
-      const current_axis2 = [current_axis2s[current_index], current_axis2s[current_index + 1],
-      current_axis2s[current_index + 2]];
-      const current_axis3 = [current_axis3s[current_index], current_axis3s[current_index + 1],
-      current_axis3s[current_index + 2]];
-      const current_scale = [current_scales[current_index], current_scales[current_index + 1],
-      current_scales[current_index + 2]];
-      const arrays = resolve_glyph_axes(current_position, current_axis1, current_axis2,
-        current_axis3, current_scale, _glyph_axis_array);
+      const current_position = [
+        current_positions[current_index],
+        current_positions[current_index + 1],
+        current_positions[current_index + 2],
+      ];
+      const current_axis1 = [
+        current_axis1s[current_index],
+        current_axis1s[current_index + 1],
+        current_axis1s[current_index + 2],
+      ];
+      const current_axis2 = [
+        current_axis2s[current_index],
+        current_axis2s[current_index + 1],
+        current_axis2s[current_index + 2],
+      ];
+      const current_axis3 = [
+        current_axis3s[current_index],
+        current_axis3s[current_index + 1],
+        current_axis3s[current_index + 2],
+      ];
+      const current_scale = [
+        current_scales[current_index],
+        current_scales[current_index + 1],
+        current_scales[current_index + 2],
+      ];
+      const arrays = resolve_glyph_axes(
+        current_position,
+        current_axis1,
+        current_axis2,
+        current_axis3,
+        current_scale,
+        _glyph_axis_array,
+      );
       if (arrays.length == numberOfGlyphs) {
         for (let j = 0; j < numberOfGlyphs; j++) {
           writeTransformMatrix(_transformMatrix, arrays[j]);
           this.morph.setMatrixAt(current_glyph_index, _transformMatrix);
           const glyph = glyphList[current_glyph_index];
           if (glyph) {
-            glyph.setTransformation(arrays[j][0], arrays[j][1],
-              arrays[j][2], arrays[j][3]);
+            glyph.setTransformation(arrays[j][0], arrays[j][1], arrays[j][2], arrays[j][3]);
           }
           current_glyph_index++;
         }
@@ -418,22 +460,19 @@ const Glyphset = function () {
    */
   const updateGlyphsetHexColors = (current_colors, labelsOnly) => {
     let numberOfGlyphs = 1;
-    if (repeat_mode == "AXES_2D" || repeat_mode == "MIRROR")
-      numberOfGlyphs = 2;
-    else if (repeat_mode == "AXES_3D")
-      numberOfGlyphs = 3;
+    if (repeat_mode == 'AXES_2D' || repeat_mode == 'MIRROR') numberOfGlyphs = 2;
+    else if (repeat_mode == 'AXES_3D') numberOfGlyphs = 3;
     const numberOfColours = current_colors.length;
     let current_glyph_index = 0;
     for (let i = 0; i < numberOfColours; i++) {
       const hex_values = current_colors[i];
       for (let j = 0; j < numberOfGlyphs; j++) {
-        _bot_colour.setHex(hex_values)
+        _bot_colour.setHex(hex_values);
         if (!labelsOnly) {
           this.morph.setColorAt(current_glyph_index, _bot_colour);
         }
         const glyph = glyphList[current_glyph_index];
-        if (glyph)
-          glyph.setColour(_bot_colour);
+        if (glyph) glyph.setColour(_bot_colour);
         current_glyph_index++;
       }
     }
@@ -531,17 +570,19 @@ const Glyphset = function () {
     glyphCompute.uniforms.globalScale.value = this.globalScale;
     glyphComputePending = true;
     boundsAreExact = false;
-    dispatchAndReadbackGlyphTransform(renderer, glyphCompute).then((result) => {
-      glyphComputePending = false;
-      applyGlyphComputeResult(result);
-      boundsAreExact = true;
-      // Restore the stock InstancedMesh.raycast (instanceMatrix is now
-      // exact again) by dropping the no-op instance override, if present.
-      delete this.morph.raycast;
-    }).catch((err) => {
-      glyphComputePending = false;
-      console.error("Glyph transform compute readback failed.", err);
-    });
+    dispatchAndReadbackGlyphTransform(renderer, glyphCompute)
+      .then((result) => {
+        glyphComputePending = false;
+        applyGlyphComputeResult(result);
+        boundsAreExact = true;
+        // Restore the stock InstancedMesh.raycast (instanceMatrix is now
+        // exact again) by dropping the no-op instance override, if present.
+        delete this.morph.raycast;
+      })
+      .catch((err) => {
+        glyphComputePending = false;
+        console.error('Glyph transform compute readback failed.', err);
+      });
   };
 
   /**
@@ -576,15 +617,17 @@ const Glyphset = function () {
     const renderer = this.region?.getScene?.()?.getRenderer?.();
     if (!renderer) return;
     glyphComputePending = true;
-    readbackGlyphTransform(renderer, glyphCompute).then((result) => {
-      glyphComputePending = false;
-      applyGlyphComputeResult(result);
-      boundsAreExact = true;
-      delete this.morph.raycast;
-    }).catch((err) => {
-      glyphComputePending = false;
-      console.error("Glyph transform compute readback failed.", err);
-    });
+    readbackGlyphTransform(renderer, glyphCompute)
+      .then((result) => {
+        glyphComputePending = false;
+        applyGlyphComputeResult(result);
+        boundsAreExact = true;
+        delete this.morph.raycast;
+      })
+      .catch((err) => {
+        glyphComputePending = false;
+        console.error('Glyph transform compute readback failed.', err);
+      });
   };
 
   const cancelScheduledAccurateResync = () => {
@@ -618,7 +661,7 @@ const Glyphset = function () {
    * immediately, as before.
    */
   const updateMorphGlyphsets = (debounceAccurateResync) => {
-    const current_time = this.inbuildTime / this.duration * (numberOfTimeSteps - 1);
+    const current_time = (this.inbuildTime / this.duration) * (numberOfTimeSteps - 1);
     const bottom_frame = Math.floor(current_time);
     const proportion = 1 - (current_time - bottom_frame);
     const top_frame = Math.ceil(current_time);
@@ -662,24 +705,30 @@ const Glyphset = function () {
       _current_scales.length = bottom_positions.length;
 
       for (let i = 0; i < bottom_positions.length; i++) {
-        current_positions[i] = proportion * bottom_positions[i] + (1.0 - proportion) * top_positions[i];
+        current_positions[i] =
+          proportion * bottom_positions[i] + (1.0 - proportion) * top_positions[i];
         current_axis1s[i] = proportion * bottom_axis1[i] + (1.0 - proportion) * top_axis1[i];
         current_axis2s[i] = proportion * bottom_axis2[i] + (1.0 - proportion) * top_axis2[i];
         current_axis3s[i] = proportion * bottom_axis3[i] + (1.0 - proportion) * top_axis3[i];
         current_scales[i] = proportion * bottom_scale[i] + (1.0 - proportion) * top_scale[i];
       }
     } else {
-      current_positions = positions["0"];
-      current_axis1s = axis1s["0"];
-      current_axis2s = axis2s["0"];
-      current_axis3s = axis3s["0"];
-      current_scales = scales["0"];
+      current_positions = positions['0'];
+      current_axis1s = axis1s['0'];
+      current_axis2s = axis2s['0'];
+      current_axis3s = axis3s['0'];
+      current_scales = scales['0'];
     }
     //Colour only morphing does not change the transformation, skip it
     //unless it is out of date.
     if (morphVertices || !staticTransformationApplied) {
-      updateGlyphsetTransformation(current_positions, current_axis1s, current_axis2s, current_axis3s,
-        current_scales);
+      updateGlyphsetTransformation(
+        current_positions,
+        current_axis1s,
+        current_axis2s,
+        current_axis3s,
+        current_scales,
+      );
       staticTransformationApplied = !morphVertices;
     }
     if (colors != undefined) {
@@ -690,13 +739,15 @@ const Glyphset = function () {
         for (let i = 0; i < bottom_colors.length; i++) {
           _bot_colour.setHex(bottom_colors[i]);
           _top_colour.setHex(top_colors[i]);
-          _bot_colour.setRGB(_bot_colour.r * proportion + _top_colour.r * (1 - proportion),
+          _bot_colour.setRGB(
+            _bot_colour.r * proportion + _top_colour.r * (1 - proportion),
             _bot_colour.g * proportion + _top_colour.g * (1 - proportion),
-            _bot_colour.b * proportion + _top_colour.b * (1 - proportion));
+            _bot_colour.b * proportion + _top_colour.b * (1 - proportion),
+          );
           current_colors[i] = _bot_colour.getHex();
         }
       } else {
-        current_colors = colors["0"];
+        current_colors = colors['0'];
       }
       updateGlyphsetHexColors(current_colors, false);
     }
@@ -709,7 +760,7 @@ const Glyphset = function () {
    */
   this.isUsingGPUCompute = () => {
     return glyphCompute !== undefined;
-  }
+  };
 
   /**
    * Get the assigned label for instance at index
@@ -719,18 +770,18 @@ const Glyphset = function () {
       return labels[index];
     }
     return undefined;
-  }
+  };
 
   this.isLabelDisplayed = () => {
     return labelsOn;
-  }
+  };
 
   /**
    * Check whether label can be shown
    */
   this.canShowLabel = () => {
-    return (glyphList?.length && (labels?.length || this.groupName));
-  }
+    return glyphList?.length && (labels?.length || this.groupName);
+  };
 
   /**
    * Display the label of the glyphs in the glyphset.
@@ -743,18 +794,18 @@ const Glyphset = function () {
         glyphList[i].showLabel(this.morph.material ? this.morph.material.color : undefined);
       }
     }
-  }
+  };
 
   /**
    * Hide label with the choosen colour.
    */
-    this.hideLabel = () => {
-      this.requestRender();
-      for (let i = 0; i < glyphList.length; i++) {
-        glyphList[i].hideLabel();
-      }
-      labelsOn = false;
+  this.hideLabel = () => {
+    this.requestRender();
+    for (let i = 0; i < glyphList.length; i++) {
+      glyphList[i].hideLabel();
     }
+    labelsOn = false;
+  };
 
   /**
    * Computes a single Box3 that conservatively contains every keyframe's
@@ -801,7 +852,7 @@ const Glyphset = function () {
       }
     }
     return first ? undefined : result;
-  }
+  };
 
   /**
    * Create the glyphs in the glyphset.
@@ -827,11 +878,16 @@ const Glyphset = function () {
       this.showLabel();
     }
     //Update the transformation of the glyphs.
-    updateGlyphsetTransformation(positions["0"], axis1s["0"],
-      axis2s["0"], axis3s["0"], scales["0"]);
+    updateGlyphsetTransformation(
+      positions['0'],
+      axis1s['0'],
+      axis2s['0'],
+      axis3s['0'],
+      scales['0'],
+    );
     staticTransformationApplied = true;
     if (colors != undefined) {
-      updateGlyphsetHexColors(colors["0"], !!(glyphCompute && glyphCompute.outputs.color));
+      updateGlyphsetHexColors(colors['0'], !!(glyphCompute && glyphCompute.outputs.color));
     }
     if (glyphCompute) {
       allFramesBoundingBox = computeAllFramesBoundingBox();
@@ -844,13 +900,12 @@ const Glyphset = function () {
    *
    * @param {Glyph} Glyph to be added.
    */
-  this.addCustomGlyph = glyph => {
+  this.addCustomGlyph = (glyph) => {
     this.requestRender();
-    if (glyph.isGlyph)
-      glyphList.push(glyph);
+    if (glyph.isGlyph) glyphList.push(glyph);
     this.ready = true;
     this.boundingBoxUpdateRequired = true;
-  }
+  };
 
   /**
    * Add a THREE.Mesh object to be displayed as glyph in this {@link Glyphset}.
@@ -864,13 +919,13 @@ const Glyphset = function () {
       const glyph = new Glyph(undefined, undefined, id, this);
       glyph.fromMesh(mesh);
       glyphList.push(glyph);
-      this.morph.add(glyph.getGroup())
+      this.morph.add(glyph.getGroup());
       this.ready = true;
       this.boundingBoxUpdateRequired = true;
       return glyph;
     }
     return undefined;
-  }
+  };
 
   /**
    * A function which iterates through the list of glyphs and call the callback
@@ -879,11 +934,11 @@ const Glyphset = function () {
    * @param {Function} callbackFunction - Callback function with the glyph
    * as an argument.
    */
-  this.forEachGlyph = callbackFunction => {
+  this.forEachGlyph = (callbackFunction) => {
     for (let i = 0; i < glyphList.length; i++) {
       callbackFunction(glyphList[i]);
     }
-  }
+  };
 
   var meshloader = (finishCallback, displayLabels) => {
     return (geometry, materials) => {
@@ -894,8 +949,7 @@ const Glyphset = function () {
       this.geometry.copy(geometry);
       this.geometry.computeBoundingSphere();
       this.geometry.computeBoundingBox();
-      if (materials && materials[0])
-        this.morph.material = materials[0];
+      if (materials && materials[0]) this.morph.material = materials[0];
       if (glyphCompute) {
         this.morph.material = createGlyphInstancedMaterial(this.morph.material, glyphCompute);
       }
@@ -904,27 +958,28 @@ const Glyphset = function () {
       this.morph.userData = this;
       this.setMorph(this.morph);
       geometry.dispose();
-      if (finishCallback != undefined && (typeof finishCallback == 'function'))
-        finishCallback(this);
+      if (finishCallback != undefined && typeof finishCallback == 'function') finishCallback(this);
     };
-  }
+  };
 
   /**
- * Get the index of the closest vertex to centroid.
- */
+   * Get the index of the closest vertex to centroid.
+   */
   this.getClosestVertexIndex = function () {
     let closestIndex = -1;
     if (this.morph && this.ready) {
       this.getBoundingBox().getCenter(this._v1);
-      let current_positions = positions["0"];
+      let current_positions = positions['0'];
       const numberOfPositions = current_positions.length / 3;
       let distance = -1;
       let currentDistance = 0;
       for (let i = 0; i < numberOfPositions; i++) {
         const current_index = i * 3;
-        this._v2.set(current_positions[current_index],
+        this._v2.set(
+          current_positions[current_index],
           current_positions[current_index + 1],
-          current_positions[current_index + 2]);
+          current_positions[current_index + 2],
+        );
         currentDistance = this._v1.distanceTo(this._v2);
         if (distance == -1) {
           distance = currentDistance;
@@ -936,13 +991,12 @@ const Glyphset = function () {
       }
     }
     return closestIndex;
-  }
+  };
 
   /**
    * Get the  closest vertex to centroid.
    */
   this.getClosestVertex = function () {
-
     if (this.closestVertexIndex == -1) {
       this.closestVertexIndex = this.getClosestVertexIndex();
     }
@@ -961,7 +1015,7 @@ const Glyphset = function () {
     }
 
     return undefined;
-  }
+  };
 
   /**
    * Get the bounding box for the whole set of glyphs.
@@ -976,8 +1030,7 @@ const Glyphset = function () {
         return this.cachedBoundingBox;
       }
       if (this.boundingBoxUpdateRequired) {
-        _boundingBox1.setFromBufferAttribute(
-          this.morph.geometry.attributes.position);
+        _boundingBox1.setFromBufferAttribute(this.morph.geometry.attributes.position);
         for (let i = 0; i < numberOfVertices; i++) {
           this.morph.getMatrixAt(i, _transformMatrix);
           _boundingBox2.copy(_boundingBox1).applyMatrix4(_transformMatrix);
@@ -991,33 +1044,28 @@ const Glyphset = function () {
           this.cachedBoundingBox.copy(_boundingBox3);
           this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(this.morph));
           this.boundingBoxUpdateRequired = false;
-        } else
-          return undefined;
+        } else return undefined;
       }
       return this.cachedBoundingBox;
     }
     return undefined;
-  }
+  };
 
   /**
    * Set the local time of this glyphset.
    *
    * @param {Number} time - Can be any value between 0 to duration.
    */
-  this.setMorphTime = time => {
+  this.setMorphTime = (time) => {
     this.requestRender();
-    if (time > this.duration)
-      this.inbuildTime = this.duration;
-    else if (0 > time)
-      this.inbuildTime = 0;
-    else
-      this.inbuildTime = time;
+    if (time > this.duration) this.inbuildTime = this.duration;
+    else if (0 > time) this.inbuildTime = 0;
+    else this.inbuildTime = time;
     if (morphColours || morphVertices) {
       updateMorphGlyphsets(true);
-      if (morphVertices)
-        this.markerUpdateRequired = true;
+      if (morphVertices) this.markerUpdateRequired = true;
     }
-  }
+  };
 
   /**
    * Check if the glyphset is time varying.
@@ -1025,11 +1073,10 @@ const Glyphset = function () {
    * @return {Boolean}
    */
   this.isTimeVarying = () => {
-    if (((this.ready === false) || (numberOfTimeSteps > 0)) &&
-      (morphColours || morphVertices))
+    if ((this.ready === false || numberOfTimeSteps > 0) && (morphColours || morphVertices))
       return true;
     return false;
-  }
+  };
 
   /**
    * Get the current inbuild time of the
@@ -1038,7 +1085,7 @@ const Glyphset = function () {
    */
   this.getCurrentTime = () => {
     return this.inbuildTime;
-  }
+  };
 
   /**
    * Exporters (see sceneExporter.js/GLTFExporter.js) read
@@ -1068,7 +1115,7 @@ const Glyphset = function () {
       colorArray[o3 + 2] = colorResult[o4 + 2];
     }
     this.morph.instanceColor.needsUpdate = true;
-  }
+  };
 
   /**
    * Undoes prepareColorForExport() - see its comment for why this matters:
@@ -1080,19 +1127,19 @@ const Glyphset = function () {
       this.morph.instanceColor = null;
       if (this.morph.material) this.morph.material.needsUpdate = true;
     }
-  }
+  };
 
   /**
    * Set the objects scale.
    *
    * @return {THREE.Box3}.
    */
-  this.setScaleAll = function(scale) {
+  this.setScaleAll = function (scale) {
     this.requestRender();
     this.globalScale = scale;
     staticTransformationApplied = false;
     updateMorphGlyphsets(false);
-  }
+  };
 
   /**
    * Clear this glyphset and its list of glyphs which will release them from the memory.
@@ -1102,10 +1149,8 @@ const Glyphset = function () {
     for (let i = glyphList.length - 1; i >= 0; i--) {
       glyphList[i].dispose();
     }
-    if (this.geometry)
-      this.geometry.dispose();
-    if (this.morph)
-      this.morph.material.dispose();
+    if (this.geometry) this.geometry.dispose();
+    if (this.morph) this.morph.material.dispose();
     cancelScheduledAccurateResync();
     axis1s = undefined;
     axis2s = undefined;
@@ -1121,7 +1166,7 @@ const Glyphset = function () {
     allFramesBoundingBox = undefined;
     this.ready = false;
     this.groupName = undefined;
-  }
+  };
 
   /**
    * Update the glyphsets if required the render.
@@ -1137,8 +1182,7 @@ const Glyphset = function () {
     }
     if (playAnimation == true) {
       let targetTime = this.inbuildTime + delta;
-      if (targetTime > this.duration)
-        targetTime = targetTime - this.duration;
+      if (targetTime > this.duration) targetTime = targetTime - this.duration;
       this.inbuildTime = targetTime;
       if (morphVertices && glyphCompute) {
         // Fast GPU-only path: update the render buffers every frame with
@@ -1148,7 +1192,7 @@ const Glyphset = function () {
         // downstream slider) left debounced-and-pending - it would apply a
         // now-stale frame once it fired mid-animation otherwise.
         cancelScheduledAccurateResync();
-        const current_time = this.inbuildTime / this.duration * (numberOfTimeSteps - 1);
+        const current_time = (this.inbuildTime / this.duration) * (numberOfTimeSteps - 1);
         const bottom_frame = Math.floor(current_time);
         const proportion = 1 - (current_time - bottom_frame);
         const top_frame = Math.ceil(current_time);
@@ -1166,8 +1210,8 @@ const Glyphset = function () {
       wasAnimating = false;
     }
     this.updateMarker(playAnimation, options);
-  }
-}
+  };
+};
 
 Glyphset.prototype = Object.create(ZincObject.prototype);
 export { Glyphset };

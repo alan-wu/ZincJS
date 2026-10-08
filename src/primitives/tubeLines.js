@@ -12,130 +12,130 @@ import { ZincObject } from './zincObject';
  * @return {TubeLines}
  */
 const TubeLines = function () {
-    ZincObject.call(this);
-    this.isTubeLines = true;
-    let dataIn = {};
-    let geometryConfig = { radius: 1, radialSegments: 8, smooth: false };
+  ZincObject.call(this);
+  this.isTubeLines = true;
+  let dataIn = {};
+  let geometryConfig = { radius: 1, radialSegments: 8, smooth: false };
 
-    /**
-     * Create the line segements using geometry and material.
-     *
-     * @param {THREE.Geomtry} geometryIn - Geometry of lines to be rendered.
-     * @param {THREE.Material} materialIn - Material to be set for the lines.
-     * @param {Object} options - Provide various options
-     * @param {Boolean} options.localTimeEnabled - A flag to indicate either the lines is
-     * time dependent.
-     * @param {Boolean} options.localMorphColour - A flag to indicate either the colour is
-     * time dependent.
-     */
-    this.createLineSegment = (geometryIn, materialIn, options) => {
-        if (geometryIn && materialIn) {
-            dataIn = { geometryIn, materialIn, options };
-            const geometry = getTubeLinesGeometry(extractVertices(geometryIn));
-            const material = new THREE.MeshStandardMaterial({ color: materialIn.color });
-            const mesh = new THREE.Mesh(geometry, material);
-            this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
-        }
+  /**
+   * Create the line segements using geometry and material.
+   *
+   * @param {THREE.Geomtry} geometryIn - Geometry of lines to be rendered.
+   * @param {THREE.Material} materialIn - Material to be set for the lines.
+   * @param {Object} options - Provide various options
+   * @param {Boolean} options.localTimeEnabled - A flag to indicate either the lines is
+   * time dependent.
+   * @param {Boolean} options.localMorphColour - A flag to indicate either the colour is
+   * time dependent.
+   */
+  this.createLineSegment = (geometryIn, materialIn, options) => {
+    if (geometryIn && materialIn) {
+      dataIn = { geometryIn, materialIn, options };
+      const geometry = getTubeLinesGeometry(extractVertices(geometryIn));
+      const material = new THREE.MeshStandardMaterial({ color: materialIn.color });
+      const mesh = new THREE.Mesh(geometry, material);
+      this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
     }
+  };
 
-    /**
+  /**
    * Set the width for the lines.
    *
    * @param {Number} width - Width of the lines.
    */
-	this.setWidth = width => {
-		this.requestRender();
-		if (this.morph && this.morph.material) {
-			this.morph.material.linewidth = width;
-			this.morph.material.needsUpdate = true;
-		}
-	}
-
-    /**
-     * Set the opacity of this Geometry. This function will also set the transparent
-     * according to the provided alpha value.
-     *
-     * @param {Number} alpah - Alpha value to set for this geometry,
-     * can be any value between from 0 to 1.0.
-     */
-    this.setAlpha = function (alpha) {
-        this.requestRender();
-        let mesh = this.getMorph();
-        mesh.material.opacity = alpha;
-        mesh.material.transparent = alpha < 1.0;
-        mesh.material.depthWrite = alpha > 0.5;
+  this.setWidth = (width) => {
+    this.requestRender();
+    if (this.morph && this.morph.material) {
+      this.morph.material.linewidth = width;
+      this.morph.material.needsUpdate = true;
     }
+  };
 
-    /**
-     * Set the wireframe mode for this geometry.
-     * @param {Boolean} wireframe
-     */
-    this.setWireframe = (wireframe) => {
-        this.requestRender();
-        let mesh = this.getMorph();
-        mesh.material.wireframe = wireframe;
+  /**
+   * Set the opacity of this Geometry. This function will also set the transparent
+   * according to the provided alpha value.
+   *
+   * @param {Number} alpah - Alpha value to set for this geometry,
+   * can be any value between from 0 to 1.0.
+   */
+  this.setAlpha = function (alpha) {
+    this.requestRender();
+    let mesh = this.getMorph();
+    mesh.material.opacity = alpha;
+    mesh.material.transparent = alpha < 1.0;
+    mesh.material.depthWrite = alpha > 0.5;
+  };
+
+  /**
+   * Set the wireframe mode for this geometry.
+   * @param {Boolean} wireframe
+   */
+  this.setWireframe = (wireframe) => {
+    this.requestRender();
+    let mesh = this.getMorph();
+    mesh.material.wireframe = wireframe;
+  };
+
+  /**
+   * Update tube radius/radialSegments value
+   *
+   * @param {Float} radius The radius of the tube.
+   * @param {Integer} radialSegments The number of segments that make up the cross-section.
+   */
+  this.setTubeLines = (radius, radialSegments) => {
+    this.requestRender();
+    if (radius && radialSegments) {
+      const { geometryIn } = dataIn;
+      let mesh = this.getMorph();
+      mesh.geometry.dispose();
+
+      geometryConfig = Object.assign(geometryConfig, { radius, radialSegments });
+      mesh.geometry = getTubeLinesGeometry(extractVertices(geometryIn));
     }
+  };
 
-    /**
-     * Update tube radius/radialSegments value
-     *
-     * @param {Float} radius The radius of the tube.
-     * @param {Integer} radialSegments The number of segments that make up the cross-section.
-     */
-    this.setTubeLines = (radius, radialSegments) => {
-        this.requestRender();
-        if (radius && radialSegments) {
-            const { geometryIn } = dataIn;
-            let mesh = this.getMorph();
-            mesh.geometry.dispose();
-
-            geometryConfig = Object.assign(geometryConfig, { radius, radialSegments });
-            mesh.geometry = getTubeLinesGeometry(extractVertices(geometryIn));
-        }
+  /**
+   * Read the position attribute of a BufferGeometry into an array of
+   * THREE.Vector3, since TubeGeometry/CatmullRomCurve3/LineCurve3 need
+   * actual Vector3 instances to work with, not a flat typed array.
+   *
+   * @param {THREE.BufferGeometry} geometry
+   * @returns {Array}
+   */
+  const extractVertices = (geometry) => {
+    const position = geometry.getAttribute('position');
+    const vertices = [];
+    for (let i = 0; i < position.count; i++) {
+      vertices.push(new THREE.Vector3().fromBufferAttribute(position, i));
     }
+    return vertices;
+  };
 
-    /**
-     * Read the position attribute of a BufferGeometry into an array of
-     * THREE.Vector3, since TubeGeometry/CatmullRomCurve3/LineCurve3 need
-     * actual Vector3 instances to work with, not a flat typed array.
-     *
-     * @param {THREE.BufferGeometry} geometry
-     * @returns {Array}
-     */
-    const extractVertices = (geometry) => {
-        const position = geometry.getAttribute('position');
-        const vertices = [];
-        for (let i = 0; i < position.count; i++) {
-            vertices.push(new THREE.Vector3().fromBufferAttribute(position, i));
-        }
-        return vertices;
+  /**
+   * Get merged geometry from list of geometry vertices
+   *
+   * @param {Array} vertices - An array of THREE.Vector3 vertices.
+   * @returns {Object}
+   */
+  const getTubeLinesGeometry = (vertices) => {
+    const { radius, radialSegments, smooth } = geometryConfig;
+    let finalGeometry;
+    if (smooth) {
+      const curve = new THREE.CatmullRomCurve3(vertices);
+      finalGeometry = new THREE.TubeGeometry(curve, vertices.length, radius, radialSegments, false);
+    } else {
+      const geometries = [];
+      for (let i = 0; i + 1 < vertices.length; i = i + 2) {
+        const curve = new THREE.LineCurve3(vertices[i], vertices[i + 1]);
+        const tubeGeometry = new THREE.TubeGeometry(curve, 1, radius, radialSegments, false);
+        geometries.push(tubeGeometry);
+      }
+      finalGeometry = mergeGeometries(geometries, true);
+      geometries.forEach((g) => g.dispose());
     }
-
-    /**
-     * Get merged geometry from list of geometry vertices
-     *
-     * @param {Array} vertices - An array of THREE.Vector3 vertices.
-     * @returns {Object}
-     */
-    const getTubeLinesGeometry = (vertices) => {
-        const { radius, radialSegments, smooth } = geometryConfig;
-        let finalGeometry;
-        if (smooth) {
-            const curve = new THREE.CatmullRomCurve3(vertices);
-            finalGeometry = new THREE.TubeGeometry(curve, vertices.length, radius, radialSegments, false);
-        } else {
-            const geometries = [];
-            for (let i = 0; i + 1 < vertices.length; i = i + 2) {
-                const curve = new THREE.LineCurve3(vertices[i], vertices[i+1]);
-                const tubeGeometry = new THREE.TubeGeometry(curve, 1, radius, radialSegments, false);
-                geometries.push(tubeGeometry);
-            }
-            finalGeometry = mergeGeometries(geometries, true);
-            geometries.forEach(g => g.dispose());
-        }
-        return finalGeometry;
-    }
-}
+    return finalGeometry;
+  };
+};
 
 TubeLines.prototype = Object.create(ZincObject.prototype);
 export { TubeLines };

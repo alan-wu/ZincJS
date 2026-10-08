@@ -1,28 +1,24 @@
 {
-	"metadata" : {
-		"formatVersion" : 3,
-		"description" : "Exported from LibZinc."
-	},
+  "metadata": {
+    "formatVersion": 3,
+    "description": "Exported from LibZinc."
+  },
 
-	"materials" : [ {
-	"DbgColor" : 15658734,
-	"DbgIndex" : 0,
-	"DbgName" : "my_material",
-	"colorDiffuse" : [0.7, 0.7, 0.7],
-	"colorSpecular" : [0.5, 0.5, 0.5],
-	"shading" : "Phong",
-	"specularCoef" : 30,
-	"opacity" : 1,
-	"vertexColors" : true
-	}],
+  "materials": [
+    {
+      "DbgColor": 15658734,
+      "DbgIndex": 0,
+      "DbgName": "my_material",
+      "colorDiffuse": [0.7, 0.7, 0.7],
+      "colorSpecular": [0.5, 0.5, 0.5],
+      "shading": "Phong",
+      "specularCoef": 30,
+      "opacity": 1,
+      "vertexColors": true
+    }
+  ],
 
-	"vertices" : [
-		0.000000,0.000000,0.000000
-	],
+  "vertices": [0.0, 0.0, 0.0],
 
-	"faces": [
-		0 ,0,0,0
-	]
-
+  "faces": [0, 0, 0, 0]
 }
-

@@ -5,7 +5,6 @@ import { Pointset } from '../primitives/pointset';
 import { applyMorphColorNode } from '../tsl/morphColorMaterial';
 
 const GLTFToZincJSLoader = function () {
-
   const _this = this;
 
   /*
@@ -40,7 +39,7 @@ const GLTFToZincJSLoader = function () {
       });
     }
     geometry.morphTargetsRelative = false;
-  }
+  };
 
   /*
    * Zinc renders colour morphs with its own colorNode (see geometry.js and
@@ -54,32 +53,32 @@ const GLTFToZincJSLoader = function () {
       material.vertexColors = false;
       return applyMorphColorNode(material);
     };
-    object.material = Array.isArray(object.material) ?
-      object.material.map(setup) : setup(object.material);
-  }
+    object.material = Array.isArray(object.material)
+      ? object.material.map(setup)
+      : setup(object.material);
+  };
 
   this.parseGLTFObjects = (object, region, depth, finishCallback) => {
     let childRegion = region;
     if (depth !== 0) {
-      if (object.type === "Object3D") {
-        if (object.name !== "") {
-          if (region)
-            childRegion = region.findOrCreateChildFromPath(object.name);
-            if (childRegion) {
-              const group = childRegion.getGroup();
-              group.position.copy(object.position);
-              group.rotation.copy(object.rotation);
-              group.quaternion.copy(object.quaternion);
-              group.matrixAutoUpdate = true;
-            }
+      if (object.type === 'Object3D') {
+        if (object.name !== '') {
+          if (region) childRegion = region.findOrCreateChildFromPath(object.name);
+          if (childRegion) {
+            const group = childRegion.getGroup();
+            group.position.copy(object.position);
+            group.rotation.copy(object.rotation);
+            group.quaternion.copy(object.quaternion);
+            group.matrixAutoUpdate = true;
+          }
         }
       } else {
         let zincGeometry = undefined;
-        if (object.type === "Mesh") {
+        if (object.type === 'Mesh') {
           zincGeometry = new Geometry();
-        } else if (object.type === "LineSegments") {
+        } else if (object.type === 'LineSegments') {
           zincGeometry = new Lines();
-        } else if (object.type === "Points") {
+        } else if (object.type === 'Points') {
           zincGeometry = new Pointset();
         }
         if (zincGeometry) {
@@ -91,31 +90,30 @@ const GLTFToZincJSLoader = function () {
             localMorphColour = object.geometry.morphAttributes.color ? true : false;
           }
           const mesh = object.clone();
-          if (localMorphColour && !zincGeometry.isPointset)
-            applyMorphColourMaterial(mesh);
+          if (localMorphColour && !zincGeometry.isPointset) applyMorphColourMaterial(mesh);
           zincGeometry.setMesh(mesh, localTimeEnabled, localMorphColour);
           const morph = zincGeometry.getMorph();
           zincGeometry.groupName = morph.name;
           morph.matrixAutoUpdate = true;
           region.addZincObject(zincGeometry);
-          if (finishCallback != undefined && (typeof finishCallback == 'function'))
+          if (finishCallback != undefined && typeof finishCallback == 'function')
             finishCallback(zincGeometry);
         }
       }
     }
     depth++;
-    object.children.forEach( child => {
+    object.children.forEach((child) => {
       _this.parseGLTFObjects(child, childRegion, depth, finishCallback);
     });
-  }
+  };
 
-  this.setCamera = scene => {
+  this.setCamera = (scene) => {
     scene.viewAll();
     const cameraControls = scene.getZincCameraControls();
     const viewport = cameraControls.getCurrentViewport();
     cameraControls.addViewport('default', viewport);
     cameraControls.setDefaultViewport('default');
-  }
+  };
 
   /**
    * Load GLTF into this scene object.
@@ -127,19 +125,19 @@ const GLTFToZincJSLoader = function () {
    * load has been cancelled, the loaded content will be discarded.
    */
   this.load = (scene, region, url, finishCallback, allCompletedCallback, options, isCancelled) => {
-    const path = url.substring(0, url.lastIndexOf("/") + 1);
-    const filename = url.substring(url.lastIndexOf("/") + 1, url.length);
+    const path = url.substring(0, url.lastIndexOf('/') + 1);
+    const filename = url.substring(url.lastIndexOf('/') + 1, url.length);
     const loader = new GLTFLoader().setPath(path);
 
-    loader.load( filename, function ( gltf ) {
+    loader.load(filename, function (gltf) {
       if (isCancelled && isCancelled()) return;
-      console.log(gltf)
+      console.log(gltf);
       _this.parseGLTFObjects(gltf.scene, region, 0, finishCallback);
       _this.setCamera(scene);
-      if (allCompletedCallback != undefined && (typeof allCompletedCallback == 'function'))
+      if (allCompletedCallback != undefined && typeof allCompletedCallback == 'function')
         allCompletedCallback();
     });
-  }
-}
+  };
+};
 
 export { GLTFToZincJSLoader };

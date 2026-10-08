@@ -42,9 +42,9 @@ const TextureSlides = function (textureIn) {
    *
    * @param {SLIDE_SETTINGS} slideSettings - An array to each slide settings.
    */
-  this.createSlides = slideSettings => {
-    slideSettings.forEach(slide => this.createSlide(slide));
-  }
+  this.createSlides = (slideSettings) => {
+    slideSettings.forEach((slide) => this.createSlide(slide));
+  };
 
   /**
    * Set the value of the uniforms for a specific mesh in this
@@ -63,20 +63,20 @@ const TextureSlides = function (textureIn) {
     mesh.position.y = 0;
     mesh.position.z = 0;
     switch (settings.direction) {
-      case "x":
+      case 'x':
         const rotation = -Math.PI / 2;
         mesh.rotation.y = rotation;
         uniforms.direction.value = 1;
         uniforms.slide.value.set(settings.value, 0, 0);
         mesh.position.x = settings.value;
         break;
-      case "y":
+      case 'y':
         mesh.rotation.x = Math.PI / 2;
         uniforms.direction.value = 2;
         uniforms.slide.value.set(0, settings.value, 0);
         mesh.position.y = settings.value;
         break;
-      case "z":
+      case 'z':
         uniforms.direction.value = 3;
         uniforms.slide.value.set(0, 0, settings.value);
         mesh.position.z = settings.value;
@@ -86,7 +86,7 @@ const TextureSlides = function (textureIn) {
     }
     material.needsUpdate = true;
     this.boundingBoxUpdateRequired = true;
-  }
+  };
 
   /**
    * Modify the mesh based on a setting
@@ -94,12 +94,10 @@ const TextureSlides = function (textureIn) {
    * @param {SLIDE_SETTINGS} settings - s.
    */
   this.modifySlideSettings = (settings) => {
-    if (settings && settings.id &&
-      settings.id in idTextureMap &&
-      idTextureMap[settings.id]) {
+    if (settings && settings.id && settings.id in idTextureMap && idTextureMap[settings.id]) {
       setUniformSlideSettingsOfMesh(idTextureMap[settings.id], settings);
     }
-  }
+  };
 
   /**
    * Create a slide required for visualisation based on the slide settings.
@@ -109,7 +107,7 @@ const TextureSlides = function (textureIn) {
    * @return {SLIDE_SETTINGS} - Returned settings, it includes the newly
    * created mesh's id.
    */
-  this.createSlide = settings => {
+  this.createSlide = (settings) => {
     if (this.texture && this.texture.isTextureArray && this.texture.isReady()) {
       if (settings && settings.direction && settings.value !== undefined) {
         const geometry = new THREE.PlaneGeometry(1, 1);
@@ -126,7 +124,7 @@ const TextureSlides = function (textureIn) {
           uniforms: uniforms,
           glslVersion: shader.glslVersion,
           side: THREE.DoubleSide,
-          transparent: false
+          transparent: false,
         };
         const material = this.texture.getMaterial(options);
         material.needsUpdate = true;
@@ -146,7 +144,7 @@ const TextureSlides = function (textureIn) {
         return slideSettings;
       }
     }
-  }
+  };
 
   /**
    * Return a copy of texture settings used by this object.
@@ -155,7 +153,7 @@ const TextureSlides = function (textureIn) {
    */
   this.getTextureSettings = () => {
     return [...textureSettings];
-  }
+  };
 
   /**
    * Return a copy of texture settings with corresponding id used by this object.
@@ -165,10 +163,10 @@ const TextureSlides = function (textureIn) {
   this.getTextureSettingsWithId = (id) => {
     for (let i = 0; i < textureSettings.length; i++) {
       if (id === textureSettings[i].id) {
-        return {...textureSettings[i]};
+        return { ...textureSettings[i] };
       }
     }
-  }
+  };
 
   /**
    * Get  the array of slides, return them in an array
@@ -178,21 +176,19 @@ const TextureSlides = function (textureIn) {
   this.getSlides = () => {
     if (this.morph) return [...this.morph.children];
     return [];
-  }
+  };
 
   /**
    * Clean up all internal objects.
    */
   this.dispose = () => {
-    this.morph.children.forEach(slide => {
-      if (slide.geometry)
-        slide.geometry.dispose();
-      if (slide.material)
-        slide.material.dispose();
+    this.morph.children.forEach((slide) => {
+      if (slide.geometry) slide.geometry.dispose();
+      if (slide.material) slide.material.dispose();
     });
     TexturePrimitive.prototype.dispose.call(this);
     this.boundingBoxUpdateRequired = true;
-  }
+  };
 
   //Expand the boundingbox with slide settings
   const expandBoxWithSettings = (box, settings, vector) => {
@@ -223,7 +219,7 @@ const TextureSlides = function (textureIn) {
           break;
       }
     }
-  }
+  };
 
   /**
    * Get the bounding box of this slides.
@@ -233,20 +229,18 @@ const TextureSlides = function (textureIn) {
    * @return {THREE.Box3}.
    */
   this.getBoundingBox = () => {
-    if (this.morph && this.morph.children && this.morph.visible &&
-      this.boundingBoxUpdateRequired) {
+    if (this.morph && this.morph.children && this.morph.visible && this.boundingBoxUpdateRequired) {
       this.cachedBoundingBox.makeEmpty();
       const vector = new THREE.Vector3(0, 0, 0);
-      this.morph.children.forEach(slide => {
-        expandBoxWithSettings(this.cachedBoundingBox, slide.material.uniforms,
-          vector);
+      this.morph.children.forEach((slide) => {
+        expandBoxWithSettings(this.cachedBoundingBox, slide.material.uniforms, vector);
       });
-      this.morph.updateMatrixWorld (true, true);
+      this.morph.updateMatrixWorld(true, true);
       this.cachedBoundingBox.applyMatrix4(this.morph.matrixWorld);
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;
-  }
+  };
 
   this.applyTransformation = (rotation, position, scale) => {
     const matrix = new THREE.Matrix4();
@@ -266,60 +260,63 @@ const TextureSlides = function (textureIn) {
       0,
       0,
       0,
-      0
+      0,
     );
     const quaternion = new THREE.Quaternion().setFromRotationMatrix(matrix);
     this.morph.position.set(...position);
-    this.morph.quaternion.copy( quaternion );
+    this.morph.quaternion.copy(quaternion);
     this.morph.scale.set(...scale);
     this.morph.updateMatrix();
     this.boundingBoxUpdateRequired = true;
-  }
+  };
 
   this.setRenderOrder = (order) => {
     //multiilayers
     this.morph.renderOrder = order;
-  }
+  };
 
   this.initialise = (textureData, finishCallback) => {
     if (textureData) {
       const locations = textureData.locations;
       if (locations && locations.length > 0) {
-        this.applyTransformation(locations[0].orientation,
-          locations[0].position, locations[0].scale);
-        if ("flipY" in locations[0]) {
+        this.applyTransformation(
+          locations[0].orientation,
+          locations[0].position,
+          locations[0].scale,
+        );
+        if ('flipY' in locations[0]) {
           flipY = locations[0].flipY;
         }
-        if ("flipZ" in locations[0]) {
+        if ('flipZ' in locations[0]) {
           flipZ = locations[0].flipZ;
         }
       }
       this.createSlides(textureData.settings.slides);
-      if (finishCallback != undefined && (typeof finishCallback == 'function')) {
+      if (finishCallback != undefined && typeof finishCallback == 'function') {
         finishCallback(this);
       }
     }
-  }
+  };
 
   this.showEdges = (color) => {
     if (!edgesLine) {
-      const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
       geometry.translate(0.5, 0.5, 0.5);
-      const edges = new THREE.EdgesGeometry( geometry );
-      edgesLine = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color } ) );
-      this.group.add( edgesLine );
+      const edges = new THREE.EdgesGeometry(geometry);
+      edgesLine = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color }));
+      this.group.add(edgesLine);
     } else {
       edgesLine.material.color = color;
     }
     edgesLine.visible = true;
-  }
+  };
 
   this.hideEdges = () => {
     if (edgesLine) {
       edgesLine.visible = false;
     }
-  }
-}
+  };
+};
 
 TextureSlides.prototype = Object.create(TexturePrimitive.prototype);
 TextureSlides.prototype.constructor = TextureSlides;

@@ -22,10 +22,21 @@ function createFakeCanvasContext(device, width, height) {
   return {
     configure(descriptor) {
       if (texture) texture.destroy();
-      texture = device.createTexture({ size: [width, height], format: descriptor.format, usage: descriptor.usage });
+      texture = device.createTexture({
+        size: [width, height],
+        format: descriptor.format,
+        usage: descriptor.usage,
+      });
     },
-    unconfigure() { if (texture) { texture.destroy(); texture = undefined; } },
-    getCurrentTexture() { return texture; },
+    unconfigure() {
+      if (texture) {
+        texture.destroy();
+        texture = undefined;
+      }
+    },
+    getCurrentTexture() {
+      return texture;
+    },
   };
 }
 
@@ -37,7 +48,9 @@ beforeAll(async () => {
   navigator.gpu = gpu;
   const adapter = await gpu.requestAdapter();
   const device = await adapter.requestDevice({
-    requiredLimits: { maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage },
+    requiredLimits: {
+      maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage,
+    },
   });
   const context = createFakeCanvasContext(device, 4, 4);
   webgpuRenderer = new THREE.WebGPURenderer({ device, context });
@@ -86,7 +99,10 @@ it('renders straight from GPU buffers while animating, then does one accurate re
   }
 
   // instanceMatrix must NOT have been touched by the fast path.
-  expect(matrixArray.every((v, i) => v === beforeAnimating[i]), 'instanceMatrix was mutated while animating').toBe(true);
+  expect(
+    matrixArray.every((v, i) => v === beforeAnimating[i]),
+    'instanceMatrix was mutated while animating',
+  ).toBe(true);
 
   // Bounding box must fall back to the conservative all-keyframes box, not
   // recompute (stale) per-instance bounds.

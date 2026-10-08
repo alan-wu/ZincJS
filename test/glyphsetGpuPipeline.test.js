@@ -25,7 +25,9 @@ beforeAll(async () => {
   navigator.gpu = gpu;
   const adapter = await gpu.requestAdapter();
   const device = await adapter.requestDevice({
-    requiredLimits: { maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage },
+    requiredLimits: {
+      maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage,
+    },
   });
   webgpuRenderer = new THREE.WebGPURenderer({ device });
   await webgpuRenderer.init();
@@ -50,12 +52,16 @@ function expectedPoint(record, bottomFrame, topFrame, proportion) {
   const a3 = lerp3(pick(axis3, bottomFrame), pick(axis3, topFrame), proportion);
   const sc = lerp3(pick(scale, bottomFrame), pick(scale, topFrame), proportion);
 
-  const axisScale = [0, 1, 2].map((j) => ((sc[j] < 0 ? -1 : 1) * baseSize[j] + sc[j] * scaleFactors[j]) * globalScale);
+  const axisScale = [0, 1, 2].map(
+    (j) => ((sc[j] < 0 ? -1 : 1) * baseSize[j] + sc[j] * scaleFactors[j]) * globalScale,
+  );
   const finalAxis1 = a1.map((v) => v * axisScale[0]);
   const finalAxis2 = a2.map((v) => v * axisScale[1]);
   const finalAxis3 = a3.map((v) => v * axisScale[2]);
-  const finalPoint = [0, 1, 2].map((j) => point[j]
-    + offset[0] * finalAxis1[j] + offset[1] * finalAxis2[j] + offset[2] * finalAxis3[j]);
+  const finalPoint = [0, 1, 2].map(
+    (j) =>
+      point[j] + offset[0] * finalAxis1[j] + offset[1] * finalAxis2[j] + offset[2] * finalAxis3[j],
+  );
   return finalPoint;
 }
 

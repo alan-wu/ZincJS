@@ -1,1689 +1,681 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="utf-8">
+  <head>
+    <meta charset="utf-8" />
     <title>JSDoc: Class: Glyph</title>
 
-    <script src="scripts/prettify/prettify.js"> </script>
-    <script src="scripts/prettify/lang-css.js"> </script>
+    <script src="scripts/prettify/prettify.js"></script>
+    <script src="scripts/prettify/lang-css.js"></script>
     <!--[if lt IE 9]>
       <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
     <![endif]-->
-    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
-    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
-</head>
-
-<body>
-
-<div id="main">
-
-    <h1 class="page-title">Class: Glyph</h1>
-
-    
-
-
-
-
-<section>
-
-<header>
-    
-        <h2><span class="attribs"><span class="type-signature"></span></span>Glyph<span class="signature">(geometry, materialIn, idIn)</span><span class="type-signature"> &rarr; {<a href="Glyph.html">Glyph</a>}</span></h2>
-        
-    
-</header>
-
-<article>
-    <div class="container-overview">
-    
-        
-
-    
-
-    
-    <h4 class="name" id="Glyph"><span class="type-signature"></span>new Glyph<span class="signature">(geometry, materialIn, idIn)</span><span class="type-signature"> &rarr; {<a href="Glyph.html">Glyph</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Zinc representation of glyph graphic, it contains the colours,
-geometry and transformation of the glyph.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>geometry</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Geometry</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Geometry of the glyph .</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>materialIn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Material</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Material of the glyph.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>idIn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Number</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Id of the glyph.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-author">Author:</dt>
-    <dd class="tag-author">
-        <ul>
-            <li>Alan Wu</li>
-        </ul>
-    </dd>
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line17">line 17</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Glyph.html">Glyph</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-    
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css" />
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css" />
+  </head>
+
+  <body>
+    <div id="main">
+      <h1 class="page-title">Class: Glyph</h1>
+
+      <section>
+        <header>
+          <h2>
+            <span class="attribs"><span class="type-signature"></span></span>
+            Glyph
+            <span class="signature">(geometry, materialIn, idIn)</span>
+            <span class="type-signature">
+              &rarr; {
+              <a href="Glyph.html">Glyph</a>
+              }
+            </span>
+          </h2>
+        </header>
+
+        <article>
+          <div class="container-overview">
+            <h4 class="name" id="Glyph">
+              <span class="type-signature"></span>
+              new Glyph
+              <span class="signature">(geometry, materialIn, idIn)</span>
+              <span class="type-signature">
+                &rarr; {
+                <a href="Glyph.html">Glyph</a>
+                }
+              </span>
+            </h4>
+
+            <div class="description">
+              Zinc representation of glyph graphic, it contains the colours, geometry and
+              transformation of the glyph.
+            </div>
+
+            <h5>Parameters:</h5>
+
+            <table class="params">
+              <thead>
+                <tr>
+                  <th>Name</th>
+
+                  <th>Type</th>
+
+                  <th class="last">Description</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                <tr>
+                  <td class="name"><code>geometry</code></td>
+
+                  <td class="type">
+                    <span class="param-type">THREE.Geometry</span>
+                  </td>
+
+                  <td class="description last">Geometry of the glyph .</td>
+                </tr>
+
+                <tr>
+                  <td class="name"><code>materialIn</code></td>
+
+                  <td class="type">
+                    <span class="param-type">THREE.Material</span>
+                  </td>
+
+                  <td class="description last">Material of the glyph.</td>
+                </tr>
+
+                <tr>
+                  <td class="name"><code>idIn</code></td>
+
+                  <td class="type">
+                    <span class="param-type">Number</span>
+                  </td>
+
+                  <td class="description last">Id of the glyph.</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <dl class="details">
+              <dt class="tag-author">Author:</dt>
+              <dd class="tag-author">
+                <ul>
+                  <li>Alan Wu</li>
+                </ul>
+              </dd>
+
+              <dt class="tag-source">Source:</dt>
+              <dd class="tag-source">
+                <ul class="dummy">
+                  <li>
+                    <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                    ,
+                    <a href="primitives_glyph.js.html#line17">line 17</a>
+                  </li>
+                </ul>
+              </dd>
+            </dl>
+
+            <h5>Returns:</h5>
+
+            <dl>
+              <dt>Type</dt>
+              <dd>
+                <span class="param-type"><a href="Glyph.html">Glyph</a></span>
+              </dd>
+            </dl>
+          </div>
+
+          <h3 class="subsection-title">Methods</h3>
+
+          <h4 class="name" id="dispose">
+            <span class="type-signature"></span>
+            dispose
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Clear and free its memory.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line198">line 198</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="fromMesh">
+            <span class="type-signature"></span>
+            fromMesh
+            <span class="signature">(meshIn)</span>
+            <span class="type-signature">&rarr; {Boolean}</span>
+          </h4>
+
+          <div class="description">Create a glyph using mesh</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>meshIn</code></td>
+
+                <td class="type">
+                  <span class="param-type">THREE.Mesh</span>
+                </td>
+
+                <td class="description last">Mesh to create the glyph from</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line38">line 38</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h5>Returns:</h5>
+
+          <div class="param-desc">true if successful</div>
+
+          <dl>
+            <dt>Type</dt>
+            <dd>
+              <span class="param-type">Boolean</span>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="getColour">
+            <span class="type-signature"></span>
+            getColour
+            <span class="signature">()</span>
+            <span class="type-signature">&rarr; {THREE.Color|undefined}</span>
+          </h4>
+
+          <div class="description">Get the last colour set via setColour(), if any.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line193">line 193</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h5>Returns:</h5>
+
+          <dl>
+            <dt>Type</dt>
+            <dd>
+              <span class="param-type">THREE.Color</span>
+              |
+
+              <span class="param-type">undefined</span>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="getGlyphset">
+            <span class="type-signature"></span>
+            getGlyphset
+            <span class="signature">()</span>
+            <span class="type-signature">&rarr; {Boolean}</span>
+          </h4>
+
+          <div class="description">Get the {Glyphset} containing this glyph.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line57">line 57</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h5>Returns:</h5>
+
+          <div class="param-desc">true if successful</div>
+
+          <dl>
+            <dt>Type</dt>
+            <dd>
+              <span class="param-type">Boolean</span>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="getLabel">
+            <span class="type-signature"></span>
+            getLabel
+            <span class="signature">()</span>
+            <span class="type-signature">
+              &rarr; {
+              <a href="Label.html">Label</a>
+              }
+            </span>
+          </h4>
+
+          <div class="description">Get the label of this glyph</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line118">line 118</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h5>Returns:</h5>
+
+          <dl>
+            <dt>Type</dt>
+            <dd>
+              <span class="param-type"><a href="Label.html">Label</a></span>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="getMesh">
+            <span class="type-signature"></span>
+            getMesh
+            <span class="signature">()</span>
+            <span class="type-signature">&rarr; {THREE.Mesh}</span>
+          </h4>
+
+          <div class="description">Get the mesh of this glyph.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line126">line 126</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h5>Returns:</h5>
+
+          <dl>
+            <dt>Type</dt>
+            <dd>
+              <span class="param-type">THREE.Mesh</span>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="hideLabel">
+            <span class="type-signature"></span>
+            hideLabel
+            <span class="signature">()</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Hide label with the choosen colour.</div>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line104">line 104</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setColour">
+            <span class="type-signature"></span>
+            setColour
+            <span class="signature">(color)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">
+            Set the color of the glyph and its label. Remembered (see showLabel()) so a label
+            created/recreated later - e.g. by Glyphset.showLabel(), which otherwise only has a
+            single shared material colour to fall back on - starts out with this glyph's own correct
+            colour rather than that shared one.
+          </div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>color</code></td>
+
+                <td class="type">
+                  <span class="param-type">THREE.Color</span>
+                </td>
+
+                <td class="description last">Colour to be set.</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line177">line 177</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setLabel">
+            <span class="type-signature"></span>
+            setLabel
+            <span class="signature">(text)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Set and update the text containing this glyph.</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>text</code></td>
+
+                <td class="type">
+                  <span class="param-type">String</span>
+                </td>
+
+                <td class="description last">Label to be set for this instance</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line65">line 65</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="setTransformation">
+            <span class="type-signature"></span>
+            setTransformation
+            <span class="signature">(position, axis1, axis2, position)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">Set the transformation of this glyph.</div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>position</code></td>
+
+                <td class="type">
+                  <span class="param-type">Array</span>
+                </td>
+
+                <td class="description last">
+                  Three components vectors containing position of the transformation.
+                </td>
+              </tr>
+
+              <tr>
+                <td class="name"><code>axis1</code></td>
+
+                <td class="type">
+                  <span class="param-type">Array</span>
+                </td>
+
+                <td class="description last">
+                  Three components vectors containing axis1 rotation of the transformation.
+                </td>
+              </tr>
+
+              <tr>
+                <td class="name"><code>axis2</code></td>
+
+                <td class="type">
+                  <span class="param-type">Array</span>
+                </td>
+
+                <td class="description last">
+                  Three components vectors containing axis2 rotation of the transformation.
+                </td>
+              </tr>
+
+              <tr>
+                <td class="name"><code>position</code></td>
+
+                <td class="type">
+                  <span class="param-type">Array</span>
+                </td>
+
+                <td class="description last">
+                  Three components vectors containing axis3 rotation of the transformation.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line141">line 141</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+
+          <h4 class="name" id="showLabel">
+            <span class="type-signature"></span>
+            showLabel
+            <span class="signature">(colour)</span>
+            <span class="type-signature"></span>
+          </h4>
+
+          <div class="description">
+            Display label with the choosen colour. It will replace the current label.
+          </div>
+
+          <h5>Parameters:</h5>
+
+          <table class="params">
+            <thead>
+              <tr>
+                <th>Name</th>
+
+                <th>Type</th>
+
+                <th class="last">Description</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr>
+                <td class="name"><code>colour</code></td>
+
+                <td class="type">
+                  <span class="param-type">THREE.Color</span>
+                </td>
+
+                <td class="description last">
+                  Colour to fall back to for the label if this glyph doesn't already have its own
+                  colour (see setColour()/ getColour()) - e.g. genuinely no colour data at all for
+                  this glyphset.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <dl class="details">
+            <dt class="tag-source">Source:</dt>
+            <dd class="tag-source">
+              <ul class="dummy">
+                <li>
+                  <a href="primitives_glyph.js.html">primitives/glyph.js</a>
+                  ,
+                  <a href="primitives_glyph.js.html#line81">line 81</a>
+                </li>
+              </ul>
+            </dd>
+          </dl>
+        </article>
+      </section>
     </div>
 
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-        <h3 class="subsection-title">Methods</h3>
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="dispose"><span class="type-signature"></span>dispose<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Clear and free its memory.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line198">line 198</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="fromMesh"><span class="type-signature"></span>fromMesh<span class="signature">(meshIn)</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Create a glyph using mesh
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>meshIn</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Mesh</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Mesh to create the glyph from</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line38">line 38</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    true if successful
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Boolean</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getColour"><span class="type-signature"></span>getColour<span class="signature">()</span><span class="type-signature"> &rarr; {THREE.Color|undefined}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Get the last colour set via setColour(), if any.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line193">line 193</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">THREE.Color</span>
-|
-
-<span class="param-type">undefined</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getGlyphset"><span class="type-signature"></span>getGlyphset<span class="signature">()</span><span class="type-signature"> &rarr; {Boolean}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Get the {Glyphset} containing this glyph.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line57">line 57</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-<div class="param-desc">
-    true if successful
-</div>
-
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">Boolean</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getLabel"><span class="type-signature"></span>getLabel<span class="signature">()</span><span class="type-signature"> &rarr; {<a href="Label.html">Label</a>}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Get the label of this glyph
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line118">line 118</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type"><a href="Label.html">Label</a></span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="getMesh"><span class="type-signature"></span>getMesh<span class="signature">()</span><span class="type-signature"> &rarr; {THREE.Mesh}</span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Get the mesh of this glyph.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line126">line 126</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<h5>Returns:</h5>
-
-        
-
-
-<dl>
-    <dt>
-        Type
-    </dt>
-    <dd>
-        
-<span class="param-type">THREE.Mesh</span>
-
-
-    </dd>
-</dl>
-
-    
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="hideLabel"><span class="type-signature"></span>hideLabel<span class="signature">()</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Hide label with the choosen colour.
-</div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line104">line 104</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setColour"><span class="type-signature"></span>setColour<span class="signature">(color)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set the color of the glyph and its label. Remembered (see showLabel())
-so a label created/recreated later - e.g. by Glyphset.showLabel(),
-which otherwise only has a single shared material colour to fall back
-on - starts out with this glyph's own correct colour rather than that
-shared one.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>color</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Color</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Colour to be set.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line177">line 177</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setLabel"><span class="type-signature"></span>setLabel<span class="signature">(text)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set and update the text containing this glyph.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>text</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">String</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Label to be set for this instance</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line65">line 65</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="setTransformation"><span class="type-signature"></span>setTransformation<span class="signature">(position, axis1, axis2, position)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Set the transformation of this glyph.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>position</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Three components vectors containing position of the
-transformation.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>axis1</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Three components vectors containing axis1 rotation of the
-transformation.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>axis2</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Three components vectors containing axis2 rotation of the
-transformation.</td>
-        </tr>
-
-    
-
-        <tr>
-            
-                <td class="name"><code>position</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">Array</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Three components vectors containing axis3 rotation of the
-transformation.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line141">line 141</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-            
-
-    
-
-    
-    <h4 class="name" id="showLabel"><span class="type-signature"></span>showLabel<span class="signature">(colour)</span><span class="type-signature"></span></h4>
-    
-
-    
-
-
-
-<div class="description">
-    Display label with the choosen colour. It will replace the current
-label.
-</div>
-
-
-
-
-
-
-
-
-
-    <h5>Parameters:</h5>
-    
-
-<table class="params">
-    <thead>
-    <tr>
-        
-        <th>Name</th>
-        
-
-        <th>Type</th>
-
-        
-
-        
-
-        <th class="last">Description</th>
-    </tr>
-    </thead>
-
-    <tbody>
-    
-
-        <tr>
-            
-                <td class="name"><code>colour</code></td>
-            
-
-            <td class="type">
-            
-                
-<span class="param-type">THREE.Color</span>
-
-
-            
-            </td>
-
-            
-
-            
-
-            <td class="description last">Colour to fall back to for the label if
-this glyph doesn't already have its own colour (see setColour()/
-getColour()) - e.g. genuinely no colour data at all for this glyphset.</td>
-        </tr>
-
-    
-    </tbody>
-</table>
-
-
-
-
-
-
-<dl class="details">
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-
-    
-    <dt class="tag-source">Source:</dt>
-    <dd class="tag-source"><ul class="dummy"><li>
-        <a href="primitives_glyph.js.html">primitives/glyph.js</a>, <a href="primitives_glyph.js.html#line81">line 81</a>
-    </li></ul></dd>
-    
-
-    
-
-    
-
-    
-</dl>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        
-    
-
-    
-
-    
-</article>
-
-</section>
-
-
-
-
-</div>
-
-<nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
-</nav>
-
-<br class="clear">
-
-<footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Oct 07 2026 19:51:26 GMT+1300 (New Zealand Daylight Time)
-</footer>
-
-<script> prettyPrint(); </script>
-<script src="scripts/linenumber.js"> </script>
-</body>
+    <nav>
+      <h2><a href="index.html">Home</a></h2>
+      <h3>Namespaces</h3>
+      <ul>
+        <li><a href="Zinc.html">Zinc</a></li>
+      </ul>
+      <h3>Classes</h3>
+      <ul>
+        <li><a href="CameraControls.html">CameraControls</a></li>
+        <li><a href="Geometry.html">Geometry</a></li>
+        <li><a href="Glyph.html">Glyph</a></li>
+        <li><a href="Glyphset.html">Glyphset</a></li>
+        <li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li>
+        <li><a href="LOD.html">LOD</a></li>
+        <li><a href="Label.html">Label</a></li>
+        <li><a href="Lines.html">Lines</a></li>
+        <li><a href="Lines2.html">Lines2</a></li>
+        <li><a href="Marker.html">Marker</a></li>
+        <li><a href="MarkerCluster.html">MarkerCluster</a></li>
+        <li><a href="Minimap.html">Minimap</a></li>
+        <li><a href="Pointset.html">Pointset</a></li>
+        <li><a href="Region.html">Region</a></li>
+        <li><a href="Renderer.html">Renderer</a></li>
+        <li><a href="Scene.html">Scene</a></li>
+        <li><a href="SceneExporter.html">SceneExporter</a></li>
+        <li><a href="SceneLoader.html">SceneLoader</a></li>
+        <li><a href="Texture.html">Texture</a></li>
+        <li><a href="TextureArray.html">TextureArray</a></li>
+        <li><a href="TexturePrimitive.html">TexturePrimitive</a></li>
+        <li><a href="TextureSlides.html">TextureSlides</a></li>
+        <li><a href="TubeLines.html">TubeLines</a></li>
+        <li><a href="VideoHandler.html">VideoHandler</a></li>
+        <li><a href="Viewport.html">Viewport</a></li>
+        <li><a href="ZincObject.html">ZincObject</a></li>
+      </ul>
+      <h3>Global</h3>
+      <ul>
+        <li>
+          <a href="global.html#ModifiedDeviceOrientationControls">
+            ModifiedDeviceOrientationControls
+          </a>
+        </li>
+        <li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li>
+        <li><a href="global.html#StereoEffect">StereoEffect</a></li>
+        <li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li>
+        <li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li>
+        <li><a href="global.html#createTextSprite">createTextSprite</a></li>
+        <li><a href="global.html#extractColorFrames">extractColorFrames</a></li>
+        <li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li>
+        <li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li>
+        <li><a href="global.html#mergeAttributes">mergeAttributes</a></li>
+        <li><a href="global.html#mergeGeometries">mergeGeometries</a></li>
+        <li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li>
+        <li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li>
+        <li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li>
+      </ul>
+    </nav>
+
+    <br class="clear" />
+
+    <footer>
+      Documentation generated by
+      <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a>
+      on Wed Oct 07 2026 19:51:26 GMT+1300 (New Zealand Daylight Time)
+    </footer>
+
+    <script>
+      prettyPrint();
+    </script>
+    <script src="scripts/linenumber.js"></script>
+  </body>
 </html>

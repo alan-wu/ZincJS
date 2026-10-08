@@ -4,10 +4,18 @@ import { JSONLoader } from '../src/loaders/JSONLoader';
 import { PrimitivesLoader } from '../src/loaders/primitivesLoader';
 import { Geometry } from '../src/primitives/geometry';
 import { Region } from '../src/region';
-import { updateMorphColorAttribute, getCircularTexture,
-  removeVertexAtIndex } from '../src/utilities';
-import { fontSizeForHeight, getTextPixelsPerUnit, registerTextSprite,
-  releaseTextSprite, setTextPixelsPerUnit } from '../src/textSprite';
+import {
+  updateMorphColorAttribute,
+  getCircularTexture,
+  removeVertexAtIndex,
+} from '../src/utilities';
+import {
+  fontSizeForHeight,
+  getTextPixelsPerUnit,
+  registerTextSprite,
+  releaseTextSprite,
+  setTextPixelsPerUnit,
+} from '../src/textSprite';
 import { Pointset } from '../src/primitives/pointset';
 import { Lines2 } from '../src/primitives/lines2';
 
@@ -70,9 +78,11 @@ describe('morph colour upload caching', () => {
     expect(attribute0.version).toBeGreaterThan(version0);
     expect(attribute1.version).toBeGreaterThan(version1);
     expect(Array.from(attribute0.array)).toEqual(
-      Array.from(geometry.morphAttributes.color[1].array));
+      Array.from(geometry.morphAttributes.color[1].array),
+    );
     expect(Array.from(attribute1.array)).toEqual(
-      Array.from(geometry.morphAttributes.color[2].array));
+      Array.from(geometry.morphAttributes.color[2].array),
+    );
   });
 
   it('colour only playback does not invalidate the bounding box', () => {
@@ -89,16 +99,19 @@ describe('morph colour upload caching', () => {
 
 describe('vertex morph playback', () => {
   it('still invalidates the bounding box', () => {
-    const { geometry } = new JSONLoader().parse({
-      metadata: { formatVersion: 3 },
-      vertices: [0, 0, 0, 1, 0, 0, 1, 1, 0],
-      faces: [bit(), 0, 1, 2],
-      morphTargets: [
-        { name: 'anim000001', vertices: [0, 0, 0, 1, 0, 0, 1, 1, 0] },
-        { name: 'anim000002', vertices: [0, 0, 0, 2, 0, 0, 2, 2, 0] },
-      ],
-      materials: [{ colorDiffuse: [1, 1, 1], opacity: 1 }],
-    }, '');
+    const { geometry } = new JSONLoader().parse(
+      {
+        metadata: { formatVersion: 3 },
+        vertices: [0, 0, 0, 1, 0, 0, 1, 1, 0],
+        faces: [bit(), 0, 1, 2],
+        morphTargets: [
+          { name: 'anim000001', vertices: [0, 0, 0, 1, 0, 0, 1, 1, 0] },
+          { name: 'anim000002', vertices: [0, 0, 0, 2, 0, 0, 2, 2, 0] },
+        ],
+        materials: [{ colorDiffuse: [1, 1, 1], opacity: 1 }],
+      },
+      '',
+    );
     const zincGeometry = new Geometry();
     zincGeometry.createMesh(geometry, undefined, {
       localTimeEnabled: true,
@@ -118,8 +131,10 @@ describe('ZincObject.getClosestVertexIndex', () => {
   it('can return the first vertex', () => {
     const geometry = new THREE.BufferGeometry();
     //Vertex 0 sits at the centre of the bounding box
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(
-      [0, 0, 0, -1, -1, 0, 1, 1, 0], 3));
+    geometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute([0, 0, 0, -1, -1, 0, 1, 1, 0], 3),
+    );
     const zincGeometry = new Geometry();
     zincGeometry.createMesh(geometry, undefined, {
       localTimeEnabled: false,
@@ -155,7 +170,8 @@ describe('PrimitivesLoader', () => {
     vi.spyOn(THREE.FileLoader.prototype, 'load').mockImplementation(
       function (url, onLoad, onProgress, onError) {
         queueMicrotask(() => onError({ responseURL: url }));
-      });
+      },
+    );
   };
 
   it('reports indexed download failures and frees the download slots', async () => {
@@ -194,8 +210,10 @@ describe('PrimitivesLoader', () => {
 
 const createPlainGeometry = (offset = 0) => {
   const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute('position', new THREE.Float32BufferAttribute(
-    [offset, 0, 0, offset + 1, 0, 0, offset + 1, 1, 0], 3));
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute([offset, 0, 0, offset + 1, 0, 0, offset + 1, 1, 0], 3),
+  );
   const zincGeometry = new Geometry();
   zincGeometry.createMesh(geometry, undefined, {
     localTimeEnabled: false,
@@ -211,8 +229,12 @@ describe('Region tree walk', () => {
     const root = new Region(undefined, undefined);
     const child = root.createChild('child');
     const grandChild = child.createChild('grandChild');
-    const objects = [createPlainGeometry(0), createPlainGeometry(2),
-      createPlainGeometry(4), createPlainGeometry(6)];
+    const objects = [
+      createPlainGeometry(0),
+      createPlainGeometry(2),
+      createPlainGeometry(4),
+      createPlainGeometry(6),
+    ];
     root.addZincObject(objects[0]);
     child.addZincObject(objects[1]);
     child.addZincObject(objects[2]);
@@ -330,10 +352,13 @@ describe('Pointset buffers', () => {
     }
     const { geometry } = new JSONLoader().parse(json, '');
     const colorFrames = geometry.morphAttributes.color?.map((attribute) =>
-      Array.from(attribute.array));
+      Array.from(attribute.array),
+    );
     const pointset = new Pointset();
-    pointset.createMesh(geometry, new THREE.PointsMaterial({ color: 0xffffff }),
-      { localTimeEnabled: morphing, localMorphColour: morphing });
+    pointset.createMesh(geometry, new THREE.PointsMaterial({ color: 0xffffff }), {
+      localTimeEnabled: morphing,
+      localMorphColour: morphing,
+    });
     pointset.colorFrames = colorFrames;
     return pointset;
   };
@@ -378,14 +403,27 @@ describe('Text sprite resolution', () => {
   //A stand-in for SpriteText, which needs a real canvas
   const createFakeSprite = (textHeight) => {
     const sprite = {
-      _textHeight: textHeight, _fontFace: 'Asap', _fontSize: 1, _fontWeight: 500,
-      get textHeight() { return this._textHeight; },
-      get fontFace() { return this._fontFace; },
-      get fontSize() { return this._fontSize; },
-      get fontWeight() { return this._fontWeight; },
+      _textHeight: textHeight,
+      _fontFace: 'Asap',
+      _fontSize: 1,
+      _fontWeight: 500,
+      get textHeight() {
+        return this._textHeight;
+      },
+      get fontFace() {
+        return this._fontFace;
+      },
+      get fontSize() {
+        return this._fontSize;
+      },
+      get fontWeight() {
+        return this._fontWeight;
+      },
       material: { map: {} },
     };
-    sprite._genCanvas = vi.fn(() => { sprite.material.map = {}; });
+    sprite._genCanvas = vi.fn(() => {
+      sprite.material.map = {};
+    });
     return sprite;
   };
 
@@ -435,7 +473,13 @@ describe('LOD secondary material', () => {
 describe('Lines2 buffers', () => {
   it('edits the positions in place', () => {
     const lines = new Lines2();
-    lines.addLines([[0, 0, 0], [1, 0, 0]], 0xffffff);
+    lines.addLines(
+      [
+        [0, 0, 0],
+        [1, 0, 0],
+      ],
+      0xffffff,
+    );
     const geometry = lines.getMorph().geometry;
     const buffer = geometry.getAttribute('instanceStart').data;
     const version = buffer.version;
@@ -443,9 +487,18 @@ describe('Lines2 buffers', () => {
     expect(geometry.getAttribute('instanceStart').data).toBe(buffer);
     expect(buffer.version).toBeGreaterThan(version);
     expect(lines.getVerticesByFaceIndex(0)[1]).toEqual([0, 5, 0]);
-    lines.addLines([[2, 0, 0], [3, 0, 0]], 0xffffff);
+    lines.addLines(
+      [
+        [2, 0, 0],
+        [3, 0, 0],
+      ],
+      0xffffff,
+    );
     expect(geometry.getAttribute('instanceStart').data).toBe(buffer);
-    expect(lines.getVerticesByFaceIndex(1)).toEqual([[2, 0, 0], [3, 0, 0]]);
+    expect(lines.getVerticesByFaceIndex(1)).toEqual([
+      [2, 0, 0],
+      [3, 0, 0],
+    ]);
   });
 
   it('grows beyond the initial capacity', () => {
@@ -457,15 +510,20 @@ describe('Lines2 buffers', () => {
     lines.addLines(coords.slice(0, 2), 0xffffff);
     lines.addLines(coords.slice(2), 0xffffff);
     expect(lines.drawRange).toBe(120);
-    expect(lines.getVerticesByFaceIndex(59)).toEqual([[118, 0, 0], [119, 0, 0]]);
+    expect(lines.getVerticesByFaceIndex(59)).toEqual([
+      [118, 0, 0],
+      [119, 0, 0],
+    ]);
   });
 });
 
 describe('removeVertexAtIndex', () => {
   it('keeps the attribute when maintaining the length', () => {
     const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(
-      [0, 0, 0, 1, 1, 1, 2, 2, 2], 3));
+    geometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute([0, 0, 0, 1, 1, 1, 2, 2, 2], 3),
+    );
     const attribute = geometry.getAttribute('position');
     expect(removeVertexAtIndex(geometry, 0, true)).toBe(true);
     expect(geometry.getAttribute('position')).toBe(attribute);

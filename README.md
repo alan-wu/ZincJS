@@ -10,19 +10,19 @@ Why ZincJS?
 
 General-purpose 3D libraries can draw meshes, but they know nothing about Zinc models. ZincJS adds the pieces needed for biomedical scaffolds:
 
-* **Direct pipeline from Zinc** – load scenes exported from PyZinc / the Argon scene exporter through a single metadata file, with no custom loader code.
-* **Region hierarchy and named groups** – objects are organised in a Zinc-like region tree and identified by anatomical group names, which makes it straightforward to link a 3D structure to search, highlighting and ontology terms.
-* **Time-varying models** – morph-target animation of geometry and field colours (for example a beating heart or gut motility), with scene-wide playback control.
-* **Primitives for scaffolds and fields** – surfaces, lines, tube lines, point sets, glyph sets for vector/tensor fields, labels, markers with clustering and level-of-detail switching.
-* **Imaging alongside models** – volume rendering and texture slices from NIfTI images in the same scene as the scaffold.
-* **Application features** – multiple scenes per renderer, picking, smooth camera transitions, auto-tumble, stereo, minimap, video synchronisation and glTF import/export.
+- **Direct pipeline from Zinc** – load scenes exported from PyZinc / the Argon scene exporter through a single metadata file, with no custom loader code.
+- **Region hierarchy and named groups** – objects are organised in a Zinc-like region tree and identified by anatomical group names, which makes it straightforward to link a 3D structure to search, highlighting and ontology terms.
+- **Time-varying models** – morph-target animation of geometry and field colours (for example a beating heart or gut motility), with scene-wide playback control.
+- **Primitives for scaffolds and fields** – surfaces, lines, tube lines, point sets, glyph sets for vector/tensor fields, labels, markers with clustering and level-of-detail switching.
+- **Imaging alongside models** – volume rendering and texture slices from NIfTI images in the same scene as the scaffold.
+- **Application features** – multiple scenes per renderer, picking, smooth camera transitions, auto-tumble, stereo, minimap, video synchronisation and glTF import/export.
 
 Applications built with ZincJS:
 
-* [SPARC Portal](https://sparc.science/maps?type=wholebody)
-* [ScaffoldVuer](https://mapcore-demo.org/current/scaffoldvuer)
-* [Scaffold Maker](https://mapcore-demo.org/2019/colon/scaffold.html)
-* [Fitzlet](https://sites.bioeng.auckland.ac.nz/mwu035/fitzlet/)
+- [SPARC Portal](https://sparc.science/maps?type=wholebody)
+- [ScaffoldVuer](https://mapcore-demo.org/current/scaffoldvuer)
+- [Scaffold Maker](https://mapcore-demo.org/2019/colon/scaffold.html)
+- [Fitzlet](https://sites.bioeng.auckland.ac.nz/mwu035/fitzlet/)
 
 Installation
 ------------
@@ -67,15 +67,15 @@ Camera movement, playback, loading, changes made through the ZincJS APIs and cha
 
 Useful links:
 
-* [Examples](https://github.com/alan-wu/ZincJS-Examples/)
-* [Tutorials](https://github.com/alan-wu/ZincJS-Tutorials/)
-* [API documentation](https://abi-software.github.io/ZincJS/)
+- [Examples](https://github.com/alan-wu/ZincJS-Examples/)
+- [Tutorials](https://github.com/alan-wu/ZincJS-Tutorials/)
+- [API documentation](https://abi-software.github.io/ZincJS/)
 
 Exporting models to ZincJS
 --------------------------
 
-* **Mapping Tools users** – use the [Argon scene exporter](https://abi-mapping-tools.readthedocs.io/en/v1.2.1/mapclientplugins.argonsceneexporterstep/docs/index.html) step.
-* **PyZinc users** – see [PyZinc2ZincJS](https://github.com/alan-wu/PyZinc2ZincJS/).
+- **Mapping Tools users** – use the [Argon scene exporter](https://abi-mapping-tools.readthedocs.io/en/v1.2.1/mapclientplugins.argonsceneexporterstep/docs/index.html) step.
+- **PyZinc users** – see [PyZinc2ZincJS](https://github.com/alan-wu/PyZinc2ZincJS/).
 
 Both produce a metadata JSON file plus the files it references. Keep them in the same folder and pass the metadata file's URL to `scene.loadMetadataURL`.
 
@@ -87,8 +87,13 @@ Both produce a metadata JSON file plus the files it references. Keep them in the
 3. Adjust the view, then run `gfx list win 1` and copy the eye point, interest point, up vector, near plane and far plane into a view file:
 
    ```json
-   {"farPlane": 601.12, "nearPlane": 14.81, "upVector": [0.0, 1.0, 0.0],
-    "targetPosition": [9.70, 6.39, -5.00], "eyePosition": [9.70, 6.39, 291.20]}
+   {
+     "farPlane": 601.12,
+     "nearPlane": 14.81,
+     "upVector": [0.0, 1.0, 0.0],
+     "targetPosition": [9.7, 6.39, -5.0],
+     "eyePosition": [9.7, 6.39, 291.2]
+   }
    ```
 
 4. The first exported file (`[filename_prefix]_1.json`) is the metadata file. Add an entry for the view file to it:
@@ -102,11 +107,11 @@ Both produce a metadata JSON file plus the files it references. Keep them in the
 Controls
 --------
 
-| Action    | Mouse               | Touch                  |
-|-----------|---------------------|------------------------|
-| Rotate    | Left button drag    | One-finger drag        |
-| Zoom      | Middle button drag / scroll wheel | Two-finger pinch |
-| Pan       | Right button drag   | Three-finger drag      |
+| Action | Mouse                             | Touch             |
+| ------ | --------------------------------- | ----------------- |
+| Rotate | Left button drag                  | One-finger drag   |
+| Zoom   | Middle button drag / scroll wheel | Two-finger pinch  |
+| Pan    | Right button drag                 | Three-finger drag |
 
 Building from source
 --------------------

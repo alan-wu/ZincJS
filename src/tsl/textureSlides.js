@@ -16,40 +16,40 @@ import {
 
 export function createWebGPUMaterial() {
   const material = new THREE.MeshBasicNodeMaterial({
-    side: THREE.DoubleSide
+    side: THREE.DoubleSide,
   });
 
-const dummyData = new Uint8Array(32);
+  const dummyData = new Uint8Array(32);
 
-const placeholderTexture = new THREE.Data3DTexture(dummyData, 2, 2, 2);
-placeholderTexture.image = {
+  const placeholderTexture = new THREE.Data3DTexture(dummyData, 2, 2, 2);
+  placeholderTexture.image = {
     data: dummyData,
     width: 2,
     height: 2,
     depth: 2,
-};
+  };
 
-placeholderTexture.format = THREE.RGBAFormat;
-placeholderTexture.type = THREE.UnsignedByteType; // Be explicit for WebGPU
-placeholderTexture.minFilter = THREE.LinearFilter;
-placeholderTexture.magFilter = THREE.LinearFilter;
-placeholderTexture.generateMipmaps = false; // WebGPU cannot auto-generate mipmaps for custom Data3D
-placeholderTexture.unpackAlignment = 1;
-placeholderTexture.needsUpdate = true;
+  placeholderTexture.format = THREE.RGBAFormat;
+  placeholderTexture.type = THREE.UnsignedByteType; // Be explicit for WebGPU
+  placeholderTexture.minFilter = THREE.LinearFilter;
+  placeholderTexture.magFilter = THREE.LinearFilter;
+  placeholderTexture.generateMipmaps = false; // WebGPU cannot auto-generate mipmaps for custom Data3D
+  placeholderTexture.unpackAlignment = 1;
+  placeholderTexture.needsUpdate = true;
 
   // Define Uniforms
   const uniforms = {
-    brightness:   uniform(0),
-    contrast:     uniform(1),
-    depth:        uniform(1),
+    brightness: uniform(0),
+    contrast: uniform(1),
+    depth: uniform(1),
     discardAlpha: uniform(true),
-    direction:    uniform(1),
-    flipY:        uniform(true),
-    flipZ:        uniform(false),
-    nChannels:    uniform(1),
-    maskEnabled:  uniform(false),
-    slide:        uniform(new THREE.Vector3(0, 0, 1)),
-    time:         uniform(0)
+    direction: uniform(1),
+    flipY: uniform(true),
+    flipZ: uniform(false),
+    nChannels: uniform(1),
+    maskEnabled: uniform(false),
+    slide: uniform(new THREE.Vector3(0, 0, 1)),
+    time: uniform(0),
   };
 
   // Share Varyings via TSL
@@ -89,7 +89,6 @@ placeholderTexture.needsUpdate = true;
     return positionLocal;
   });
 
-
   // Fragment Node
   const fragmentNode = Fn(() => {
     // diffuse0/diffuse1/mask are already-built texture3D sampling nodes.
@@ -117,7 +116,7 @@ placeholderTexture.needsUpdate = true;
     return vec4(sRGBTransferEOTF(contrastedColor), 1.0);
   });
 
-   // Assign to NodeMaterial slots
+  // Assign to NodeMaterial slots
   // TSL handles the base vertex transformation automatically, positionNode hooks custom vertex behaviour.
   material.positionNode = vertexNode();
   material.colorNode = fragmentNode();

@@ -1,40 +1,40 @@
 {
-    "plugins": [],
-    "title": "ZincJS",
-    "recurseDepth": 10,
-    "source": {
-    	"include": [ "README.md", "src", "src/primitives", "src/texture" ],
-    	"exclude": [ "src/OBJLoader.js", "src/STLLoader.js"], 
-        "includePattern": ".+\\.js(doc|x)?$",
-        "excludePattern": "(^|\\/|\\\\)_"
-    },
-    "sourceType": "module",
-    "tags": {
-        "allowUnknownTags": true,
-        "dictionaries": ["jsdoc","closure"]
-    },
-    "templates": {
-        "cleverLinks": false,
-        "monospaceLinks": false,
-	"better-docs": {
-            "name": "ZincJS Documentation",
-            "navigation": [
-                {
-                    "label": "Github",
-                    "href": "https://github.com/alan-wu/ZincJS"
-                },
-                {
-                    "label": "Examples",
-                    "href": "https://sites.bioeng.auckland.ac.nz/webgl_zinc_collections"
-                },
-		{
-                    "label": "Tutorials",
-                    "href": "https://github.com/alan-wu/ZincJS-Tutorials"
-		}
-            ]
+  "plugins": [],
+  "title": "ZincJS",
+  "recurseDepth": 10,
+  "source": {
+    "include": ["README.md", "src", "src/primitives", "src/texture"],
+    "exclude": ["src/OBJLoader.js", "src/STLLoader.js"],
+    "includePattern": ".+\\.js(doc|x)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "sourceType": "module",
+  "tags": {
+    "allowUnknownTags": true,
+    "dictionaries": ["jsdoc", "closure"]
+  },
+  "templates": {
+    "cleverLinks": false,
+    "monospaceLinks": false,
+    "better-docs": {
+      "name": "ZincJS Documentation",
+      "navigation": [
+        {
+          "label": "Github",
+          "href": "https://github.com/alan-wu/ZincJS"
+        },
+        {
+          "label": "Examples",
+          "href": "https://sites.bioeng.auckland.ac.nz/webgl_zinc_collections"
+        },
+        {
+          "label": "Tutorials",
+          "href": "https://github.com/alan-wu/ZincJS-Tutorials"
         }
-    },
-    "opts": {
-        "destination": "./docs/"
+      ]
     }
+  },
+  "opts": {
+    "destination": "./docs/"
+  }
 }

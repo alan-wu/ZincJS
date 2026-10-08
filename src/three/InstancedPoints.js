@@ -1,9 +1,4 @@
-import {
-  InstancedMesh,
-  Matrix4,
-  Ray,
-  Vector3,
-} from 'three/webgpu';
+import { InstancedMesh, Matrix4, Ray, Vector3 } from 'three/webgpu';
 
 const _inverseMatrix = /*@__PURE__*/ new Matrix4();
 const _ray = /*@__PURE__*/ new Ray();
@@ -19,7 +14,6 @@ const _position = /*@__PURE__*/ new Vector3();
  * the distance-to-point approach the legacy `THREE.Points` override used.
  */
 class InstancedPoints extends InstancedMesh {
-
   constructor(geometry, material, count) {
     super(geometry, material, count);
     this.type = 'InstancedPoints';
@@ -44,7 +38,7 @@ class InstancedPoints extends InstancedMesh {
     _ray.copy(raycaster.ray).applyMatrix4(_inverseMatrix);
 
     const averageScale = (this.scale.x + this.scale.y + this.scale.z) / 3;
-    const localThreshold = threshold / averageScale * this.pointSize * this.sizePerPixel;
+    const localThreshold = (threshold / averageScale) * this.pointSize * this.sizePerPixel;
     const localThresholdSq = localThreshold * localThreshold;
 
     for (let i = 0; i < count; i++) {
@@ -67,7 +61,6 @@ class InstancedPoints extends InstancedMesh {
       }
     }
   }
-
 }
 
 export { InstancedPoints };

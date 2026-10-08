@@ -6,20 +6,20 @@ import { createTextSprite } from './textSprite';
 function createNewURL(target, reference) {
   const getNewURL = (target, reference) => {
     try {
-      let newURL = (new URL(target, reference)).href;
+      let newURL = new URL(target, reference).href;
       //Make sure the target url does not contain parameters
-      if (target && target.split("?").length < 2) {
-        const paramsStrings = reference.split("?");
+      if (target && target.split('?').length < 2) {
+        const paramsStrings = reference.split('?');
         //There are parameters, add them to the target
         if (paramsStrings.length === 2) {
-          newURL = newURL + "?" + paramsStrings[1];
+          newURL = newURL + '?' + paramsStrings[1];
         }
       }
       return newURL;
     } catch {
-      console.error(`There is an issue creating the url link with: ${target}.` );
+      console.error(`There is an issue creating the url link with: ${target}.`);
     }
-  }
+  };
   if (!Array.isArray(target)) {
     return getNewURL(target, reference);
   } else {
@@ -62,8 +62,7 @@ function updateWorldMatrixFromAncestors(object) {
 function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
   let influences = mesh.morphTargetInfluences;
   let attributes = undefined;
-  if (mesh.geometry)
-    attributes = mesh.geometry.morphAttributes;
+  if (mesh.geometry) attributes = mesh.geometry.morphAttributes;
   let found = false;
   if (influences && attributes && attributes.position) {
     v1.set(0.0, 0.0, 0.0);
@@ -81,82 +80,78 @@ function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
     }
   }
   if (!found) {
-    cachedBox.setFromBufferAttribute(
-      mesh.geometry.attributes.position);
+    cachedBox.setFromBufferAttribute(mesh.geometry.attributes.position);
   }
   cachedBox.applyMatrix4(updateWorldMatrixFromAncestors(mesh));
 }
 
-
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {
-    // Set up an asynchronous request
+  // Set up an asynchronous request
   fetch(url)
-  .then((response) => {
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response.text();
-  })
-  .then((responseText) => {
-    callback(responseText, data);
-  })
-  .catch((error) => {
-    console.error(`Fetch string payload retrieval failed for: ${requestURL}`, error);
-    errorCallback(url);
-  });
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.text();
+    })
+    .then((responseText) => {
+      callback(responseText, data);
+    })
+    .catch((error) => {
+      console.error(`Fetch string payload retrieval failed for: ${requestURL}`, error);
+      errorCallback(url);
+    });
 }
 
 function loadExternalFiles(urls, callback, errorCallback) {
-    const numUrls = urls.length;
-    let numComplete = 0;
-    const result = [];
+  const numUrls = urls.length;
+  let numComplete = 0;
+  const result = [];
 
-    // Callback for a single file
-    function partialCallback(text, urlIndex) {
-        result[urlIndex] = text;
-        numComplete++;
+  // Callback for a single file
+  function partialCallback(text, urlIndex) {
+    result[urlIndex] = text;
+    numComplete++;
 
-        // When all files have downloaded
-        if (numComplete == numUrls) {
-            callback(result);
-        }
+    // When all files have downloaded
+    if (numComplete == numUrls) {
+      callback(result);
     }
+  }
 
-    for (let i = 0; i < numUrls; i++) {
-    	loadExternalFile(urls[i], i, partialCallback, errorCallback);
-    }
+  for (let i = 0; i < numUrls; i++) {
+    loadExternalFile(urls[i], i, partialCallback, errorCallback);
+  }
 }
-
 
 //Get the colours at index
 const getColorsRGB = (colors, index) => {
-    const index_in_colors = Math.floor(index/3);
-    const remainder = index%3;
-    let hex_value = 0;
-    if (remainder == 0)
-    {
-        hex_value = colors[index_in_colors].r;
-    }
-    else if (remainder == 1)
-    {
-        hex_value = colors[index_in_colors].g;
-    }
-    else if (remainder == 2)
-    {
-        hex_value = colors[index_in_colors].b;
-    }
-    const mycolor = new THREE.Color(hex_value);
-    return [mycolor.r, mycolor.g, mycolor.b];
-}
+  const index_in_colors = Math.floor(index / 3);
+  const remainder = index % 3;
+  let hex_value = 0;
+  if (remainder == 0) {
+    hex_value = colors[index_in_colors].r;
+  } else if (remainder == 1) {
+    hex_value = colors[index_in_colors].g;
+  } else if (remainder == 2) {
+    hex_value = colors[index_in_colors].b;
+  }
+  const mycolor = new THREE.Color(hex_value);
+  return [mycolor.r, mycolor.g, mycolor.b];
+};
 
 //morphColor0/morphColor1 attribute -> morph colour target last copied into it
 const morphColorSources = new WeakMap();
 
-const updateMorphColorAttribute = function(targetGeometry, morph) {
-  if (morph && targetGeometry && targetGeometry.morphAttributes &&
-    targetGeometry.morphAttributes[ "color" ]) {
-    const morphColors = targetGeometry.morphAttributes[ "color" ];
+const updateMorphColorAttribute = function (targetGeometry, morph) {
+  if (
+    morph &&
+    targetGeometry &&
+    targetGeometry.morphAttributes &&
+    targetGeometry.morphAttributes['color']
+  ) {
+    const morphColors = targetGeometry.morphAttributes['color'];
     const influences = morph.morphTargetInfluences;
     const length = influences.length;
     //Find the first two morph targets with non-zero influence
@@ -199,9 +194,13 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
     let attribute1 = targetGeometry.getAttribute('morphColor1');
     if (!attribute0 || !attribute1) {
       attribute0 = new THREE.Float32BufferAttribute(
-        new Float32Array(morphColors[0].array.length), morphColors[0].itemSize);
+        new Float32Array(morphColors[0].array.length),
+        morphColors[0].itemSize,
+      );
       attribute1 = new THREE.Float32BufferAttribute(
-        new Float32Array(morphColors[0].array.length), morphColors[0].itemSize);
+        new Float32Array(morphColors[0].array.length),
+        morphColors[0].itemSize,
+      );
       attribute0.setUsage(THREE.DynamicDrawUsage);
       attribute1.setUsage(THREE.DynamicDrawUsage);
       targetGeometry.setAttribute('morphColor0', attribute0);
@@ -221,24 +220,25 @@ const updateMorphColorAttribute = function(targetGeometry, morph) {
       attribute1.needsUpdate = true;
       morphColorSources.set(attribute1, source1);
     }
-    const morphColorMix = morph.material && morph.material.userData &&
-      morph.material.userData.uniforms && morph.material.userData.uniforms.morphColorMix;
+    const morphColorMix =
+      morph.material &&
+      morph.material.userData &&
+      morph.material.userData.uniforms &&
+      morph.material.userData.uniforms.morphColorMix;
     if (morphColorMix) {
       morphColorMix.value = mix;
     }
   }
-}
-
+};
 
 const toBufferGeometry = (geometryIn) => {
   const geometry = geometryIn.clone();
   geometry.colorsNeedUpdate = true;
   geometry.computeBoundingBox();
   geometry.computeBoundingSphere();
-  if (geometryIn._video)
-    geometry._video = geometryIn._video;
+  if (geometryIn._video) geometry._video = geometryIn._video;
   return geometry;
-}
+};
 
 /**
  * Merges a set of attributes into a single instance. All attributes must have compatible properties and types.
@@ -247,93 +247,77 @@ const toBufferGeometry = (geometryIn) => {
  * @param {Array<BufferAttribute>} attributes - The attributes to merge.
  * @return {?BufferAttribute} The merged attribute. Returns `null` if the merge does not succeed.
  */
-function mergeAttributes( attributes ) {
-
+function mergeAttributes(attributes) {
   let TypedArray;
   let itemSize;
   let normalized;
-  let gpuType = - 1;
+  let gpuType = -1;
   let arrayLength = 0;
 
-  for ( let i = 0; i < attributes.length; ++ i ) {
+  for (let i = 0; i < attributes.length; ++i) {
+    const attribute = attributes[i];
 
-    const attribute = attributes[ i ];
-
-    if ( TypedArray === undefined ) TypedArray = attribute.array.constructor;
-    if ( TypedArray !== attribute.array.constructor ) {
-
-      console.error( 'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.' );
+    if (TypedArray === undefined) TypedArray = attribute.array.constructor;
+    if (TypedArray !== attribute.array.constructor) {
+      console.error(
+        'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.array must be of consistent array types across matching attributes.',
+      );
       return null;
-
     }
 
-    if ( itemSize === undefined ) itemSize = attribute.itemSize;
-    if ( itemSize !== attribute.itemSize ) {
-
-      console.error( 'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.' );
+    if (itemSize === undefined) itemSize = attribute.itemSize;
+    if (itemSize !== attribute.itemSize) {
+      console.error(
+        'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.itemSize must be consistent across matching attributes.',
+      );
       return null;
-
     }
 
-    if ( normalized === undefined ) normalized = attribute.normalized;
-    if ( normalized !== attribute.normalized ) {
-
-      console.error( 'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.' );
+    if (normalized === undefined) normalized = attribute.normalized;
+    if (normalized !== attribute.normalized) {
+      console.error(
+        'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.normalized must be consistent across matching attributes.',
+      );
       return null;
-
     }
 
-    if ( gpuType === - 1 ) gpuType = attribute.gpuType;
-    if ( gpuType !== attribute.gpuType ) {
-
-      console.error( 'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.gpuType must be consistent across matching attributes.' );
+    if (gpuType === -1) gpuType = attribute.gpuType;
+    if (gpuType !== attribute.gpuType) {
+      console.error(
+        'THREE.BufferGeometryUtils: .mergeAttributes() failed. BufferAttribute.gpuType must be consistent across matching attributes.',
+      );
       return null;
-
     }
 
     arrayLength += attribute.count * itemSize;
-
   }
 
-  const array = new TypedArray( arrayLength );
-  const result = new THREE.BufferAttribute( array, itemSize, normalized );
+  const array = new TypedArray(arrayLength);
+  const result = new THREE.BufferAttribute(array, itemSize, normalized);
   let offset = 0;
 
-  for ( let i = 0; i < attributes.length; ++ i ) {
-
-    const attribute = attributes[ i ];
-    if ( attribute.isInterleavedBufferAttribute ) {
-
+  for (let i = 0; i < attributes.length; ++i) {
+    const attribute = attributes[i];
+    if (attribute.isInterleavedBufferAttribute) {
       const tupleOffset = offset / itemSize;
-      for ( let j = 0, l = attribute.count; j < l; j ++ ) {
-
-        for ( let c = 0; c < itemSize; c ++ ) {
-
-          const value = attribute.getComponent( j, c );
-          result.setComponent( j + tupleOffset, c, value );
-
+      for (let j = 0, l = attribute.count; j < l; j++) {
+        for (let c = 0; c < itemSize; c++) {
+          const value = attribute.getComponent(j, c);
+          result.setComponent(j + tupleOffset, c, value);
         }
-
       }
-
     } else {
-
-      array.set( attribute.array, offset );
-
+      array.set(attribute.array, offset);
     }
 
     offset += attribute.count * itemSize;
-
   }
 
-  if ( gpuType !== undefined ) {
-
+  if (gpuType !== undefined) {
     result.gpuType = gpuType;
-
   }
 
   return result;
-
 }
 
 /**
@@ -343,378 +327,331 @@ function mergeAttributes( attributes ) {
  * @param {boolean} [useGroups=false] - Whether to use groups or not.
  * @return {?BufferGeometry} The merged geometry. Returns `null` if the merge does not succeed.
  */
-const mergeGeometries = ( geometries, useGroups = false ) => {
+const mergeGeometries = (geometries, useGroups = false) => {
+  const isIndexed = geometries[0].index !== null;
 
-  const isIndexed = geometries[ 0 ].index !== null;
-
-  const attributesUsed = new Set( Object.keys( geometries[ 0 ].attributes ) );
-  const morphAttributesUsed = new Set( Object.keys( geometries[ 0 ].morphAttributes ) );
+  const attributesUsed = new Set(Object.keys(geometries[0].attributes));
+  const morphAttributesUsed = new Set(Object.keys(geometries[0].morphAttributes));
 
   const attributes = {};
   const morphAttributes = {};
 
-  const morphTargetsRelative = geometries[ 0 ].morphTargetsRelative;
+  const morphTargetsRelative = geometries[0].morphTargetsRelative;
 
   const mergedGeometry = new THREE.BufferGeometry();
 
   let offset = 0;
 
-  for ( let i = 0; i < geometries.length; ++ i ) {
-
-    const geometry = geometries[ i ];
+  for (let i = 0; i < geometries.length; ++i) {
+    const geometry = geometries[i];
     let attributesCount = 0;
 
     // ensure that all geometries are indexed, or none
 
-    if ( isIndexed !== ( geometry.index !== null ) ) {
-
-      console.error( 'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.' );
+    if (isIndexed !== (geometry.index !== null)) {
+      console.error(
+        'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' +
+          i +
+          '. All geometries must have compatible attributes; make sure index attribute exists among all geometries, or in none of them.',
+      );
       return null;
-
     }
 
     // gather attributes, exit early if they're different
 
-    for ( const name in geometry.attributes ) {
-
-      if ( ! attributesUsed.has( name ) ) {
-
-        console.error( 'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' + i + '. All geometries must have compatible attributes; make sure "' + name + '" attribute exists among all geometries, or in none of them.' );
+    for (const name in geometry.attributes) {
+      if (!attributesUsed.has(name)) {
+        console.error(
+          'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' +
+            i +
+            '. All geometries must have compatible attributes; make sure "' +
+            name +
+            '" attribute exists among all geometries, or in none of them.',
+        );
         return null;
-
       }
 
-      if ( attributes[ name ] === undefined ) attributes[ name ] = [];
+      if (attributes[name] === undefined) attributes[name] = [];
 
-      attributes[ name ].push( geometry.attributes[ name ] );
+      attributes[name].push(geometry.attributes[name]);
 
-      attributesCount ++;
-
+      attributesCount++;
     }
 
     // ensure geometries have the same number of attributes
 
-    if ( attributesCount !== attributesUsed.size ) {
-
-      console.error( 'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' + i + '. Make sure all geometries have the same number of attributes.' );
+    if (attributesCount !== attributesUsed.size) {
+      console.error(
+        'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' +
+          i +
+          '. Make sure all geometries have the same number of attributes.',
+      );
       return null;
-
     }
 
     // gather morph attributes, exit early if they're different
 
-    if ( morphTargetsRelative !== geometry.morphTargetsRelative ) {
-
-      console.error( 'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' + i + '. .morphTargetsRelative must be consistent throughout all geometries.' );
+    if (morphTargetsRelative !== geometry.morphTargetsRelative) {
+      console.error(
+        'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' +
+          i +
+          '. .morphTargetsRelative must be consistent throughout all geometries.',
+      );
       return null;
-
     }
 
-    for ( const name in geometry.morphAttributes ) {
-
-      if ( ! morphAttributesUsed.has( name ) ) {
-
-        console.error( 'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' + i + '.  .morphAttributes must be consistent throughout all geometries.' );
+    for (const name in geometry.morphAttributes) {
+      if (!morphAttributesUsed.has(name)) {
+        console.error(
+          'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' +
+            i +
+            '.  .morphAttributes must be consistent throughout all geometries.',
+        );
         return null;
-
       }
 
-      if ( morphAttributes[ name ] === undefined ) morphAttributes[ name ] = [];
+      if (morphAttributes[name] === undefined) morphAttributes[name] = [];
 
-      morphAttributes[ name ].push( geometry.morphAttributes[ name ] );
-
+      morphAttributes[name].push(geometry.morphAttributes[name]);
     }
 
-    if ( useGroups ) {
-
+    if (useGroups) {
       let count;
 
-      if ( isIndexed ) {
-
+      if (isIndexed) {
         count = geometry.index.count;
-
-      } else if ( geometry.attributes.position !== undefined ) {
-
+      } else if (geometry.attributes.position !== undefined) {
         count = geometry.attributes.position.count;
-
       } else {
-
-        console.error( 'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' + i + '. The geometry must have either an index or a position attribute' );
+        console.error(
+          'THREE.BufferGeometryUtils: .mergeGeometries() failed with geometry at index ' +
+            i +
+            '. The geometry must have either an index or a position attribute',
+        );
         return null;
-
       }
 
-      mergedGeometry.addGroup( offset, count, i );
+      mergedGeometry.addGroup(offset, count, i);
 
       offset += count;
-
     }
-
   }
 
   // merge indices
 
-  if ( isIndexed ) {
-
+  if (isIndexed) {
     let indexOffset = 0;
     const mergedIndex = [];
 
-    for ( let i = 0; i < geometries.length; ++ i ) {
+    for (let i = 0; i < geometries.length; ++i) {
+      const index = geometries[i].index;
 
-      const index = geometries[ i ].index;
-
-      for ( let j = 0; j < index.count; ++ j ) {
-
-        mergedIndex.push( index.getX( j ) + indexOffset );
-
+      for (let j = 0; j < index.count; ++j) {
+        mergedIndex.push(index.getX(j) + indexOffset);
       }
 
-      indexOffset += geometries[ i ].attributes.position.count;
-
+      indexOffset += geometries[i].attributes.position.count;
     }
 
-    mergedGeometry.setIndex( mergedIndex );
-
+    mergedGeometry.setIndex(mergedIndex);
   }
 
   // merge attributes
 
-  for ( const name in attributes ) {
+  for (const name in attributes) {
+    const mergedAttribute = mergeAttributes(attributes[name]);
 
-    const mergedAttribute = mergeAttributes( attributes[ name ] );
-
-    if ( ! mergedAttribute ) {
-
-      console.error( 'THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the ' + name + ' attribute.' );
+    if (!mergedAttribute) {
+      console.error(
+        'THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the ' +
+          name +
+          ' attribute.',
+      );
       return null;
-
     }
 
-    mergedGeometry.setAttribute( name, mergedAttribute );
-
+    mergedGeometry.setAttribute(name, mergedAttribute);
   }
 
   // merge morph attributes
 
-  for ( const name in morphAttributes ) {
+  for (const name in morphAttributes) {
+    const numMorphTargets = morphAttributes[name][0].length;
 
-    const numMorphTargets = morphAttributes[ name ][ 0 ].length;
-
-    if ( numMorphTargets === 0 ) break;
+    if (numMorphTargets === 0) break;
 
     mergedGeometry.morphAttributes = mergedGeometry.morphAttributes || {};
-    mergedGeometry.morphAttributes[ name ] = [];
+    mergedGeometry.morphAttributes[name] = [];
 
-    for ( let i = 0; i < numMorphTargets; ++ i ) {
-
+    for (let i = 0; i < numMorphTargets; ++i) {
       const morphAttributesToMerge = [];
 
-      for ( let j = 0; j < morphAttributes[ name ].length; ++ j ) {
-
-        morphAttributesToMerge.push( morphAttributes[ name ][ j ][ i ] );
-
+      for (let j = 0; j < morphAttributes[name].length; ++j) {
+        morphAttributesToMerge.push(morphAttributes[name][j][i]);
       }
 
-      const mergedMorphAttribute = mergeAttributes( morphAttributesToMerge );
+      const mergedMorphAttribute = mergeAttributes(morphAttributesToMerge);
 
-      if ( ! mergedMorphAttribute ) {
-
-        console.error( 'THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the ' + name + ' morphAttribute.' );
+      if (!mergedMorphAttribute) {
+        console.error(
+          'THREE.BufferGeometryUtils: .mergeGeometries() failed while trying to merge the ' +
+            name +
+            ' morphAttribute.',
+        );
         return null;
-
       }
 
-      mergedGeometry.morphAttributes[ name ].push( mergedMorphAttribute );
-
+      mergedGeometry.morphAttributes[name].push(mergedMorphAttribute);
     }
-
   }
 
   return mergedGeometry;
+};
 
-}
-
-const mergeVertices = ( geometry, tolerance = 1e-4 ) => {
-
-  tolerance = Math.max( tolerance, Number.EPSILON );
+const mergeVertices = (geometry, tolerance = 1e-4) => {
+  tolerance = Math.max(tolerance, Number.EPSILON);
 
   // Generate an index buffer if the geometry doesn't have one, or optimize it
   // if it's already available.
   var hashToIndex = {};
   var indices = geometry.getIndex();
-  var positions = geometry.getAttribute( 'position' );
+  var positions = geometry.getAttribute('position');
   var vertexCount = indices ? indices.count : positions.count;
 
   // next value for triangle indices
   var nextIndex = 0;
 
   // attributes and new attribute arrays
-  var attributeNames = Object.keys( geometry.attributes );
+  var attributeNames = Object.keys(geometry.attributes);
   var attrArrays = {};
   var morphAttrsArrays = {};
   var newIndices = [];
-  var getters = [ 'getX', 'getY', 'getZ', 'getW' ];
+  var getters = ['getX', 'getY', 'getZ', 'getW'];
 
   // initialize the arrays
-  for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
-      var name = attributeNames[ i ];
+  for (var i = 0, l = attributeNames.length; i < l; i++) {
+    var name = attributeNames[i];
 
-      attrArrays[ name ] = [];
+    attrArrays[name] = [];
 
-      var morphAttr = geometry.morphAttributes[ name ];
-      if ( morphAttr ) {
-
-          morphAttrsArrays[ name ] = new Array( morphAttr.length ).fill().map( () => [] );
-
-      }
-
+    var morphAttr = geometry.morphAttributes[name];
+    if (morphAttr) {
+      morphAttrsArrays[name] = new Array(morphAttr.length).fill().map(() => []);
+    }
   }
 
   // convert the error tolerance to an amount of decimal places to truncate to
-  var decimalShift = Math.log10( 1 / tolerance );
-  var shiftMultiplier = Math.pow( 10, decimalShift );
-  for ( var i = 0; i < vertexCount; i ++ ) {
+  var decimalShift = Math.log10(1 / tolerance);
+  var shiftMultiplier = Math.pow(10, decimalShift);
+  for (var i = 0; i < vertexCount; i++) {
+    var index = indices ? indices.getX(i) : i;
 
-      var index = indices ? indices.getX( i ) : i;
+    // Generate a hash for the vertex attributes at the current index 'i'
+    var hash = '';
+    for (var j = 0, l = attributeNames.length; j < l; j++) {
+      var name = attributeNames[j];
+      var attribute = geometry.getAttribute(name);
+      var itemSize = attribute.itemSize;
 
-      // Generate a hash for the vertex attributes at the current index 'i'
-      var hash = '';
-      for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
+      for (var k = 0; k < itemSize; k++) {
+        // double tilde truncates the decimal value
+        hash += `${~~(attribute[getters[k]](index) * shiftMultiplier)},`;
+      }
+    }
 
-          var name = attributeNames[ j ];
-          var attribute = geometry.getAttribute( name );
-          var itemSize = attribute.itemSize;
+    // Add another reference to the vertex if it's already
+    // used by another index
+    if (hash in hashToIndex) {
+      newIndices.push(hashToIndex[hash]);
+    } else {
+      // copy data to the new index in the attribute arrays
+      for (var j = 0, l = attributeNames.length; j < l; j++) {
+        var name = attributeNames[j];
+        var attribute = geometry.getAttribute(name);
+        var morphAttr = geometry.morphAttributes[name];
+        var itemSize = attribute.itemSize;
+        var newarray = attrArrays[name];
+        var newMorphArrays = morphAttrsArrays[name];
 
-          for ( var k = 0; k < itemSize; k ++ ) {
+        for (var k = 0; k < itemSize; k++) {
+          var getterFunc = getters[k];
+          newarray.push(attribute[getterFunc](index));
 
-              // double tilde truncates the decimal value
-              hash += `${ ~ ~ ( attribute[ getters[ k ] ]( index ) * shiftMultiplier ) },`;
-
+          if (morphAttr) {
+            for (var m = 0, ml = morphAttr.length; m < ml; m++) {
+              newMorphArrays[m].push(morphAttr[m][getterFunc](index));
+            }
           }
-
+        }
       }
 
-      // Add another reference to the vertex if it's already
-      // used by another index
-      if ( hash in hashToIndex ) {
-
-          newIndices.push( hashToIndex[ hash ] );
-
-      } else {
-
-          // copy data to the new index in the attribute arrays
-          for ( var j = 0, l = attributeNames.length; j < l; j ++ ) {
-
-              var name = attributeNames[ j ];
-              var attribute = geometry.getAttribute( name );
-              var morphAttr = geometry.morphAttributes[ name ];
-              var itemSize = attribute.itemSize;
-              var newarray = attrArrays[ name ];
-              var newMorphArrays = morphAttrsArrays[ name ];
-
-              for ( var k = 0; k < itemSize; k ++ ) {
-
-                  var getterFunc = getters[ k ];
-                  newarray.push( attribute[ getterFunc ]( index ) );
-
-                  if ( morphAttr ) {
-
-                      for ( var m = 0, ml = morphAttr.length; m < ml; m ++ ) {
-
-                          newMorphArrays[ m ].push( morphAttr[ m ][ getterFunc ]( index ) );
-
-                      }
-
-                  }
-
-              }
-
-          }
-
-          hashToIndex[ hash ] = nextIndex;
-          newIndices.push( nextIndex );
-          nextIndex ++;
-
-      }
-
+      hashToIndex[hash] = nextIndex;
+      newIndices.push(nextIndex);
+      nextIndex++;
+    }
   }
 
   // Generate typed arrays from new attribute arrays and update
   // the attributeBuffers
   const result = geometry.clone();
-  for ( var i = 0, l = attributeNames.length; i < l; i ++ ) {
+  for (var i = 0, l = attributeNames.length; i < l; i++) {
+    var name = attributeNames[i];
+    var oldAttribute = geometry.getAttribute(name);
+    var attribute;
 
-      var name = attributeNames[ i ];
-      var oldAttribute = geometry.getAttribute( name );
-      var attribute;
+    var buffer = new oldAttribute.array.constructor(attrArrays[name]);
+    if (oldAttribute.isInterleavedBufferAttribute) {
+      attribute = new THREE.BufferAttribute(buffer, oldAttribute.itemSize, oldAttribute.itemSize);
+    } else {
+      attribute = geometry.getAttribute(name).clone();
+      attribute.setArray(buffer);
+    }
 
-      var buffer = new oldAttribute.array.constructor( attrArrays[ name ] );
-      if ( oldAttribute.isInterleavedBufferAttribute ) {
+    result.setAttribute(name, attribute);
 
-          attribute = new THREE.BufferAttribute( buffer, oldAttribute.itemSize, oldAttribute.itemSize );
-
-      } else {
-
-          attribute = geometry.getAttribute( name ).clone();
-          attribute.setArray( buffer );
-
+    // Update the attribute arrays
+    if (name in morphAttrsArrays) {
+      for (var j = 0; j < morphAttrsArrays[name].length; j++) {
+        var morphAttribute = geometry.morphAttributes[name][j].clone();
+        morphAttribute.setArray(new morphAttribute.array.constructor(morphAttrsArrays[name][j]));
+        result.morphAttributes[name][j] = morphAttribute;
       }
-
-      result.setAttribute( name, attribute );
-
-      // Update the attribute arrays
-      if ( name in morphAttrsArrays ) {
-
-          for ( var j = 0; j < morphAttrsArrays[ name ].length; j ++ ) {
-
-              var morphAttribute = geometry.morphAttributes[ name ][ j ].clone();
-              morphAttribute.setArray( new morphAttribute.array.constructor( morphAttrsArrays[ name ][ j ] ) );
-              result.morphAttributes[ name ][ j ] = morphAttribute;
-
-          }
-
-      }
-
+    }
   }
 
   // Generate an index buffer typed array
   var cons = Uint8Array;
-  if ( newIndices.length >= Math.pow( 2, 8 ) ) cons = Uint16Array;
-  if ( newIndices.length >= Math.pow( 2, 16 ) ) cons = Uint32Array;
+  if (newIndices.length >= Math.pow(2, 8)) cons = Uint16Array;
+  if (newIndices.length >= Math.pow(2, 16)) cons = Uint32Array;
 
-  var newIndexBuffer = new cons( newIndices );
+  var newIndexBuffer = new cons(newIndices);
   var newIndices = null;
-  if ( indices === null ) {
-
-      newIndices = new THREE.BufferAttribute( newIndexBuffer, 1 );
-
+  if (indices === null) {
+    newIndices = new THREE.BufferAttribute(newIndexBuffer, 1);
   } else {
-
-      newIndices = geometry.getIndex().clone();
-      newIndices.setArray( newIndexBuffer );
-
+    newIndices = geometry.getIndex().clone();
+    newIndices.setArray(newIndexBuffer);
   }
 
-  result.setIndex( newIndices );
+  result.setIndex(newIndices);
 
   return result;
-}
+};
 
 function PhongToToon(materialIn) {
-	if (materialIn.isMeshPhongMaterial) {
-		let material = new THREE.MeshToonMaterial({
-			color : materialIn.color.clone(),
-			vertexColors : materialIn.vertexColors,
-			transparent : materialIn.transparent,
-			opacity : materialIn.opacity,
-			side : materialIn.side
-		});
-		if (materialIn.map)
-			material.map = materialIn.map;
-		return material;
-	}
+  if (materialIn.isMeshPhongMaterial) {
+    let material = new THREE.MeshToonMaterial({
+      color: materialIn.color.clone(),
+      vertexColors: materialIn.vertexColors,
+      transparent: materialIn.transparent,
+      opacity: materialIn.opacity,
+      side: materialIn.side,
+    });
+    if (materialIn.map) material.map = materialIn.map;
+    return material;
+  }
 
-	return materialIn;
+  return materialIn;
 }
 
 /**
@@ -722,21 +659,21 @@ function PhongToToon(materialIn) {
  * and initial coords.
  */
 function createBufferGeometry(length, coords) {
-  if (coords && (length >= coords.length)) {
-    const geometry = new THREE.BufferGeometry()
+  if (coords && length >= coords.length) {
+    const geometry = new THREE.BufferGeometry();
     const vertices = new Float32Array(length * 3);
     let i = 0;
-    coords.forEach(coord => {
+    coords.forEach((coord) => {
       vertices[i++] = coord[0];
       vertices[i++] = coord[1];
       vertices[i++] = coord[2];
     });
-    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    geometry.setAttribute('position', new THREE.BufferAttribute(vertices, 3));
     geometry.setDrawRange(0, coords.length);
     return geometry;
   }
   return undefined;
-};
+}
 
 /*
  * WebGPURenderer converts 16 bit index buffers to 32 bit and keeps the
@@ -830,23 +767,25 @@ function createNewSpriteText(text, height, colour, font, pixel, weight) {
  */
 function isRegionGroup(regionPath, groupName, comparePath) {
   if (comparePath) {
-    const region = regionPath ? regionPath : "";
-    const group = groupName ? groupName : "";
+    const region = regionPath ? regionPath : '';
+    const group = groupName ? groupName : '';
     const n = comparePath.lastIndexOf('/');
     if (n > -1) {
       let r = undefined;
       let g = undefined;
       r = comparePath.substring(0, n);
       g = comparePath.substring(n + 1);
-      if (r === "*" || r === "**" || r.toLowerCase() === region.toLowerCase()) {
-        if (g === "*" || g === "**" || g.toLowerCase() === group.toLowerCase()) {
+      if (r === '*' || r === '**' || r.toLowerCase() === region.toLowerCase()) {
+        if (g === '*' || g === '**' || g.toLowerCase() === group.toLowerCase()) {
           return true;
         }
       }
     } else {
       //one single value if one of the region / group matches
-      if (region.toLowerCase() === comparePath.toLowerCase() ||
-        group.toLowerCase() === comparePath.toLowerCase()) {
+      if (
+        region.toLowerCase() === comparePath.toLowerCase() ||
+        group.toLowerCase() === comparePath.toLowerCase()
+      ) {
         return true;
       }
     }
@@ -869,7 +808,7 @@ function removeVertexAtIndex(geometry, index, maintainLength) {
   // Helper to remove elements from a typed array
   const removeElements = (attribute, name) => {
     const array = attribute.array;
-    if (array.length < (start + deleteCount)) {
+    if (array.length < start + deleteCount) {
       return false;
     }
     if (maintainLength) {
@@ -894,8 +833,8 @@ function removeVertexAtIndex(geometry, index, maintainLength) {
 
   // If the geometry is indexed, the index buffer will also need adjustment
   if (geometry.index !== null) {
-      // This is more complex, typically easier to work with non-indexed geometry when modifying vertices
-      console.warn("Removing vertices from indexed geometry requires index buffer recalculation.");
+    // This is more complex, typically easier to work with non-indexed geometry when modifying vertices
+    console.warn('Removing vertices from indexed geometry requires index buffer recalculation.');
   }
 
   return removed;
@@ -985,5 +924,4 @@ export {
   removeVertexAtIndex,
   updateMorphColorAttribute,
   toBufferGeometry,
- };
-
+};

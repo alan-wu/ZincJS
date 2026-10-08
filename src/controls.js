@@ -9,16 +9,16 @@ import * as THREE from 'three/webgpu';
  */
 const Viewport = function () {
   /** @property {Number} */
-	this.nearPlane = 0.168248;
+  this.nearPlane = 0.168248;
   /** @property {Number} */
-	this.farPlane = 6.82906;
+  this.farPlane = 6.82906;
   /**@property {Array} */
-	this.eyePosition = [0.5, -2.86496, 0.5];
+  this.eyePosition = [0.5, -2.86496, 0.5];
   /** @property {Array} */
-	this.targetPosition = [0.5, 0.5, 0.5];
+  this.targetPosition = [0.5, 0.5, 0.5];
   /** @property {Array} */
-	this.upVector = [ 0.0, 0.0, 1.0];
-	const _this = this;
+  this.upVector = [0.0, 0.0, 1.0];
+  const _this = this;
 
   this.setFromObject = ({ nearPlane, farPlane, eyePosition, targetPosition, upVector }) => {
     _this.nearPlane = nearPlane;
@@ -26,7 +26,7 @@ const Viewport = function () {
     _this.eyePosition = eyePosition;
     _this.targetPosition = targetPosition;
     _this.upVector = upVector;
-  }
+  };
 };
 
 /**
@@ -36,61 +36,91 @@ const Viewport = function () {
  * @author Alan Wu
  * @return {CameraControls}
  */
-const CameraControls = function ( object, domElement, renderer, scene ) {
-	const MODE = { NONE: -1, DEFAULT: 0, PATH: 1, SMOOTH_CAMERA_TRANSITION: 2, AUTO_TUMBLE: 3, ROTATE_TRANSITION: 4, MINIMAP: 5, SYNC_CONTROL: 6 };
+const CameraControls = function (object, domElement, renderer, scene) {
+  const MODE = {
+    NONE: -1,
+    DEFAULT: 0,
+    PATH: 1,
+    SMOOTH_CAMERA_TRANSITION: 2,
+    AUTO_TUMBLE: 3,
+    ROTATE_TRANSITION: 4,
+    MINIMAP: 5,
+    SYNC_CONTROL: 6,
+  };
   /**
    * Actions states.
    * Available states are NONE, ROTATE, ZOOM, PAN, TOUCH_ROTATE, TOUCH_ZOOM, TOUCH_PAN and SCROLL.
    * @property {Object}
    */
-	const STATE = { NONE: -1, ROTATE: 0, ZOOM: 1, PAN: 2, TOUCH_ROTATE: 3, TOUCH_ZOOM: 4, TOUCH_PAN: 5, SCROLL: 6, KEYBOARD_ZOOM: 7, KEYBOARD_ROTATE: 8, KEYBOARD_PAN: 9 };
+  const STATE = {
+    NONE: -1,
+    ROTATE: 0,
+    ZOOM: 1,
+    PAN: 2,
+    TOUCH_ROTATE: 3,
+    TOUCH_ZOOM: 4,
+    TOUCH_PAN: 5,
+    SCROLL: 6,
+    KEYBOARD_ZOOM: 7,
+    KEYBOARD_ROTATE: 8,
+    KEYBOARD_PAN: 9,
+  };
   const ROTATE_DIRECTION = { NONE: -1, FREE: 1, HORIZONTAL: 2, VERTICAL: 3 };
-	const KEYBOARD = { ARROWLEFT: 37, ARROWUP: 38, ARROWRIGHT: 39, ARROWDOWN: 40, NUMPADADD: 107, NUMPADSUBTRACT: 109, EQUAL: 187, MINUS: 189 };
+  const KEYBOARD = {
+    ARROWLEFT: 37,
+    ARROWUP: 38,
+    ARROWRIGHT: 39,
+    ARROWDOWN: 40,
+    NUMPADADD: 107,
+    NUMPADSUBTRACT: 109,
+    EQUAL: 187,
+    MINUS: 189,
+  };
   /**
    * Available click actions are MAIN, AUXILIARY and SECONARY.
    * @property {Object}
    */
-	const CLICK_ACTION = {};
-	CLICK_ACTION.MAIN = STATE.ROTATE;
-	CLICK_ACTION.AUXILIARY = STATE.ZOOM;
-	CLICK_ACTION.SECONDARY = STATE.PAN;
-	this.cameraObject = object;
-	this.domElement = ( domElement !== undefined ) ? domElement : document;
-	this.renderer = renderer;
-	this.scene = scene ;
-	this.tumble_rate = 1.5;
-	this.pointer_x = 0;
-	this.pointer_y = 0;
-	this.pointer_x_start = 0;
-	this.pointer_y_start = 0;
-	this.previous_pointer_x = 0;
-	this.previous_pointer_y = 0;
-	this.near_plane_fly_debt = 0.0;
-	this.touchZoomDistanceStart = 0;
-	this.touchZoomDistanceEnd = 0;
-	this.directionalLight = 0;
-	this.zoomRate = 50;
-	this.rotateRate = 50;
-	this.panRate = 100;
-	this.pixelHeight = 1;
-	let duration = 6000;
+  const CLICK_ACTION = {};
+  CLICK_ACTION.MAIN = STATE.ROTATE;
+  CLICK_ACTION.AUXILIARY = STATE.ZOOM;
+  CLICK_ACTION.SECONDARY = STATE.PAN;
+  this.cameraObject = object;
+  this.domElement = domElement !== undefined ? domElement : document;
+  this.renderer = renderer;
+  this.scene = scene;
+  this.tumble_rate = 1.5;
+  this.pointer_x = 0;
+  this.pointer_y = 0;
+  this.pointer_x_start = 0;
+  this.pointer_y_start = 0;
+  this.previous_pointer_x = 0;
+  this.previous_pointer_y = 0;
+  this.near_plane_fly_debt = 0.0;
+  this.touchZoomDistanceStart = 0;
+  this.touchZoomDistanceEnd = 0;
+  this.directionalLight = 0;
+  this.zoomRate = 50;
+  this.rotateRate = 50;
+  this.panRate = 100;
+  this.pixelHeight = 1;
+  let duration = 6000;
   let enabled = true;
-	let inbuildTime = 0;
-	let cameraPath = undefined;
-	let numberOfCameraPoint = undefined;
-	let updateLightWithPathFlag = false;
-	let playRate = 500;
-	let deviceOrientationControl = undefined;
-	let defaultViewport = "default";
-	let currentMode = MODE.DEFAULT;
-	let smoothCameraTransitionObject = undefined;
-	let rotateCameraTransitionObject = undefined;
-	let cameraAutoTumbleObject = undefined;
-	let zoomSize = 0;
+  let inbuildTime = 0;
+  let cameraPath = undefined;
+  let numberOfCameraPoint = undefined;
+  let updateLightWithPathFlag = false;
+  let playRate = 500;
+  let deviceOrientationControl = undefined;
+  let defaultViewport = 'default';
+  let currentMode = MODE.DEFAULT;
+  let smoothCameraTransitionObject = undefined;
+  let rotateCameraTransitionObject = undefined;
+  let cameraAutoTumbleObject = undefined;
+  let zoomSize = 0;
   let rotateMode = ROTATE_DIRECTION.FREE;
-	this._state = STATE.NONE;
-	let zincRayCaster = undefined;
-	this.targetTouchId = -1;
+  this._state = STATE.NONE;
+  let zincRayCaster = undefined;
+  this.targetTouchId = -1;
   let rect = undefined;
   const _a = new THREE.Vector3();
   const _b = new THREE.Vector3();
@@ -106,17 +136,17 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   let ndcControl = undefined;
   let maxDist = 0;
   const viewports = {
-    "default" : new Viewport()
+    default: new Viewport(),
   };
   viewports.default.nearPlane = 0.1;
-	viewports.default.farPlane = 2000;
-	viewports.default.eyePosition = [0, 0, 0];
-	viewports.default.targetPosition = [0, 0, -1.0];
-	viewports.default.upVector = [ 0.0, 1.0, 0.0];
+  viewports.default.farPlane = 2000;
+  viewports.default.eyePosition = [0, 0, 0];
+  viewports.default.targetPosition = [0, 0, -1.0];
+  viewports.default.upVector = [0.0, 1.0, 0.0];
 
   //Add the target property
-	if (this.cameraObject.target === undefined)
-		this.cameraObject.target = new THREE.Vector3( ...viewports.default.targetPosition );
+  if (this.cameraObject.target === undefined)
+    this.cameraObject.target = new THREE.Vector3(...viewports.default.targetPosition);
 
   //Calculate the max distanc allowed, it is the longer
   //of 6 times the radius of the current scene and
@@ -131,11 +161,11 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
       if (this.cameraObject) {
         currentDist = this.cameraObject.position.distanceTo(sceneSphere.center);
       }
-      maxDist = currentDist > maxDist ? currentDist * 1.5: maxDist;
+      maxDist = currentDist > maxDist ? currentDist * 1.5 : maxDist;
     } else {
       maxDist = 0;
     }
-  }
+  };
 
   const updateNearAndFarPlane = (travalDist) => {
     const ratio = 0.001;
@@ -173,7 +203,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
       }
     }
     */
-  }
+  };
 
   /**
    * Add a viewport to the list of available named viewports.
@@ -182,9 +212,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {Viewport} viewportName - Viewport to be added
    */
   this.addViewport = (viewportName, viewport) => {
-    if (viewportName && viewport)
-      viewports[viewportName] = viewport;
-  }
+    if (viewportName && viewport) viewports[viewportName] = viewport;
+  };
 
   /**
    * Set the default viewport for this {@link CameraControls}.
@@ -193,13 +222,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    *
    * @return {Boolean} true if set successfully, false otherwise.
    */
-  this.setDefaultViewport = defaultName => {
-		if (defaultName && (defaultName in viewports)) {
+  this.setDefaultViewport = (defaultName) => {
+    if (defaultName && defaultName in viewports) {
       defaultViewport = defaultName;
       return true;
     }
-    return false
-	}
+    return false;
+  };
 
   /**
    * Get the name of the default viewport.
@@ -208,8 +237,8 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @return {String}
    */
   this.getDefaultViewport = () => {
-		return defaultViewport;
-	}
+    return defaultViewport;
+  };
 
   /**
    * Get the viewport with the provied name stored in this object.
@@ -217,9 +246,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    *
    * @return {Viewport}
    */
-	this.getViewportOfName = name => {
-		return viewports[name];
-	}
+  this.getViewportOfName = (name) => {
+    return viewports[name];
+  };
 
   /**
    * Set the viewport with a name if it is found in the list.
@@ -227,13 +256,13 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    *
    * @return {Boolean} if viewport is found and set, otherwise false.
    */
-  this.setCurrentViewport = name => {
+  this.setCurrentViewport = (name) => {
     if (name in viewports) {
-      this.setCurrentCameraSettings(viewports[name])
+      this.setCurrentCameraSettings(viewports[name]);
       return true;
     }
     return false;
-	}
+  };
 
   /**
    * Set the direction of rotation allowed with this control.
@@ -241,51 +270,49 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {String} mode - available options are none, horizontal,
    * vertical and free.
    */
-  this.setRotationMode = mode => {
+  this.setRotationMode = (mode) => {
     switch (mode) {
-      case "none":
+      case 'none':
         rotateMode = ROTATE_DIRECTION.NONE;
         break;
-      case "horizontal":
+      case 'horizontal':
         rotateMode = ROTATE_DIRECTION.HORIZONTAL;
         break;
-      case "vertical":
+      case 'vertical':
         rotateMode = ROTATE_DIRECTION.VERTICAL;
         break;
-      case "free":
+      case 'free':
       default:
         rotateMode = ROTATE_DIRECTION.FREE;
     }
-  }
+  };
 
-	this.onResize = () => {
-		hasUpdated = true;
-		if (rect)
-			rect = undefined;
+  this.onResize = () => {
+    hasUpdated = true;
+    if (rect) rect = undefined;
     if (ndcControl)
-      ndcControl.setCurrentCameraSettings(this.cameraObject,
-        viewports[defaultViewport]);
-	}
+      ndcControl.setCurrentCameraSettings(this.cameraObject, viewports[defaultViewport]);
+  };
 
-	this.getVisibleHeightAtZDepth = ( depth ) => {
-		// compensate for cameras not positioned at z=0
+  this.getVisibleHeightAtZDepth = (depth) => {
+    // compensate for cameras not positioned at z=0
 
-		const cameraOffset = this.cameraObject.position.distanceTo(this.cameraObject.target);
-		if ( depth < cameraOffset ) depth -= cameraOffset;
-		else depth += cameraOffset;
+    const cameraOffset = this.cameraObject.position.distanceTo(this.cameraObject.target);
+    if (depth < cameraOffset) depth -= cameraOffset;
+    else depth += cameraOffset;
 
-		// vertical fov in radians
-		const vFOV = this.cameraObject.fov * Math.PI / 180;
+    // vertical fov in radians
+    const vFOV = (this.cameraObject.fov * Math.PI) / 180;
 
-		// Math.abs to ensure the result is always positive
-		return 2 * Math.tan( vFOV / 2 ) * Math.abs( depth );
-	};
+    // Math.abs to ensure the result is always positive
+    return 2 * Math.tan(vFOV / 2) * Math.abs(depth);
+  };
 
-	this.calculateHeightPerPixelAtZeroDepth = ( wHeight ) => {
-		const height = this.getVisibleHeightAtZDepth(0);
-		this.pixelHeight = height / wHeight;
-		return this.pixelHeight;
-	}
+  this.calculateHeightPerPixelAtZeroDepth = (wHeight) => {
+    const height = this.getVisibleHeightAtZDepth(0);
+    this.pixelHeight = height / wHeight;
+    return this.pixelHeight;
+  };
 
   /**
    * Get normalised coordinates from windows coordinates.
@@ -304,7 +331,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     const out_x = ((x - rect.left) / rect.width) * 2 - 1;
     const out_y = -((y - rect.top) / rect.height) * 2 + 1;
     return position.set(out_x, out_y);
-  }
+  };
 
   /**
    * Get the relative windows coordinates from normalised coordiantes.
@@ -320,10 +347,10 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   this.getRelativeCoordsFromNDC = (x, y, positionIn) => {
     updateRect(false);
     const position = positionIn ? positionIn : new THREE.Vector2();
-    position.x = (x + 1) * rect.width / 2.0;
-    position.y = (1 - y) * rect.height / 2.0;
+    position.x = ((x + 1) * rect.width) / 2.0;
+    position.y = ((1 - y) * rect.height) / 2.0;
     return position;
-  }
+  };
 
   /**
    * Map a mouse click to the specified action.
@@ -331,184 +358,193 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {String} buttonName - please see {@link CLICK_ACTION}
    * @param {String} actionName - please see {@link STATE}
    */
-	this.setMouseButtonAction = (buttonName, actionName) => {
-		CLICK_ACTION[buttonName] = STATE[actionName];
-  }
+  this.setMouseButtonAction = (buttonName, actionName) => {
+    CLICK_ACTION[buttonName] = STATE[actionName];
+  };
 
-	/**
-	 *
-	 * @param {HTML} element
-	 * @param {Number} index
-	 */
-	const setCanvasTabindex = (element, index) => {
-		if (element instanceof HTMLCanvasElement)
-			element.tabIndex = index
-	}
+  /**
+   *
+   * @param {HTML} element
+   * @param {Number} index
+   */
+  const setCanvasTabindex = (element, index) => {
+    if (element instanceof HTMLCanvasElement) element.tabIndex = index;
+  };
 
   //Make sure the camera does not travel beyond limit
   const checkTravelDistance = () => {
     if (maxDist > 0) {
       const newDist = _tempEye.distanceTo(sceneSphere.center);
-      return (maxDist > newDist ||
-        this.cameraObject.position.distanceTo(sceneSphere.center) > newDist );
+      return (
+        maxDist > newDist || this.cameraObject.position.distanceTo(sceneSphere.center) > newDist
+      );
     }
     return true;
-  }
+  };
 
-  const translateViewport = translation => {
-		hasUpdated = true;
+  const translateViewport = (translation) => {
+    hasUpdated = true;
     _tempEye.copy(this.cameraObject.position).add(translation);
     if (checkTravelDistance()) {
       this.cameraObject.target.add(translation);
       this.cameraObject.position.add(translation);
       this.updateDirectionalLight();
     }
-  }
+  };
 
-	const onDocumentMouseDown = event => {
+  const onDocumentMouseDown = (event) => {
     updateRect(false);
     // Check if mouse event hapens inside the minimap
     let minimapCoordinates = undefined;
     if (currentMode === MODE.DEFAULT)
-      minimapCoordinates = this.scene.getNormalisedMinimapCoordinates(
-        this.renderer, event);
+      minimapCoordinates = this.scene.getNormalisedMinimapCoordinates(this.renderer, event);
     if (!minimapCoordinates) {
       if (event.button == 0) {
-        if (event.ctrlKey)
-          this._state = CLICK_ACTION.AUXILIARY;
-        else if (event.shiftKey)
-          this._state = CLICK_ACTION.SECONDARY;
-        else
-          this._state = CLICK_ACTION.MAIN;
+        if (event.ctrlKey) this._state = CLICK_ACTION.AUXILIARY;
+        else if (event.shiftKey) this._state = CLICK_ACTION.SECONDARY;
+        else this._state = CLICK_ACTION.MAIN;
       } else if (event.button == 1) {
         event.preventDefault();
         this._state = CLICK_ACTION.AUXILIARY;
-        }
-        else if (event.button == 2) {
-          this._state = CLICK_ACTION.SECONDARY;
-        }
+      } else if (event.button == 2) {
+        this._state = CLICK_ACTION.SECONDARY;
+      }
       this.pointer_x = event.clientX - rect.left;
       this.pointer_y = event.clientY - rect.top;
       this.pointer_x_start = this.pointer_x;
       this.pointer_y_start = this.pointer_y;
       this.previous_pointer_x = this.pointer_x;
-      this.previous_pointer_y= this.pointer_y;
+      this.previous_pointer_y = this.pointer_y;
     } else {
       currentMode = MODE.MINIMAP;
       let translation = this.scene.getMinimapDiffFromNormalised(
-        minimapCoordinates.x, minimapCoordinates.y);
+        minimapCoordinates.x,
+        minimapCoordinates.y,
+      );
       translateViewport(translation);
     }
-  }
+  };
 
-	const onDocumentMouseMove = event => {
+  const onDocumentMouseMove = (event) => {
     updateRect(false);
-		if (rect) {
-			this.pointer_x = event.clientX - rect.left;
-			this.pointer_y = event.clientY - rect.top;
-			if (currentMode === MODE.MINIMAP) {
-				let minimapCoordinates = this.scene.getNormalisedMinimapCoordinates(this.renderer, event);
-				if (minimapCoordinates) {
-					let translation = this.scene.getMinimapDiffFromNormalised(
-						minimapCoordinates.x, minimapCoordinates.y);
-					translateViewport(translation);
-				}
-			} else {
-				if ((this._state === STATE.NONE) && (zincRayCaster !== undefined)) {
-					zincRayCaster.move(this, event.clientX, event.clientY, this.renderer);
-				}
-			}
-		}
-	}
+    if (rect) {
+      this.pointer_x = event.clientX - rect.left;
+      this.pointer_y = event.clientY - rect.top;
+      if (currentMode === MODE.MINIMAP) {
+        let minimapCoordinates = this.scene.getNormalisedMinimapCoordinates(this.renderer, event);
+        if (minimapCoordinates) {
+          let translation = this.scene.getMinimapDiffFromNormalised(
+            minimapCoordinates.x,
+            minimapCoordinates.y,
+          );
+          translateViewport(translation);
+        }
+      } else {
+        if (this._state === STATE.NONE && zincRayCaster !== undefined) {
+          zincRayCaster.move(this, event.clientX, event.clientY, this.renderer);
+        }
+      }
+    }
+  };
 
-	const onDocumentMouseUp = event => {
+  const onDocumentMouseUp = (event) => {
     this._state = STATE.NONE;
-    if (currentMode == MODE.MINIMAP)
-      currentMode = MODE.DEFAULT;
-		if (zincRayCaster !== undefined) {
-			if (this.pointer_x_start==(event.clientX - rect.left) && this.pointer_y_start==(event.clientY- rect.top)) {
-				zincRayCaster.pick(this, event.clientX, event.clientY, this.renderer);
-			}
-		}
-	}
+    if (currentMode == MODE.MINIMAP) currentMode = MODE.DEFAULT;
+    if (zincRayCaster !== undefined) {
+      if (
+        this.pointer_x_start == event.clientX - rect.left &&
+        this.pointer_y_start == event.clientY - rect.top
+      ) {
+        zincRayCaster.pick(this, event.clientX, event.clientY, this.renderer);
+      }
+    }
+  };
 
-	const onDocumentMouseLeave = event => {
-		this._state = STATE.NONE;
-	}
+  const onDocumentMouseLeave = (event) => {
+    this._state = STATE.NONE;
+  };
 
-	const onDocumentTouchStart = event => {
+  const onDocumentTouchStart = (event) => {
     updateRect(false);
-		const len = event.touches.length;
-		if (len == 1) {
-			this._state = STATE.TOUCH_ROTATE;
-			this.pointer_x = event.touches[0].clientX - rect?.left;
-			this.pointer_y = event.touches[0].clientY - rect?.top;
-			this.pointer_x_start = this.pointer_x;
-			this.pointer_y_start = this.pointer_y;
-			this.previous_pointer_x = this.pointer_x;
-			this.previous_pointer_y= this.pointer_y;
-		} else if (len == 2) {
-			this._state = STATE.TOUCH_ZOOM;
-			const dx = event.touches[ 0 ].clientX - event.touches[ 1 ].clientX;
-			const dy = event.touches[ 0 ].clientY - event.touches[ 1 ].clientY;
-			this.touchZoomDistanceEnd = this.touchZoomDistanceStart = Math.sqrt( dx * dx + dy * dy );
-		} else if (len == 3) {
-			this._state = STATE.TOUCH_PAN;
-			this.targetTouchId = event.touches[0].identifier;
-			this.pointer_x = event.touches[0].clientX - rect?.left;
-			this.pointer_y = event.touches[0].clientY - rect?.top;
-			this.previous_pointer_x = this.pointer_x;
-			this.previous_pointer_y= this.pointer_y;
-		}
-	}
+    const len = event.touches.length;
+    if (len == 1) {
+      this._state = STATE.TOUCH_ROTATE;
+      this.pointer_x = event.touches[0].clientX - rect?.left;
+      this.pointer_y = event.touches[0].clientY - rect?.top;
+      this.pointer_x_start = this.pointer_x;
+      this.pointer_y_start = this.pointer_y;
+      this.previous_pointer_x = this.pointer_x;
+      this.previous_pointer_y = this.pointer_y;
+    } else if (len == 2) {
+      this._state = STATE.TOUCH_ZOOM;
+      const dx = event.touches[0].clientX - event.touches[1].clientX;
+      const dy = event.touches[0].clientY - event.touches[1].clientY;
+      this.touchZoomDistanceEnd = this.touchZoomDistanceStart = Math.sqrt(dx * dx + dy * dy);
+    } else if (len == 3) {
+      this._state = STATE.TOUCH_PAN;
+      this.targetTouchId = event.touches[0].identifier;
+      this.pointer_x = event.touches[0].clientX - rect?.left;
+      this.pointer_y = event.touches[0].clientY - rect?.top;
+      this.previous_pointer_x = this.pointer_x;
+      this.previous_pointer_y = this.pointer_y;
+    }
+  };
 
-	const onDocumentTouchMove = event => {
-		event.preventDefault();
-		event.stopPropagation();
-		const len = event.touches.length;
-		if (len == 1) {
-			this.pointer_x = event.touches[0].clientX - rect.left;
-			this.pointer_y = event.touches[0].clientY - rect.top;
-		} else if (len == 2) {
-			if (this._state === STATE.TOUCH_ZOOM) {
-				const dx = event.touches[ 0 ].clientX - event.touches[ 1 ].clientX;
-				const dy = event.touches[ 0 ].clientY - event.touches[ 1 ].clientY;
-				this.touchZoomDistanceEnd = Math.sqrt( dx * dx + dy * dy );
-			}
-		} else if (len == 3) {
-			if (this._state === STATE.TOUCH_PAN) {
-				for (let i = 0; i < 3; i++) {
-					if (event.touches[i].identifier == this.targetTouchId) {
-						this.pointer_x = event.touches[0].clientX - rect.left;
-						this.pointer_y = event.touches[0].clientY - rect.top;
-					}
-				}
-			}
-		}
-	}
+  const onDocumentTouchMove = (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const len = event.touches.length;
+    if (len == 1) {
+      this.pointer_x = event.touches[0].clientX - rect.left;
+      this.pointer_y = event.touches[0].clientY - rect.top;
+    } else if (len == 2) {
+      if (this._state === STATE.TOUCH_ZOOM) {
+        const dx = event.touches[0].clientX - event.touches[1].clientX;
+        const dy = event.touches[0].clientY - event.touches[1].clientY;
+        this.touchZoomDistanceEnd = Math.sqrt(dx * dx + dy * dy);
+      }
+    } else if (len == 3) {
+      if (this._state === STATE.TOUCH_PAN) {
+        for (let i = 0; i < 3; i++) {
+          if (event.touches[i].identifier == this.targetTouchId) {
+            this.pointer_x = event.touches[0].clientX - rect.left;
+            this.pointer_y = event.touches[0].clientY - rect.top;
+          }
+        }
+      }
+    }
+  };
 
-	const onDocumentTouchEnd = event => {
-		const previousState = this._state;
-		this.touchZoomDistanceStart = this.touchZoomDistanceEnd = 0;
-		this.targetTouchId = -1;
-		this._state = STATE.NONE;
-		//A single finger tap, the lifted touch is in changedTouches
-		if (previousState === STATE.TOUCH_ROTATE && event.touches.length === 0 &&
-			event.changedTouches && event.changedTouches.length === 1 && rect) {
-			if (zincRayCaster !== undefined) {
-				const touch = event.changedTouches[0];
-				if (this.pointer_x_start==(touch.clientX- rect.left) && this.pointer_y_start==(touch.clientY- rect.top)) {
-					zincRayCaster.pick(this, touch.clientX, touch.clientY, this.renderer);
-				}
-			}
-		}
-	}
+  const onDocumentTouchEnd = (event) => {
+    const previousState = this._state;
+    this.touchZoomDistanceStart = this.touchZoomDistanceEnd = 0;
+    this.targetTouchId = -1;
+    this._state = STATE.NONE;
+    //A single finger tap, the lifted touch is in changedTouches
+    if (
+      previousState === STATE.TOUCH_ROTATE &&
+      event.touches.length === 0 &&
+      event.changedTouches &&
+      event.changedTouches.length === 1 &&
+      rect
+    ) {
+      if (zincRayCaster !== undefined) {
+        const touch = event.changedTouches[0];
+        if (
+          this.pointer_x_start == touch.clientX - rect.left &&
+          this.pointer_y_start == touch.clientY - rect.top
+        ) {
+          zincRayCaster.pick(this, touch.clientX, touch.clientY, this.renderer);
+        }
+      }
+    }
+  };
 
   const onDocumentEnter = () => {
-		updateRect(true);
-	}
+    updateRect(true);
+  };
 
-  const updateRect = forced => {
+  const updateRect = (forced) => {
     //Use intersectionObserver to reset the rect for ray tracing.
     if (forced || rect === undefined) {
       const observer = new IntersectionObserver((entries) => {
@@ -520,146 +556,146 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
 
       observer.observe(this.domElement);
     }
-  }
+  };
 
-	const onDocumentWheelEvent = event => {
+  const onDocumentWheelEvent = (event) => {
     updateRect(false);
-		this._state = STATE.SCROLL;
-		let changes = 0;
-		if (event.deltaY > 0)
-			changes = this.zoomRate;
-		else if (event.deltaY < 0)
-			changes = this.zoomRate * -1;
-		zoomSize = zoomSize + changes;
-		event.preventDefault();
-		event.stopImmediatePropagation();
-	}
+    this._state = STATE.SCROLL;
+    let changes = 0;
+    if (event.deltaY > 0) changes = this.zoomRate;
+    else if (event.deltaY < 0) changes = this.zoomRate * -1;
+    zoomSize = zoomSize + changes;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+  };
 
-	const onDocumentKeydownEvent = event => {
-		updateRect(false);
-		let changes = 0;
-		if (
-			(event.keyCode === KEYBOARD.EQUAL) ||
-			(event.keyCode === KEYBOARD.MINUS) ||
-			(event.keyCode === KEYBOARD.NUMPADADD) ||
-			(event.keyCode === KEYBOARD.NUMPADSUBTRACT)
-		) {
-			this._state = STATE.KEYBOARD_ZOOM
-			let unit = 1;
-			if (event.shiftKey) {
-				unit = unit * 2
-			}
-			if (
-				(event.keyCode === KEYBOARD.EQUAL) ||
-				(event.keyCode === KEYBOARD.NUMPADADD)
-			) {
-				changes = this.zoomRate * unit * -1;
-			} else if (
-				(event.keyCode === KEYBOARD.MINUS) ||
-				(event.keyCode === KEYBOARD.NUMPADSUBTRACT)
-			) {
-				changes = this.zoomRate * unit;
-			}
-			zoomSize = zoomSize + changes;
-		} else if (
-			(event.keyCode === KEYBOARD.ARROWLEFT) ||
-			(event.keyCode === KEYBOARD.ARROWUP) ||
-			(event.keyCode === KEYBOARD.ARROWRIGHT) ||
-			(event.keyCode === KEYBOARD.ARROWDOWN)
-		) {
-			if (event.shiftKey) {
-				this._state = STATE.KEYBOARD_ROTATE
-				this.pointer_x_start = this.pointer_x;
-				this.pointer_y_start = this.pointer_y;
-				changes = this.rotateRate
-			} else {
-				this._state = STATE.KEYBOARD_PAN
-				changes = this.panRate
-			}
-			this.previous_pointer_x = this.pointer_x;
-			this.previous_pointer_y = this.pointer_y;
-			if (event.keyCode === KEYBOARD.ARROWLEFT) {
-				this.pointer_x = this.pointer_x - changes;
-			} else if (event.keyCode === KEYBOARD.ARROWUP) {
-				this.pointer_y = this.pointer_y - changes;
-			} else if (event.keyCode === KEYBOARD.ARROWRIGHT) {
-				this.pointer_x = this.pointer_x + changes;
-			} else if (event.keyCode === KEYBOARD.ARROWDOWN) {
-				this.pointer_y = this.pointer_y + changes;
-			}
-		}
-		if (Object.values(KEYBOARD).includes(event.keyCode)) {
-			event.preventDefault();
-		}
-	}
+  const onDocumentKeydownEvent = (event) => {
+    updateRect(false);
+    let changes = 0;
+    if (
+      event.keyCode === KEYBOARD.EQUAL ||
+      event.keyCode === KEYBOARD.MINUS ||
+      event.keyCode === KEYBOARD.NUMPADADD ||
+      event.keyCode === KEYBOARD.NUMPADSUBTRACT
+    ) {
+      this._state = STATE.KEYBOARD_ZOOM;
+      let unit = 1;
+      if (event.shiftKey) {
+        unit = unit * 2;
+      }
+      if (event.keyCode === KEYBOARD.EQUAL || event.keyCode === KEYBOARD.NUMPADADD) {
+        changes = this.zoomRate * unit * -1;
+      } else if (event.keyCode === KEYBOARD.MINUS || event.keyCode === KEYBOARD.NUMPADSUBTRACT) {
+        changes = this.zoomRate * unit;
+      }
+      zoomSize = zoomSize + changes;
+    } else if (
+      event.keyCode === KEYBOARD.ARROWLEFT ||
+      event.keyCode === KEYBOARD.ARROWUP ||
+      event.keyCode === KEYBOARD.ARROWRIGHT ||
+      event.keyCode === KEYBOARD.ARROWDOWN
+    ) {
+      if (event.shiftKey) {
+        this._state = STATE.KEYBOARD_ROTATE;
+        this.pointer_x_start = this.pointer_x;
+        this.pointer_y_start = this.pointer_y;
+        changes = this.rotateRate;
+      } else {
+        this._state = STATE.KEYBOARD_PAN;
+        changes = this.panRate;
+      }
+      this.previous_pointer_x = this.pointer_x;
+      this.previous_pointer_y = this.pointer_y;
+      if (event.keyCode === KEYBOARD.ARROWLEFT) {
+        this.pointer_x = this.pointer_x - changes;
+      } else if (event.keyCode === KEYBOARD.ARROWUP) {
+        this.pointer_y = this.pointer_y - changes;
+      } else if (event.keyCode === KEYBOARD.ARROWRIGHT) {
+        this.pointer_x = this.pointer_x + changes;
+      } else if (event.keyCode === KEYBOARD.ARROWDOWN) {
+        this.pointer_y = this.pointer_y + changes;
+      }
+    }
+    if (Object.values(KEYBOARD).includes(event.keyCode)) {
+      event.preventDefault();
+    }
+  };
 
-	const onDocumentKeyupEvent = event => {
-		this._state = STATE.NONE;
-	}
+  const onDocumentKeyupEvent = (event) => {
+    this._state = STATE.NONE;
+  };
 
-	const translate = () => {
-		if (typeof this.cameraObject !== "undefined")
-		{
-			const height = rect.height;
-			const distance = this.cameraObject.position.distanceTo(this.cameraObject.target);
-			let fact = 0.0;
-			if ((this.cameraObject.far > this.cameraObject.near) && (distance >= this.cameraObject.near) &&
-				(distance <= this.cameraObject.far))
-			{
-				 fact = (distance-this.cameraObject.near)/(this.cameraObject.far-this.cameraObject.near);
+  const translate = () => {
+    if (typeof this.cameraObject !== 'undefined') {
+      const height = rect.height;
+      const distance = this.cameraObject.position.distanceTo(this.cameraObject.target);
+      let fact = 0.0;
+      if (
+        this.cameraObject.far > this.cameraObject.near &&
+        distance >= this.cameraObject.near &&
+        distance <= this.cameraObject.far
+      ) {
+        fact =
+          (distance - this.cameraObject.near) / (this.cameraObject.far - this.cameraObject.near);
       }
       //_b == old_near, _c = old_far, _new_b = new_near, _new_c = new_far
-			_b.set(this.previous_pointer_x,height - this.previous_pointer_y,0.0);
-			_c.set(this.previous_pointer_x, height - this.previous_pointer_y,1.0);
-			_new_b.set(this.pointer_x,height - this.pointer_y,0.0);
-			_new_c.set(this.pointer_x,height - this.pointer_y,1.0);
-			_b.unproject(this.cameraObject);
-			_c.unproject(this.cameraObject);
-			_new_b.unproject(this.cameraObject);
-			_new_c.unproject( this.cameraObject);
+      _b.set(this.previous_pointer_x, height - this.previous_pointer_y, 0.0);
+      _c.set(this.previous_pointer_x, height - this.previous_pointer_y, 1.0);
+      _new_b.set(this.pointer_x, height - this.pointer_y, 0.0);
+      _new_c.set(this.pointer_x, height - this.pointer_y, 1.0);
+      _b.unproject(this.cameraObject);
+      _c.unproject(this.cameraObject);
+      _new_b.unproject(this.cameraObject);
+      _new_c.unproject(this.cameraObject);
       const translate_rate = -0.002;
-      _new_b.sub(_b).multiplyScalar(1.0-fact);
+      _new_b.sub(_b).multiplyScalar(1.0 - fact);
       _new_c.sub(_c).multiplyScalar(fact);
       _new_b.add(_new_c).multiplyScalar(translate_rate);
       translateViewport(_new_b);
-		}
-		this.previous_pointer_x = this.pointer_x;
-		this.previous_pointer_y = this.pointer_y;
-	}
+    }
+    this.previous_pointer_x = this.pointer_x;
+    this.previous_pointer_y = this.pointer_y;
+  };
 
-	this.getVectorsFromRotateAboutLookAtPoints = (axis, angle) => {
-      axis.normalize();
-	    _v.copy(this.cameraObject.position).sub(this.cameraObject.target);
-	    _rel_eye.copy(_v);
-	    _v.normalize()
-	    if (0.8 < Math.abs(_v.dot(axis))) {
-	      _v.copy(this.cameraObject.up);
-      }
-      _b.crossVectors(axis, _v).normalize();
-      _c.crossVectors(axis, _b);
-	    const rel_eyea = axis.dot(_rel_eye);
-	    const rel_eyeb = _b.dot(_rel_eye);
-	    const rel_eyec = _c.dot(_rel_eye);
-	    const upa = axis.dot(this.cameraObject.up);
-	    const upb = _b.dot(this.cameraObject.up);
-	    const upc = _c.dot(this.cameraObject.up);
-	    const cos_angle = Math.cos(angle);
-	    const sin_angle = Math.sin(angle);
-      _new_b.set(cos_angle*_b.x+sin_angle*_c.x,
-	                  cos_angle*_b.y+sin_angle*_c.y,
-	                  cos_angle*_b.z+sin_angle*_c.z);
-	    _new_c.set(cos_angle*_c.x-sin_angle*_b.x,
-	                  cos_angle*_c.y-sin_angle*_b.y,
-	                  cos_angle*_c.z-sin_angle*_b.z);
-      _v.copy(this.cameraObject.target);
-	    _v.x = _v.x + axis.x*rel_eyea + _new_b.x*rel_eyeb+_new_c.x*rel_eyec;
-	    _v.y = _v.y + axis.y*rel_eyea + _new_b.y*rel_eyeb+_new_c.y*rel_eyec;
-	    _v.z = _v.z + axis.z*rel_eyea + _new_b.z*rel_eyeb+_new_c.z*rel_eyec;
-	    _a.set(axis.x*upa+_new_b.x*upb+_new_c.x*upc,
-            axis.y*upa+_new_b.y*upb+_new_c.y*upc,
-            axis.z*upa+_new_b.z*upb+_new_c.z*upc);
-	    return {position: _v, up: _a};
-	}
+  this.getVectorsFromRotateAboutLookAtPoints = (axis, angle) => {
+    axis.normalize();
+    _v.copy(this.cameraObject.position).sub(this.cameraObject.target);
+    _rel_eye.copy(_v);
+    _v.normalize();
+    if (0.8 < Math.abs(_v.dot(axis))) {
+      _v.copy(this.cameraObject.up);
+    }
+    _b.crossVectors(axis, _v).normalize();
+    _c.crossVectors(axis, _b);
+    const rel_eyea = axis.dot(_rel_eye);
+    const rel_eyeb = _b.dot(_rel_eye);
+    const rel_eyec = _c.dot(_rel_eye);
+    const upa = axis.dot(this.cameraObject.up);
+    const upb = _b.dot(this.cameraObject.up);
+    const upc = _c.dot(this.cameraObject.up);
+    const cos_angle = Math.cos(angle);
+    const sin_angle = Math.sin(angle);
+    _new_b.set(
+      cos_angle * _b.x + sin_angle * _c.x,
+      cos_angle * _b.y + sin_angle * _c.y,
+      cos_angle * _b.z + sin_angle * _c.z,
+    );
+    _new_c.set(
+      cos_angle * _c.x - sin_angle * _b.x,
+      cos_angle * _c.y - sin_angle * _b.y,
+      cos_angle * _c.z - sin_angle * _b.z,
+    );
+    _v.copy(this.cameraObject.target);
+    _v.x = _v.x + axis.x * rel_eyea + _new_b.x * rel_eyeb + _new_c.x * rel_eyec;
+    _v.y = _v.y + axis.y * rel_eyea + _new_b.y * rel_eyeb + _new_c.y * rel_eyec;
+    _v.z = _v.z + axis.z * rel_eyea + _new_b.z * rel_eyeb + _new_c.z * rel_eyec;
+    _a.set(
+      axis.x * upa + _new_b.x * upb + _new_c.x * upc,
+      axis.y * upa + _new_b.y * upb + _new_c.y * upc,
+      axis.z * upa + _new_b.z * upb + _new_c.z * upc,
+    );
+    return { position: _v, up: _a };
+  };
 
   /**
    * Rotate around the axis with the amount specified by angle.
@@ -667,188 +703,196 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {THREE.Vector3} axis - The rotational axis.
    * @param {Number} Angle - Specify how much the camera shoudl rotate by.
    */
-	this.rotateAboutLookAtpoint = (axis, angle) => {
-		hasUpdated = true;
-	  const returned_values = this.getVectorsFromRotateAboutLookAtPoints(axis, angle);
-	  this.cameraObject.position.copy(returned_values.position);
-	  this.updateDirectionalLight();
-	  this.cameraObject.up.copy(returned_values.up);
-	}
+  this.rotateAboutLookAtpoint = (axis, angle) => {
+    hasUpdated = true;
+    const returned_values = this.getVectorsFromRotateAboutLookAtPoints(axis, angle);
+    this.cameraObject.position.copy(returned_values.position);
+    this.updateDirectionalLight();
+    this.cameraObject.up.copy(returned_values.up);
+  };
 
-	const tumble = () => {
-		if (typeof this.cameraObject !== "undefined")
-		{
-			const width = rect?.width;
-			const height = rect?.height;
-			if ((0<width)&&(0<height))
-			{
-				const radius=0.25*(width+height);
-				let delta_x = 0;
-				let delta_y = 0;
-        if (rotateMode === ROTATE_DIRECTION.FREE ||
-          rotateMode === ROTATE_DIRECTION.HORIZONTAL)
-				  delta_x=this.pointer_x-this.previous_pointer_x;
-        if (rotateMode === ROTATE_DIRECTION.FREE ||
-            rotateMode === ROTATE_DIRECTION.VERTICAL)
-				  delta_y=this.previous_pointer_y-this.pointer_y;
-				const tangent_dist = Math.sqrt(delta_x*delta_x + delta_y*delta_y);
-				if (tangent_dist > 0)
-				{
-					const dx=-delta_y*1.0/tangent_dist;
-					const dy=delta_x*1.0/tangent_dist;
+  const tumble = () => {
+    if (typeof this.cameraObject !== 'undefined') {
+      const width = rect?.width;
+      const height = rect?.height;
+      if (0 < width && 0 < height) {
+        const radius = 0.25 * (width + height);
+        let delta_x = 0;
+        let delta_y = 0;
+        if (rotateMode === ROTATE_DIRECTION.FREE || rotateMode === ROTATE_DIRECTION.HORIZONTAL)
+          delta_x = this.pointer_x - this.previous_pointer_x;
+        if (rotateMode === ROTATE_DIRECTION.FREE || rotateMode === ROTATE_DIRECTION.VERTICAL)
+          delta_y = this.previous_pointer_y - this.pointer_y;
+        const tangent_dist = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
+        if (tangent_dist > 0) {
+          const dx = (-delta_y * 1.0) / tangent_dist;
+          const dy = (delta_x * 1.0) / tangent_dist;
           let d = 0;
           // Do not allow rotation on other direction around the origin if rotateMode is not free
           if (rotateMode === ROTATE_DIRECTION.FREE) {
-            let d=dx*(this.pointer_x-0.5*(width-1))+dy*(0.5*(height-1)-this.pointer_y);
-            if (d > radius)	{
+            let d =
+              dx * (this.pointer_x - 0.5 * (width - 1)) +
+              dy * (0.5 * (height - 1) - this.pointer_y);
+            if (d > radius) {
               d = radius;
-            }
-            else {
+            } else {
               if (d < -radius) {
                 d = -radius;
               }
             }
           }
-					const phi=Math.acos(d/radius)-0.5*Math.PI;
-					const angle=this.tumble_rate*tangent_dist/radius;
-					_a.copy(this.cameraObject.position).sub(this.cameraObject.target).normalize();
-					_b.copy(this.cameraObject.up).normalize();
+          const phi = Math.acos(d / radius) - 0.5 * Math.PI;
+          const angle = (this.tumble_rate * tangent_dist) / radius;
+          _a.copy(this.cameraObject.position).sub(this.cameraObject.target).normalize();
+          _b.copy(this.cameraObject.up).normalize();
           _c.copy(_b).cross(_a).normalize().multiplyScalar(dx);
           _b.multiplyScalar(dy);
           _axis.addVectors(_c, _b).multiplyScalar(Math.cos(phi));
           _a.multiplyScalar(Math.sin(phi));
           _axis.add(_a);
-					this.rotateAboutLookAtpoint(_axis, -angle);
-				}
-			}
-		}
-		this.previous_pointer_x = this.pointer_x;
-		this.previous_pointer_y = this.pointer_y;
-	}
+          this.rotateAboutLookAtpoint(_axis, -angle);
+        }
+      }
+    }
+    this.previous_pointer_x = this.pointer_x;
+    this.previous_pointer_y = this.pointer_y;
+  };
 
-	const calculateZoomDelta = () => {
-		let delta = 0;
-		if (this._state === STATE.ZOOM)
-		{
-			delta = this.previous_pointer_y-this.pointer_y;
-		} else if ((this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)) {
-			delta = zoomSize;
-		} else {
-			delta = -1.0 * (this.touchZoomDistanceEnd - this.touchZoomDistanceStart);
-			this.touchZoomDistanceStart = this.touchZoomDistanceEnd;
-		}
-		return delta;
-  }
+  const calculateZoomDelta = () => {
+    let delta = 0;
+    if (this._state === STATE.ZOOM) {
+      delta = this.previous_pointer_y - this.pointer_y;
+    } else if (this._state === STATE.SCROLL || this._state === STATE.KEYBOARD_ZOOM) {
+      delta = zoomSize;
+    } else {
+      delta = -1.0 * (this.touchZoomDistanceEnd - this.touchZoomDistanceStart);
+      this.touchZoomDistanceStart = this.touchZoomDistanceEnd;
+    }
+    return delta;
+  };
 
-  this.changeZoomByScrollRateUnit = unit => {
+  this.changeZoomByScrollRateUnit = (unit) => {
     const delta_y = unit * this.zoomRate;
     this.changeZoomByValue(delta_y);
-  }
+  };
 
-  this.changeZoomByValue = delta_y => {
-		if (typeof this.cameraObject !== "undefined")
-		{
+  this.changeZoomByValue = (delta_y) => {
+    if (typeof this.cameraObject !== 'undefined') {
       const height = rect.height;
-			const a = _v.copy(this.cameraObject.position);
-			a.sub(this.cameraObject.target);
-			const dist = a.length();
-			const dy = 1.5 * delta_y/height;
+      const a = _v.copy(this.cameraObject.position);
+      a.sub(this.cameraObject.target);
+      const dist = a.length();
+      const dy = (1.5 * delta_y) / height;
       const travalDist = dist * dy;
-			if ((dist + travalDist) > 0.01) {
-				a.normalize()
+      if (dist + travalDist > 0.01) {
+        a.normalize();
         _tempEye.copy(this.cameraObject.position);
-				_tempEye.x += a.x*travalDist;
-				_tempEye.y += a.y*travalDist;
-				_tempEye.z += a.z*travalDist;
+        _tempEye.x += a.x * travalDist;
+        _tempEye.y += a.y * travalDist;
+        _tempEye.z += a.z * travalDist;
         if (checkTravelDistance()) {
           this.cameraObject.position.copy(_tempEye);
           this.updateDirectionalLight();
           updateNearAndFarPlane(travalDist);
           hasUpdated = true;
         }
-			}
-		}
-  }
+      }
+    }
+  };
 
-	const flyZoom = () => {
+  const flyZoom = () => {
     const delta_y = calculateZoomDelta();
     this.changeZoomByValue(delta_y);
 
-		if (this._state === STATE.ZOOM) {
-			this.previous_pointer_x = this.pointer_x;
-			this.previous_pointer_y = this.pointer_y;
-		}
-		if ((this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)) {
-			zoomSize = 0;
+    if (this._state === STATE.ZOOM) {
+      this.previous_pointer_x = this.pointer_x;
+      this.previous_pointer_y = this.pointer_y;
+    }
+    if (this._state === STATE.SCROLL || this._state === STATE.KEYBOARD_ZOOM) {
+      zoomSize = 0;
       this._state = STATE.NONE;
-		}
-	}
+    }
+  };
 
-	this.setDirectionalLight = directionalLightIn => {
-		this.directionalLight = directionalLightIn;
-	};
+  this.setDirectionalLight = (directionalLightIn) => {
+    this.directionalLight = directionalLightIn;
+  };
 
   /**
    * Force an update to the position of the directional light.
    */
-	this.updateDirectionalLight = () => {
-		hasUpdated = true;
-		if (this.directionalLight != 0) {
-			this.directionalLight.position.set(this.cameraObject.position.x,
-					this.cameraObject.position.y,
-					this.cameraObject.position.z);
-		}
-	}
+  this.updateDirectionalLight = () => {
+    hasUpdated = true;
+    if (this.directionalLight != 0) {
+      this.directionalLight.position.set(
+        this.cameraObject.position.x,
+        this.cameraObject.position.y,
+        this.cameraObject.position.z,
+      );
+    }
+  };
 
-	/**
+  /**
    * Enable the camera control.
    */
-	this.enable = function () {
-		enabled = true;
-		if (this.domElement && this.domElement.addEventListener) {
-			setCanvasTabindex(this.domElement, 0)
-			this.domElement.addEventListener( 'mousedown', onDocumentMouseDown, false );
-			this.domElement.addEventListener( 'mousemove', onDocumentMouseMove, false );
-			this.domElement.addEventListener( 'mouseup', onDocumentMouseUp, false );
-			this.domElement.addEventListener( 'mouseleave', onDocumentMouseLeave, false );
-			this.domElement.addEventListener( 'touchstart', onDocumentTouchStart, false);
-			this.domElement.addEventListener( 'touchmove', onDocumentTouchMove, false);
-			this.domElement.addEventListener( 'touchend', onDocumentTouchEnd, false);
-			this.domElement.addEventListener( 'wheel', onDocumentWheelEvent, false);
-			this.domElement.addEventListener( 'mouseenter', onDocumentEnter, false );
-			this.domElement.addEventListener( 'contextmenu', event => { event.preventDefault(); }, false );
-			this.domElement.addEventListener( 'keydown', onDocumentKeydownEvent, false );
-			this.domElement.addEventListener( 'keyup', onDocumentKeyupEvent, false );
-	  }
-	}
+  this.enable = function () {
+    enabled = true;
+    if (this.domElement && this.domElement.addEventListener) {
+      setCanvasTabindex(this.domElement, 0);
+      this.domElement.addEventListener('mousedown', onDocumentMouseDown, false);
+      this.domElement.addEventListener('mousemove', onDocumentMouseMove, false);
+      this.domElement.addEventListener('mouseup', onDocumentMouseUp, false);
+      this.domElement.addEventListener('mouseleave', onDocumentMouseLeave, false);
+      this.domElement.addEventListener('touchstart', onDocumentTouchStart, false);
+      this.domElement.addEventListener('touchmove', onDocumentTouchMove, false);
+      this.domElement.addEventListener('touchend', onDocumentTouchEnd, false);
+      this.domElement.addEventListener('wheel', onDocumentWheelEvent, false);
+      this.domElement.addEventListener('mouseenter', onDocumentEnter, false);
+      this.domElement.addEventListener(
+        'contextmenu',
+        (event) => {
+          event.preventDefault();
+        },
+        false,
+      );
+      this.domElement.addEventListener('keydown', onDocumentKeydownEvent, false);
+      this.domElement.addEventListener('keyup', onDocumentKeyupEvent, false);
+    }
+  };
 
   /**
    * Disable the camera control.
    */
-	this.disable = function () {
-		enabled = false;
+  this.disable = function () {
+    enabled = false;
     this._state = STATE.NONE;
-		if (this.domElement && this.domElement.removeEventListener) {
-			this.domElement.removeEventListener( 'mousedown', onDocumentMouseDown, false );
-			this.domElement.removeEventListener( 'mousemove', onDocumentMouseMove, false );
-			this.domElement.removeEventListener( 'mouseup', onDocumentMouseUp, false );
-			this.domElement.removeEventListener( 'mouseleave', onDocumentMouseLeave, false );
-			this.domElement.removeEventListener( 'touchstart', onDocumentTouchStart, false);
-			this.domElement.removeEventListener( 'touchmove', onDocumentTouchMove, false);
-			this.domElement.removeEventListener( 'touchend', onDocumentTouchEnd, false);
-			this.domElement.removeEventListener( 'wheel', onDocumentWheelEvent, false);
-			this.domElement.removeEventListener( 'mouseenter', onDocumentEnter, false );
-			this.domElement.removeEventListener( 'contextmenu', event => { event.preventDefault(); }, false );
-			this.domElement.removeEventListener( 'keydown', onDocumentKeydownEvent, false );
-			this.domElement.removeEventListener( 'keyup', onDocumentKeyupEvent, false );
-			setCanvasTabindex(this.domElement, -1)
-	    }
-	}
+    if (this.domElement && this.domElement.removeEventListener) {
+      this.domElement.removeEventListener('mousedown', onDocumentMouseDown, false);
+      this.domElement.removeEventListener('mousemove', onDocumentMouseMove, false);
+      this.domElement.removeEventListener('mouseup', onDocumentMouseUp, false);
+      this.domElement.removeEventListener('mouseleave', onDocumentMouseLeave, false);
+      this.domElement.removeEventListener('touchstart', onDocumentTouchStart, false);
+      this.domElement.removeEventListener('touchmove', onDocumentTouchMove, false);
+      this.domElement.removeEventListener('touchend', onDocumentTouchEnd, false);
+      this.domElement.removeEventListener('wheel', onDocumentWheelEvent, false);
+      this.domElement.removeEventListener('mouseenter', onDocumentEnter, false);
+      this.domElement.removeEventListener(
+        'contextmenu',
+        (event) => {
+          event.preventDefault();
+        },
+        false,
+      );
+      this.domElement.removeEventListener('keydown', onDocumentKeydownEvent, false);
+      this.domElement.removeEventListener('keyup', onDocumentKeyupEvent, false);
+      setCanvasTabindex(this.domElement, -1);
+    }
+  };
 
-	this.loadPath = pathData => {
-		cameraPath = pathData.CameraPath;
-		numberOfCameraPoint = pathData.NumberOfPoints;
-	}
+  this.loadPath = (pathData) => {
+    cameraPath = pathData.CameraPath;
+    numberOfCameraPoint = pathData.NumberOfPoints;
+  };
 
   /**
    * This is an experimental feature. It loads a path - point to point which
@@ -857,39 +901,36 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {String} path_url - The path.
    * @param {requestCallback} finishCallback - The callback once the path is load.
    */
-	this.loadPathURL = (path_url, finishCallback) => {
+  this.loadPathURL = (path_url, finishCallback) => {
     const requestURL = path_url;
     fetch(requestURL)
-    .then((response) => {
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      return response.json();
-    })
-    .then((pathData) => {
-      this.loadPath(pathData);
-      if (finishCallback !== undefined && typeof finishCallback === 'function') {
-        finishCallback();
-      }
-    })
-    .catch((error) => {
-      console.error(`Failed to load path asset from: ${requestURL}`, error);
-    });
-
-	}
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((pathData) => {
+        this.loadPath(pathData);
+        if (finishCallback !== undefined && typeof finishCallback === 'function') {
+          finishCallback();
+        }
+      })
+      .catch((error) => {
+        console.error(`Failed to load path asset from: ${requestURL}`, error);
+      });
+  };
 
   /**
    * Set the duration for the camera to travel along the path.
    *
    * @param {Number} durationIn - the duration for the path.
    */
-	this.setPathDuration = durationIn => {
+  this.setPathDuration = (durationIn) => {
     duration = durationIn;
-    if (smoothCameraTransitionObject)
-      smoothCameraTransitionObject.setDuration(duration);
-    if (rotateCameraTransitionObject)
-      rotateCameraTransitionObject.setDuration(duration);
-	}
+    if (smoothCameraTransitionObject) smoothCameraTransitionObject.setDuration(duration);
+    if (rotateCameraTransitionObject) rotateCameraTransitionObject.setDuration(duration);
+  };
 
   /**
    * Get the playRate - this determines how fast it takes to
@@ -897,9 +938,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    *
    * @return {Number}
    */
-	 this.getPlayRate = () => {
-	    return playRate;
-	  }
+  this.getPlayRate = () => {
+    return playRate;
+  };
 
   /**
    * Set the playRate - this determines how fast it takes to
@@ -907,9 +948,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    *
    * @param {Number} playRateIn - The play rate speed.
    */
-	this.setPlayRate = playRateIn => {
-		playRate = playRateIn;
-	}
+  this.setPlayRate = (playRateIn) => {
+    playRate = playRateIn;
+  };
 
   /**
    * Update the internal timer by the set amount, this can
@@ -918,21 +959,20 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {Number} delta - The amount of time to increment
    * the time by.
    */
-	const updateTime = delta => {
-		let targetTime = inbuildTime + delta;
-		if (targetTime > duration)
-			targetTime = targetTime - duration
-		inbuildTime = targetTime;
-	};
+  const updateTime = (delta) => {
+    let targetTime = inbuildTime + delta;
+    if (targetTime > duration) targetTime = targetTime - duration;
+    inbuildTime = targetTime;
+  };
 
   /**
    * Get the current inbuild time,
    *
    * @return {Number}
    */
-	 this.getTime = () => {
-	    return inbuildTime;
-	  }
+  this.getTime = () => {
+    return inbuildTime;
+  };
 
   /**
    * Set the current inbuild time,
@@ -940,14 +980,11 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {Number} timeIn - this will be used as the current time,
    * it should be between the range of zero and the set duration.
    */
-	this.setTime = timeIn => {
-	  if (timeIn > duration)
-	    inbuildTime = duration;
-	  else if (timeIn < 0.0)
-	    inbuildTime = 0.0;
-	  else
-	    inbuildTime = timeIn;
-	}
+  this.setTime = (timeIn) => {
+    if (timeIn > duration) inbuildTime = duration;
+    else if (timeIn < 0.0) inbuildTime = 0.0;
+    else inbuildTime = timeIn;
+  };
 
   /**
    * Get the number of frame which is determine by number of points
@@ -955,9 +992,9 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    *
    * @return {Number}
    */
-	this.getNumberOfTimeFrame = () => {
-		return numberOfCameraPoint;
-	}
+  this.getNumberOfTimeFrame = () => {
+    return numberOfCameraPoint;
+  };
 
   /**
    * Get the current time frame and it will return three values in
@@ -965,191 +1002,219 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    *
    * @return {Array} - bottom frame, top frame and the proportion.
    */
-	this.getCurrentTimeFrame = () => {
-	  if (numberOfCameraPoint > 2) {
-  		const current_time = inbuildTime/duration * (numberOfCameraPoint - 1);
-  		const bottom_frame =  Math.floor(current_time);
-  		const proportion = 1 - (current_time - bottom_frame);
-  		const top_frame =  Math.ceil(current_time);
-  		if (bottom_frame == top_frame) {
-  			if (bottom_frame == numberOfCameraPoint - 1) {
-  				return [bottom_frame - 1, top_frame, 0];
-  			} else {
-  				return [bottom_frame, top_frame + 1, 1.0];
-  			}
-  		}
-  		return [bottom_frame, top_frame, proportion];
-	  } else if (numberOfCameraPoint == 1) {
-	    return [0, 0, 0];
-	  }
+  this.getCurrentTimeFrame = () => {
+    if (numberOfCameraPoint > 2) {
+      const current_time = (inbuildTime / duration) * (numberOfCameraPoint - 1);
+      const bottom_frame = Math.floor(current_time);
+      const proportion = 1 - (current_time - bottom_frame);
+      const top_frame = Math.ceil(current_time);
+      if (bottom_frame == top_frame) {
+        if (bottom_frame == numberOfCameraPoint - 1) {
+          return [bottom_frame - 1, top_frame, 0];
+        } else {
+          return [bottom_frame, top_frame + 1, 1.0];
+        }
+      }
+      return [bottom_frame, top_frame, proportion];
+    } else if (numberOfCameraPoint == 1) {
+      return [0, 0, 0];
+    }
 
-	  return undefined;
-	}
+    return undefined;
+  };
 
   /**
    * Set the current time frame.
    *
    * @param {Number} targetTimeFrame - bottom frame, top frame and the proportion.
    */
-	this.setCurrentTimeFrame = targetTimeFrame => {
-		hasUpdated = true;
-	   if (numberOfCameraPoint > 2) {
-  		inbuildTime = duration * targetTimeFrame / (numberOfCameraPoint - 1);
-  		if (inbuildTime < 0.0)
-  			inbuildTime = 0.0;
-  		if (inbuildTime > duration)
-  			inbuildTime = duration;
-	   }
-	}
+  this.setCurrentTimeFrame = (targetTimeFrame) => {
+    hasUpdated = true;
+    if (numberOfCameraPoint > 2) {
+      inbuildTime = (duration * targetTimeFrame) / (numberOfCameraPoint - 1);
+      if (inbuildTime < 0.0) inbuildTime = 0.0;
+      if (inbuildTime > duration) inbuildTime = duration;
+    }
+  };
 
   /**
    * Update the progress on the path by the specified amount - delta.
    *
    * @param {Number} delta - The amount of time to increment
    */
-	const updatePath = delta => {
-		if (currentMode === MODE.PATH) {
-			updateTime(delta);
-			if (cameraPath) {
-				const time_frame = this.getCurrentTimeFrame();
-				const bottom_frame = time_frame[0];
-				const top_frame = time_frame[1];
-				const proportion = time_frame[2];
-				const bottom = bottom_frame * 3;
-				const top = top_frame * 3;
-				const x = proportion * cameraPath[bottom] + (1.0 - proportion) * cameraPath[top];
-				const y = proportion * cameraPath[bottom + 1] + (1.0 - proportion) * cameraPath[top + 1];
-				const z = proportion * cameraPath[bottom + 2] + (1.0 - proportion) * cameraPath[top + 2];
-				this.cameraObject.position.set(x, y, z);
-				this.cameraObject.target.set(cameraPath[top], cameraPath[top + 1], cameraPath[top + 2]);
-				if (deviceOrientationControl)
-					this.cameraObject.lookAt( this.cameraObject.target );
-				if (updateLightWithPathFlag) {
-					this.directionalLight.position.set(x, y, z);
-					this.directionalLight.target.position.set(cameraPath[top], cameraPath[top + 1],
-						cameraPath[top + 2]);
-				}
-			}
-		}
-	};
+  const updatePath = (delta) => {
+    if (currentMode === MODE.PATH) {
+      updateTime(delta);
+      if (cameraPath) {
+        const time_frame = this.getCurrentTimeFrame();
+        const bottom_frame = time_frame[0];
+        const top_frame = time_frame[1];
+        const proportion = time_frame[2];
+        const bottom = bottom_frame * 3;
+        const top = top_frame * 3;
+        const x = proportion * cameraPath[bottom] + (1.0 - proportion) * cameraPath[top];
+        const y = proportion * cameraPath[bottom + 1] + (1.0 - proportion) * cameraPath[top + 1];
+        const z = proportion * cameraPath[bottom + 2] + (1.0 - proportion) * cameraPath[top + 2];
+        this.cameraObject.position.set(x, y, z);
+        this.cameraObject.target.set(cameraPath[top], cameraPath[top + 1], cameraPath[top + 2]);
+        if (deviceOrientationControl) this.cameraObject.lookAt(this.cameraObject.target);
+        if (updateLightWithPathFlag) {
+          this.directionalLight.position.set(x, y, z);
+          this.directionalLight.target.position.set(
+            cameraPath[top],
+            cameraPath[top + 1],
+            cameraPath[top + 2],
+          );
+        }
+      }
+    }
+  };
 
   /**
    * Force recalculation of the current path.
    */
-	this.calculatePathNow = () => {
-		hasUpdated = true;
-	  updatePath(0.0);
-	}
+  this.calculatePathNow = () => {
+    hasUpdated = true;
+    updatePath(0.0);
+  };
 
   // handle synchronised control based on information in the idc
   const handleSyncControl = () => {
-    if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE) || (this._state === STATE.KEYBOARD_ROTATE)){
+    if (
+      this._state === STATE.ROTATE ||
+      this._state === STATE.TOUCH_ROTATE ||
+      this._state === STATE.KEYBOARD_ROTATE
+    ) {
       //rotateion does not trigger callback
       tumble();
-    } else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN) || (this._state === STATE.KEYBOARD_PAN)){
+    } else if (
+      this._state === STATE.PAN ||
+      this._state === STATE.TOUCH_PAN ||
+      this._state === STATE.KEYBOARD_PAN
+    ) {
       translate();
       ndcControl.triggerCallback();
-    } else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)){
+    } else if (
+      this._state === STATE.ZOOM ||
+      this._state === STATE.TOUCH_ZOOM ||
+      this._state === STATE.SCROLL ||
+      this._state === STATE.KEYBOARD_ZOOM
+    ) {
       ndcControl.zoom(calculateZoomDelta());
       this.previous_pointer_x = this.pointer_x;
       this.previous_pointer_y = this.pointer_y;
-      if ((this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)) {
+      if (this._state === STATE.SCROLL || this._state === STATE.KEYBOARD_ZOOM) {
         this._state = STATE.NONE;
       }
       zoomSize = 0;
       ndcControl.triggerCallback();
     }
-  }
+  };
 
   /**
    * Update all controls related changes - including calculation of the viewport.
    *
    * @param {Number} timeChanged - Time eclipse since last called.
    */
-	this.update = timeChanged => {
-		const delta = timeChanged * playRate;
-		let controlEnabled = enabled;
-		let updated = true;
-		if (currentMode === MODE.PATH) {
-			updatePath(delta);
-		} else if (currentMode === MODE.SMOOTH_CAMERA_TRANSITION && smoothCameraTransitionObject) {
-			smoothCameraTransitionObject.update(delta);
-			if (smoothCameraTransitionObject.isTransitionCompleted()) {
-				smoothCameraTransitionObject = undefined;
-				currentMode = MODE.DEFAULT;
-			}
-			controlEnabled = false;
-		} else if (currentMode === MODE.ROTATE_TRANSITION && rotateCameraTransitionObject) {
-			rotateCameraTransitionObject.update(delta);
-			if (rotateCameraTransitionObject.isTransitionCompleted()) {
-				rotateCameraTransitionObject = undefined;
-				currentMode = MODE.DEFAULT;
-			}
-			controlEnabled = false;
-		} else if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject) {
-			cameraAutoTumbleObject.update(delta);
-		} else if (currentMode === MODE.SYNC_CONTROL && ndcControl) {
+  this.update = (timeChanged) => {
+    const delta = timeChanged * playRate;
+    let controlEnabled = enabled;
+    let updated = true;
+    if (currentMode === MODE.PATH) {
+      updatePath(delta);
+    } else if (currentMode === MODE.SMOOTH_CAMERA_TRANSITION && smoothCameraTransitionObject) {
+      smoothCameraTransitionObject.update(delta);
+      if (smoothCameraTransitionObject.isTransitionCompleted()) {
+        smoothCameraTransitionObject = undefined;
+        currentMode = MODE.DEFAULT;
+      }
+      controlEnabled = false;
+    } else if (currentMode === MODE.ROTATE_TRANSITION && rotateCameraTransitionObject) {
+      rotateCameraTransitionObject.update(delta);
+      if (rotateCameraTransitionObject.isTransitionCompleted()) {
+        rotateCameraTransitionObject = undefined;
+        currentMode = MODE.DEFAULT;
+      }
+      controlEnabled = false;
+    } else if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject) {
+      cameraAutoTumbleObject.update(delta);
+    } else if (currentMode === MODE.SYNC_CONTROL && ndcControl) {
       handleSyncControl();
       controlEnabled = false;
     } else {
-			updated = false;
-		}
-		if (controlEnabled) {
-			if (this._state !== STATE.NONE) {
-				updated = true;
-			}
-			if ((this._state === STATE.ROTATE) || (this._state === STATE.TOUCH_ROTATE) || (this._state === STATE.KEYBOARD_ROTATE)){
-				tumble();
-			} else if ((this._state === STATE.PAN) || (this._state === STATE.TOUCH_PAN) || (this._state === STATE.KEYBOARD_PAN)){
-				translate();
-			} else if ((this._state === STATE.ZOOM) || (this._state === STATE.TOUCH_ZOOM) || (this._state === STATE.SCROLL) || (this._state === STATE.KEYBOARD_ZOOM)){
-				flyZoom();
-			}
-			if (this._state !== STATE.NONE) {
-				if (currentMode === MODE.AUTO_TUMBLE && cameraAutoTumbleObject &&
-						cameraAutoTumbleObject.stopOnCameraInput) {
-				}
-			}
-			if (this._state === STATE.SCROLL)
-				this._state = STATE.NONE;
-		}
-		if (deviceOrientationControl) {
-			updated = true;
-			deviceOrientationControl.update();
-			//this.directionalLight.target.position.set(this.cameraObject.target.x,
-			//	this.cameraObject.target.y, this.cameraObject.target.z);
-		} else {
-			this.cameraObject.lookAt( this.cameraObject.target );
-		}
+      updated = false;
+    }
+    if (controlEnabled) {
+      if (this._state !== STATE.NONE) {
+        updated = true;
+      }
+      if (
+        this._state === STATE.ROTATE ||
+        this._state === STATE.TOUCH_ROTATE ||
+        this._state === STATE.KEYBOARD_ROTATE
+      ) {
+        tumble();
+      } else if (
+        this._state === STATE.PAN ||
+        this._state === STATE.TOUCH_PAN ||
+        this._state === STATE.KEYBOARD_PAN
+      ) {
+        translate();
+      } else if (
+        this._state === STATE.ZOOM ||
+        this._state === STATE.TOUCH_ZOOM ||
+        this._state === STATE.SCROLL ||
+        this._state === STATE.KEYBOARD_ZOOM
+      ) {
+        flyZoom();
+      }
+      if (this._state !== STATE.NONE) {
+        if (
+          currentMode === MODE.AUTO_TUMBLE &&
+          cameraAutoTumbleObject &&
+          cameraAutoTumbleObject.stopOnCameraInput
+        ) {
+        }
+      }
+      if (this._state === STATE.SCROLL) this._state = STATE.NONE;
+    }
+    if (deviceOrientationControl) {
+      updated = true;
+      deviceOrientationControl.update();
+      //this.directionalLight.target.position.set(this.cameraObject.target.x,
+      //	this.cameraObject.target.y, this.cameraObject.target.z);
+    } else {
+      this.cameraObject.lookAt(this.cameraObject.target);
+    }
 
-		updated = updated || hasUpdated;
-		hasUpdated = false;
+    updated = updated || hasUpdated;
+    hasUpdated = false;
 
-		return updated;
-	};
+    return updated;
+  };
 
   /**
    * Switch to path mode and begin traveling through the camera path.
    */
-	this.playPath = () => {
-		currentMode = MODE.PATH;
-	}
+  this.playPath = () => {
+    currentMode = MODE.PATH;
+  };
 
   /**
    * Stop playing path and switch back to normal control.
    */
-	this.stopPath = () => {
-		currentMode = MODE.DEFAULT;
-	}
+  this.stopPath = () => {
+    currentMode = MODE.DEFAULT;
+  };
 
   /**
    * Check rather the control is currently in path mode.
    *
    * @return {Boolean}
    */
-	this.isPlayingPath = () => {
-		return (currentMode === MODE.PATH);
-	}
+  this.isPlayingPath = () => {
+    return currentMode === MODE.PATH;
+  };
 
   /**
    * Enable directional light update as the camera
@@ -1157,79 +1222,91 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    *
    * @param {Boolean} flag
    */
-	this.enableDirectionalLightUpdateWithPath = flag => {
-		updateLightWithPathFlag = flag;
-	}
+  this.enableDirectionalLightUpdateWithPath = (flag) => {
+    updateLightWithPathFlag = flag;
+  };
 
   /**
    * Enable rotation using the devices's accelerometer.
    */
-	this.enableDeviceOrientation = () => {
-		if (!deviceOrientationControl)
-			deviceOrientationControl = new ModifiedDeviceOrientationControls(this.cameraObject);
-	}
+  this.enableDeviceOrientation = () => {
+    if (!deviceOrientationControl)
+      deviceOrientationControl = new ModifiedDeviceOrientationControls(this.cameraObject);
+  };
 
   /**
    * Disable rotation using the devices's accelerometer.
    */
-	this.disableDeviceOrientation = () => {
-		if (deviceOrientationControl) {
-			deviceOrientationControl.dispose();
-			deviceOrientationControl = undefined;
-		}
-	}
+  this.disableDeviceOrientation = () => {
+    if (deviceOrientationControl) {
+      deviceOrientationControl.dispose();
+      deviceOrientationControl = undefined;
+    }
+  };
 
   /**
    * Check rather device orientation based on accelerometer is on.
    */
-	this.isDeviceOrientationEnabled = () => {
-		if (deviceOrientationControl) {
-			return true;
-		}
-		return false;
-	}
+  this.isDeviceOrientationEnabled = () => {
+    if (deviceOrientationControl) {
+      return true;
+    }
+    return false;
+  };
 
   /**
    * Reset the viewport settings to the one provided by default viewport.
    */
-	this.resetView = () => {
-		hasUpdated = true;
+  this.resetView = () => {
+    hasUpdated = true;
     const viewport = viewports[defaultViewport];
-		this.cameraObject.near = viewport.nearPlane;
-		this.cameraObject.far = viewport.farPlane;
-		this.cameraObject.position.set( viewport.eyePosition[0], viewport.eyePosition[1],
-      viewport.eyePosition[2]);
-		this.cameraObject.target.set( viewport.targetPosition[0],
-      viewport.targetPosition[1], viewport.targetPosition[2]  );
-		this.cameraObject.up.set( viewport.upVector[0],  viewport.upVector[1],
-      viewport.upVector[2]);
-		this.cameraObject.updateProjectionMatrix();
-		this.updateDirectionalLight();
-	}
+    this.cameraObject.near = viewport.nearPlane;
+    this.cameraObject.far = viewport.farPlane;
+    this.cameraObject.position.set(
+      viewport.eyePosition[0],
+      viewport.eyePosition[1],
+      viewport.eyePosition[2],
+    );
+    this.cameraObject.target.set(
+      viewport.targetPosition[0],
+      viewport.targetPosition[1],
+      viewport.targetPosition[2],
+    );
+    this.cameraObject.up.set(viewport.upVector[0], viewport.upVector[1], viewport.upVector[2]);
+    this.cameraObject.updateProjectionMatrix();
+    this.updateDirectionalLight();
+  };
 
   /**
    * Set the current camera settings with the provided viewport.
    *
    * @param {Viewport} newViewport - viewport settings.
    */
-	this.setCurrentCameraSettings = newViewport => {
-		if (newViewport.nearPlane)
-			this.cameraObject.near = newViewport.nearPlane;
-		if (newViewport.farPlane)
-			this.cameraObject.far = newViewport.farPlane;
-		if (newViewport.eyePosition)
-			this.cameraObject.position.set( newViewport.eyePosition[0],
-					newViewport.eyePosition[1], newViewport.eyePosition[2]);
-		if (newViewport.targetPosition)
-			this.cameraObject.target.set( newViewport.targetPosition[0],
-					newViewport.targetPosition[1], newViewport.targetPosition[2]  );
-		if (newViewport.upVector)
-			this.cameraObject.up.set( newViewport.upVector[0], newViewport.upVector[1],
-					newViewport.upVector[2]);
-		this.cameraObject.updateProjectionMatrix();
-		this.updateDirectionalLight();
-		hasUpdated = true;
-	}
+  this.setCurrentCameraSettings = (newViewport) => {
+    if (newViewport.nearPlane) this.cameraObject.near = newViewport.nearPlane;
+    if (newViewport.farPlane) this.cameraObject.far = newViewport.farPlane;
+    if (newViewport.eyePosition)
+      this.cameraObject.position.set(
+        newViewport.eyePosition[0],
+        newViewport.eyePosition[1],
+        newViewport.eyePosition[2],
+      );
+    if (newViewport.targetPosition)
+      this.cameraObject.target.set(
+        newViewport.targetPosition[0],
+        newViewport.targetPosition[1],
+        newViewport.targetPosition[2],
+      );
+    if (newViewport.upVector)
+      this.cameraObject.up.set(
+        newViewport.upVector[0],
+        newViewport.upVector[1],
+        newViewport.upVector[2],
+      );
+    this.cameraObject.updateProjectionMatrix();
+    this.updateDirectionalLight();
+    hasUpdated = true;
+  };
 
   /**
    * Get the viewport based on centre, radius, view_angle and clip distance.
@@ -1243,83 +1320,95 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    *
    * @return {Viewport}
    */
-	this.getViewportFromCentreAndRadius = (centreX, centreY, centreZ, radius, view_angle, clip_distance) => {
+  this.getViewportFromCentreAndRadius = (
+    centreX,
+    centreY,
+    centreZ,
+    radius,
+    view_angle,
+    clip_distance,
+  ) => {
     _a.copy(this.cameraObject.position);
     _a.sub(this.cameraObject.target);
     _a.normalize();
-		/* look at the centre of the sphere */
-		const localTargetPosition = [centreX, centreY, centreZ];
-		/* shift the eye position to achieve the desired view_angle */
-		const eye_distance = radius/Math.tan(view_angle*Math.PI/360.0);
-		const localEyePosition = [ centreX + _a.x*eye_distance,  centreY + _a.y*eye_distance,
-		                    centreZ + _a.z*eye_distance];
-		const localFarPlane = eye_distance+clip_distance;
-		let localNearPlane = 0.0;
-		const nearClippingFactor = 0.95;
-		if (clip_distance > nearClippingFactor*eye_distance)
-		{
-			localNearPlane = (1.0 - nearClippingFactor)*eye_distance;
-		}
-		else
-		{
-			localNearPlane = eye_distance - clip_distance;
-		}
-		const newViewport = new Viewport();
-		newViewport.nearPlane = localNearPlane;
-		newViewport.farPlane = localFarPlane;
-		newViewport.eyePosition = localEyePosition;
-		newViewport.targetPosition = localTargetPosition;
-		newViewport.upVector = [this.cameraObject.up.x, this.cameraObject.up.y,
-		                        this.cameraObject.up.z];
+    /* look at the centre of the sphere */
+    const localTargetPosition = [centreX, centreY, centreZ];
+    /* shift the eye position to achieve the desired view_angle */
+    const eye_distance = radius / Math.tan((view_angle * Math.PI) / 360.0);
+    const localEyePosition = [
+      centreX + _a.x * eye_distance,
+      centreY + _a.y * eye_distance,
+      centreZ + _a.z * eye_distance,
+    ];
+    const localFarPlane = eye_distance + clip_distance;
+    let localNearPlane = 0.0;
+    const nearClippingFactor = 0.95;
+    if (clip_distance > nearClippingFactor * eye_distance) {
+      localNearPlane = (1.0 - nearClippingFactor) * eye_distance;
+    } else {
+      localNearPlane = eye_distance - clip_distance;
+    }
+    const newViewport = new Viewport();
+    newViewport.nearPlane = localNearPlane;
+    newViewport.farPlane = localFarPlane;
+    newViewport.eyePosition = localEyePosition;
+    newViewport.targetPosition = localTargetPosition;
+    newViewport.upVector = [this.cameraObject.up.x, this.cameraObject.up.y, this.cameraObject.up.z];
 
-		return newViewport;
-	}
+    return newViewport;
+  };
 
-	  /**
+  /**
    * Get the viewport for the boudning box
    *
    * @param {Number} boundingBox - y coordinate of the centre.
    * @return {Viewport}
    */
-	this.getViewportFromBoundingBox = (boundingBox, radiusScale) => {
-		const radius = boundingBox.min.distanceTo(boundingBox.max) / 2.0 * radiusScale;
-		const centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
-		const centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
-		const centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
-		const clip_factor = 4.0;
-		const viewport = this.getViewportFromCentreAndRadius(
-			centreX, centreY, centreZ, radius, 40, radius * clip_factor);
-		return viewport;
-	}
+  this.getViewportFromBoundingBox = (boundingBox, radiusScale) => {
+    const radius = (boundingBox.min.distanceTo(boundingBox.max) / 2.0) * radiusScale;
+    const centreX = (boundingBox.min.x + boundingBox.max.x) / 2.0;
+    const centreY = (boundingBox.min.y + boundingBox.max.y) / 2.0;
+    const centreZ = (boundingBox.min.z + boundingBox.max.z) / 2.0;
+    const clip_factor = 4.0;
+    const viewport = this.getViewportFromCentreAndRadius(
+      centreX,
+      centreY,
+      centreZ,
+      radius,
+      40,
+      radius * clip_factor,
+    );
+    return viewport;
+  };
 
   /**
    * Get the current camera viewport.
    *
    * @return {Viewport}
    */
-	this.getCurrentViewport = () => {
-		const currentViewport = new Viewport();
-		currentViewport.nearPlane = this.cameraObject.near;
-		currentViewport.farPlane = this.cameraObject.far;
-		currentViewport.eyePosition[0] = this.cameraObject.position.x;
-		currentViewport.eyePosition[1] = this.cameraObject.position.y;
-		currentViewport.eyePosition[2] = this.cameraObject.position.z;
-		currentViewport.targetPosition[0] = this.cameraObject.target.x;
-		currentViewport.targetPosition[1] = this.cameraObject.target.y;
-		currentViewport.targetPosition[2] = this.cameraObject.target.z;
-		currentViewport.upVector[0] = this.cameraObject.up.x;
-		currentViewport.upVector[1] = this.cameraObject.up.y;
-		currentViewport.upVector[2] = this.cameraObject.up.z;
-		return currentViewport;
-	}
+  this.getCurrentViewport = () => {
+    const currentViewport = new Viewport();
+    currentViewport.nearPlane = this.cameraObject.near;
+    currentViewport.farPlane = this.cameraObject.far;
+    currentViewport.eyePosition[0] = this.cameraObject.position.x;
+    currentViewport.eyePosition[1] = this.cameraObject.position.y;
+    currentViewport.eyePosition[2] = this.cameraObject.position.z;
+    currentViewport.targetPosition[0] = this.cameraObject.target.x;
+    currentViewport.targetPosition[1] = this.cameraObject.target.y;
+    currentViewport.targetPosition[2] = this.cameraObject.target.z;
+    currentViewport.upVector[0] = this.cameraObject.up.x;
+    currentViewport.upVector[1] = this.cameraObject.up.y;
+    currentViewport.upVector[2] = this.cameraObject.up.z;
+    return currentViewport;
+  };
 
-	this.getDefaultEyePosition = () => {
-		return eyePosition;
-	}
+  this.getDefaultEyePosition = () => {
+    return eyePosition;
+  };
 
-	this.getDefaultTargetPosition = () => {
-		return targetPosition;
-	}
+  this.getDefaultTargetPosition = () => {
+    return targetPosition;
+  };
 
   /**
    * Setup a smooth transition object which transition the camera from one
@@ -1332,11 +1421,15 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {Viewport} endingViewport - the viewport ti end the transistion with.
    * @param {Number} durationIn - duration of the smooth transition.
    */
-	this.cameraTransition = (startingViewport, endingViewport, durationIn) => {
-	  if (rotateCameraTransitionObject == undefined)
-	    smoothCameraTransitionObject = new SmoothCameraTransition(startingViewport, endingViewport,
-	        this, durationIn);
-	}
+  this.cameraTransition = (startingViewport, endingViewport, durationIn) => {
+    if (rotateCameraTransitionObject == undefined)
+      smoothCameraTransitionObject = new SmoothCameraTransition(
+        startingViewport,
+        endingViewport,
+        this,
+        durationIn,
+      );
+  };
 
   /**
    * Setup a rotate camera transition object which rotate the
@@ -1350,48 +1443,44 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {Number} angle - the viewport ti end the transistion with.
    * @param {Number} duration - duration of the smooth transition.
    */
-	this.rotateCameraTransition = (axis, angle, duration) => {
-	  if (smoothCameraTransitionObject == undefined)
-	    rotateCameraTransitionObject = new RotateCameraTransition(axis, angle,
-	      this, duration);
-	}
+  this.rotateCameraTransition = (axis, angle, duration) => {
+    if (smoothCameraTransitionObject == undefined)
+      rotateCameraTransitionObject = new RotateCameraTransition(axis, angle, this, duration);
+  };
 
   /**
    * Enable camera transition, {@link rotateCameraTransition} amd
    * {@link cameraTransition} must be called before camera transition can
    * be enabled.
    */
-	this.enableCameraTransition = () => {
-	  if (smoothCameraTransitionObject)
-	    currentMode = MODE.SMOOTH_CAMERA_TRANSITION;
-	  if (rotateCameraTransitionObject)
-	    currentMode = MODE.ROTATE_TRANSITION;
-	}
+  this.enableCameraTransition = () => {
+    if (smoothCameraTransitionObject) currentMode = MODE.SMOOTH_CAMERA_TRANSITION;
+    if (rotateCameraTransitionObject) currentMode = MODE.ROTATE_TRANSITION;
+  };
 
   /**
    * Pause the camera transition.
    */
-	this.pauseCameraTransition = () => {
-		currentMode = MODE.DEFAULT;
-	}
+  this.pauseCameraTransition = () => {
+    currentMode = MODE.DEFAULT;
+  };
 
   /**
    * Stop the camera transition and remove camera transition
    * and rotate camera transition.
    */
-	this.stopCameraTransition = () => {
-		currentMode = MODE.DEFAULT;
-		smoothCameraTransitionObject = undefined;
-		rotateCameraTransitionObject = undefined;
-	}
+  this.stopCameraTransition = () => {
+    currentMode = MODE.DEFAULT;
+    smoothCameraTransitionObject = undefined;
+    rotateCameraTransitionObject = undefined;
+  };
 
   /**
    * Check if camera transition is active.
    */
-	this.isTransitioningCamera = () => {
-		return (currentMode === MODE.SMOOTH_CAMERA_TRANSITION ||
-		    currentMode === MODE.ROTATE_TRANSITION);
-	}
+  this.isTransitioningCamera = () => {
+    return currentMode === MODE.SMOOTH_CAMERA_TRANSITION || currentMode === MODE.ROTATE_TRANSITION;
+  };
 
   /**
    * Setup auto tumble object of the camera which will rotate the camera
@@ -1404,41 +1493,45 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    * @param {Boolean} stopOnCameraInputIn - Disable the tumbling once the user
    * start interacting with the scene.
    */
-	this.autoTumble = (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn) => {
-		cameraAutoTumbleObject = new CameraAutoTumble(tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, this);
-	}
+  this.autoTumble = (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn) => {
+    cameraAutoTumbleObject = new CameraAutoTumble(
+      tumbleDirectionIn,
+      tumbleRateIn,
+      stopOnCameraInputIn,
+      this,
+    );
+  };
 
   /**
    * Enable autotumble.
    */
-	this.enableAutoTumble = () => {
-		currentMode = MODE.AUTO_TUMBLE;
-	}
+  this.enableAutoTumble = () => {
+    currentMode = MODE.AUTO_TUMBLE;
+  };
 
   /**
    * Disable the autotumble.
    */
-	this.stopAutoTumble = () => {
-		currentMode = MODE.DEFAULT;
-		cameraAutoTumbleObject = undefined;
-	}
+  this.stopAutoTumble = () => {
+    currentMode = MODE.DEFAULT;
+    cameraAutoTumbleObject = undefined;
+  };
 
   /**
    * Update the autotumble object.
    */
-	this.updateAutoTumble = () => {
-		if (cameraAutoTumbleObject)
-			cameraAutoTumbleObject.requireUpdate = true;
-	}
+  this.updateAutoTumble = () => {
+    if (cameraAutoTumbleObject) cameraAutoTumbleObject.requireUpdate = true;
+  };
 
   /**
    * Check rather autotumble is active.
    *
    * @return {Boolean}
    */
-	this.isAutoTumble = () => {
-		return (currentMode === MODE.AUTO_TUMBLE);
-	}
+  this.isAutoTumble = () => {
+    return currentMode === MODE.AUTO_TUMBLE;
+  };
 
   /**
    * Create an internal raycaster object and enable it for picking.
@@ -1451,8 +1544,14 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    */
   this.enableRaycaster = (sceneIn, callbackFunctionIn, hoverCallbackFunctionIn) => {
     if (zincRayCaster == undefined)
-      zincRayCaster = new RayCaster(sceneIn, this.scene, callbackFunctionIn, hoverCallbackFunctionIn, this.renderer);
-  }
+      zincRayCaster = new RayCaster(
+        sceneIn,
+        this.scene,
+        callbackFunctionIn,
+        hoverCallbackFunctionIn,
+        this.renderer,
+      );
+  };
 
   /**
    * Disable raycaster and remove the internal ray caster object.
@@ -1460,7 +1559,7 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
   this.disableRaycaster = () => {
     zincRayCaster.disable();
     zincRayCaster = undefined;
-  }
+  };
 
   /**
    * Check rather the camera is in syncControl mode.
@@ -1469,19 +1568,17 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
    */
   this.isSyncControl = () => {
     return currentMpde === MODE.SYNC_CONTROL;
-  }
+  };
 
   /**
    * Enable syncControl.
    */
   this.enableSyncControl = () => {
     currentMode = MODE.SYNC_CONTROL;
-    if (!ndcControl)
-      ndcControl = new NDCCameraControl();
-    ndcControl.setCurrentCameraSettings(this.cameraObject,
-      viewports[defaultViewport]);
+    if (!ndcControl) ndcControl = new NDCCameraControl();
+    ndcControl.setCurrentCameraSettings(this.cameraObject, viewports[defaultViewport]);
     return ndcControl;
-  }
+  };
 
   /**
    * Disable syncControl.
@@ -1490,73 +1587,78 @@ const CameraControls = function ( object, domElement, renderer, scene ) {
     currentMode = MODE.DEFAULT;
     this.cameraObject.zoom = 1;
     this.cameraObject.updateProjectionMatrix();
-  }
+  };
 
-	this.enable();
-
+  this.enable();
 };
 
-const SmoothCameraTransition = function(startingViewport, endingViewport, targetCameraIn, durationIn) {
-	const startingEyePosition = startingViewport.eyePosition;
-	const startingTargetPosition = startingViewport.targetPosition;
-	const endingEyePosition = endingViewport.eyePosition;
-	const endingTargetPosition = endingViewport.targetPosition;
-	const targetCamera = targetCameraIn;
-	let duration = durationIn;
-	let inbuildTime = 0;
-	const enabled = true;
-	const updateLightWithPathFlag = true;
-	let completed = false;
-	targetCamera.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
-	targetCamera.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
-	targetCamera.cameraObject.up.set( endingViewport.upVector[0],  endingViewport.upVector[1],
-      endingViewport.upVector[2]);
+const SmoothCameraTransition = function (
+  startingViewport,
+  endingViewport,
+  targetCameraIn,
+  durationIn,
+) {
+  const startingEyePosition = startingViewport.eyePosition;
+  const startingTargetPosition = startingViewport.targetPosition;
+  const endingEyePosition = endingViewport.eyePosition;
+  const endingTargetPosition = endingViewport.targetPosition;
+  const targetCamera = targetCameraIn;
+  let duration = durationIn;
+  let inbuildTime = 0;
+  const enabled = true;
+  const updateLightWithPathFlag = true;
+  let completed = false;
+  targetCamera.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
+  targetCamera.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
+  targetCamera.cameraObject.up.set(
+    endingViewport.upVector[0],
+    endingViewport.upVector[1],
+    endingViewport.upVector[2],
+  );
 
-  this.setDuration = newDuration => {
+  this.setDuration = (newDuration) => {
     duration = newDuration;
-  }
+  };
 
-	const updateTime = delta => {
-		let targetTime = inbuildTime + delta;
-		if (targetTime > duration)
-			targetTime = duration;
-		inbuildTime = targetTime;
-	};
+  const updateTime = (delta) => {
+    let targetTime = inbuildTime + delta;
+    if (targetTime > duration) targetTime = duration;
+    inbuildTime = targetTime;
+  };
 
-	const updateCameraSettings = () => {
-		const ratio = inbuildTime / duration;
-		const start = 1.0 - ratio;
-		targetCamera.cameraObject.position.set(
-			startingEyePosition[0] * start + endingEyePosition[0] * ratio,
-			startingEyePosition[1] * start + endingEyePosition[1] * ratio,
-			startingEyePosition[2] * start + endingEyePosition[2] * ratio);
-		targetCamera.cameraObject.target.set(
-			startingTargetPosition[0] * start + endingTargetPosition[0] * ratio,
-			startingTargetPosition[1] * start + endingTargetPosition[1] * ratio,
-			startingTargetPosition[2] * start + endingTargetPosition[2] * ratio);
-	};
+  const updateCameraSettings = () => {
+    const ratio = inbuildTime / duration;
+    const start = 1.0 - ratio;
+    targetCamera.cameraObject.position.set(
+      startingEyePosition[0] * start + endingEyePosition[0] * ratio,
+      startingEyePosition[1] * start + endingEyePosition[1] * ratio,
+      startingEyePosition[2] * start + endingEyePosition[2] * ratio,
+    );
+    targetCamera.cameraObject.target.set(
+      startingTargetPosition[0] * start + endingTargetPosition[0] * ratio,
+      startingTargetPosition[1] * start + endingTargetPosition[1] * ratio,
+      startingTargetPosition[2] * start + endingTargetPosition[2] * ratio,
+    );
+  };
 
-	this.update = delta => {
+  this.update = (delta) => {
+    if (this.enabled === false) return;
 
-		if ( this.enabled === false ) return;
+    updateTime(delta);
 
-		updateTime(delta);
+    updateCameraSettings();
 
-		updateCameraSettings();
+    if (inbuildTime == duration) {
+      completed = true;
+    }
+  };
 
-		if (inbuildTime == duration) {
-			completed = true;
-		}
-
-	}
-
-	this.isTransitionCompleted = () => {
-		return completed;
-	}
-
+  this.isTransitionCompleted = () => {
+    return completed;
+  };
 };
 
-const RotateCameraTransition = function(axisIn, angleIn, targetCameraIn, durationIn) {
+const RotateCameraTransition = function (axisIn, angleIn, targetCameraIn, durationIn) {
   const axis = axisIn;
   const angle = angleIn;
   const targetCamera = targetCameraIn;
@@ -1566,15 +1668,14 @@ const RotateCameraTransition = function(axisIn, angleIn, targetCameraIn, duratio
   const ratio = inbuildTime / duration;
   let completed = false;
 
-  this.setDuration = newDuration => {
+  this.setDuration = (newDuration) => {
     duration = newDuration;
-  }
+  };
 
-  const updateCameraSettings = delta => {
+  const updateCameraSettings = (delta) => {
     const previousTime = inbuildTime;
     let targetTime = inbuildTime + delta;
-    if (targetTime > duration)
-      targetTime = duration;
+    if (targetTime > duration) targetTime = duration;
     inbuildTime = targetTime;
     const actualDelta = inbuildTime - previousTime;
     const ratio = actualDelta / duration;
@@ -1582,52 +1683,56 @@ const RotateCameraTransition = function(axisIn, angleIn, targetCameraIn, duratio
     targetCamera.rotateAboutLookAtpoint(axis, alpha);
   };
 
-  this.update = delta => {
-
-    if ( this.enabled === false ) return;
+  this.update = (delta) => {
+    if (this.enabled === false) return;
 
     updateCameraSettings(delta);
 
     if (inbuildTime == duration) {
       completed = true;
     }
-
-  }
+  };
 
   this.isTransitionCompleted = () => {
     return completed;
-  }
-}
+  };
+};
 
-const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallbackFunctionIn, rendererIn) {
+const RayCaster = function (
+  sceneIn,
+  hostSceneIn,
+  callbackFunctionIn,
+  hoverCallbackFunctionIn,
+  rendererIn,
+) {
   const scene = sceneIn;
   const hostScene = hostSceneIn;
-	const renderer = rendererIn;
-	const callbackFunction = callbackFunctionIn;
-	const hoverCallbackFunction = hoverCallbackFunctionIn;
-	let enabled = true;
-	const raycaster = new THREE.Raycaster();
-	raycaster.params.Line.threshold = 0.1;
-	raycaster.params.Points.threshold = 1;
+  const renderer = rendererIn;
+  const callbackFunction = callbackFunctionIn;
+  const hoverCallbackFunction = hoverCallbackFunctionIn;
+  let enabled = true;
+  const raycaster = new THREE.Raycaster();
+  raycaster.params.Line.threshold = 0.1;
+  raycaster.params.Points.threshold = 1;
   const mouse = new THREE.Vector2();
   let awaiting = false;
   let lastHoveredDate = new Date();
   let lastHoveredEmpty = false;
   let timeDiff = 0;
   let pickedObjects = new Array();
-  let lastPosition = { zincCamera: undefined, x: -1 ,y: -1};
+  let lastPosition = { zincCamera: undefined, x: -1, y: -1 };
   let hoverFrameRequested = false;
-	let pickableObjects = undefined;
+  let pickableObjects = undefined;
 
-	this.enable = () => {
-		enabled = true;
-	}
+  this.enable = () => {
+    enabled = true;
+  };
 
-	this.disable = () => {
-		enabled = false;
-	}
+  this.disable = () => {
+    enabled = false;
+  };
 
-	this.getIntersectsObject = (zincCamera) => {
+  this.getIntersectsObject = (zincCamera) => {
     if (hostScene !== scene) {
       //Only the world matrices need to be up to date for raycasting
       scene.getThreeJSScene().updateMatrixWorld();
@@ -1635,52 +1740,56 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
     let objects = pickableObjects ? pickableObjects : scene.getPickableThreeJSObjects();
     //Reset pickedObjects array
     pickedObjects.length = 0;
-		return raycaster.intersectObjects( objects, true, pickedObjects );
-	}
+    return raycaster.intersectObjects(objects, true, pickedObjects);
+  };
 
-	this.setPickableObjects = (zincObjects) => {
-		if (zincObjects === undefined) {
-			pickableObjects = undefined;
-		} else {
-			pickableObjects = [];
-			zincObjects.forEach(zincObject => {
-				if (zincObject.getGroup() && zincObject.getGroup().visible) {
-					pickableObjects.push(zincObject.getGroup());
-				}
-			});
-		}
-	}
+  this.setPickableObjects = (zincObjects) => {
+    if (zincObjects === undefined) {
+      pickableObjects = undefined;
+    } else {
+      pickableObjects = [];
+      zincObjects.forEach((zincObject) => {
+        if (zincObject.getGroup() && zincObject.getGroup().visible) {
+          pickableObjects.push(zincObject.getGroup());
+        }
+      });
+    }
+  };
 
-	this.getIntersectsObjectWithOrigin = (zincCamera, origin, direction) => {
-		raycaster.set(origin, direction);
-		return this.getIntersectsObject(zincCamera);
-	}
+  this.getIntersectsObjectWithOrigin = (zincCamera, origin, direction) => {
+    raycaster.set(origin, direction);
+    return this.getIntersectsObject(zincCamera);
+  };
 
-	this.getIntersectsObjectWithCamera = (zincCamera, x, y) => {
+  this.getIntersectsObjectWithCamera = (zincCamera, x, y) => {
     zincCamera.getNDCFromDocumentCoords(x, y, mouse);
-		raycaster.setFromCamera(mouse, zincCamera.cameraObject);
-		return this.getIntersectsObject(zincCamera);
-	};
+    raycaster.setFromCamera(mouse, zincCamera.cameraObject);
+    return this.getIntersectsObject(zincCamera);
+  };
 
-	this.pick = (zincCamera, x, y) => {
-		if (enabled && renderer && scene && zincCamera && callbackFunction) {
-			this.getIntersectsObjectWithCamera(zincCamera, x, y);
-			const length = pickedObjects.length;
-			for (let i = 0; i < length; i++) {
-				let zincObject = pickedObjects[i].object ? pickedObjects[i].object.userData : undefined;
-				if (zincObject && zincObject.isMarkerCluster && zincObject.visible
-					&& zincObject.clusterIsVisible(pickedObjects[i].object.clusterIndex)) {
-					//Can zoom into cluster
-					if (zincObject.zoomToCluster(pickedObjects[i].object.clusterIndex)) {
-						return;
-					}
-				}
-			}
-			callbackFunction(pickedObjects, x, y);
-			//The callback may have changed what is displayed
-			hostScene?.invalidate?.();
-		}
-  }
+  this.pick = (zincCamera, x, y) => {
+    if (enabled && renderer && scene && zincCamera && callbackFunction) {
+      this.getIntersectsObjectWithCamera(zincCamera, x, y);
+      const length = pickedObjects.length;
+      for (let i = 0; i < length; i++) {
+        let zincObject = pickedObjects[i].object ? pickedObjects[i].object.userData : undefined;
+        if (
+          zincObject &&
+          zincObject.isMarkerCluster &&
+          zincObject.visible &&
+          zincObject.clusterIsVisible(pickedObjects[i].object.clusterIndex)
+        ) {
+          //Can zoom into cluster
+          if (zincObject.zoomToCluster(pickedObjects[i].object.clusterIndex)) {
+            return;
+          }
+        }
+      }
+      callbackFunction(pickedObjects, x, y);
+      //The callback may have changed what is displayed
+      hostScene?.invalidate?.();
+    }
+  };
 
   let hovered = (zincCamera, x, y) => {
     if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
@@ -1688,8 +1797,7 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
       lastHoveredDate.setTime(Date.now());
       if (pickedObjects.length === 0) {
         //skip hovered callback if the previous one is empty
-        if (lastHoveredEmpty)
-          return
+        if (lastHoveredEmpty) return;
         lastHoveredEmpty = true;
       } else {
         lastHoveredEmpty = false;
@@ -1698,9 +1806,9 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
       //The callback may have changed what is displayed
       hostScene?.invalidate?.();
     }
-  }
+  };
 
-	this.move = (zincCamera, x, y) => {
+  this.move = (zincCamera, x, y) => {
     if (enabled && renderer && scene && zincCamera && hoverCallbackFunction) {
       lastPosition.zincCamera = zincCamera;
       lastPosition.x = x;
@@ -1729,162 +1837,157 @@ const RayCaster = function (sceneIn, hostSceneIn, callbackFunctionIn, hoverCallb
         }
       }
     }
-  }
+  };
 
   let awaitMove = (lastPosition) => {
-    return function() {
+    return function () {
       awaiting = false;
       hovered(lastPosition.zincCamera, lastPosition.x, lastPosition.y);
-    }
-  }
+    };
+  };
 };
 
-const CameraAutoTumble = function (tumbleDirectionIn, tumbleRateIn, stopOnCameraInputIn, targetCameraIn) {
-	const tumbleAxis = new THREE.Vector3();
-	const angle = -tumbleRateIn;
-	const targetCamera = targetCameraIn;
-	const enabled = true;
-	const updateLightWithPathFlag = true;
-	const tumbleDirection = tumbleDirectionIn;
-	this.stopOnCameraInput = stopOnCameraInputIn;
+const CameraAutoTumble = function (
+  tumbleDirectionIn,
+  tumbleRateIn,
+  stopOnCameraInputIn,
+  targetCameraIn,
+) {
+  const tumbleAxis = new THREE.Vector3();
+  const angle = -tumbleRateIn;
+  const targetCamera = targetCameraIn;
+  const enabled = true;
+  const updateLightWithPathFlag = true;
+  const tumbleDirection = tumbleDirectionIn;
+  this.stopOnCameraInput = stopOnCameraInputIn;
   this.requireUpdate = true;
   const b = new THREE.Vector3();
   const c = new THREE.Vector3();
 
-	const computeTumbleAxisAngle = tumbleDirection => {
-		const tangent_dist = Math.sqrt(tumbleDirection[0]*tumbleDirection[0] +
-			tumbleDirection[1]*tumbleDirection[1]);
-		const width = Math.abs(tumbleDirection[0]) * 4.0;
-		const height = Math.abs(tumbleDirection[1]) * 4.0;
-		const radius = 0.25 * (width + height);
-		const dx = -tumbleDirection[1]/tangent_dist;
-		const dy = tumbleDirection[0]/tangent_dist;
-		let d = dx*(tumbleDirection[0])+dy*(-tumbleDirection[1]);
+  const computeTumbleAxisAngle = (tumbleDirection) => {
+    const tangent_dist = Math.sqrt(
+      tumbleDirection[0] * tumbleDirection[0] + tumbleDirection[1] * tumbleDirection[1],
+    );
+    const width = Math.abs(tumbleDirection[0]) * 4.0;
+    const height = Math.abs(tumbleDirection[1]) * 4.0;
+    const radius = 0.25 * (width + height);
+    const dx = -tumbleDirection[1] / tangent_dist;
+    const dy = tumbleDirection[0] / tangent_dist;
+    let d = dx * tumbleDirection[0] + dy * -tumbleDirection[1];
 
-		if (d > radius)
-		{
-			d = radius;
-		}
-		else
-		{
-			if (d < -radius)
-			{
-				d = -radius;
-			}
-		}
+    if (d > radius) {
+      d = radius;
+    } else {
+      if (d < -radius) {
+        d = -radius;
+      }
+    }
 
-		const phi=Math.acos(d/radius)-0.5*Math.PI;
-		/* get axis to rotate about */
-		tumbleAxis.copy(targetCamera.cameraObject.position).sub(
-      targetCamera.cameraObject.target).normalize();
-		b.copy(targetCamera.cameraObject.up).normalize();
+    const phi = Math.acos(d / radius) - 0.5 * Math.PI;
+    /* get axis to rotate about */
+    tumbleAxis
+      .copy(targetCamera.cameraObject.position)
+      .sub(targetCamera.cameraObject.target)
+      .normalize();
+    b.copy(targetCamera.cameraObject.up).normalize();
     c.crossVectors(b, tumbleAxis).normalize().multiplyScalar(dx);
     b.multiplyScalar(dy);
     b.add(c).multiplyScalar(Math.cos(phi));
     tumbleAxis.multiplyScalar(Math.sin(phi)).add(b);
-	};
+  };
 
-	this.update = delta => {
+  this.update = (delta) => {
+    if (this.enabled === false) return;
 
-		if ( this.enabled === false ) return;
-
-		if (this.requireUpdate) {
-			computeTumbleAxisAngle(tumbleDirection);
-			this.requireUpdate = false;
-		}
-		targetCamera.rotateAboutLookAtpoint(tumbleAxis, angle * delta/1000);
-
-	}
-
+    if (this.requireUpdate) {
+      computeTumbleAxisAngle(tumbleDirection);
+      this.requireUpdate = false;
+    }
+    targetCamera.rotateAboutLookAtpoint(tumbleAxis, (angle * delta) / 1000);
+  };
 };
 
 /**
  * @author mrdoob / http://mrdoob.com/
  */
 const StereoCameraZoomFixed = function () {
+  this.type = 'StereoCamera';
 
-	this.type = 'StereoCamera';
+  this.aspect = 1;
 
-	this.aspect = 1;
+  this.cameraL = new THREE.PerspectiveCamera();
+  this.cameraL.layers.enable(1);
+  this.cameraL.matrixAutoUpdate = false;
 
-	this.cameraL = new THREE.PerspectiveCamera();
-	this.cameraL.layers.enable( 1 );
-	this.cameraL.matrixAutoUpdate = false;
-
-	this.cameraR = new THREE.PerspectiveCamera();
-	this.cameraR.layers.enable( 2 );
-	this.cameraR.matrixAutoUpdate = false;
-
+  this.cameraR = new THREE.PerspectiveCamera();
+  this.cameraR.layers.enable(2);
+  this.cameraR.matrixAutoUpdate = false;
 };
 
-Object.assign( StereoCameraZoomFixed.prototype, {
+Object.assign(StereoCameraZoomFixed.prototype, {
+  update: (() => {
+    let focus, fov, aspect, near, far, zoom;
 
-	update: (() => {
+    const eyeRight = new THREE.Matrix4();
+    const eyeLeft = new THREE.Matrix4();
 
-		let focus, fov, aspect, near, far, zoom;
+    return function update(camera) {
+      const needsUpdate =
+        focus !== camera.focus ||
+        fov !== camera.fov ||
+        aspect !== camera.aspect * this.aspect ||
+        near !== camera.near ||
+        far !== camera.far ||
+        zoom !== camera.zoom;
 
-		const eyeRight = new THREE.Matrix4();
-		const eyeLeft = new THREE.Matrix4();
+      if (needsUpdate) {
+        focus = camera.focus;
+        fov = camera.fov;
+        aspect = camera.aspect * this.aspect;
+        near = camera.near;
+        far = camera.far;
+        zoom = camera.zoom;
 
-		return function update( camera ) {
+        // Off-axis stereoscopic effect based on
+        // http://paulbourke.net/stereographics/stereorender/
 
-			const needsUpdate = focus !== camera.focus || fov !== camera.fov ||
-												aspect !== camera.aspect * this.aspect || near !== camera.near ||
-												far !== camera.far || zoom !== camera.zoom;
+        const projectionMatrix = camera.projectionMatrix.clone();
+        const eyeSep = 0.064 / 2;
+        const eyeSepOnProjection = (eyeSep * near) / focus;
+        const ymax = (near * Math.tan(THREE.MathUtils.DEG2RAD * fov * 0.5)) / camera.zoom;
+        let xmin, xmax;
 
-			if ( needsUpdate ) {
+        // translate xOffset
 
-				focus = camera.focus;
-				fov = camera.fov;
-				aspect = camera.aspect * this.aspect;
-				near = camera.near;
-				far = camera.far;
-				zoom = camera.zoom;
+        eyeLeft.elements[12] = -eyeSep;
+        eyeRight.elements[12] = eyeSep;
 
-				// Off-axis stereoscopic effect based on
-				// http://paulbourke.net/stereographics/stereorender/
+        // for left eye
 
-				const projectionMatrix = camera.projectionMatrix.clone();
-				const eyeSep = 0.064 / 2;
-				const eyeSepOnProjection = eyeSep * near / focus;
-				const ymax = near * Math.tan( THREE.MathUtils.DEG2RAD * fov * 0.5 ) / camera.zoom;
-				let xmin, xmax;
+        xmin = -ymax * aspect + eyeSepOnProjection;
+        xmax = ymax * aspect + eyeSepOnProjection;
 
-				// translate xOffset
+        projectionMatrix.elements[0] = (2 * near) / (xmax - xmin);
+        projectionMatrix.elements[8] = (xmax + xmin) / (xmax - xmin);
 
-				eyeLeft.elements[ 12 ] = - eyeSep;
-				eyeRight.elements[ 12 ] = eyeSep;
+        this.cameraL.projectionMatrix.copy(projectionMatrix);
 
-				// for left eye
+        // for right eye
 
-				xmin = - ymax * aspect + eyeSepOnProjection;
-				xmax = ymax * aspect + eyeSepOnProjection;
+        xmin = -ymax * aspect - eyeSepOnProjection;
+        xmax = ymax * aspect - eyeSepOnProjection;
 
-				projectionMatrix.elements[ 0 ] = 2 * near / ( xmax - xmin );
-				projectionMatrix.elements[ 8 ] = ( xmax + xmin ) / ( xmax - xmin );
+        projectionMatrix.elements[0] = (2 * near) / (xmax - xmin);
+        projectionMatrix.elements[8] = (xmax + xmin) / (xmax - xmin);
 
-				this.cameraL.projectionMatrix.copy( projectionMatrix );
+        this.cameraR.projectionMatrix.copy(projectionMatrix);
+      }
 
-				// for right eye
-
-				xmin = - ymax * aspect - eyeSepOnProjection;
-				xmax = ymax * aspect - eyeSepOnProjection;
-
-				projectionMatrix.elements[ 0 ] = 2 * near / ( xmax - xmin );
-				projectionMatrix.elements[ 8 ] = ( xmax + xmin ) / ( xmax - xmin );
-
-				this.cameraR.projectionMatrix.copy( projectionMatrix );
-
-			}
-
-			this.cameraL.matrixWorld.copy( camera.matrixWorld ).multiply( eyeLeft );
-			this.cameraR.matrixWorld.copy( camera.matrixWorld ).multiply( eyeRight );
-
-		};
-
-	})()
-
-} );
+      this.cameraL.matrixWorld.copy(camera.matrixWorld).multiply(eyeLeft);
+      this.cameraR.matrixWorld.copy(camera.matrixWorld).multiply(eyeRight);
+    };
+  })(),
+});
 
 /** the following StereoEffect is written by third party */
 /**
@@ -1892,45 +1995,38 @@ Object.assign( StereoCameraZoomFixed.prototype, {
  * @authod mrdoob / http://mrdoob.com/
  * @authod arodic / http://aleksandarrodic.com/
  * @authod fonserbc / http://fonserbc.github.io/
-*/
-const StereoEffect = function ( renderer ) {
+ */
+const StereoEffect = function (renderer) {
+  const _stereo = new StereoCameraZoomFixed();
+  _stereo.aspect = 0.5;
 
-	const _stereo = new StereoCameraZoomFixed();
-	_stereo.aspect = 0.5;
+  this.setSize = (width, height) => {
+    renderer.setSize(width, height);
+  };
 
-	this.setSize = (width, height) => {
+  this.render = (scene, camera) => {
+    scene.updateMatrixWorld();
 
-		renderer.setSize( width, height );
+    if (camera.parent === null) camera.updateMatrixWorld();
 
-	};
+    _stereo.update(camera);
 
-	this.render = (scene, camera) => {
+    const size = renderer.getSize();
 
-		scene.updateMatrixWorld();
+    renderer.setScissorTest(true);
+    renderer.clear();
 
-		if ( camera.parent === null ) camera.updateMatrixWorld();
+    renderer.setScissor(0, 0, size.width / 2, size.height);
+    renderer.setViewport(0, 0, size.width / 2, size.height);
+    renderer.render(scene, _stereo.cameraL);
 
-		_stereo.update( camera );
+    renderer.setScissor(size.width / 2, 0, size.width / 2, size.height);
+    renderer.setViewport(size.width / 2, 0, size.width / 2, size.height);
+    renderer.render(scene, _stereo.cameraR);
 
-		const size = renderer.getSize();
-
-		renderer.setScissorTest( true );
-		renderer.clear();
-
-		renderer.setScissor( 0, 0, size.width / 2, size.height );
-		renderer.setViewport( 0, 0, size.width / 2, size.height );
-		renderer.render( scene, _stereo.cameraL );
-
-		renderer.setScissor( size.width / 2, 0, size.width / 2, size.height );
-		renderer.setViewport( size.width / 2, 0, size.width / 2, size.height );
-		renderer.render( scene, _stereo.cameraR );
-
-		renderer.setScissorTest( false );
-
-	};
-
+    renderer.setScissorTest(false);
+  };
 };
-
 
 /**
  * @author richt / http://richt.me
@@ -1939,113 +2035,102 @@ const StereoEffect = function ( renderer ) {
  * W3C Device Orientation control (http://w3c.github.io/deviceorientation/spec-source-orientation.html)
  */
 
-const ModifiedDeviceOrientationControls = function ( object ) {
+const ModifiedDeviceOrientationControls = function (object) {
+  const scope = this;
 
-	const scope = this;
+  this.object = object;
+  this.object.rotation.reorder('YXZ');
 
-	this.object = object;
-	this.object.rotation.reorder( "YXZ" );
+  this.enabled = true;
 
-	this.enabled = true;
+  this.deviceOrientation = {};
+  this.screenOrientation = 0;
 
-	this.deviceOrientation = {};
-	this.screenOrientation = 0;
+  const onDeviceOrientationChangeEvent = (event) => {
+    scope.deviceOrientation = event;
+  };
 
-	const onDeviceOrientationChangeEvent = event => {
+  const onScreenOrientationChangeEvent = () => {
+    if (typeof window !== 'undefined') scope.screenOrientation = window.orientation || 0;
+  };
 
-		scope.deviceOrientation = event;
+  // The angles alpha, beta and gamma form a set of intrinsic Tait-Bryan angles of type Z-X'-Y''
 
-	};
+  const setObjectQuaternion = (() => {
+    const zee = new THREE.Vector3(0, 0, 1);
 
-	const onScreenOrientationChangeEvent = () => {
-	  if (typeof(window) !== 'undefined')
-	    scope.screenOrientation = window.orientation || 0;
+    const euler = new THREE.Euler();
 
-	};
+    const q0 = new THREE.Quaternion();
 
-	// The angles alpha, beta and gamma form a set of intrinsic Tait-Bryan angles of type Z-X'-Y''
+    const q1 = new THREE.Quaternion(-Math.sqrt(0.5), 0, 0, Math.sqrt(0.5)); // - PI/2 around the x-axis
 
-	const setObjectQuaternion = (() => {
+    const vector = new THREE.Vector3();
 
-		const zee = new THREE.Vector3( 0, 0, 1 );
+    const quaternion = new THREE.Quaternion();
 
-		const euler = new THREE.Euler();
+    return (cameraObject, alpha, beta, gamma, orient) => {
+      vector.subVectors(cameraObject.target, cameraObject.position);
 
-		const q0 = new THREE.Quaternion();
+      euler.set(beta, alpha, -gamma, 'YXZ'); // 'ZXY' for the device, but 'YXZ' for us
 
-		const q1 = new THREE.Quaternion( - Math.sqrt( 0.5 ), 0, 0, Math.sqrt( 0.5 ) ); // - PI/2 around the x-axis
+      quaternion.setFromEuler(euler); // orient the device
 
-		const vector = new THREE.Vector3();
+      quaternion.multiply(q1); // camera looks out the back of the device, not the top
 
-		const quaternion = new THREE.Quaternion();
+      quaternion.multiply(q0.setFromAxisAngle(zee, -orient)); // adjust for screen orientation
 
-		return (cameraObject, alpha, beta, gamma, orient) => {
+      vector.applyQuaternion(quaternion);
 
-			vector.subVectors(cameraObject.target, cameraObject.position);
+      vector.addVectors(cameraObject.position, vector);
 
-			euler.set( beta, alpha, - gamma, 'YXZ' );                       // 'ZXY' for the device, but 'YXZ' for us
+      cameraObject.lookAt(vector);
+    };
+  })();
 
-			quaternion.setFromEuler( euler );                               // orient the device
+  this.connect = () => {
+    onScreenOrientationChangeEvent(); // run once on load
+    if (typeof window !== 'undefined') {
+      window.addEventListener('orientationchange', onScreenOrientationChangeEvent, false);
+      window.addEventListener('deviceorientation', onDeviceOrientationChangeEvent, false);
+    }
+    scope.enabled = true;
+  };
 
-			quaternion.multiply( q1 );                                      // camera looks out the back of the device, not the top
+  this.disconnect = () => {
+    if (typeof window !== 'undefined') {
+      window.removeEventListener('orientationchange', onScreenOrientationChangeEvent, false);
+      window.removeEventListener('deviceorientation', onDeviceOrientationChangeEvent, false);
+    }
+    scope.enabled = false;
+  };
 
-			quaternion.multiply( q0.setFromAxisAngle( zee, - orient ) );    // adjust for screen orientation
+  this.update = () => {
+    if (scope.enabled === false) return;
 
-			vector.applyQuaternion(quaternion);
+    const alpha = scope.deviceOrientation.alpha
+      ? THREE.MathUtils.degToRad(scope.deviceOrientation.alpha)
+      : 0; // Z
+    const beta = scope.deviceOrientation.beta
+      ? THREE.MathUtils.degToRad(scope.deviceOrientation.beta)
+      : 0; // X'
+    const gamma = scope.deviceOrientation.gamma
+      ? THREE.MathUtils.degToRad(scope.deviceOrientation.gamma)
+      : 0; // Y''
+    const orient = scope.screenOrientation ? THREE.MathUtils.degToRad(scope.screenOrientation) : 0; // O
 
-			vector.addVectors(cameraObject.position, vector);
+    setObjectQuaternion(scope.object, alpha, beta, gamma, orient);
+  };
 
-			cameraObject.lookAt(vector);
+  this.dispose = function () {
+    this.disconnect();
+  };
 
-		};
-
-	})();
-
-	this.connect = () => {
-
-		onScreenOrientationChangeEvent(); // run once on load
-		if (typeof(window) !== 'undefined') {
-		  window.addEventListener( 'orientationchange', onScreenOrientationChangeEvent, false );
-		  window.addEventListener( 'deviceorientation', onDeviceOrientationChangeEvent, false );
-		}
-		scope.enabled = true;
-
-	};
-
-	this.disconnect = () => {
-	  if (typeof(window) !== 'undefined') {
-	    window.removeEventListener( 'orientationchange', onScreenOrientationChangeEvent, false );
-		  window.removeEventListener( 'deviceorientation', onDeviceOrientationChangeEvent, false );
-	  }
-		scope.enabled = false;
-
-	};
-
-	this.update = () => {
-
-		if ( scope.enabled === false ) return;
-
-		const alpha  = scope.deviceOrientation.alpha ? THREE.MathUtils.degToRad( scope.deviceOrientation.alpha ) : 0; // Z
-		const beta   = scope.deviceOrientation.beta  ? THREE.MathUtils.degToRad( scope.deviceOrientation.beta  ) : 0; // X'
-		const gamma  = scope.deviceOrientation.gamma ? THREE.MathUtils.degToRad( scope.deviceOrientation.gamma ) : 0; // Y''
-		const orient = scope.screenOrientation       ? THREE.MathUtils.degToRad( scope.screenOrientation       ) : 0; // O
-
-		setObjectQuaternion( scope.object, alpha, beta, gamma, orient );
-
-	};
-
-	this.dispose = function () {
-
-		this.disconnect();
-
-	};
-
-	this.connect();
-
+  this.connect();
 };
 
 const NDCCameraControl = function () {
-	let camera = undefined;
+  let camera = undefined;
   let targetCamera = undefined;
   let defaultViewport = undefined;
   const position = new THREE.Vector3();
@@ -2054,52 +2139,60 @@ const NDCCameraControl = function () {
   const v2 = new THREE.Vector3();
   let eventCallback = undefined;
 
-  this.setCurrentCameraSettings = (cameraIn, defaultViewportIn)  => {
+  this.setCurrentCameraSettings = (cameraIn, defaultViewportIn) => {
     this.near_plane_fly_debt == 0.0;
     camera = cameraIn.clone();
     targetCamera = cameraIn;
     defaultViewport = defaultViewportIn;
     camera.near = defaultViewport.nearPlane;
-    if (defaultViewport.farPlane)
-      camera.far = defaultViewport.farPlane;
+    if (defaultViewport.farPlane) camera.far = defaultViewport.farPlane;
     if (defaultViewport.eyePosition)
-      camera.position.set(defaultViewport.eyePosition[0],
-        defaultViewport.eyePosition[1], defaultViewport.eyePosition[2]);
+      camera.position.set(
+        defaultViewport.eyePosition[0],
+        defaultViewport.eyePosition[1],
+        defaultViewport.eyePosition[2],
+      );
     if (defaultViewport.upVector)
-      camera.up.set(defaultViewport.upVector[0], defaultViewport.upVector[1],
-        defaultViewport.upVector[2]);
+      camera.up.set(
+        defaultViewport.upVector[0],
+        defaultViewport.upVector[1],
+        defaultViewport.upVector[2],
+      );
     if (defaultViewport.targetPosition) {
-      camera.target = new THREE.Vector3(defaultViewport.targetPosition[0],
-        defaultViewport.targetPosition[1], defaultViewport.targetPosition[2]);
+      camera.target = new THREE.Vector3(
+        defaultViewport.targetPosition[0],
+        defaultViewport.targetPosition[1],
+        defaultViewport.targetPosition[2],
+      );
       camera.lookAt(camera.target);
     }
     camera.updateProjectionMatrix();
     position.copy(camera.position).project(camera);
     target.copy(camera.target).project(camera);
-  }
+  };
 
   this.getCurrentPosition = () => {
     target.copy(targetCamera.target).project(camera);
     return [target.x, target.y];
-  }
+  };
 
-  this.zoom = delta => {
+  this.zoom = (delta) => {
     let scaledDelta = delta * 0.002;
     let zoom = Math.max(targetCamera.zoom - scaledDelta, 1.0);
     targetCamera.zoom = zoom;
     targetCamera.updateProjectionMatrix();
-  }
+  };
 
   this.zoomToBox = (box, zoom) => {
     box.getCenter(v1);
     v1.project(camera);
     this.setCenterZoom([v1.x, v1.y], zoom);
-  }
+  };
 
   //return top left and size
   this.getPanZoom = () => {
-    return {target: this.getCurrentPosition(), zoom: targetCamera.zoom };
-  }
+    return { target: this.getCurrentPosition(), zoom: targetCamera.zoom };
+  };
 
   this.setCenterZoom = (center, zoom) => {
     v1.set(center[0], center[1], target.z).unproject(camera);
@@ -2109,17 +2202,15 @@ const NDCCameraControl = function () {
     targetCamera.position.add(v2);
     targetCamera.zoom = zoom;
     targetCamera.updateProjectionMatrix();
-  }
+  };
 
   this.setEventCallback = (callback) => {
-    if (callback === undefined || (typeof callback == 'function'))
-      eventCallback = callback;
-  }
+    if (callback === undefined || typeof callback == 'function') eventCallback = callback;
+  };
 
   this.triggerCallback = () => {
-    if (eventCallback !== undefined && (typeof eventCallback == 'function'))
-      eventCallback();
-  }
+    if (eventCallback !== undefined && typeof eventCallback == 'function') eventCallback();
+  };
 };
 
 export {
@@ -2130,5 +2221,5 @@ export {
   RayCaster,
   CameraAutoTumble,
   StereoEffect,
-  NDCCameraControl
-}
+  NDCCameraControl,
+};

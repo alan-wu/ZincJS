@@ -1,8 +1,7 @@
 [
-
   {
-     "GroupName" : "textureSlides",
-     "Type" : "Texture",
-     "URL" : "test_ts.json"
+    "GroupName": "textureSlides",
+    "Type": "Texture",
+    "URL": "test_ts.json"
   }
 ]

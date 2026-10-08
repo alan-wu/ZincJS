@@ -10,11 +10,16 @@ import { TextureArray } from '../src/texture/textureArray';
 //Resolve fetch manually so a load can be cancelled while it is in flight.
 const deferredFetch = (body) => {
   let resolve;
-  const promise = new Promise(r => { resolve = r; });
-  vi.stubGlobal('fetch', vi.fn(() => promise));
+  const promise = new Promise((r) => {
+    resolve = r;
+  });
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(() => promise),
+  );
   return async () => {
     resolve({ ok: true, url: 'http://localhost/data.json', json: () => Promise.resolve(body) });
-    await new Promise(r => setTimeout(r, 0));
+    await new Promise((r) => setTimeout(r, 0));
   };
 };
 
@@ -48,8 +53,12 @@ describe('Scene clear and pending loads', () => {
     const loader = new SceneLoader(scene);
     const allCompleted = vi.fn();
     const resolveFetch = deferredFetch([]);
-    loader.loadMetadataURL(new Region(undefined, undefined),
-      'http://localhost/data.json', undefined, allCompleted);
+    loader.loadMetadataURL(
+      new Region(undefined, undefined),
+      'http://localhost/data.json',
+      undefined,
+      allCompleted,
+    );
     loader.cancelPendingLoads();
     await resolveFetch();
     expect(scene.resetMetadata).not.toHaveBeenCalled();
@@ -60,8 +69,7 @@ describe('Scene clear and pending loads', () => {
     const scene = createFakeScene();
     const loader = new SceneLoader(scene);
     const resolveFetch = deferredFetch([]);
-    loader.loadMetadataURL(new Region(undefined, undefined),
-      'http://localhost/data.json');
+    loader.loadMetadataURL(new Region(undefined, undefined), 'http://localhost/data.json');
     await resolveFetch();
     expect(scene.resetMetadata).toHaveBeenCalled();
   });
@@ -108,15 +116,15 @@ describe('Scene clear and pending loads', () => {
   it('disposes the textures of a texture primitive', () => {
     const slides = new TextureSlides();
     const textures = [new TextureArray(), new TextureArray()];
-    const spies = textures.map(texture => {
+    const spies = textures.map((texture) => {
       texture.impl = new THREE.Data3DTexture(new Uint8Array(4), 1, 1, 1);
       return vi.spyOn(texture.impl, 'dispose');
     });
     slides.texture = textures[0];
     slides.addTextureArray(textures[1]);
     slides.dispose();
-    spies.forEach(spy => expect(spy).toHaveBeenCalledTimes(1));
-    textures.forEach(texture => expect(texture.impl).toBeUndefined());
+    spies.forEach((spy) => expect(spy).toHaveBeenCalledTimes(1));
+    textures.forEach((texture) => expect(texture.impl).toBeUndefined());
     expect(slides.texture).toBeUndefined();
   });
 });

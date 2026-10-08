@@ -186,7 +186,10 @@ describe('Geometry/Pointset colour and video regressions', () => {
     const instancePosition = mesh.geometry.getAttribute('instancePosition');
 
     pointset.setMorphTime(1); // 10% through the duration.
-    expect(instancePosition.getX(0), 'point had not started morphing 10% into the duration').toBeCloseTo(1, 5);
+    expect(
+      instancePosition.getX(0),
+      'point had not started morphing 10% into the duration',
+    ).toBeCloseTo(1, 5);
 
     pointset.setMorphTime(5); // halfway through the duration.
     expect(instancePosition.getX(0)).toBeCloseTo(5, 5);
@@ -208,10 +211,12 @@ describe('Geometry/Pointset colour and video regressions', () => {
 
     const tubeLines = new TubeLines();
     const material = new THREE.LineBasicMaterial({ color: materials[0].color.clone() });
-    expect(() => tubeLines.createLineSegment(geometry, material, {
-      localTimeEnabled: false,
-      localMorphColour: false,
-    })).not.toThrow();
+    expect(() =>
+      tubeLines.createLineSegment(geometry, material, {
+        localTimeEnabled: false,
+        localMorphColour: false,
+      }),
+    ).not.toThrow();
 
     const mesh = tubeLines.getMorph();
     expect(mesh.geometry.getAttribute('position').count).toBeGreaterThan(0);

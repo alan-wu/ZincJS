@@ -16,12 +16,11 @@ class GLTFMorphColourPlugin {
 
   writeMesh(mesh, meshDef) {
     const geometry = mesh.geometry;
-    const morphColours = geometry && geometry.morphAttributes ?
-      geometry.morphAttributes.color : undefined;
+    const morphColours =
+      geometry && geometry.morphAttributes ? geometry.morphAttributes.color : undefined;
     const baseColour = geometry ? geometry.attributes.color : undefined;
     const primitive = meshDef.primitives ? meshDef.primitives[0] : undefined;
-    if (!morphColours || !baseColour || !primitive || !primitive.targets)
-      return;
+    if (!morphColours || !baseColour || !primitive || !primitive.targets) return;
     // All primitives of a mesh share the same targets array.
     const targets = primitive.targets;
     const itemSize = baseColour.itemSize;
@@ -36,12 +35,15 @@ class GLTFMorphColourPlugin {
       for (let j = 0; j < count; j++) {
         for (let a = 0; a < itemSize; a++) {
           const value = attribute.getComponent(j, a);
-          array[j * itemSize + a] = geometry.morphTargetsRelative ?
-            value : value - baseColour.getComponent(j, a);
+          array[j * itemSize + a] = geometry.morphTargetsRelative
+            ? value
+            : value - baseColour.getComponent(j, a);
         }
       }
       targets[i].COLOR_0 = this.writer.processAccessor(
-        new BufferAttribute(array, itemSize), geometry);
+        new BufferAttribute(array, itemSize),
+        geometry,
+      );
     }
   }
 }
@@ -65,7 +67,7 @@ const SceneExporter = function (sceneIn) {
     return true;
   };
 
-	this.exportGLTF = async (binary) => {
+  this.exportGLTF = async (binary) => {
     const rootRegion = scene.getRootRegion();
     const zincObjects = rootRegion.getAllObjects(true);
     const animations = [];
@@ -77,7 +79,9 @@ const SceneExporter = function (sceneIn) {
           // The exporter resolves tracks against the scene root, but morph
           // clips target '' (the mesh itself), so retarget them by uuid.
           const clip = zincObject.animationClip[0].clone();
-          clip.tracks.forEach(track => { track.name = mesh.uuid + track.name; });
+          clip.tracks.forEach((track) => {
+            track.name = mesh.uuid + track.name;
+          });
           animations.push(clip);
         }
       }
@@ -93,26 +97,27 @@ const SceneExporter = function (sceneIn) {
     //GLTFExporter only accepts plain typed arrays
     const restoreIndexType = useStandardIndexType(scene.getThreeJSScene());
     const exporter = new GLTFExporter();
-    exporter.register(writer => new GLTFMorphColourPlugin(writer));
+    exporter.register((writer) => new GLTFMorphColourPlugin(writer));
     const options = { binary, animations, onlyVisible: true };
     try {
       return await new Promise((resolve, reject) => {
         exporter.parse(
           scene.getThreeJSScene(),
-          function ( gltf ) {
+          function (gltf) {
             resolve(gltf);
           },
-          function ( error ) {
-            console.error("Unable to export GLTF.", error);
+          function (error) {
+            console.error('Unable to export GLTF.', error);
             reject(error);
           },
-          options );
+          options,
+        );
       });
     } finally {
       restoreIndexType();
-      glyphsetsToRestore.forEach(zincObject => zincObject.clearColorExportState());
+      glyphsetsToRestore.forEach((zincObject) => zincObject.clearColorExportState());
     }
-	}
-}
+  };
+};
 
 export { SceneExporter };

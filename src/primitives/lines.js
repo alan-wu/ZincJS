@@ -15,7 +15,7 @@ import { ZincObject } from './zincObject';
  */
 const Lines = function () {
   ZincObject.call(this);
-	this.isLines = true;
+  this.isLines = true;
 
   /**
    * Create the line segements using geometry and material.
@@ -28,10 +28,10 @@ const Lines = function () {
    * @param {Boolean} options.localMorphColour - A flag to indicate either the colour is
    * time dependent.
    */
-	this.createLineSegment = (geometryIn, materialIn, options) => {
-		if (geometryIn && materialIn) {
-			let geometry = toBufferGeometry(geometryIn, options );
-			if (options.localMorphColour && geometry.morphAttributes[ "color" ]) {
+  this.createLineSegment = (geometryIn, materialIn, options) => {
+    if (geometryIn && materialIn) {
+      let geometry = toBufferGeometry(geometryIn, options);
+      if (options.localMorphColour && geometry.morphAttributes['color']) {
         //Force vertexColors off (even if the caller/material already set
         //it true from the file's declared material) - NodeMaterial would
         //otherwise multiply our morph colour blend by the static,
@@ -40,25 +40,25 @@ const Lines = function () {
         //turning parts of the blend black instead of the intended hue.
         //applyMorphColorNode's colorNode fully replaces vertex colouring.
         materialIn.vertexColors = false;
-				materialIn = applyMorphColorNode(materialIn);
+        materialIn = applyMorphColorNode(materialIn);
       }
       let line = new LineSegments(geometry, materialIn);
       this.setMesh(line, options.localTimeEnabled, options.localMorphColour);
-		}
-	}
+    }
+  };
 
   /**
    * Set the width for the lines.
    *
    * @param {Number} width - Width of the lines.
    */
-	this.setWidth = width => {
-		this.requestRender();
-		if (this.morph && this.morph.material) {
-			this.morph.material.linewidth = width;
-			this.morph.material.needsUpdate = true;
-		}
-	}
+  this.setWidth = (width) => {
+    this.requestRender();
+    if (this.morph && this.morph.material) {
+      this.morph.material.linewidth = width;
+      this.morph.material.needsUpdate = true;
+    }
+  };
 
   /**
    * Add new lines to existing lines if it exists, otherwise
@@ -67,21 +67,21 @@ const Lines = function () {
 
    * @param {Number} colour - A hex value of the colour for the points
    */
-	this.addLines = (coords, colour)  => {
+  this.addLines = (coords, colour) => {
     this.requestRender();
     if (coords && coords.length > 0) {
       const geometry = this.addVertices(coords);
       let mesh = this.getMorph();
       if (!mesh) {
-        let material = new THREE.LineBasicMaterial({color:colour});
-        const options = { localTimeEnabled: false, localMorphColour: false};
+        let material = new THREE.LineBasicMaterial({ color: colour });
+        const options = { localTimeEnabled: false, localMorphColour: false };
         geometry.colorsNeedUpdate = true;
         this.createLineSegment(geometry, material, options);
       }
       if (this.region) this.region.pickableUpdateRequired = true;
     }
-	}
-}
+  };
+};
 
 Lines.prototype = Object.create(ZincObject.prototype);
 export { Lines };

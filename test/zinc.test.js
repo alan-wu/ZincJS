@@ -1,15 +1,14 @@
-import Zinc from "../src/zinc";
-import {assert} from 'chai';
+import Zinc from '../src/zinc';
+import { assert } from 'chai';
 import { create as createGPU, globals as gpuGlobals } from 'webgpu';
 
 const THREE = Zinc.THREE;
-const container = document.querySelector("#container");
+const container = document.querySelector('#container');
 let geometryCount = 0;
 import { describe, it, beforeAll } from 'vitest';
 import { assert } from 'chai';
 
-
-var testBoxGeometry = new THREE.BoxGeometry( 10, 10, 10 );
+var testBoxGeometry = new THREE.BoxGeometry(10, 10, 10);
 
 //Dawn's node bindings provide a real GPUDevice but no HTMLCanvasElement/
 //canvas.getContext('webgpu') (there is no OS window to present to headlessly)
@@ -58,185 +57,269 @@ const device = await adapter.requestDevice();
 //colour attachment to match, or WebGPU's stricter validation rejects the
 //mismatch (WebGL silently tolerated it).
 const gpuCanvasContext = createFakeCanvasContext(
-  device, container.clientWidth || 1, container.clientHeight || 1);
+  device,
+  container.clientWidth || 1,
+  container.clientHeight || 1,
+);
 await tData.renderer.initialiseVisualisation({ device, context: gpuCanvasContext });
-tData.scene = tData.renderer.createScene("TestScene");
-tData.indexedScene = tData.renderer.createScene("indexedScene");
-tData.regionScene = tData.renderer.createScene("regionScene");
+tData.scene = tData.renderer.createScene('TestScene');
+tData.indexedScene = tData.renderer.createScene('indexedScene');
+tData.regionScene = tData.renderer.createScene('regionScene');
 
-var preRenderCallback = function() {
-  return function() {
-    it('PreRenderCallbackFunction',function()
-      {assert.isTrue(true, 'PreRenderCallbackFunction is successfully called');}
-    );
-  }
-}
+var preRenderCallback = function () {
+  return function () {
+    it('PreRenderCallbackFunction', function () {
+      assert.isTrue(true, 'PreRenderCallbackFunction is successfully called');
+    });
+  };
+};
 
-var geometryCallback = function() {
-  return function(geometry) {
+var geometryCallback = function () {
+  return function (geometry) {
     assert.isObject(geometry, 'geometry has been read');
     geometryCount = geometryCount + 1;
-  }
-}
+  };
+};
 
 function checkControls() {
   let scene = tData.scene;
-  describe('Controls()', function(){
+  describe('Controls()', function () {
     let controls = undefined;
     beforeAll(() => {
       controls = scene.getZincCameraControls();
       assert.isObject(controls, 'controls is available');
     });
-    describe('Local Variables()', function(){
-      it('cameraObject', function(){
+    describe('Local Variables()', function () {
+      it('cameraObject', function () {
         assert.isObject(controls.cameraObject, 'cameraObject is an object');
       });
       //it('domElement', function(){
       //  assert.isObject(controls.domElement, 'domElement is an object');
       //});
-      it('renderer', function(){
+      it('renderer', function () {
         assert.isObject(controls.renderer, 'renderer is an object');
       });
-      it('scene', function(){
+      it('scene', function () {
         assert.isObject(controls.scene, 'renderer is an object');
       });
-      it('tumble_rate', function(){
+      it('tumble_rate', function () {
         assert.equal(controls.tumble_rate, 1.5, 'tumble_rate is correct');
       });
-      it('zoomRate', function(){
+      it('zoomRate', function () {
         assert.equal(controls.zoomRate, 50, 'zoomRate is correct');
       });
-      it('rotateRate', function(){
+      it('rotateRate', function () {
         assert.equal(controls.rotateRate, 50, 'rotateRate is correct');
       });
-      it('panRate', function(){
+      it('panRate', function () {
         assert.equal(controls.panRate, 100, 'panRate is correct');
       });
     });
-    describe('Methods()', function(){
-      it('setMouseButtonAction', function(){
-        assert.isUndefined(controls.setMouseButtonAction("AUXILIARY", "ZOOM"), 'setMouseButtonAction is successfully called');
+    describe('Methods()', function () {
+      it('setMouseButtonAction', function () {
+        assert.isUndefined(
+          controls.setMouseButtonAction('AUXILIARY', 'ZOOM'),
+          'setMouseButtonAction is successfully called',
+        );
       });
-      it('updateDirectionalLight', function(){
-        assert.isUndefined(controls.updateDirectionalLight(), 'updateDirectionalLight is successfully called');
+      it('updateDirectionalLight', function () {
+        assert.isUndefined(
+          controls.updateDirectionalLight(),
+          'updateDirectionalLight is successfully called',
+        );
       });
-      it('disable', function(){
+      it('disable', function () {
         assert.isUndefined(controls.updateDirectionalLight(), 'disable is successfully called');
       });
-      it('enable', function(){
-        assert.isUndefined(controls.enable(""), 'enable is successfully called');
+      it('enable', function () {
+        assert.isUndefined(controls.enable(''), 'enable is successfully called');
       });
-      it('setPathDuration', function(){
-        assert.isUndefined(controls.setPathDuration(2000), 'setPathDuration is successfully called');
+      it('setPathDuration', function () {
+        assert.isUndefined(
+          controls.setPathDuration(2000),
+          'setPathDuration is successfully called',
+        );
       });
-      it('setTime', function(){
+      it('setTime', function () {
         assert.isUndefined(controls.setTime(1000), 'setTime is successfully called');
       });
-      it('setPlayRate', function(){
+      it('setPlayRate', function () {
         assert.isUndefined(controls.setPlayRate(200), 'setPlayRate is successfully called');
       });
-      it('loadPathURL', async function() {
+      it('loadPathURL', async function () {
         await new Promise((resolve, reject) => {
           controls.loadPathURL('https://www.mytestserver.com/models/test_path.json', resolve);
         });
       });
-      it('getNumberOfTimeFrame', function(){
-        assert.equal(controls.getNumberOfTimeFrame(), 8135, 'getNumberOfTimeFrame returns the correct value');
+      it('getNumberOfTimeFrame', function () {
+        assert.equal(
+          controls.getNumberOfTimeFrame(),
+          8135,
+          'getNumberOfTimeFrame returns the correct value',
+        );
       });
-      it('getCurrentTimeFrame', function(){
-        assert.equal(controls.getCurrentTimeFrame()[0], 4067, 'getCurrentTimeFrame returns the correct value');
+      it('getCurrentTimeFrame', function () {
+        assert.equal(
+          controls.getCurrentTimeFrame()[0],
+          4067,
+          'getCurrentTimeFrame returns the correct value',
+        );
       });
-      it('setCurrentTimeFrame', function(){
-        assert.isUndefined(controls.setCurrentTimeFrame(4110), 'setCurrentTimeFrame is successfully called');
-        assert.equal(controls.getCurrentTimeFrame()[0], 4110, 'getCurrentTimeFrame returns the correct value');
+      it('setCurrentTimeFrame', function () {
+        assert.isUndefined(
+          controls.setCurrentTimeFrame(4110),
+          'setCurrentTimeFrame is successfully called',
+        );
+        assert.equal(
+          controls.getCurrentTimeFrame()[0],
+          4110,
+          'getCurrentTimeFrame returns the correct value',
+        );
       });
-      it('playPath', function(){
+      it('playPath', function () {
         assert.isUndefined(controls.playPath(), 'playPath is successfully called');
         assert.isTrue(controls.isPlayingPath(), 'Playing path');
       });
-      it('update', function(){
+      it('update', function () {
         assert.isTrue(controls.update(1), 'update is successfully called');
-        assert.equal(controls.getCurrentTimeFrame()[0], 4923, 'getCurrentTimeFrame returns the correct value');
+        assert.equal(
+          controls.getCurrentTimeFrame()[0],
+          4923,
+          'getCurrentTimeFrame returns the correct value',
+        );
       });
-      it('stopPath', function(){
+      it('stopPath', function () {
         assert.isUndefined(controls.stopPath(), 'stopPath is successfully called');
         assert.isFalse(controls.isPlayingPath(), 'Stop playing path');
       });
-      it('enableDirectionalLightUpdateWithPath', function(){
-        assert.isUndefined(controls.enableDirectionalLightUpdateWithPath(true),
-          'enableDirectionalLightUpdateWithPath is successfully called');
+      it('enableDirectionalLightUpdateWithPath', function () {
+        assert.isUndefined(
+          controls.enableDirectionalLightUpdateWithPath(true),
+          'enableDirectionalLightUpdateWithPath is successfully called',
+        );
       });
-      it('enableDeviceOrientation', function(){
-        assert.isUndefined(controls.enableDeviceOrientation(), 'enableDeviceOrientation is successfully called');
-        assert.isTrue(controls.isDeviceOrientationEnabled(), 'Device Orientation is correctly enabled');
+      it('enableDeviceOrientation', function () {
+        assert.isUndefined(
+          controls.enableDeviceOrientation(),
+          'enableDeviceOrientation is successfully called',
+        );
+        assert.isTrue(
+          controls.isDeviceOrientationEnabled(),
+          'Device Orientation is correctly enabled',
+        );
       });
-      it('disableDeviceOrientation', function(){
-        assert.isUndefined(controls.disableDeviceOrientation(), 'disableDeviceOrientation is successfully called');
-        assert.isFalse(controls.isDeviceOrientationEnabled(), 'Device Orientation is correctly disable');
+      it('disableDeviceOrientation', function () {
+        assert.isUndefined(
+          controls.disableDeviceOrientation(),
+          'disableDeviceOrientation is successfully called',
+        );
+        assert.isFalse(
+          controls.isDeviceOrientationEnabled(),
+          'Device Orientation is correctly disable',
+        );
       });
-      it('getViewportFromCentreAndRadius', function(){
-        var viewport = controls.getViewportFromCentreAndRadius(10,20,30, 30, 40, 100);
+      it('getViewportFromCentreAndRadius', function () {
+        var viewport = controls.getViewportFromCentreAndRadius(10, 20, 30, 30, 40, 100);
         assert.isObject(viewport, 'getViewportFromCentreAndRadius successfully returns an object');
       });
-      it('getDefaultViewport', function(){
+      it('getDefaultViewport', function () {
         var viewport = controls.getDefaultViewport();
         assert.equal(viewport, 'default', 'getDefaultViewport successfully returns default');
       });
-      it('getCurrentViewport', function() {
+      it('getCurrentViewport', function () {
         var viewport = controls.getCurrentViewport();
         assert.isObject(viewport, 'getCurrentViewport successfully returns an object');
       });
-      it('addViewport', function(){
-        var viewport = controls.getViewportFromCentreAndRadius(10,20,30, 30, 40, 100);
+      it('addViewport', function () {
+        var viewport = controls.getViewportFromCentreAndRadius(10, 20, 30, 30, 40, 100);
         assert.isObject(viewport, 'getViewportFromCentreAndRadius successfully returns an object');
-        assert.isUndefined(controls.addViewport('newViewport', viewport), 'addViewport  successfully called');
-        assert.isObject(controls.getViewportOfName('newViewport'), 'getViewportOfName  successfully called');
+        assert.isUndefined(
+          controls.addViewport('newViewport', viewport),
+          'addViewport  successfully called',
+        );
+        assert.isObject(
+          controls.getViewportOfName('newViewport'),
+          'getViewportOfName  successfully called',
+        );
       });
-      it('setCurrentCameraSettings', function(){
-        var viewport = controls.getViewportFromCentreAndRadius(10,20,30, 30, 40, 100);
+      it('setCurrentCameraSettings', function () {
+        var viewport = controls.getViewportFromCentreAndRadius(10, 20, 30, 30, 40, 100);
         assert.isObject(viewport, 'getViewportFromCentreAndRadius successfully returns an object');
-        assert.isUndefined(controls.setCurrentCameraSettings(viewport), 'setCurrentCameraSettings is successfully called');
-        assert.equal(viewport.eyePosition[0], controls.getCurrentViewport().eyePosition[0], 'Current camera settings are set correctly');
+        assert.isUndefined(
+          controls.setCurrentCameraSettings(viewport),
+          'setCurrentCameraSettings is successfully called',
+        );
+        assert.equal(
+          viewport.eyePosition[0],
+          controls.getCurrentViewport().eyePosition[0],
+          'Current camera settings are set correctly',
+        );
       });
-      it('resetView', function(){
+      it('resetView', function () {
         assert.isUndefined(controls.resetView(), 'resetView is successfully called');
       });
-      it('cameraTransition', function(){
-        var startingViewport = controls.getViewportFromCentreAndRadius(10,20,30, 30, 40, 100);
-        var endingViewport = controls.getViewportFromCentreAndRadius(20,40,60, 60, 80, 200);
-        assert.isUndefined(controls.cameraTransition(startingViewport, endingViewport, 2000),
-            'cameraTransition is successfully called');
+      it('cameraTransition', function () {
+        var startingViewport = controls.getViewportFromCentreAndRadius(10, 20, 30, 30, 40, 100);
+        var endingViewport = controls.getViewportFromCentreAndRadius(20, 40, 60, 60, 80, 200);
+        assert.isUndefined(
+          controls.cameraTransition(startingViewport, endingViewport, 2000),
+          'cameraTransition is successfully called',
+        );
       });
-      it('enableCameraTransition', function(){
-        assert.isUndefined(controls.enableCameraTransition(), 'enableCameraTransition is successfully called');
-        assert.isTrue(controls.isTransitioningCamera(), 'camera transition is successfully enabled');
+      it('enableCameraTransition', function () {
+        assert.isUndefined(
+          controls.enableCameraTransition(),
+          'enableCameraTransition is successfully called',
+        );
+        assert.isTrue(
+          controls.isTransitioningCamera(),
+          'camera transition is successfully enabled',
+        );
       });
-      it('pauseCameraTransition', function(){
-        assert.isUndefined(controls.pauseCameraTransition(), 'pauseCameraTransition is successfully called');
-        assert.isFalse(controls.isTransitioningCamera(), 'camera transition is successfully paused');
+      it('pauseCameraTransition', function () {
+        assert.isUndefined(
+          controls.pauseCameraTransition(),
+          'pauseCameraTransition is successfully called',
+        );
+        assert.isFalse(
+          controls.isTransitioningCamera(),
+          'camera transition is successfully paused',
+        );
       });
-      it('stopCameraTransition', function(){
-        assert.isUndefined(controls.stopCameraTransition(), 'stopCameraTransition is successfully called');
-        assert.isFalse(controls.isTransitioningCamera(), 'camera transition is successfully stopped');
+      it('stopCameraTransition', function () {
+        assert.isUndefined(
+          controls.stopCameraTransition(),
+          'stopCameraTransition is successfully called',
+        );
+        assert.isFalse(
+          controls.isTransitioningCamera(),
+          'camera transition is successfully stopped',
+        );
       });
-      it('autoTumble', function(){
-        assert.isUndefined(controls.autoTumble([1.0, 0.0], 0.01, true), 'autoTumble is successfully called');
+      it('autoTumble', function () {
+        assert.isUndefined(
+          controls.autoTumble([1.0, 0.0], 0.01, true),
+          'autoTumble is successfully called',
+        );
       });
-      it('enableAutoTumble', function(){
+      it('enableAutoTumble', function () {
         assert.isUndefined(controls.enableAutoTumble(), 'enableAutoTumble is successfully called');
         assert.isTrue(controls.isAutoTumble(), 'auto tumble is successfully enabled');
       });
-      it('updateAutoTumble', function(){
+      it('updateAutoTumble', function () {
         assert.isUndefined(controls.updateAutoTumble(), 'updateAutoTumble is successfully called');
       });
-      it('stopAutoTumble', function(){
+      it('stopAutoTumble', function () {
         assert.isUndefined(controls.stopAutoTumble(), 'stopAutoTumble is successfully called');
         assert.isFalse(controls.isAutoTumble(), 'auto tumble is successfully stopped');
       });
-      it('enableRaycaster', function(){
-        assert.isUndefined(controls.enableRaycaster(scene, undefined, undefined), 'enableRaycaster is successfully called');
+      it('enableRaycaster', function () {
+        assert.isUndefined(
+          controls.enableRaycaster(scene, undefined, undefined),
+          'enableRaycaster is successfully called',
+        );
       });
-      it('disableRaycaster', function(){
+      it('disableRaycaster', function () {
         assert.isUndefined(controls.disableRaycaster(), 'disableRaycaster is successfully called');
       });
     });
@@ -245,7 +328,7 @@ function checkControls() {
 
 function checkGeometry() {
   const scene = tData.scene;
-  describe('Geometry()', function(){
+  describe('Geometry()', function () {
     let geometry = undefined;
     beforeAll(() => {
       geometry = new Zinc.Geometry();
@@ -253,87 +336,97 @@ function checkGeometry() {
       options.colour = 0x00ff00;
       options.opacity = 1.0;
       options.localTimeEnabled = false;
-      options.localMorphColour = false
+      options.localMorphColour = false;
       geometry.createMesh(testBoxGeometry, undefined, options);
       geometry.setName('TestGeometry');
       scene.addZincObject(geometry);
       assert.isObject(geometry, 'ZincGeometry has been created');
-      assert.equal(geometry.groupName, "TestGeometry", 'ZincGeometry group name has been set');
+      assert.equal(geometry.groupName, 'TestGeometry', 'ZincGeometry group name has been set');
     });
-    describe('Local Variables()', function(){
-      it('geometry', function(){
+    describe('Local Variables()', function () {
+      it('geometry', function () {
         assert.isObject(geometry.geometry, 'geometry is an object');
       });
-      it('mixer', function(){
+      it('mixer', function () {
         assert.isObject(geometry.mixer, 'mixer is an object');
       });
-      it('timeEnabled', function(){
+      it('timeEnabled', function () {
         assert.isFalse(geometry.timeEnabled, 'timeEnabled is false');
       });
-      it('morphColour', function(){
+      it('morphColour', function () {
         assert.isFalse(geometry.morphColour, 'morphColour is an object');
       });
-      it('morph', function(){
+      it('morph', function () {
         assert.isObject(geometry.getMorph(), 'morph is an object');
       });
-      it('clipAction', function(){
+      it('clipAction', function () {
         assert.isUndefined(geometry.clipAction, 'clipAction is an object');
       });
-      it('groupName', function(){
-        assert.equal(geometry.groupName, "TestGeometry", 'groupName is correct');
+      it('groupName', function () {
+        assert.equal(geometry.groupName, 'TestGeometry', 'groupName is correct');
       });
     });
-    describe('Methods()', function(){
-      it('getBoundingBox', function() {
+    describe('Methods()', function () {
+      it('getBoundingBox', function () {
         var boundingBox = geometry.getBoundingBox();
         assert.isObject(boundingBox, 'boundingBox is successfully called');
-        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
+        assert.isObject(boundingBox.min, 'boundingbox`s min is alright');
         assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
       });
-      it('setVisibility', function() {
+      it('setVisibility', function () {
         assert.isUndefined(geometry.setVisibility(false), 'setVisibility is successfully called');
         assert.isFalse(geometry.getVisibility(), 'visibility is false');
       });
-      it('setAlpha', function() {
+      it('setAlpha', function () {
         assert.isUndefined(geometry.setAlpha(0.5), 'setAlpha is successfully called');
         assert.isTrue(geometry.getMorph().material.transparent, 'transparent is true');
         assert.equal(geometry.getMorph().material.opacity, 0.5, 'opacity is correct');
       });
-      it('setMarkerMode', function() {
-        assert.isUndefined(geometry.setMarkerMode("on"), 'setMarkerMode is successfully called');
-        assert.equal(geometry.markerMode, "on", 'marker is set correctly');
-        assert.isUndefined(geometry.setMarkerMode("off"), 'setMarkerMode is successfully called');
-        assert.equal(geometry.markerMode, "off", 'marker is set correctly');
-        assert.isUndefined(geometry.setMarkerMode("inherited"), 'setMarkerMode is successfully called');
-        assert.equal(geometry.markerMode, "inherited", 'marker is set correctly');
+      it('setMarkerMode', function () {
+        assert.isUndefined(geometry.setMarkerMode('on'), 'setMarkerMode is successfully called');
+        assert.equal(geometry.markerMode, 'on', 'marker is set correctly');
+        assert.isUndefined(geometry.setMarkerMode('off'), 'setMarkerMode is successfully called');
+        assert.equal(geometry.markerMode, 'off', 'marker is set correctly');
+        assert.isUndefined(
+          geometry.setMarkerMode('inherited'),
+          'setMarkerMode is successfully called',
+        );
+        assert.equal(geometry.markerMode, 'inherited', 'marker is set correctly');
       });
-      it('getCurrentTime', function() {
+      it('getCurrentTime', function () {
         assert.equal(geometry.getCurrentTime(), 0.0, 'getCurrentTime returns the correct value');
       });
-      it('setMorphTime', function() {
+      it('setMorphTime', function () {
         assert.isUndefined(geometry.setMorphTime(1500), 'setMorphTime is successfully called');
         assert.equal(geometry.getCurrentTime(), 1500.0, 'getCurrentTime returns the correct value');
       });
-      it('setWireframe', function() {
+      it('setWireframe', function () {
         assert.isUndefined(geometry.setWireframe(true), 'setWireframe is successfully called');
-        assert.isTrue(geometry.getMorph().material.wireframe , 'wireframe is correct');
+        assert.isTrue(geometry.getMorph().material.wireframe, 'wireframe is correct');
       });
-      it('setColour', function() {
+      it('setColour', function () {
         assert.isUndefined(geometry.setColour(0x888888), 'setColour is successfully called');
-        assert.equal(geometry.getMorph().material.color , 0x888888, 'colour is correct');
+        assert.equal(geometry.getMorph().material.color, 0x888888, 'colour is correct');
       });
-      it('setVertexColour', function() {
-        assert.isUndefined(geometry.setVertexColors(THREE.NoColors), 'setVertexColour is successfully called');
-        assert.equal(geometry.getMorph().material.vertexColors , THREE.NoColors, 'colour is correct');
+      it('setVertexColour', function () {
+        assert.isUndefined(
+          geometry.setVertexColors(THREE.NoColors),
+          'setVertexColour is successfully called',
+        );
+        assert.equal(
+          geometry.getMorph().material.vertexColors,
+          THREE.NoColors,
+          'colour is correct',
+        );
       });
-      it('setMaterial', function() {
-        var material = new THREE.MeshBasicMaterial( {
-          color: 0x000000
-        } );
-        assert.isUndefined(geometry.setMaterial(material), 'setMaterial is successfully called');;
+      it('setMaterial', function () {
+        var material = new THREE.MeshBasicMaterial({
+          color: 0x000000,
+        });
+        assert.isUndefined(geometry.setMaterial(material), 'setMaterial is successfully called');
         assert.equal(geometry.getMorph().material, material, 'material is correct');
       });
-      it('render', function() {
+      it('render', function () {
         assert.isUndefined(geometry.render(100, true), 'render is successfully called');
       });
     });
@@ -343,61 +436,61 @@ function checkGeometry() {
 function checkLines() {
   const scene = tData.scene;
 
-  describe('Lines()', function(){
+  describe('Lines()', function () {
     let linesList = undefined;
     let lines = undefined;
     beforeAll(() => {
-      linesList = scene.findLinesWithGroupName("test lines");
+      linesList = scene.findLinesWithGroupName('test lines');
       lines = linesList.length ? linesList[0] : undefined;
     });
-    describe('Local Variables()', function(){
-      it ('findLines', function(){
+    describe('Local Variables()', function () {
+      it('findLines', function () {
         assert.lengthOf(linesList, 1, 'findLinesWithGroupName returns 1 lines');
-      })
-      it('lines', function(){
+      });
+      it('lines', function () {
         assert.isObject(lines.getMorph(), 'geometry is an object');
       });
-      it('timeEnabled', function(){
+      it('timeEnabled', function () {
         assert.isTrue(lines.timeEnabled, 'timeEnabled is true');
       });
-      it('morphColour', function(){
+      it('morphColour', function () {
         assert.isFalse(lines.morphColour, 'morphColour is false');
       });
-      it('clipAction', function(){
+      it('clipAction', function () {
         assert.isObject(lines.clipAction, 'clipAction is an object');
       });
-      it('groupName', function(){
-        assert.equal(lines.groupName, "test lines", 'groupName is correct');
+      it('groupName', function () {
+        assert.equal(lines.groupName, 'test lines', 'groupName is correct');
       });
     });
-    describe('Methods()', function(){
-      it('setMorphTime', function() {
+    describe('Methods()', function () {
+      it('setMorphTime', function () {
         assert.isUndefined(lines.setMorphTime(1500), 'setMorphTime is successfully called');
       });
-      it('getCurrentTime', function() {
+      it('getCurrentTime', function () {
         assert.equal(lines.getCurrentTime(), 1500.0, 'getCurrentTime returns the correct value');
       });
-      it('getBoundingBox', function() {
+      it('getBoundingBox', function () {
         var boundingBox = lines.getBoundingBox();
         assert.isObject(boundingBox, 'boundingBox is successfully called');
-        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
+        assert.isObject(boundingBox.min, 'boundingbox`s min is alright');
         assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
       });
-      it('setName', function() {
-        assert.isUndefined(lines.setName("lines1"), 'setName is successfully called');
+      it('setName', function () {
+        assert.isUndefined(lines.setName('lines1'), 'setName is successfully called');
         assert.equal(lines.groupName, 'lines1', 'name is correctly set');
       });
-      it('setVisibility', function() {
+      it('setVisibility', function () {
         assert.isUndefined(lines.setVisibility(false), 'setVisibility is successfully called');
       });
-      it('setWidth', function() {
+      it('setWidth', function () {
         assert.isUndefined(lines.setWidth(3), 'setWidth is successfully called');
         assert.equal(lines.getMorph().material.linewidth, 3.0, 'setWidth sets the correct value');
       });
-      it('isTimeVarying', function() {
+      it('isTimeVarying', function () {
         assert.isTrue(lines.isTimeVarying(), 'isTimeVarying is true');
       });
-      it('render', function() {
+      it('render', function () {
         assert.isUndefined(lines.render(100, true), 'render is successfully called');
       });
     });
@@ -406,67 +499,73 @@ function checkLines() {
 
 function checkPoints() {
   const scene = tData.scene;
-  const pointsets = scene.findPointsetsWithGroupName("test point");
+  const pointsets = scene.findPointsetsWithGroupName('test point');
   let points = pointsets.length ? pointsets[0] : undefined;
-  describe('Points()', function(){
+  describe('Points()', function () {
     let pointsets = undefined;
     let points = undefined;
     beforeAll(() => {
-      pointsets = scene.findPointsetsWithGroupName("test point");
+      pointsets = scene.findPointsetsWithGroupName('test point');
       points = pointsets.length ? pointsets[0] : undefined;
     });
-    describe('Local Variables()', function(){
-      it ('findPointsets', function(){
+    describe('Local Variables()', function () {
+      it('findPointsets', function () {
         assert.lengthOf(pointsets, 1, 'findPointsetsWithGroupName returns 1 point');
-      })
-      it('points', function(){
+      });
+      it('points', function () {
         assert.isObject(points.getMorph(), 'geometry is an object');
       });
-      it('timeEnabled', function(){
+      it('timeEnabled', function () {
         assert.isFalse(points.timeEnabled, 'timeEnabled is true');
       });
-      it('morphColour', function(){
+      it('morphColour', function () {
         assert.isFalse(points.morphColour, 'morphColour is false');
       });
-      it('clipAction', function(){
+      it('clipAction', function () {
         assert.isUndefined(points.clipAction, 'clipAction is an object');
       });
-      it('groupName', function(){
-        assert.equal(points.groupName, "test point", 'groupName is correct');
+      it('groupName', function () {
+        assert.equal(points.groupName, 'test point', 'groupName is correct');
       });
     });
-    describe('Methods()', function(){
-      it('setMorphTime', function() {
+    describe('Methods()', function () {
+      it('setMorphTime', function () {
         assert.isUndefined(points.setMorphTime(1500), 'setMorphTime is successfully called');
       });
-      it('getCurrentTime', function() {
+      it('getCurrentTime', function () {
         assert.equal(points.getCurrentTime(), 1500.0, 'getCurrentTime returns the correct value');
       });
-      it('getBoundingBox', function() {
+      it('getBoundingBox', function () {
         var boundingBox = points.getBoundingBox();
         assert.isObject(boundingBox, 'boundingBox is successfully called');
-        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
+        assert.isObject(boundingBox.min, 'boundingbox`s min is alright');
         assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
       });
-      it('setName', function() {
-        assert.isUndefined(points.setName("points1"), 'setName is successfully called');
+      it('setName', function () {
+        assert.isUndefined(points.setName('points1'), 'setName is successfully called');
         assert.equal(points.groupName, 'points1', 'name is correctly set');
       });
-      it('setVisibility', function() {
+      it('setVisibility', function () {
         assert.isUndefined(points.setVisibility(false), 'setVisibility is successfully called');
       });
-      it('setSize', function() {
+      it('setSize', function () {
         assert.isUndefined(points.setSize(3.0), 'setSize is successfully called');
         assert.equal(points.getMorph().material.size, 3.0, 'setSize sets the correct value');
       });
-      it('setSizeAttenuation', function() {
-        assert.isUndefined(points.setSizeAttenuation(true), 'setSizeAttenuation is successfully called');
-        assert.isTrue(points.getMorph().material.sizeAttenuation, 'setSizeAttenuation sets the correct value');
+      it('setSizeAttenuation', function () {
+        assert.isUndefined(
+          points.setSizeAttenuation(true),
+          'setSizeAttenuation is successfully called',
+        );
+        assert.isTrue(
+          points.getMorph().material.sizeAttenuation,
+          'setSizeAttenuation sets the correct value',
+        );
       });
-      it('isTimeVarying', function() {
+      it('isTimeVarying', function () {
         assert.isFalse(points.isTimeVarying(), 'isTimeVarying is true');
       });
-      it('render', function() {
+      it('render', function () {
         assert.isUndefined(points.render(100, true), 'render is successfully called');
       });
     });
@@ -476,40 +575,50 @@ function checkPoints() {
 function checkTextureSlides() {
   const scene = tData.scene;
   const rootRegion = scene.getRootRegion();
-  describe('TextureSlides()', function(){
+  describe('TextureSlides()', function () {
     beforeAll(async () => {
       await new Promise((resolve, reject) => {
-        scene.loadMetadataURL("https://www.mytestserver.com/models/test_ts_metadata.json", undefined, resolve);
+        scene.loadMetadataURL(
+          'https://www.mytestserver.com/models/test_ts_metadata.json',
+          undefined,
+          resolve,
+        );
       });
     });
 
-    describe('Methods()', function(){
-      it('findObjectsWithGroupName', function() {
+    describe('Methods()', function () {
+      it('findObjectsWithGroupName', function () {
         let objects = rootRegion.findObjectsWithGroupName('textureSlides', false);
         assert.equal(objects.length, 1, 'Should be found in root region');
-        assert.isTrue(objects[0].isTextureSlides, "Object should be a textureSlides");
+        assert.isTrue(objects[0].isTextureSlides, 'Object should be a textureSlides');
       });
     });
   });
 }
 
-
 function checkCleanup() {
   const scene = tData.scene;
-  describe('Cleanup()', function(){
-    describe('Local Variables()', function(){
-      it('scene', function(){
+  describe('Cleanup()', function () {
+    describe('Local Variables()', function () {
+      it('scene', function () {
         assert.isObject(scene, 'scene is an object');
       });
     });
-    describe('Methods()', function(){
-      it ('removeZincObject', function() {
-        var glyphsets = scene.findGlyphsetsWithGroupName("test glyph");
+    describe('Methods()', function () {
+      it('removeZincObject', function () {
+        var glyphsets = scene.findGlyphsetsWithGroupName('test glyph');
         assert.lengthOf(glyphsets, 1, 'findGlyphsetsWithGroupName returns 1 geometry');
-        assert.isUndefined(scene.removeZincObject(glyphsets[0]), 'removeZincGlyphset is successfully called');
-        assert.lengthOf(scene.findGlyphsetsWithGroupName("test glyph"), 0, 'findLinesWithGroupName returns 0 point');
+        assert.isUndefined(
+          scene.removeZincObject(glyphsets[0]),
+          'removeZincGlyphset is successfully called',
+        );
+        assert.lengthOf(
+          scene.findGlyphsetsWithGroupName('test glyph'),
+          0,
+          'findLinesWithGroupName returns 0 point',
+        );
       });
-      it('clearAll', function(){
+      it('clearAll', function () {
         assert.isUndefined(scene.clearAll(), 'renderGeometries is successfully called');
       });
     });
@@ -519,331 +628,397 @@ function checkCleanup() {
 function checkScene() {
   const scene = tData.scene;
   const renderer = tData.renderer;
-  describe('Scene()', function(){
-    it('New scene object', function(){
+  describe('Scene()', function () {
+    it('New scene object', function () {
       assert.isObject(scene, 'Scene has been created');
     });
     var returnedValue = renderer.setCurrentScene(scene);
-    it('Set as current scene', function(){
+    it('Set as current scene', function () {
       assert.isUndefined(returnedValue, 'Scene has been set correctly');
     });
-    describe('Local Variables()', function(){
-      it('autoClearFlag', function(){
+    describe('Local Variables()', function () {
+      it('autoClearFlag', function () {
         assert.isTrue(scene.autoClearFlag, 'autoClearFlag equals `false`');
       });
     });
 
-    describe('Methods()', function(){
+    describe('Methods()', function () {
       var testGeometry = undefined;
-      beforeAll(function() {
+      beforeAll(function () {
         let options = {};
         options.colour = 0x00ff00;
         options.opacity = 1.0;
         options.localTimeEnabled = undefined;
-        options.localMorphColour = undefined
+        options.localMorphColour = undefined;
         testGeometry = new Zinc.Geometry();
         testGeometry.createMesh(testBoxGeometry, undefined, options);
-        testGeometry.setName("TestGeometry");
+        testGeometry.setName('TestGeometry');
         scene.addZincObject(testGeometry);
         assert.isObject(testGeometry, 'ZincGeometry has been created');
-        assert.equal(testGeometry.groupName, "TestGeometry", 'ZincGeometry group name has been set');
+        assert.equal(
+          testGeometry.groupName,
+          'TestGeometry',
+          'ZincGeometry group name has been set',
+        );
         //nockSetup();
       });
 
-
-      it('loadView', function() {
-        scene.loadViewURL("https://www.mytestserver.com/models/test_view.json");
+      it('loadView', function () {
+        scene.loadViewURL('https://www.mytestserver.com/models/test_view.json');
       });
-      it('loadMetadataURL', async function() {
+      it('loadMetadataURL', async function () {
         await new Promise((resolve, reject) => {
           scene.loadMetadataURL(
-            "https://www.mytestserver.com/models/test_metadata.json",
+            'https://www.mytestserver.com/models/test_metadata.json',
             undefined,
             // Pass resolve as the callback so the await unblocks when finished
-            resolve
+            resolve,
           );
         });
       });
-      it('onWindowResize', function(){
+      it('onWindowResize', function () {
         assert.isUndefined(scene.onWindowResize(), 'onWindowResize is successfully called');
       });
-      it('resetView', function(){
+      it('resetView', function () {
         assert.isUndefined(scene.resetView(), 'resetView is successfully called');
       });
-      it('viewAll', function(){
+      it('viewAll', function () {
         assert.isUndefined(scene.viewAll(), 'viewAll is successfully called');
       });
-      it('getBoundingBox', function() {
+      it('getBoundingBox', function () {
         var boundingBox = scene.getBoundingBox();
         assert.isObject(boundingBox, 'boundingBox is successfully called');
-        assert.isObject(boundingBox.min,'boundingbox`s min is alright');
+        assert.isObject(boundingBox.min, 'boundingbox`s min is alright');
         assert.isObject(boundingBox.max, 'boundingbox`s max is alright');
       });
-      it('viewAllWithBoundingBox', function() {
+      it('viewAllWithBoundingBox', function () {
         var boundingBox = scene.getBoundingBox();
-        assert.isUndefined(scene.viewAllWithBoundingBox(boundingBox), 'viewAllWithBoundingBox is successfully called');
+        assert.isUndefined(
+          scene.viewAllWithBoundingBox(boundingBox),
+          'viewAllWithBoundingBox is successfully called',
+        );
       });
-      it ('forEachGeometry', function() {
+      it('forEachGeometry', function () {
         geometryCount = 0;
         scene.forEachGeometry(geometryCallback());
-        assert.equal(3, geometryCount, 'forEachGeometry is called successfully.')
+        assert.equal(3, geometryCount, 'forEachGeometry is called successfully.');
       });
-      it ('forEachGlyphset', function() {
+      it('forEachGlyphset', function () {
         geometryCount = 0;
         scene.forEachGlyphset(geometryCallback());
-        assert.equal(1, geometryCount, 'forEachGlyphset is called successfully.')
+        assert.equal(1, geometryCount, 'forEachGlyphset is called successfully.');
       });
-      it ('forEachPointset', function() {
+      it('forEachPointset', function () {
         geometryCount = 0;
         scene.forEachPointset(geometryCallback());
-        assert.equal(1, geometryCount, 'forEachPointset is called successfully.')
+        assert.equal(1, geometryCount, 'forEachPointset is called successfully.');
       });
-      it ('forEachLine', function() {
+      it('forEachLine', function () {
         geometryCount = 0;
         scene.forEachLine(geometryCallback());
-        assert.equal(1, geometryCount, 'forEachLine is called successfully.')
+        assert.equal(1, geometryCount, 'forEachLine is called successfully.');
       });
-      it ('findGeometriesWithGroupName', function() {
-        assert.lengthOf(scene.findGeometriesWithGroupName("TestGeometry"), 1, 'findGeometriesWithGroupName returns 1 geometry');
+      it('findGeometriesWithGroupName', function () {
+        assert.lengthOf(
+          scene.findGeometriesWithGroupName('TestGeometry'),
+          1,
+          'findGeometriesWithGroupName returns 1 geometry',
+        );
       });
-      it ('findGlyphsetsWithGroupName', function() {
-        assert.lengthOf(scene.findGlyphsetsWithGroupName("test glyph"), 1, 'findGlyphsetsWithGroupName returns 1 glyphset');
+      it('findGlyphsetsWithGroupName', function () {
+        assert.lengthOf(
+          scene.findGlyphsetsWithGroupName('test glyph'),
+          1,
+          'findGlyphsetsWithGroupName returns 1 glyphset',
+        );
       });
-      it ('findLinesWithGroupName', function() {
-        assert.lengthOf(scene.findLinesWithGroupName("test lines"), 1, 'findLinesWithGroupName returns 1 glyphset');
+      it('findLinesWithGroupName', function () {
+        assert.lengthOf(
+          scene.findLinesWithGroupName('test lines'),
+          1,
+          'findLinesWithGroupName returns 1 glyphset',
+        );
       });
-      it ('findPointsetsWithGroupName', function() {
-        assert.lengthOf(scene.findPointsetsWithGroupName("test point"), 1, 'findPointsetsWithGroupName returns 1 point');
+      it('findPointsetsWithGroupName', function () {
+        assert.lengthOf(
+          scene.findPointsetsWithGroupName('test point'),
+          1,
+          'findPointsetsWithGroupName returns 1 point',
+        );
       });
-      it('updateDirectionalLight', function(){
-        assert.isUndefined(scene.updateDirectionalLight(), 'updateDirectionalLight is successfully called');
+      it('updateDirectionalLight', function () {
+        assert.isUndefined(
+          scene.updateDirectionalLight(),
+          'updateDirectionalLight is successfully called',
+        );
       });
-      it('isTimeVarying', function(){
+      it('isTimeVarying', function () {
         assert.isTrue(scene.isTimeVarying(), 'isTimeVarying is successfully called');
       });
-      it('getCurrentTime', function(){
+      it('getCurrentTime', function () {
         assert.equal(scene.getCurrentTime(), 0.0, 'getCurrentTime is successfully called');
       });
-      it('setMorphsTime', function(){
+      it('setMorphsTime', function () {
         assert.isUndefined(scene.setMorphsTime(1000.0), 'setMorphsTime is successfully called');
       });
-      it('getZincCameraControls', function() {
-        assert.isObject(scene.getZincCameraControls(), 'getZincCameraControls returns the correct object');
+      it('getZincCameraControls', function () {
+        assert.isObject(
+          scene.getZincCameraControls(),
+          'getZincCameraControls returns the correct object',
+        );
       });
-      it('getThreeJSScene', function(){
+      it('getThreeJSScene', function () {
         assert.isObject(scene.getThreeJSScene(), 'getThreeJSScene returns the correct object');
       });
-      it('setInteractiveControlEnable', function(){
-        assert.isUndefined(scene.setInteractiveControlEnable(true), 'setInteractiveControlEnable is successfully called');
+      it('setInteractiveControlEnable', function () {
+        assert.isUndefined(
+          scene.setInteractiveControlEnable(true),
+          'setInteractiveControlEnable is successfully called',
+        );
       });
-      it('setStereoEffectEnable', function(){
-        assert.isUndefined(scene.setStereoEffectEnable(true), 'setStereoEffectEnable is successfully called');
+      it('setStereoEffectEnable', function () {
+        assert.isUndefined(
+          scene.setStereoEffectEnable(true),
+          'setStereoEffectEnable is successfully called',
+        );
       });
-      it('isStereoEffectEnable', function(){
+      it('isStereoEffectEnable', function () {
         assert.isTrue(scene.isStereoEffectEnable(), 'setStereoEffectEnable is successfully called');
       });
-      it('setDuration', function(){
+      it('setDuration', function () {
         assert.isUndefined(scene.setDuration(4000), 'setDuration is successfully called');
       });
-      it('getDuration', function(){
+      it('getDuration', function () {
         assert.equal(scene.getDuration(), 4000, 'getDuration returns the correct object');
       });
-      it('alignObjectToCameraView', function(){
-        assert.isUndefined(scene.alignObjectToCameraView(testGeometry,30000), 'alignObjectToCameraView is successfully called');
+      it('alignObjectToCameraView', function () {
+        assert.isUndefined(
+          scene.alignObjectToCameraView(testGeometry, 30000),
+          'alignObjectToCameraView is successfully called',
+        );
       });
-      it('setCameraTargetToObject', function(){
-        assert.isUndefined(scene.setCameraTargetToObject(testGeometry), 'setCameraTargetToObject is successfully called');
+      it('setCameraTargetToObject', function () {
+        assert.isUndefined(
+          scene.setCameraTargetToObject(testGeometry),
+          'setCameraTargetToObject is successfully called',
+        );
       });
-      it('renderGeometries', function(){
-        assert.isBoolean(scene.renderGeometries(500, 0.3, true), 'renderGeometries reports whether the scene changed');
+      it('renderGeometries', function () {
+        assert.isBoolean(
+          scene.renderGeometries(500, 0.3, true),
+          'renderGeometries reports whether the scene changed',
+        );
       });
-      it('removeZincObject', function(){
-        assert.isUndefined(scene.removeZincObject(testGeometry), 'removeZincGeometry is successfully called');
+      it('removeZincObject', function () {
+        assert.isUndefined(
+          scene.removeZincObject(testGeometry),
+          'removeZincGeometry is successfully called',
+        );
       });
-      if ('getNamedObjectsScreenXY', function() {
-        assert.isObject(scene.getNamedObjectsScreenXY("TestGeometry"),
-          'getNamedObjectsScreenXY is successfully called');
-      });
+      if (
+        ('getNamedObjectsScreenXY',
+        function () {
+          assert.isObject(
+            scene.getNamedObjectsScreenXY('TestGeometry'),
+            'getNamedObjectsScreenXY is successfully called',
+          );
+        })
+      );
     });
   });
 }
 
-
 function checkRegion() {
   const scene = tData.regionScene;
-  describe('Region()', function(){
+  describe('Region()', function () {
     const rootRegion = scene.getRootRegion();
     beforeAll(async () => {
       await new Promise((resolve, reject) => {
-        scene.loadMetadataURL("https://www.mytestserver.com/models/test_region_metadata.json", undefined,
-          resolve);
+        scene.loadMetadataURL(
+          'https://www.mytestserver.com/models/test_region_metadata.json',
+          undefined,
+          resolve,
+        );
       });
     });
-    describe('Methods()', function(){
-      it('getRegion', function(){
-        const cubeRegion = rootRegion.getChildWithName("cube");
+    describe('Methods()', function () {
+      it('getRegion', function () {
+        const cubeRegion = rootRegion.getChildWithName('cube');
         assert.isObject(cubeRegion, 'cube region is not found');
       });
-      it('getGroup', function(){
-        assert.isTrue(rootRegion.getGroup().isGroup, 'Visibility should be an object')
+      it('getGroup', function () {
+        assert.isTrue(rootRegion.getGroup().isGroup, 'Visibility should be an object');
       });
-      it('findChildFromPath', function(){
-        const child = rootRegion.findChildFromPath("cube/grandChild_2/greatGrand");
+      it('findChildFromPath', function () {
+        const child = rootRegion.findChildFromPath('cube/grandChild_2/greatGrand');
         assert.isObject(child, 'child region is not found');
-        assert.equal(child.getFullPath(), 'cube/grandChild_2/greatGrand',
-          'child region path is not matching');
+        assert.equal(
+          child.getFullPath(),
+          'cube/grandChild_2/greatGrand',
+          'child region path is not matching',
+        );
       });
-      it('findOrCreateChildFromPath', function(){
-        const child = rootRegion.findOrCreateChildFromPath("cube/grandChild_2/greatGrand/greatGreateGrand");
+      it('findOrCreateChildFromPath', function () {
+        const child = rootRegion.findOrCreateChildFromPath(
+          'cube/grandChild_2/greatGrand/greatGreateGrand',
+        );
         assert.isObject(child, 'region cannot be created');
-        assert.equal(child.getFullPath(), 'cube/grandChild_2/greatGrand/greatGreateGrand',
-          'child region path is not matching');
+        assert.equal(
+          child.getFullPath(),
+          'cube/grandChild_2/greatGrand/greatGreateGrand',
+          'child region path is not matching',
+        );
       });
-      it('checkPickableUpdateRequred', function(){
+      it('checkPickableUpdateRequred', function () {
         const flag = rootRegion.checkPickableUpdateRequred(true);
         assert.isTrue(flag, 'Pickable flag is not correct');
       });
-      it('getPickableThreeJSObjects', function(){
+      it('getPickableThreeJSObjects', function () {
         let objectsList = [];
         rootRegion.getPickableThreeJSObjects(objectsList, true);
         assert.equal(objectsList.length, 6, 'Number of pickable object is not correct');
       });
 
-      it('duration', function() {
+      it('duration', function () {
         rootRegion.setDuration(500);
         assert.equal(rootRegion.getDuration(), 500, 'Duration is not set correctly');
       });
-      it('getBoundingBox', function(){
+      it('getBoundingBox', function () {
         const boundingBox = rootRegion.getBoundingBox(true);
         assert.isObject(boundingBox, 'Cannot get bounding box for the root region');
       });
-      it('objectIsInRegion', function() {
+      it('objectIsInRegion', function () {
         const objects = rootRegion.findGeometriesWithGroupName('cube texture', true);
         assert.equal(objects.length, 1, 'cannot find surface in region');
-        assert.isTrue(objects[0].isGeometry, "Object is not geometry");
-        assert.isFalse(rootRegion.objectIsInRegion(objects[0], false),
-          "object should not be in the rootRegion");
-        assert.isTrue(rootRegion.objectIsInRegion(objects[0], true),
-          "object should be in the one of the child regions");
-        const cubeRegion = rootRegion.getChildWithName("cube");
-        assert.isTrue(cubeRegion.objectIsInRegion(objects[0], false),
-          "object should be in the cube region");
+        assert.isTrue(objects[0].isGeometry, 'Object is not geometry');
+        assert.isFalse(
+          rootRegion.objectIsInRegion(objects[0], false),
+          'object should not be in the rootRegion',
+        );
+        assert.isTrue(
+          rootRegion.objectIsInRegion(objects[0], true),
+          'object should be in the one of the child regions',
+        );
+        const cubeRegion = rootRegion.getChildWithName('cube');
+        assert.isTrue(
+          cubeRegion.objectIsInRegion(objects[0], false),
+          'object should be in the cube region',
+        );
       });
-      it('findObjectsWithGroupName', function() {
+      it('findObjectsWithGroupName', function () {
         let objects = rootRegion.findObjectsWithGroupName('greatGrand_surface', false);
         assert.equal(objects.length, 0, 'Should not be found in root region');
         objects = rootRegion.findObjectsWithGroupName('greatGrand_surface', true);
         assert.equal(objects.length, 1, 'cannot find objects in region');
-        assert.isTrue(objects[0].isGeometry, "Object is geometry");
+        assert.isTrue(objects[0].isGeometry, 'Object is geometry');
         objects = [];
         objects = rootRegion.findObjectsWithGroupName('not me', true);
         assert.equal(objects.length, 0, 'should find objects in region');
       });
-      it('findGeometriesWithGroupName', function() {
+      it('findGeometriesWithGroupName', function () {
         let objects = rootRegion.findGeometriesWithGroupName('cube texture', false);
         assert.equal(objects.length, 0, 'Should not be found in root region');
         objects = rootRegion.findGeometriesWithGroupName('cube texture', true);
         assert.equal(objects.length, 1, 'cannot find surface in region');
-        assert.isTrue(objects[0].isGeometry, "Object is not geometry");
+        assert.isTrue(objects[0].isGeometry, 'Object is not geometry');
         objects = [];
         objects = rootRegion.findGeometriesWithGroupName('not me', true);
         assert.equal(objects.length, 0, 'should find objects in region');
       });
-      it('findPointsetsWithGroupName', function() {
+      it('findPointsetsWithGroupName', function () {
         let objects = rootRegion.findPointsetsWithGroupName('points', true);
         assert.equal(objects.length, 1, 'Should not be found in root region');
         objects = rootRegion.findPointsetsWithGroupName('points', true);
         assert.equal(objects.length, 1, 'cannot find points in regions');
-        assert.isTrue(objects[0].isPointset, "Object is not pointsets");
+        assert.isTrue(objects[0].isPointset, 'Object is not pointsets');
         objects = [];
         objects = rootRegion.findPointsetsWithGroupName('not me', true);
         assert.equal(objects.length, 0, 'should find objects in region');
       });
-      it('findGlyphsetsWithGroupName', function() {
+      it('findGlyphsetsWithGroupName', function () {
         let objects = rootRegion.findGlyphsetsWithGroupName('grandChild_1_glyph', false);
         assert.equal(objects.length, 0, 'Should not be found in root region');
         objects = rootRegion.findGlyphsetsWithGroupName('grandChild_1_glyph', true);
         assert.equal(objects.length, 1, 'cannot find glyphset in group');
-        assert.isTrue(objects[0].isGlyphset, "Object is not glyphset");
+        assert.isTrue(objects[0].isGlyphset, 'Object is not glyphset');
         objects = [];
         objects = rootRegion.findGlyphsetsWithGroupName('not me', true);
         assert.equal(objects.length, 0, 'should find objects in region');
       });
-      it('findLinesWithGroupName', function() {
+      it('findLinesWithGroupName', function () {
         let objects = rootRegion.findLinesWithGroupName('grandChild_2_lines', false);
         assert.equal(objects.length, 0, 'Should not be found in root region');
         objects = rootRegion.findLinesWithGroupName('grandChild_2_lines', true);
         assert.equal(objects.length, 1, 'cannot find lines in group');
-        assert.isTrue(objects[0].isLines, "Object is not line");
+        assert.isTrue(objects[0].isLines, 'Object is not line');
         objects = [];
         objects = rootRegion.findLinesWithGroupName('not me', true);
         assert.equal(objects.length, 0, 'should find objects in region');
       });
-      it('getAllObjects', function(){
+      it('getAllObjects', function () {
         const list = rootRegion.getAllObjects(true);
         assert.equal(list.length, 6, 'Number of primitives is not matching');
       });
-      it('setMorphTime', function(){
+      it('setMorphTime', function () {
         rootRegion.setMorphTime(200, false);
         assert.equal(rootRegion.getCurrentTime(), 200, 'morph time is not correct');
-        const childRegion = rootRegion.findChildFromPath("cube/grandChild_2/greatGrand");
+        const childRegion = rootRegion.findChildFromPath('cube/grandChild_2/greatGrand');
         assert.equal(childRegion.getCurrentTime(), 0, 'morph time is not correct');
       });
-      it('isTimeVarying', function(){
+      it('isTimeVarying', function () {
         assert.isFalse(rootRegion.isTimeVarying(), 'It should not be time varying');
       });
-      it ('forEachGeometry', function() {
+      it('forEachGeometry', function () {
         geometryCount = 0;
         rootRegion.forEachGeometry(geometryCallback(), false);
-        assert.equal(0, geometryCount, 'geometry count is incorrect.')
+        assert.equal(0, geometryCount, 'geometry count is incorrect.');
         geometryCount = 0;
         rootRegion.forEachGeometry(geometryCallback(), true);
-        assert.equal(2, geometryCount, 'geometry count is incorrect.')
+        assert.equal(2, geometryCount, 'geometry count is incorrect.');
       });
-      it ('forEachGlyphset', function() {
+      it('forEachGlyphset', function () {
         geometryCount = 0;
         rootRegion.forEachGlyphset(geometryCallback(), false);
-        assert.equal(0, geometryCount, 'glyphset count is incorrect.')
+        assert.equal(0, geometryCount, 'glyphset count is incorrect.');
         geometryCount = 0;
         rootRegion.forEachGlyphset(geometryCallback(), true);
-        assert.equal(1, geometryCount, 'glyphset count is incorrect.')
+        assert.equal(1, geometryCount, 'glyphset count is incorrect.');
       });
-      it ('forEachPointset', function() {
+      it('forEachPointset', function () {
         geometryCount = 0;
         rootRegion.forEachPointset(geometryCallback(), false);
-        assert.equal(1, geometryCount, 'pointset count is incorrect.')
+        assert.equal(1, geometryCount, 'pointset count is incorrect.');
         geometryCount = 0;
-        rootRegion.getChildWithName("cube").forEachPointset(geometryCallback(), false);
-        assert.equal(0, geometryCount, 'line count is incorrect.')
+        rootRegion.getChildWithName('cube').forEachPointset(geometryCallback(), false);
+        assert.equal(0, geometryCount, 'line count is incorrect.');
         geometryCount = 0;
         rootRegion.forEachPointset(geometryCallback(), true);
-        assert.equal(1, geometryCount, 'pointset count is incorrect.')
+        assert.equal(1, geometryCount, 'pointset count is incorrect.');
       });
-      it ('forEachLine', function() {
+      it('forEachLine', function () {
         geometryCount = 0;
         rootRegion.forEachLine(geometryCallback(), false);
-        assert.equal(0, geometryCount, 'line count is incorrect.')
+        assert.equal(0, geometryCount, 'line count is incorrect.');
         geometryCount = 0;
-        rootRegion.getChildWithName("cube").forEachLine(geometryCallback(), false);
-        assert.equal(1, geometryCount, 'line count is incorrect.')
+        rootRegion.getChildWithName('cube').forEachLine(geometryCallback(), false);
+        assert.equal(1, geometryCount, 'line count is incorrect.');
         geometryCount = 0;
         rootRegion.forEachLine(geometryCallback(), true);
-        assert.equal(2, geometryCount, 'line count is incorrect.')
+        assert.equal(2, geometryCount, 'line count is incorrect.');
       });
-      it ('renderGeometries', function() {
-        rootRegion.renderGeometries(
-          1, 0.1, false, undefined);
+      it('renderGeometries', function () {
+        rootRegion.renderGeometries(1, 0.1, false, undefined);
       });
-      it('setVisibility', function(){
-        assert.isTrue(rootRegion.getVisibility(), 'Visibility should be true')
+      it('setVisibility', function () {
+        assert.isTrue(rootRegion.getVisibility(), 'Visibility should be true');
         rootRegion.setVisibility(false);
         assert.isFalse(rootRegion.getVisibility(), 'Visibility should be false');
       });
-      it('clear', function(){
+      it('clear', function () {
         rootRegion.clear(true);
         const objects = rootRegion.getAllObjects(true);
         assert.equal(0, objects.length, 'All graphics should be removed');
-        assert.isUndefined(rootRegion.getChildWithName("cube"), 'All regions should be removed');
+        assert.isUndefined(rootRegion.getChildWithName('cube'), 'All regions should be removed');
       });
     });
   });
@@ -851,212 +1026,270 @@ function checkRegion() {
 
 function checkCreateAPIs() {
   const scene = tData.scene;
-  describe('Methods()', function() {
+  describe('Methods()', function () {
     const rootRegion = scene.getRootRegion();
-    it('createPoints', function() {
+    it('createPoints', function () {
       let object = scene.createPoints(
-        '__create', 'createdPoints', [[1.0, 1.0, 1.0]], undefined, 0x0022ee,
+        '__create',
+        'createdPoints',
+        [[1.0, 1.0, 1.0]],
+        undefined,
+        0x0022ee,
       );
-      assert.isObject(object, "Object is not defined");
+      assert.isObject(object, 'Object is not defined');
       let objects = rootRegion.findPointsetsWithGroupName('createdPoints', false);
       assert.equal(objects.length, 0, 'Should not be found in root region');
       objects = rootRegion.findPointsetsWithGroupName('createdPoints', true);
       assert.equal(objects.length, 1, 'Should be found in sub region');
-      assert.isTrue(objects[0].isPointset, "Object is a pointsets");
+      assert.isTrue(objects[0].isPointset, 'Object is a pointsets');
     });
-    it('createLines', function() {
+    it('createLines', function () {
       let lines2 = scene.createLines(
-        '__create', 'createdLines', [[0.0, 1,0, 2.0], [3.0, 4.0, 5.0]], 0x0022ee,
+        '__create',
+        'createdLines',
+        [
+          [0.0, 1, 0, 2.0],
+          [3.0, 4.0, 5.0],
+        ],
+        0x0022ee,
       );
-      assert.isObject(lines2, "Object is not defined");
+      assert.isObject(lines2, 'Object is not defined');
       let objects = rootRegion.findLinesWithGroupName('createdLines', false);
       assert.equal(objects.length, 0, 'Should not be found in root region');
       objects = rootRegion.findLinesWithGroupName('createdLines', true);
       assert.equal(objects.length, 1, 'Should be found in sub region');
-      assert.isTrue(objects[0].isLines2, "Object is a lines");
+      assert.isTrue(objects[0].isLines2, 'Object is a lines');
     });
-    it('addBoundingBoxes', function() {
-      let object = scene.addBoundingBoxPrimitive(
-        "_helper", "boundingBox", 0x40E0D0, 0.15
-      );
-      assert.isObject(object, "Object is not defined");
+    it('addBoundingBoxes', function () {
+      let object = scene.addBoundingBoxPrimitive('_helper', 'boundingBox', 0x40e0d0, 0.15);
+      assert.isObject(object, 'Object is not defined');
       let objects = rootRegion.findGeometriesWithGroupName('boundingBox', false);
       assert.equal(objects.length, 0, 'Should not be found in root region');
       objects = rootRegion.findGeometriesWithGroupName('boundingBox', true);
       assert.equal(objects.length, 1, 'Should be found in sub region');
-      assert.isTrue(objects[0].isGeometry, "Object should be a geometry");
+      assert.isTrue(objects[0].isGeometry, 'Object should be a geometry');
     });
-    it('addSlicesPrimitive', function() {
+    it('addSlicesPrimitive', function () {
       let object = scene.addSlicesPrimitive(
-        "_helper", ["x-plane", "y-plane", "z-plane"],
-        [0xFF5555, 0x55FF55, 0x5555FF], 0.15
+        '_helper',
+        ['x-plane', 'y-plane', 'z-plane'],
+        [0xff5555, 0x55ff55, 0x5555ff],
+        0.15,
       );
-      assert.equal(object.length, 3, "Object is not defined");
+      assert.equal(object.length, 3, 'Object is not defined');
       let objects = rootRegion.findGeometriesWithGroupName('x-plane', false);
       assert.equal(objects.length, 0, 'Should not be found in root region');
       objects = rootRegion.findGeometriesWithGroupName('x-plane', true);
       assert.equal(objects.length, 1, 'Should be found in sub region');
-      assert.isTrue(objects[0].isGeometry, "Object should be a geometry");
-
+      assert.isTrue(objects[0].isGeometry, 'Object should be a geometry');
     });
-    it('addTemporaryPoints', function() {
-      let object = scene.addTemporaryPoints(
-        [0.0, 0,0, 0.0], 0xFF5555
-      );
-      assert.isObject(object, "Object is not defined");
+    it('addTemporaryPoints', function () {
+      let object = scene.addTemporaryPoints([0.0, 0, 0, 0.0], 0xff5555);
+      assert.isObject(object, 'Object is not defined');
     });
-    it('addTemporaryLines', function() {
+    it('addTemporaryLines', function () {
       let object = scene.addTemporaryLines(
-        [[0.0, 0,0, 0.0], [1.0, 1.0, 1.0]], 0xFF5555
+        [
+          [0.0, 0, 0, 0.0],
+          [1.0, 1.0, 1.0],
+        ],
+        0xff5555,
       );
-      assert.isObject(object, "Object is not defined");
+      assert.isObject(object, 'Object is not defined');
     });
-    it('clearTemporaryPrimitives', function() {
+    it('clearTemporaryPrimitives', function () {
       let number = scene.clearTemporaryPrimitives();
-      assert.equal(number, 2, "Number of removal should be 2");
+      assert.equal(number, 2, 'Number of removal should be 2');
     });
-
   });
 }
 
 function checkIndexedAndMergedFormat() {
   const scene = tData.indexedScene;
-  describe('IndexedAndMergedFormat()', function(){
+  describe('IndexedAndMergedFormat()', function () {
     const rootRegion = scene.getRootRegion();
     beforeAll(async () => {
       await new Promise((resolve, reject) => {
-        scene.loadMetadataURL("https://www.mytestserver.com/models/test_indexed_metadata.json", undefined,
-          resolve);
+        scene.loadMetadataURL(
+          'https://www.mytestserver.com/models/test_indexed_metadata.json',
+          undefined,
+          resolve,
+        );
       });
     });
 
-    describe('Methods()', function(){
-      it('findGeometriesWithGroupName', function() {
+    describe('Methods()', function () {
+      it('findGeometriesWithGroupName', function () {
         let objects = rootRegion.findGeometriesWithGroupName('indexed geometry', false);
         assert.equal(objects.length, 1, 'Should be found in root region');
-        assert.isTrue(objects[0].isGeometry, "Object is not geometry");
+        assert.isTrue(objects[0].isGeometry, 'Object is not geometry');
       });
-      it('findPointsetsWithGroupName', function() {
+      it('findPointsetsWithGroupName', function () {
         let objects = rootRegion.findPointsetsWithGroupName('indexed points', false);
         assert.equal(objects.length, 1, 'Should be found in root region');
-        assert.isTrue(objects[0].isPointset, "Object is not pointsets");
+        assert.isTrue(objects[0].isPointset, 'Object is not pointsets');
       });
-      it('findMergedWithGroupName', function() {
+      it('findMergedWithGroupName', function () {
         let objects = rootRegion.findGeometriesWithGroupName('merged surfaces', false);
         assert.equal(objects.length, 1, 'Should be found in root region');
-        assert.isTrue(objects[0].isGeometry, "Object is not pointsets");
+        assert.isTrue(objects[0].isGeometry, 'Object is not pointsets');
       });
-      it ('renderGeometries', function() {
-        rootRegion.renderGeometries(
-          1, 0.1, false, undefined);
+      it('renderGeometries', function () {
+        rootRegion.renderGeometries(1, 0.1, false, undefined);
       });
     });
   });
 }
 
 function checkRenderer() {
-  describe('Renderer()', function(){
+  describe('Renderer()', function () {
     let renderer = tData.renderer;
 
-    it('Renderer is a valid constructor', function(){
+    it('Renderer is a valid constructor', function () {
       assert.isFunction(Zinc.Renderer, 'Zinc.Renderer is a valid constructor');
     });
-    it('Renderer creates an object', function(){
+    it('Renderer creates an object', function () {
       assert.isObject(renderer, 'Zinc.Renderer creates an object');
     });
-    describe('Local Variables()', function(){
-      it('playAnimation', function(){
+    describe('Local Variables()', function () {
+      it('playAnimation', function () {
         assert.equal(renderer.playAnimation, true, 'playAnimation equals `true`');
       });
-    })
-    describe('Methods()', function(){
-      let renderer =  tData.renderer;
-      it('getCurrentScene', function(){
+    });
+    describe('Methods()', function () {
+      let renderer = tData.renderer;
+      it('getCurrentScene', function () {
         assert.isObject(renderer.getCurrentScene(), 'getCurrentScene returns an object');
       });
-      var scene = renderer.createScene("Test1");
-      it('createScene', function(){
+      var scene = renderer.createScene('Test1');
+      it('createScene', function () {
         assert.isObject(scene, 'createScene returns an object');
       });
-      it('getSceneByName', function(){
-        assert.isObject(renderer.getSceneByName("Test1"), 'getSceneByName returns an object');
+      it('getSceneByName', function () {
+        assert.isObject(renderer.getSceneByName('Test1'), 'getSceneByName returns an object');
       });
-      it('setCurrentScene', function(){
-        assert.isUndefined(renderer.setCurrentScene(scene), 'setCurrentScene is successfully called');
+      it('setCurrentScene', function () {
+        assert.isUndefined(
+          renderer.setCurrentScene(scene),
+          'setCurrentScene is successfully called',
+        );
       });
-      it('resetView', function(){
+      it('resetView', function () {
         assert.isUndefined(renderer.resetView(), 'resetView is successfully called');
       });
-      it('viewAll', function(){
+      it('viewAll', function () {
         assert.isUndefined(renderer.viewAll(), 'viewAll is successfully called');
       });
-      it('updateDirectionalLight', function(){
-        assert.isUndefined(renderer.updateDirectionalLight(), 'updateDirectionalLight is successfully called');
+      it('updateDirectionalLight', function () {
+        assert.isUndefined(
+          renderer.updateDirectionalLight(),
+          'updateDirectionalLight is successfully called',
+        );
       });
-      it('getPlayRate', function(){
-        assert.equal(renderer.getPlayRate(), 1000, 'getPlayRate succesfully returns the correct value');
+      it('getPlayRate', function () {
+        assert.equal(
+          renderer.getPlayRate(),
+          1000,
+          'getPlayRate succesfully returns the correct value',
+        );
       });
-      var callbackId =  renderer.addPreRenderCallbackFunction(preRenderCallback());
-      it('addPreRenderCallbackFunction', function(){
-        assert.isNumber(callbackId, 'addPreRenderCallbackFunction succesfully returns the correct value');
+      var callbackId = renderer.addPreRenderCallbackFunction(preRenderCallback());
+      it('addPreRenderCallbackFunction', function () {
+        assert.isNumber(
+          callbackId,
+          'addPreRenderCallbackFunction succesfully returns the correct value',
+        );
       });
 
-      it('setPlayRate', function(){
-        assert.isUndefined(renderer.setPlayRate(300), 'setPlayRate succesfully returns the correct value');
+      it('setPlayRate', function () {
+        assert.isUndefined(
+          renderer.setPlayRate(300),
+          'setPlayRate succesfully returns the correct value',
+        );
       });
-      it('getCurrentTime', function(){
-        assert.equal(renderer.getCurrentTime(), 0, 'getCurrentTime succesfully returns the correct value');
+      it('getCurrentTime', function () {
+        assert.equal(
+          renderer.getCurrentTime(),
+          0,
+          'getCurrentTime succesfully returns the correct value',
+        );
       });
-      it('setMorphsTime', function(){
-        assert.isUndefined(renderer.setMorphsTime(300), 'setMorphsTime succesfully returns the correct value');
+      it('setMorphsTime', function () {
+        assert.isUndefined(
+          renderer.setMorphsTime(300),
+          'setMorphsTime succesfully returns the correct value',
+        );
       });
-      var  returnValue2 = renderer.render();
-      it('render', function(){
+      var returnValue2 = renderer.render();
+      it('render', function () {
         assert.isUndefined(returnValue2, 'render succesfully returns the correct value');
       });
-      it('removePreRenderCallbackFunction', function(){
-        assert.isUndefined(renderer.removePreRenderCallbackFunction(callbackId),
-            'removePreRenderCallbackFunction succesfully is successfully called');
+      it('removePreRenderCallbackFunction', function () {
+        assert.isUndefined(
+          renderer.removePreRenderCallbackFunction(callbackId),
+          'removePreRenderCallbackFunction succesfully is successfully called',
+        );
       });
-      it('getThreeJSRenderer', function(){
+      it('getThreeJSRenderer', function () {
         assert.isObject(renderer.getThreeJSRenderer(), 'getThreeJSRenderer returns an object');
       });
-      var scene2 = renderer.createScene("Test2");
-      it('isSceneActive', function() {
-        assert.isFalse(renderer.isSceneActive(scene2), 'isSceneActive succcessfully returns fail value');
+      var scene2 = renderer.createScene('Test2');
+      it('isSceneActive', function () {
+        assert.isFalse(
+          renderer.isSceneActive(scene2),
+          'isSceneActive succcessfully returns fail value',
+        );
       });
-      it('addActiveScene', function() {
-        assert.isUndefined(renderer.addActiveScene(scene2), 'addActiveScene is successfully called');
+      it('addActiveScene', function () {
+        assert.isUndefined(
+          renderer.addActiveScene(scene2),
+          'addActiveScene is successfully called',
+        );
       });
-      it('isSceneActive', function() {
-        assert.isTrue(renderer.isSceneActive(scene2), 'isSceneActive successfully returns correct value');
+      it('isSceneActive', function () {
+        assert.isTrue(
+          renderer.isSceneActive(scene2),
+          'isSceneActive successfully returns correct value',
+        );
       });
-      it('removeActiveScene', function() {
-        assert.isUndefined(renderer.removeActiveScene(scene2), 'removeActiveScene is successfully called');
+      it('removeActiveScene', function () {
+        assert.isUndefined(
+          renderer.removeActiveScene(scene2),
+          'removeActiveScene is successfully called',
+        );
       });
-      it('isSceneActive', function() {
-        assert.isFalse(renderer.isSceneActive(scene2), 'isSceneActive succcessfully returns fail value');
+      it('isSceneActive', function () {
+        assert.isFalse(
+          renderer.isSceneActive(scene2),
+          'isSceneActive succcessfully returns fail value',
+        );
       });
-      it('clearAllActiveScene', function() {
-        assert.isUndefined(renderer.clearAllActiveScene(), 'clearAllActiveScene is successfully called');
+      it('clearAllActiveScene', function () {
+        assert.isUndefined(
+          renderer.clearAllActiveScene(),
+          'clearAllActiveScene is successfully called',
+        );
       });
-      it('transitionScene', function() {
-        assert.isUndefined(renderer.transitionScene(scene2, 3000), 'transitionScene is successfully called');
+      it('transitionScene', function () {
+        assert.isUndefined(
+          renderer.transitionScene(scene2, 3000),
+          'transitionScene is successfully called',
+        );
       });
-      it('animate', function() {
+      it('animate', function () {
         assert.isUndefined(renderer.animate(), 'animate is successfully called');
       });
-      it('stopAnimate', function() {
+      it('stopAnimate', function () {
         assert.isUndefined(renderer.stopAnimate(), 'stopAnimate is successfully called');
       });
-      it('getDrawingWidth', function() {
+      it('getDrawingWidth', function () {
         assert.equal(renderer.getDrawingWidth(), 0, 'getDrawingWidth is successfully called');
       });
-      it('getDrawingHeight', function() {
+      it('getDrawingHeight', function () {
         assert.equal(renderer.getDrawingHeight(), 0, 'getDrawingHeight is successfully called');
       });
-    })
-  })
+    });
+  });
   checkScene();
   checkLines();
   checkPoints();
@@ -1070,12 +1303,12 @@ function checkRenderer() {
 }
 
 function checkZincObject() {
-  it('Zinc is a valid object', function(){
+  it('Zinc is a valid object', function () {
     assert.isObject(Zinc, 'Zinc is an object');
   });
   checkRenderer();
 }
 
-describe('Zinc', function(){
+describe('Zinc', function () {
   checkZincObject();
-})
+});

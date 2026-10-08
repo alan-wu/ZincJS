@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 const glslVersion = THREE.GLSL3;
 
-const fs =
-`
+const fs = `
 precision highp int;
 precision highp float;
 
@@ -72,8 +71,7 @@ void main(void) {
 }
 `;
 
-const vs =
-`
+const vs = `
 uniform vec3 volume_scale;
 
 out vec3 vray_dir;
@@ -91,18 +89,13 @@ void main(void) {
 }
 `;
 
-const getUniforms = function() {
+const getUniforms = function () {
   return {
-		volume_scale: { value: new THREE.Vector3( 1, 1, 1 ) },
+    volume_scale: { value: new THREE.Vector3(1, 1, 1) },
     diffuse: { value: undefined },
-    volume_dims: { value: [ 1, 1, 1 ] },
+    volume_dims: { value: [1, 1, 1] },
     depth: { value: 1 },
-  }
+  };
 };
 
-export {
-  fs,
-  vs,
-  glslVersion,
-  getUniforms
-}
+export { fs, vs, glslVersion, getUniforms };

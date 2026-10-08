@@ -35,7 +35,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    *
    * @returns {Boolean} true if successful
    */
-  this.fromMesh = meshIn => {
+  this.fromMesh = (meshIn) => {
     if (meshIn && meshIn.isMesh) {
       this.morph = meshIn.clone();
       this.morph.userData = this;
@@ -43,7 +43,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
       return true;
     }
     return false;
-  }
+  };
 
   if (geometry && material) {
     this.fromMesh(new THREE.Mesh(geometry, material));
@@ -56,20 +56,19 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    */
   this.getGlyphset = function () {
     return parent;
-  }
+  };
 
   /**
    * Set and update the text containing this glyph.
    * @param   {String} text - Label to be set for this instance
    */
-  this.setLabel = text => {
+  this.setLabel = (text) => {
     parent?.requestRender?.();
     if (text && (typeof text === 'string' || text instanceof String)) {
       labelString = text;
-      if (this.morph)
-        this.morph.name = text;
+      if (this.morph) this.morph.name = text;
     }
-  }
+  };
 
   /**
    * Display label with the choosen colour. It will replace the current
@@ -96,7 +95,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
       sprite.material.depthWrite = false;
       this.group.add(label.getSprite());
     }
-  }
+  };
 
   /**
    * Hide label with the choosen colour.
@@ -109,7 +108,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
       label.dispose();
       label = undefined;
     }
-  }
+  };
 
   /**
    * Get the label of this glyph
@@ -117,7 +116,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    */
   this.getLabel = () => {
     return labelString;
-  }
+  };
 
   /**
    * Get the mesh of this glyph.
@@ -125,7 +124,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
    */
   this.getMesh = () => {
     return this.morph;
-  }
+  };
 
   /**
    * Set the transformation of this glyph.
@@ -163,7 +162,7 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
     if (label) {
       label.setPosition(position[0], position[1], position[2]);
     }
-  }
+  };
 
   /**
    * Set the color of the glyph and its label. Remembered (see showLabel())
@@ -177,14 +176,13 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
   this.setColour = (color) => {
     parent?.requestRender?.();
     _colour = color ? color.clone() : undefined;
-    if (label)
-      label.setColour(color);
+    if (label) label.setColour(color);
     if (this.secondaryMesh && this.secondaryMesh.material)
       this.secondaryMesh.material.color = color;
     if (this.geometry) {
       this.geometry.colorsNeedUpdate = true;
     }
-  }
+  };
 
   /**
    * Get the last colour set via setColour(), if any.
@@ -200,11 +198,10 @@ const Glyph = function (geometry, materialIn, idIn, glyphsetIn) {
       label.dispose();
       label = undefined;
     }
-    if (this.material)
-      this.material.dispose();
+    if (this.material) this.material.dispose();
     this.morph = undefined;
-  }
-}
+  };
+};
 
 Glyph.prototype = Object.create(ZincObject.prototype);
 export { Glyph };

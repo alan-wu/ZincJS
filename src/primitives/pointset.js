@@ -17,12 +17,11 @@ const DEFAULT_CAPACITY = 500;
  */
 const createPointQuadGeometry = (capacity) => {
   const geometry = new THREE.PlaneGeometry(1, 1);
-  const instancePosition = new THREE.InstancedBufferAttribute(
-    new Float32Array(capacity * 3), 3);
+  const instancePosition = new THREE.InstancedBufferAttribute(new Float32Array(capacity * 3), 3);
   instancePosition.setUsage(THREE.DynamicDrawUsage);
   geometry.setAttribute('instancePosition', instancePosition);
   return geometry;
-}
+};
 
 /**
  * Extract the per time step, flat [x0, y0, z0, x1, y1, z1, ...] position
@@ -46,7 +45,7 @@ const extractPositionFrames = (geometry, localTimeEnabled) => {
     });
   }
   return [Float32Array.from(positionAttribute.array)];
-}
+};
 
 /**
  * Extract the per time step, flat [r0, g0, b0, r1, g1, b1, ...] colour
@@ -60,7 +59,7 @@ const extractColorFrames = (geometry, localMorphColour) => {
     return morphColors.map((attribute) => Float32Array.from(attribute.array));
   }
   return undefined;
-}
+};
 
 /**
  * Extract the plain, non-morph per-vertex 'color' attribute (if any) so a
@@ -70,7 +69,7 @@ const extractColorFrames = (geometry, localMorphColour) => {
 const extractStaticColorFrame = (geometry) => {
   const colorAttribute = geometry.getAttribute('color');
   return colorAttribute ? Float32Array.from(colorAttribute.array) : undefined;
-}
+};
 
 /**
  * Provides an object which stores points and provides method which controls its position.
@@ -116,7 +115,7 @@ const Pointset = function () {
     let topFrame = 0;
     let proportion = 1;
     if (totalSteps > 1) {
-      const currentTime = this.inbuildTime / this.duration * (totalSteps - 1);
+      const currentTime = (this.inbuildTime / this.duration) * (totalSteps - 1);
       bottomFrame = Math.floor(currentTime);
       topFrame = Math.ceil(currentTime);
       proportion = 1 - (currentTime - bottomFrame);
@@ -147,7 +146,7 @@ const Pointset = function () {
       }
       mesh.instanceColor.needsUpdate = true;
     }
-  }
+  };
 
   /**
    * Create the pointset using geometry and material.
@@ -198,7 +197,11 @@ const Pointset = function () {
     const initialColorFrame = colorFrames ? colorFrames[0] : extractStaticColorFrame(geometry);
     if (initialColorFrame) {
       for (let i = 0; i < numberOfPoints; i++) {
-        _tempColor.setRGB(initialColorFrame[i * 3], initialColorFrame[i * 3 + 1], initialColorFrame[i * 3 + 2]);
+        _tempColor.setRGB(
+          initialColorFrame[i * 3],
+          initialColorFrame[i * 3 + 1],
+          initialColorFrame[i * 3 + 2],
+        );
         mesh.setColorAt(i, _tempColor);
       }
     }
@@ -206,20 +209,19 @@ const Pointset = function () {
     this.setMorph(mesh);
     geometry.dispose();
     this.boundingBoxUpdateRequired = true;
-  }
+  };
 
   /**
    * Adapt a plain THREE.Points object (e.g. one parsed from a GLTF file)
    * into this Pointset's instanced mesh representation.
    */
   this.setMesh = (mesh, localTimeEnabled, localMorphColour) => {
-    this.createMesh(mesh.geometry, mesh.material,
-      { localTimeEnabled, localMorphColour });
+    this.createMesh(mesh.geometry, mesh.material, { localTimeEnabled, localMorphColour });
     const newMesh = this.getMorph();
     if (newMesh) {
       newMesh.name = mesh.name;
     }
-  }
+  };
 
   const addLabel = (index, coord, labelText, colourHex) => {
     if (labelText) {
@@ -239,7 +241,7 @@ const Pointset = function () {
       this.group.add(sprite);
       labelSets[index] = label;
     }
-  }
+  };
 
   const removeLabel = (index) => {
     const label = labelSets[index];
@@ -249,7 +251,7 @@ const Pointset = function () {
       label.dispose();
       labelSets.splice(index, 1);
     }
-  }
+  };
 
   /**
    * Add points to existing mesh if it exists, otherwise
@@ -278,7 +280,7 @@ const Pointset = function () {
         this.setMorph(mesh);
       }
       const instancePosition = mesh.geometry.getAttribute('instancePosition');
-      coords.forEach(coord => {
+      coords.forEach((coord) => {
         if (this.drawRange < DEFAULT_CAPACITY) {
           instancePosition.setXYZ(this.drawRange, coord[0], coord[1], coord[2]);
           this.drawRange++;
@@ -289,10 +291,12 @@ const Pointset = function () {
 
       let end = current + coords.length;
       let index = 0;
-      if ((Array.isArray(labels) && labels.length === coords.length) ||
-        (typeof labels === "string")) {
+      if (
+        (Array.isArray(labels) && labels.length === coords.length) ||
+        typeof labels === 'string'
+      ) {
         for (current; current + index < end;) {
-          const labelText = typeof labels === "string" ? labels : labels[index];
+          const labelText = typeof labels === 'string' ? labels : labels[index];
           addLabel(current + index, coords[index], labelText, this._lod._material.color);
           index++;
         }
@@ -300,14 +304,14 @@ const Pointset = function () {
       this.boundingBoxUpdateRequired = true;
       if (this.region) this.region.pickableUpdateRequired = true;
     }
-  }
+  };
 
-    /**
+  /**
    * Set the colour of the pointset and its label using the hex value
    *
    * @param {Number} hex - hex value of color to be set
    */
-  this.setColourHex = function(hex) {
+  this.setColourHex = function (hex) {
     this.requestRender();
     this._lod._material.color.setHex(hex);
     if (this._lod._secondaryMaterial) {
@@ -318,7 +322,7 @@ const Pointset = function () {
         labelSets[i].setColour(this._lod._material.color);
       }
     }
-  }
+  };
 
   /**
    * Set the colour of the pointset and its label
@@ -333,7 +337,7 @@ const Pointset = function () {
         labelSets[i].setColour(this._lod._material.color);
       }
     }
-  }
+  };
 
   /**
    * Turn size attenuation on/off based on the flag.
@@ -349,7 +353,7 @@ const Pointset = function () {
         labelSets[i].setDepthTest(flag);
       }
     }
-  }
+  };
 
   /**
    * Turn size attenuation on/off based on the flag.
@@ -364,7 +368,7 @@ const Pointset = function () {
         labelSets[i].setFontWeight(fontWeightIn);
       }
     }
-  }
+  };
 
   /**
    * Set the size of the label
@@ -380,35 +384,35 @@ const Pointset = function () {
         labelSets[i].setSize(labelSize);
       }
     }
-  }
+  };
 
   /**
    * Set visibility of Labels
    *
    * @param {boolean} flag - default value is true
    */
-    this.displayLabels = (flag) => {
-      this.requestRender();
-      labelVisibility = flag;
-      for (let i = 0; i < labelSets.length; i++) {
-        if (labelSets[i]) {
-          labelSets[i].setVisibility(labelVisibility);
-        }
+  this.displayLabels = (flag) => {
+    this.requestRender();
+    labelVisibility = flag;
+    for (let i = 0; i < labelSets.length; i++) {
+      if (labelSets[i]) {
+        labelSets[i].setVisibility(labelVisibility);
       }
     }
+  };
   /**
    * Set the size of the points in pixels.
    *
    * @param {Number} size - size to be set.
    */
-  this.setSize = size => {
+  this.setSize = (size) => {
     this.requestRender();
     if (this.morph && this.morph.material) {
       this.morph.material.size = size;
       this.morph.material.userData.uniforms.pointSize.value = size;
       this.morph.pointSize = size;
     }
-  }
+  };
 
   /**
    * Turn size attenuation on/off based on the flag.
@@ -416,18 +420,18 @@ const Pointset = function () {
    * @param {Boolean} flag - Determin either size attenuation
    * should be on or off.
    */
-  this.setSizeAttenuation = flag => {
+  this.setSizeAttenuation = (flag) => {
     this.requestRender();
     if (this.morph && this.morph.material) {
       this.morph.material.sizeAttenuation = flag;
       this.morph.material.userData.uniforms.sizeAttenuation.value = flag ? 1 : 0;
     }
-  }
+  };
 
   /**
    * Get vertices at index
    */
-  this.getVerticesByIndex = function(index) {
+  this.getVerticesByIndex = function (index) {
     const mesh = this.getMorph();
     if (mesh && index >= 0 && this.drawRange > index) {
       return [
@@ -437,12 +441,12 @@ const Pointset = function () {
       ];
     }
     return undefined;
-  }
+  };
 
   /**
    * Edit Vertice in index.
    */
-  this.editVertices = function(coords, i) {
+  this.editVertices = function (coords, i) {
     this.requestRender();
     if (coords && coords.length) {
       const mesh = this.getMorph();
@@ -452,7 +456,7 @@ const Pointset = function () {
       } else {
         const instancePosition = mesh.geometry.getAttribute('instancePosition');
         let index = i;
-        coords.forEach(coord => {
+        coords.forEach((coord) => {
           const label = labelSets[index];
           if (label) {
             label.setPosition(coord[0], coord[1], coord[2]);
@@ -471,53 +475,53 @@ const Pointset = function () {
         this.boundingBoxUpdateRequired = true;
       }
     }
-  }
+  };
 
-    /**
+  /**
    * Delete a vertex in index.
    */
-    this.deleteVertices = function(index) {
-      this.requestRender();
-      const mesh = this.getMorph();
-      if (!mesh || 0 > index || index >= this.drawRange) {
-        return this.drawRange;
-      }
-      const instancePosition = mesh.geometry.getAttribute('instancePosition');
-      const end = this.drawRange - 1;
-      instancePosition.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
-      if (mesh.pointPositions !== instancePosition.array)
-        mesh.pointPositions.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
-      if (mesh.instanceColor) {
-        mesh.instanceColor.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
-        mesh.instanceColor.needsUpdate = true;
-      }
-      instancePosition.needsUpdate = true;
-      this.drawRange = end;
-      mesh.count = this.drawRange;
-      removeLabel(index);
-      this.boundingBoxUpdateRequired = true;
+  this.deleteVertices = function (index) {
+    this.requestRender();
+    const mesh = this.getMorph();
+    if (!mesh || 0 > index || index >= this.drawRange) {
       return this.drawRange;
     }
+    const instancePosition = mesh.geometry.getAttribute('instancePosition');
+    const end = this.drawRange - 1;
+    instancePosition.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
+    if (mesh.pointPositions !== instancePosition.array)
+      mesh.pointPositions.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
+    if (mesh.instanceColor) {
+      mesh.instanceColor.array.copyWithin(index * 3, (index + 1) * 3, this.drawRange * 3);
+      mesh.instanceColor.needsUpdate = true;
+    }
+    instancePosition.needsUpdate = true;
+    this.drawRange = end;
+    mesh.count = this.drawRange;
+    removeLabel(index);
+    this.boundingBoxUpdateRequired = true;
+    return this.drawRange;
+  };
 
   /**
    * Set the name for this ZincObject.
    *
    * @param {String} groupNameIn - Name to be set.
    */
-  this.setName = function(groupNameIn) {
+  this.setName = function (groupNameIn) {
     const oldName = this.groupName;
     Pointset.prototype.setName.call(this, groupNameIn);
-    labelSets.forEach(label => {
+    labelSets.forEach((label) => {
       if (label.getString() === oldName) {
         label?.setText(groupNameIn);
       }
-    })
-  }
+    });
+  };
 
   /**
    * Get the index of the closest vertex to centroid.
    */
-  this.getClosestVertexIndex = function() {
+  this.getClosestVertexIndex = function () {
     let closestIndex = -1;
     const mesh = this.getMorph();
     if (mesh && this.drawRange > 0) {
@@ -534,12 +538,12 @@ const Pointset = function () {
       }
     }
     return closestIndex;
-  }
+  };
 
   /**
    * Get the closest vertex to centroid.
    */
-  this.getClosestVertex = function(applyMatrixWorld) {
+  this.getClosestVertex = function (applyMatrixWorld) {
     const mesh = this.getMorph();
     if (this.closestVertexIndex === -1) {
       this.closestVertexIndex = this.getClosestVertexIndex();
@@ -552,14 +556,14 @@ const Pointset = function () {
     this.getBoundingBox();
     position.copy(this.center);
     return position;
-  }
+  };
 
   /**
    * Get the bounding box for the whole set of points.
    *
    * @return {THREE.Box3}
    */
-  this.getBoundingBox = function() {
+  this.getBoundingBox = function () {
     const mesh = this.getMorph();
     if (this.visible && mesh && mesh.visible && this.drawRange > 0) {
       if (this.boundingBoxUpdateRequired) {
@@ -573,7 +577,7 @@ const Pointset = function () {
       return this.cachedBoundingBox;
     }
     return undefined;
-  }
+  };
 
   /**
    * Check if the pointset is time varying.
@@ -582,14 +586,14 @@ const Pointset = function () {
    */
   this.isTimeVarying = () => {
     return morphVertices || morphColours;
-  }
+  };
 
   /**
    * Set the local time of this pointset.
    *
    * @param {Number} time - Can be any value between 0 to duration.
    */
-  this.setMorphTime = time => {
+  this.setMorphTime = (time) => {
     this.requestRender();
     if (time > this.duration) {
       this.inbuildTime = this.duration;
@@ -601,12 +605,12 @@ const Pointset = function () {
     if (morphVertices || morphColours) {
       updateMorphPointset();
     }
-  }
+  };
 
   /**
-  * Update the geometry and colours depending on the internal time and
-  * refresh the marker/LOD state for the render.
-  */
+   * Update the geometry and colours depending on the internal time and
+   * refresh the marker/LOD state for the render.
+   */
   this.render = (delta, playAnimation, cameraControls, options) => {
     if (this.morph && cameraControls) {
       this.morph.sizePerPixel = cameraControls.pixelHeight;
@@ -623,9 +627,8 @@ const Pointset = function () {
       updateMorphPointset();
     }
     this.updateMarker(playAnimation, options);
-  }
-
-}
+  };
+};
 
 Pointset.prototype = Object.create(ZincObject.prototype);
 export { Pointset, createPointQuadGeometry };

@@ -1,4 +1,3 @@
-
 import { TextureArray } from '../texture/textureArray';
 import { ZincObject } from './zincObject';
 /**
@@ -31,7 +30,7 @@ const TexturePrimitive = function (textureIn) {
       if (textureData.images && textureData.images.source) {
         const texture = new TextureArray();
         const imgArray = [];
-        textureData.images.source.forEach(img => {
+        textureData.images.source.forEach((img) => {
           imgArray.push(img);
         });
         const _this = this;
@@ -42,7 +41,7 @@ const TexturePrimitive = function (textureIn) {
         });
       }
     }
-  }
+  };
 
   this.addTextureArray = (tArray) => {
     if (this.textureList.length === 0 && this.texture) {
@@ -51,7 +50,7 @@ const TexturePrimitive = function (textureIn) {
     if (tArray && tArray.isTextureArray) {
       this.textureList.push(tArray);
     }
-  }
+  };
 
   /**
    * Initialise a texture based on the provided textureData, this should be used
@@ -62,11 +61,11 @@ const TexturePrimitive = function (textureIn) {
    *  is loaded.
    */
   this.initialise = (textureData, finishCallback) => {
-    if (finishCallback != undefined && (typeof finishCallback == 'function')) {
+    if (finishCallback != undefined && typeof finishCallback == 'function') {
       finishCallback(this);
     }
-  }
-}
+  };
+};
 
 TexturePrimitive.prototype = Object.create(ZincObject.prototype);
 TexturePrimitive.prototype.constructor = TexturePrimitive;
@@ -74,12 +73,12 @@ TexturePrimitive.prototype.constructor = TexturePrimitive;
 /**
  * Free the textures and the other allocated memory.
  */
-TexturePrimitive.prototype.dispose = function() {
+TexturePrimitive.prototype.dispose = function () {
   const textures = new Set(this.textureList);
   if (this.texture) textures.add(this.texture);
-  textures.forEach(texture => texture.dispose());
+  textures.forEach((texture) => texture.dispose());
   this.texture = undefined;
   this.textureList = [];
   ZincObject.prototype.dispose.call(this);
-}
+};
 export { TexturePrimitive };

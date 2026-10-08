@@ -1,7 +1,10 @@
 import * as THREE from 'three/webgpu';
 import { describe, it, expect, beforeAll } from 'vitest';
 import { create as createGPU, globals as gpuGlobals } from 'webgpu';
-import { createGlyphTransformCompute, dispatchAndReadbackGlyphTransform } from '../src/tsl/glyphTransform';
+import {
+  createGlyphTransformCompute,
+  dispatchAndReadbackGlyphTransform,
+} from '../src/tsl/glyphTransform';
 import { runRepeatModeCheck } from './glyphTransformReference';
 
 // Verifies the TSL compute-shader port of glyphset.js's resolve_glyph_axes()
@@ -31,7 +34,9 @@ beforeAll(async () => {
   //Request the adapter's maximum storage buffers per stage, matching
   //src/renderer.js. The compute pass itself only binds two.
   const device = await adapter.requestDevice({
-    requiredLimits: { maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage },
+    requiredLimits: {
+      maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage,
+    },
   });
   webgpuRenderer = new THREE.WebGPURenderer({ device });
   await webgpuRenderer.init();
@@ -39,6 +44,12 @@ beforeAll(async () => {
 
 describe('glyph transform compute (AXES_3D)', () => {
   it('matches the CPU resolve_glyph_axes reference for a blended frame', async () => {
-    await runRepeatModeCheck(webgpuRenderer, "AXES_3D", createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, expect);
+    await runRepeatModeCheck(
+      webgpuRenderer,
+      'AXES_3D',
+      createGlyphTransformCompute,
+      dispatchAndReadbackGlyphTransform,
+      expect,
+    );
   });
 });

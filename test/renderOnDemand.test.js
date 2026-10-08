@@ -1,10 +1,10 @@
-import Zinc from "../src/zinc";
+import Zinc from '../src/zinc';
 import { describe, it, expect, vi, beforeAll, afterAll } from 'vitest';
 import { create as createGPU, globals as gpuGlobals } from 'webgpu';
 import { JSONLoader } from '../src/loaders/JSONLoader';
 import { requestRenderAll } from '../src/renderRequests';
 
-const container = document.querySelector("#container");
+const container = document.querySelector('#container');
 const bit = (...positions) => positions.reduce((v, p) => v | (1 << p), 0);
 
 //Same headless WebGPU setup as zinc.test.js
@@ -65,10 +65,13 @@ describe('Render on demand', () => {
     navigator.gpu = gpu;
     const adapter = await gpu.requestAdapter();
     const device = await adapter.requestDevice();
-    const context = createFakeCanvasContext(device,
-      container.clientWidth || 1, container.clientHeight || 1);
+    const context = createFakeCanvasContext(
+      device,
+      container.clientWidth || 1,
+      container.clientHeight || 1,
+    );
     await renderer.initialiseVisualisation({ device, context });
-    scene = renderer.createScene("onDemand");
+    scene = renderer.createScene('onDemand');
     renderer.setCurrentScene(scene);
     renderer.playAnimation = false;
     drawSpy = vi.spyOn(scene, 'render');
@@ -138,8 +141,9 @@ describe('Render on demand', () => {
 
   it('draws every frame while downloads are pending', async () => {
     //Fail the download on a later tick
-    const load = vi.spyOn(Zinc.THREE.FileLoader.prototype, 'load').mockImplementation(
-      function (url, onLoad, onProgress, onError) {
+    const load = vi
+      .spyOn(Zinc.THREE.FileLoader.prototype, 'load')
+      .mockImplementation(function (url, onLoad, onProgress, onError) {
         setTimeout(() => onError({ responseURL: url }), 0);
       });
     const finished = vi.fn();
@@ -240,7 +244,7 @@ describe('Render on demand', () => {
   });
 
   it('additional active scenes use the current scene camera', () => {
-    const additionalScene = renderer.createScene("additional");
+    const additionalScene = renderer.createScene('additional');
     const zincGeometry = createGeometry(false);
     additionalScene.getRootRegion().addZincObject(zincGeometry);
     renderer.addActiveScene(additionalScene);
@@ -272,7 +276,9 @@ describe('Render on demand', () => {
     const mesh = zincGeometry.getMorph();
     mesh.updateMatrixWorld(true);
     const raycaster = new Zinc.THREE.Raycaster(
-      new Zinc.THREE.Vector3(0.75, 0.25, 10), new Zinc.THREE.Vector3(0, 0, -1));
+      new Zinc.THREE.Vector3(0.75, 0.25, 10),
+      new Zinc.THREE.Vector3(0, 0, -1),
+    );
     expect(raycaster.intersectObject(mesh, false).length).toBeGreaterThan(0);
     //GLTFExporter only accepts plain typed arrays, the export must succeed
     //and the indices stay 16 bit afterwards.

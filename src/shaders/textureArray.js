@@ -2,8 +2,7 @@ import * as THREE from 'three';
 
 const glslVersion = THREE.GLSL3;
 
-const fs =
-`
+const fs = `
 precision highp float;
 precision highp int;
 precision highp sampler2DArray;
@@ -23,8 +22,7 @@ void main() {
 }
 `;
 
-const vs =
-`
+const vs = `
 out vec3 vUw;
 uniform float depth;
 
@@ -37,16 +35,11 @@ void main() {
 }
 `;
 
-const getUniforms = function() {
+const getUniforms = function () {
   return {
     diffuse: { value: undefined },
     depth: { value: 1 },
   };
-}
+};
 
-export {
-  fs,
-  vs,
-  glslVersion,
-  getUniforms
-}
+export { fs, vs, glslVersion, getUniforms };

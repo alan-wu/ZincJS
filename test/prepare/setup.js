@@ -9,7 +9,7 @@ document.body.innerHTML = '<div id="container" style="width:1024px;height:1024px
 
 Object.defineProperty(navigator, 'userAgent', {
   value: 'node.js',
-  configurable: true
+  configurable: true,
 });
 
 import util from 'node:util';
@@ -23,31 +23,31 @@ const interceptor = new BatchInterceptor({
 });
 
 export const restHandlers = [
-  http.get('https://www.mytestserver.com/models/:id', ({params}) => {
+  http.get('https://www.mytestserver.com/models/:id', ({ params }) => {
     const { id } = params;
     const lookupKey = `../models/${id}`;
     const fileData = mockFixtures[lookupKey];
     if (fileData) {
-      console.log("Response here")
+      console.log('Response here');
       const response = HttpResponse.json(fileData.default || fileData);
       return response;
     }
   }),
-]
+];
 
-const server = setupServer(...restHandlers)
+const server = setupServer(...restHandlers);
 
 // Start server before all tests
 beforeAll(() => {
   server.listen({ onUnhandledRequest: 'error' });
   interceptor.apply();
-})
+});
 
 // Close server after all tests
 afterAll(() => {
   server.close();
   interceptor.dispose();
-})
+});
 
 // Reset handlers after each test for test isolation
-afterEach(() => server.resetHandlers())
+afterEach(() => server.resetHandlers());

@@ -21,20 +21,30 @@ export const GLOBAL_SCALE = 1.25;
 //deliberately close to the original so it's easy to eyeball-diff the two.
 export function referenceResolveGlyphAxes(point, axis1, axis2, axis3, scale, repeat_mode) {
   const return_arrays = [];
-  if (repeat_mode == "NONE" || repeat_mode == "MIRROR") {
+  if (repeat_mode == 'NONE' || repeat_mode == 'MIRROR') {
     const axis_scale = [0, 0, 0];
-    const final_axis1 = [0, 0, 0], final_axis2 = [0, 0, 0], final_axis3 = [0, 0, 0], final_point = [0, 0, 0];
-    const mirrored_axis1 = [0, 0, 0], mirrored_axis2 = [0, 0, 0], mirrored_axis3 = [0, 0, 0], mirrored_point = [0, 0, 0];
+    const final_axis1 = [0, 0, 0],
+      final_axis2 = [0, 0, 0],
+      final_axis3 = [0, 0, 0],
+      final_point = [0, 0, 0];
+    const mirrored_axis1 = [0, 0, 0],
+      mirrored_axis2 = [0, 0, 0],
+      mirrored_axis3 = [0, 0, 0],
+      mirrored_point = [0, 0, 0];
     for (let j = 0; j < 3; j++) {
-      const sign = (scale[j] < 0.0) ? -1.0 : 1.0;
+      const sign = scale[j] < 0.0 ? -1.0 : 1.0;
       axis_scale[j] = (sign * BASE_SIZE[j] + scale[j] * SCALE_FACTORS[j]) * GLOBAL_SCALE;
     }
     for (let j = 0; j < 3; j++) {
       final_axis1[j] = axis1[j] * axis_scale[0];
       final_axis2[j] = axis2[j] * axis_scale[1];
       final_axis3[j] = axis3[j] * axis_scale[2];
-      final_point[j] = point[j] + OFFSET[0] * final_axis1[j] + OFFSET[1] * final_axis2[j] + OFFSET[2] * final_axis3[j];
-      if (repeat_mode == "MIRROR") {
+      final_point[j] =
+        point[j] +
+        OFFSET[0] * final_axis1[j] +
+        OFFSET[1] * final_axis2[j] +
+        OFFSET[2] * final_axis3[j];
+      if (repeat_mode == 'MIRROR') {
         mirrored_axis1[j] = -final_axis1[j];
         mirrored_axis2[j] = -final_axis2[j];
         mirrored_axis3[j] = -final_axis3[j];
@@ -45,56 +55,88 @@ export function referenceResolveGlyphAxes(point, axis1, axis2, axis3, scale, rep
         }
       }
     }
-    if (0.0 > (final_axis3[0] * (final_axis1[1] * final_axis2[2] - final_axis1[2] * final_axis2[1]) +
-      final_axis3[1] * (final_axis1[2] * final_axis2[0] - final_axis1[0] * final_axis2[2]) +
-      final_axis3[2] * (final_axis1[0] * final_axis2[1] - final_axis1[1] * final_axis2[0]))) {
-      final_axis3[0] = -final_axis3[0]; final_axis3[1] = -final_axis3[1]; final_axis3[2] = -final_axis3[2];
+    if (
+      0.0 >
+      final_axis3[0] * (final_axis1[1] * final_axis2[2] - final_axis1[2] * final_axis2[1]) +
+        final_axis3[1] * (final_axis1[2] * final_axis2[0] - final_axis1[0] * final_axis2[2]) +
+        final_axis3[2] * (final_axis1[0] * final_axis2[1] - final_axis1[1] * final_axis2[0])
+    ) {
+      final_axis3[0] = -final_axis3[0];
+      final_axis3[1] = -final_axis3[1];
+      final_axis3[2] = -final_axis3[2];
     }
     return_arrays[0] = [final_point, final_axis1, final_axis2, final_axis3];
-    if (repeat_mode == "MIRROR") {
-      if (0.0 > (mirrored_axis3[0] * (mirrored_axis1[1] * mirrored_axis2[2] - mirrored_axis1[2] * mirrored_axis2[1]) +
-        mirrored_axis3[1] * (mirrored_axis1[2] * mirrored_axis2[0] - mirrored_axis1[0] * mirrored_axis2[2]) +
-        mirrored_axis3[2] * (mirrored_axis1[0] * mirrored_axis2[1] - mirrored_axis1[1] * mirrored_axis2[0]))) {
-        mirrored_axis3[0] = -mirrored_axis3[0]; mirrored_axis3[1] = -mirrored_axis3[1]; mirrored_axis3[2] = -mirrored_axis3[2];
+    if (repeat_mode == 'MIRROR') {
+      if (
+        0.0 >
+        mirrored_axis3[0] *
+          (mirrored_axis1[1] * mirrored_axis2[2] - mirrored_axis1[2] * mirrored_axis2[1]) +
+          mirrored_axis3[1] *
+            (mirrored_axis1[2] * mirrored_axis2[0] - mirrored_axis1[0] * mirrored_axis2[2]) +
+          mirrored_axis3[2] *
+            (mirrored_axis1[0] * mirrored_axis2[1] - mirrored_axis1[1] * mirrored_axis2[0])
+      ) {
+        mirrored_axis3[0] = -mirrored_axis3[0];
+        mirrored_axis3[1] = -mirrored_axis3[1];
+        mirrored_axis3[2] = -mirrored_axis3[2];
       }
       return_arrays[1] = [mirrored_point, mirrored_axis1, mirrored_axis2, mirrored_axis3];
     }
-  } else if (repeat_mode == "AXES_2D" || repeat_mode == "AXES_3D") {
+  } else if (repeat_mode == 'AXES_2D' || repeat_mode == 'AXES_3D') {
     const axis_scale = [0, 0, 0];
     const final_point = [0, 0, 0];
     for (let j = 0; j < 3; j++) {
-      const sign = (scale[j] < 0.0) ? -1.0 : 1.0;
+      const sign = scale[j] < 0.0 ? -1.0 : 1.0;
       axis_scale[j] = (sign * BASE_SIZE[0] + scale[j] * SCALE_FACTORS[0]) * GLOBAL_SCALE;
     }
     for (let j = 0; j < 3; j++) {
-      final_point[j] = point[j] + OFFSET[0] * axis_scale[0] * axis1[j] + OFFSET[1] * axis_scale[1] * axis2[j] + OFFSET[2] * axis_scale[2] * axis3[j];
+      final_point[j] =
+        point[j] +
+        OFFSET[0] * axis_scale[0] * axis1[j] +
+        OFFSET[1] * axis_scale[1] * axis2[j] +
+        OFFSET[2] * axis_scale[2] * axis3[j];
     }
-    const number_of_glyphs = (repeat_mode == "AXES_2D") ? 2 : 3;
+    const number_of_glyphs = repeat_mode == 'AXES_2D' ? 2 : 3;
     for (let k = 0; k < number_of_glyphs; k++) {
       let use_axis1, use_axis2;
       const use_scale = scale[k];
-      const final_axis1 = [0, 0, 0], final_axis2 = [0, 0, 0], final_axis3 = [0, 0, 0];
-      if (k == 0) { use_axis1 = axis1; use_axis2 = axis2; }
-      else if (k == 1) { use_axis1 = axis2; use_axis2 = (repeat_mode == "AXES_2D") ? axis1 : axis3; }
-      else { use_axis1 = axis3; use_axis2 = axis1; }
+      const final_axis1 = [0, 0, 0],
+        final_axis2 = [0, 0, 0],
+        final_axis3 = [0, 0, 0];
+      if (k == 0) {
+        use_axis1 = axis1;
+        use_axis2 = axis2;
+      } else if (k == 1) {
+        use_axis1 = axis2;
+        use_axis2 = repeat_mode == 'AXES_2D' ? axis1 : axis3;
+      } else {
+        use_axis1 = axis3;
+        use_axis2 = axis1;
+      }
       const final_scale1 = (BASE_SIZE[0] + use_scale * SCALE_FACTORS[0]) * GLOBAL_SCALE;
-      final_axis1[0] = use_axis1[0] * final_scale1; final_axis1[1] = use_axis1[1] * final_scale1; final_axis1[2] = use_axis1[2] * final_scale1;
+      final_axis1[0] = use_axis1[0] * final_scale1;
+      final_axis1[1] = use_axis1[1] * final_scale1;
+      final_axis1[2] = use_axis1[2] * final_scale1;
       final_axis3[0] = final_axis1[1] * use_axis2[2] - use_axis2[1] * final_axis1[2];
       final_axis3[1] = final_axis1[2] * use_axis2[0] - use_axis2[2] * final_axis1[0];
       final_axis3[2] = final_axis1[0] * use_axis2[1] - final_axis1[1] * use_axis2[0];
       let magnitude = Math.sqrt(final_axis3[0] ** 2 + final_axis3[1] ** 2 + final_axis3[2] ** 2);
       if (0.0 < magnitude) {
-        let scaling = (BASE_SIZE[2] + use_scale * SCALE_FACTORS[2]) * GLOBAL_SCALE / magnitude;
-        if ((repeat_mode == "AXES_2D") && (k > 0)) scaling *= -1.0;
-        final_axis3[0] *= scaling; final_axis3[1] *= scaling; final_axis3[2] *= scaling;
+        let scaling = ((BASE_SIZE[2] + use_scale * SCALE_FACTORS[2]) * GLOBAL_SCALE) / magnitude;
+        if (repeat_mode == 'AXES_2D' && k > 0) scaling *= -1.0;
+        final_axis3[0] *= scaling;
+        final_axis3[1] *= scaling;
+        final_axis3[2] *= scaling;
       }
       final_axis2[0] = final_axis3[1] * final_axis1[2] - final_axis1[1] * final_axis3[2];
       final_axis2[1] = final_axis3[2] * final_axis1[0] - final_axis1[2] * final_axis3[0];
       final_axis2[2] = final_axis3[0] * final_axis1[1] - final_axis3[1] * final_axis1[0];
       magnitude = Math.sqrt(final_axis2[0] ** 2 + final_axis2[1] ** 2 + final_axis2[2] ** 2);
       if (0.0 < magnitude) {
-        const scaling = (BASE_SIZE[1] + use_scale * SCALE_FACTORS[1]) * GLOBAL_SCALE / magnitude;
-        final_axis2[0] *= scaling; final_axis2[1] *= scaling; final_axis2[2] *= scaling;
+        const scaling = ((BASE_SIZE[1] + use_scale * SCALE_FACTORS[1]) * GLOBAL_SCALE) / magnitude;
+        final_axis2[0] *= scaling;
+        final_axis2[1] *= scaling;
+        final_axis2[2] *= scaling;
       }
       return_arrays[k] = [final_point, final_axis1, final_axis2, final_axis3];
     }
@@ -107,18 +149,48 @@ export function referenceResolveGlyphAxes(point, axis1, axis2, axis3, scale, rep
 //so both the handedness-fix and origin-shift branches actually get
 //exercised.
 export const FRAME0 = {
-  point: [[0, 0, 0], [1, 2, 3]],
-  axis1: [[1, 0, 0], [0.6, 0.8, 0]],
-  axis2: [[0, 1, 0], [-0.8, 0.6, 0]],
-  axis3: [[0, 0, -1], [0, 0, 1]], // left-handed on record 0 - exercises the handedness fix
-  scale: [[1, 1, 1], [-1, 2, 0.5]], // negative scale.x on record 1 - exercises MIRROR's origin shift
+  point: [
+    [0, 0, 0],
+    [1, 2, 3],
+  ],
+  axis1: [
+    [1, 0, 0],
+    [0.6, 0.8, 0],
+  ],
+  axis2: [
+    [0, 1, 0],
+    [-0.8, 0.6, 0],
+  ],
+  axis3: [
+    [0, 0, -1],
+    [0, 0, 1],
+  ], // left-handed on record 0 - exercises the handedness fix
+  scale: [
+    [1, 1, 1],
+    [-1, 2, 0.5],
+  ], // negative scale.x on record 1 - exercises MIRROR's origin shift
 };
 export const FRAME1 = {
-  point: [[5, 0, 0], [4, -1, 2]],
-  axis1: [[0, 1, 0], [1, 0, 0]],
-  axis2: [[-1, 0, 0], [0, 0, 1]],
-  axis3: [[0, 0, 1], [0, -1, 0]],
-  scale: [[2, 1, 1], [1, -1, 1]],
+  point: [
+    [5, 0, 0],
+    [4, -1, 2],
+  ],
+  axis1: [
+    [0, 1, 0],
+    [1, 0, 0],
+  ],
+  axis2: [
+    [-1, 0, 0],
+    [0, 0, 1],
+  ],
+  axis3: [
+    [0, 0, 1],
+    [0, -1, 0],
+  ],
+  scale: [
+    [2, 1, 1],
+    [1, -1, 1],
+  ],
 };
 export const COLOR0 = [0xff0000, 0x00ff00];
 export const COLOR1 = [0x0000ff, 0xffff00];
@@ -141,7 +213,9 @@ export function buildFrameData() {
     const c = new THREE.Color();
     for (let i = 0; i < baseCount; i++) {
       c.setHex(frame[i]);
-      out[i * 3] = c.r; out[i * 3 + 1] = c.g; out[i * 3 + 2] = c.b;
+      out[i * 3] = c.r;
+      out[i * 3 + 1] = c.g;
+      out[i * 3 + 2] = c.b;
     }
     return out;
   };
@@ -174,13 +248,20 @@ export function referenceForRecord(recordIndex, repeat_mode, proportion) {
 }
 
 export function multiplierFor(repeat_mode) {
-  if (repeat_mode == "AXES_2D" || repeat_mode == "MIRROR") return 2;
-  if (repeat_mode == "AXES_3D") return 3;
+  if (repeat_mode == 'AXES_2D' || repeat_mode == 'MIRROR') return 2;
+  if (repeat_mode == 'AXES_3D') return 3;
   return 1;
 }
 
-export async function runRepeatModeCheck(webgpuRenderer, repeat_mode, createGlyphTransformCompute, dispatchAndReadbackGlyphTransform, expect) {
-  const { baseCount, positionsData, axis1Data, axis2Data, axis3Data, scaleData, colorData } = buildFrameData();
+export async function runRepeatModeCheck(
+  webgpuRenderer,
+  repeat_mode,
+  createGlyphTransformCompute,
+  dispatchAndReadbackGlyphTransform,
+  expect,
+) {
+  const { baseCount, positionsData, axis1Data, axis2Data, axis3Data, scaleData, colorData } =
+    buildFrameData();
   const multiplier = multiplierFor(repeat_mode);
   const outputCount = baseCount * multiplier;
 

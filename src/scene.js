@@ -10,24 +10,20 @@ import { SceneLoader } from './sceneLoader';
 import { Viewport } from './controls';
 import { createPointQuadGeometry } from './primitives/pointset';
 import { createInstancedPointsMaterial } from './tsl/pointsMaterial';
-import {
-  createBufferGeometry,
-  createNewSpriteText,
-  getCircularTexture
-} from './utilities';
+import { createBufferGeometry, createNewSpriteText, getCircularTexture } from './utilities';
 
 let uniqueiId = 0;
 
 const getUniqueId = function () {
-  return "sc" + uniqueiId++;
-}
+  return 'sc' + uniqueiId++;
+};
 
-const defaultMetadata = function() {
+const defaultMetadata = function () {
   return {
-    Duration: "6 secs",
-    OriginalDuration: "-",
-    TimeStamps: {}
-  }
+    Duration: '6 secs',
+    OriginalDuration: '-',
+    TimeStamps: {},
+  };
 };
 
 const defaultDuration = 6000;
@@ -97,10 +93,10 @@ const Scene = function (containerIn, rendererIn) {
     y_offset: 16,
     width: 128,
     height: 128,
-    align: "top-right",
-    updateRequired: true
+    align: 'top-right',
+    updateRequired: true,
   };
-  let scissor = {x: 0,  y: 0};
+  let scissor = { x: 0, y: 0 };
   let metadata = defaultMetadata();
   let _markerTarget = new THREE.Vector2();
   let pickableObjectsList = [];
@@ -112,26 +108,22 @@ const Scene = function (containerIn, rendererIn) {
   let axisDisplay = {
     main: [],
     mini: [],
-  }
-  const _v3 = new THREE.Vector3( 0, 0, 0 );
+  };
+  const _v3 = new THREE.Vector3(0, 0, 0);
 
   const getDrawingWidth = () => {
     if (container)
-      if (typeof container.clientWidth !== "undefined")
-        return container.clientWidth;
-      else
-        return container.width;
+      if (typeof container.clientWidth !== 'undefined') return container.clientWidth;
+      else return container.width;
     return 0;
-  }
+  };
 
   const getDrawingHeight = () => {
     if (container)
-      if (typeof container.clientHeight !== "undefined")
-        return container.clientHeight;
-      else
-        return container.height;
+      if (typeof container.clientHeight !== 'undefined') return container.clientHeight;
+      else return container.height;
     return 0;
-  }
+  };
 
   /**
    * This function returns a three component array, which contains
@@ -141,7 +133,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.getDownloadProgress = () => {
     return sceneLoader.getDownloadProgress();
-  }
+  };
 
   //called from Renderer when panel has been resized
   this.onWindowResize = () => {
@@ -152,7 +144,7 @@ const Scene = function (containerIn, rendererIn) {
     this.minimapScissor.updateRequired = true;
     zincCameraControls.onResize();
     zincCameraControls.calculateHeightPerPixelAtZeroDepth(wHeight);
-  }
+  };
 
   /**
    * Reset the viewport of this scene to its original state.
@@ -161,19 +153,24 @@ const Scene = function (containerIn, rendererIn) {
     needsRender = true;
     this.onWindowResize();
     zincCameraControls.resetView();
-  }
+  };
 
   /**
    * Set the zoom level by unit scroll rate
    */
-  this.changeZoomByScrollRateUnit = unit => {
+  this.changeZoomByScrollRateUnit = (unit) => {
     needsRender = true;
     zincCameraControls.changeZoomByScrollRateUnit(unit);
-  }
+  };
 
   //Setup the camera for this scene, it also initialise the lighting
   const setupCamera = () => {
-    this.camera = new THREE.PerspectiveCamera(40, getDrawingWidth() / getDrawingHeight(), 0.0, 10.0);
+    this.camera = new THREE.PerspectiveCamera(
+      40,
+      getDrawingWidth() / getDrawingHeight(),
+      0.0,
+      10.0,
+    );
     this.ambient = new THREE.AmbientLight(0xffffff, 0.2);
     scene.add(this.ambient);
 
@@ -195,13 +192,13 @@ const Scene = function (containerIn, rendererIn) {
    *
    * @param {Zinc.Viewport} viewData - Viewport data to be loaded.
    */
-  this.loadView = settings => {
+  this.loadView = (settings) => {
     needsRender = true;
     const viewPort = new Viewport();
     viewPort.setFromObject(settings);
     zincCameraControls.setCurrentCameraSettings(viewPort);
     return true;
-  }
+  };
 
   /**
    * Set up multiple views.
@@ -215,7 +212,7 @@ const Scene = function (containerIn, rendererIn) {
       zincCameraControls.addViewport(name, viewport);
     }
     zincCameraControls.setDefaultViewport(defaultView);
-  }
+  };
 
   /**
    * Get the bounding box of all the object in this scene only.
@@ -224,7 +221,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.getBoundingBox = () => {
     return rootRegion.getBoundingBox(true);
-  }
+  };
 
   /**
    * Adjust the viewport to display the desired volume provided by the bounding box.
@@ -232,7 +229,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {THREE.Box3} boundingBox - The bounding box which describes the volume of
    * which we the viewport should be displaying.
    */
-  this.viewAllWithBoundingBox = boundingBox => {
+  this.viewAllWithBoundingBox = (boundingBox) => {
     needsRender = true;
     if (boundingBox) {
       const viewport = zincCameraControls.getViewportFromBoundingBox(boundingBox, 1.0);
@@ -240,7 +237,7 @@ const Scene = function (containerIn, rendererIn) {
       zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
       markerCluster.markerUpdateRequired = true;
     }
-  }
+  };
 
   /**
    * Adjust zoom distance to include all primitives in scene only.
@@ -250,7 +247,7 @@ const Scene = function (containerIn, rendererIn) {
     const boundingBox = this.getBoundingBox();
     this.viewAllWithBoundingBox(boundingBox);
     markerCluster.markerUpdateRequired = true;
-  }
+  };
 
   /**
    * A function which iterates through the list of geometries and call the callback
@@ -258,9 +255,9 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Function} callbackFunction - Callback function with the geometry
    * as an argument.
    */
-  this.forEachGeometry = callbackFunction => {
+  this.forEachGeometry = (callbackFunction) => {
     rootRegion.forEachGeometry(callbackFunction, true);
-  }
+  };
 
   /**
    * A function which iterates through the list of glyphsets and call the callback
@@ -268,9 +265,9 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Function} callbackFunction - Callback function with the glyphset
    * as an argument.
    */
-  this.forEachGlyphset = callbackFunction => {
+  this.forEachGlyphset = (callbackFunction) => {
     rootRegion.forEachGlyphset(callbackFunction, true);
-  }
+  };
 
   /**
    * A function which iterates through the list of pointsets and call the callback
@@ -278,19 +275,19 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Function} callbackFunction - Callback function with the pointset
    * as an argument.
    */
-  this.forEachPointset = callbackFunction => {
+  this.forEachPointset = (callbackFunction) => {
     rootRegion.forEachPointset(callbackFunction, true);
-  }
+  };
 
   /**
-  * A function which iterates through the list of lines and call the callback
-  * function with the lines as the argument.
-  * @param {Function} callbackFunction - Callback function with the lines
-  * as an argument.
-  */
-  this.forEachLine = callbackFunction => {
+   * A function which iterates through the list of lines and call the callback
+   * function with the lines as the argument.
+   * @param {Function} callbackFunction - Callback function with the lines
+   * as an argument.
+   */
+  this.forEachLine = (callbackFunction) => {
     rootRegion.forEachLine(callbackFunction, true);
-  }
+  };
 
   /**
    * Find and return all geometries in this scene with the matching GroupName.
@@ -298,9 +295,9 @@ const Scene = function (containerIn, rendererIn) {
    * @param {String} GroupName - Groupname to match with.
    * @returns {Array}
    */
-  this.findGeometriesWithGroupName = GroupName => {
+  this.findGeometriesWithGroupName = (GroupName) => {
     return rootRegion.findGeometriesWithGroupName(GroupName, true);
-  }
+  };
 
   /**
    * Find and return all pointsets in this scene with the matching GroupName.
@@ -308,18 +305,18 @@ const Scene = function (containerIn, rendererIn) {
    * @param {String} GroupName - Groupname to match with.
    * @returns {Array}
    */
-  this.findPointsetsWithGroupName = GroupName => {
+  this.findPointsetsWithGroupName = (GroupName) => {
     return rootRegion.findPointsetsWithGroupName(GroupName, true);
-  }
+  };
   /**
    * Find and return all glyphsets in this scene with the matching GroupName.
    *
    * @param {String} GroupName - Groupname to match with.
    * @returns {Array}
    */
-  this.findGlyphsetsWithGroupName = GroupName => {
+  this.findGlyphsetsWithGroupName = (GroupName) => {
     return rootRegion.findGlyphsetsWithGroupName(GroupName, true);
-  }
+  };
 
   /**
    * Find and return all lines in this scene with the matching GroupName.
@@ -327,9 +324,9 @@ const Scene = function (containerIn, rendererIn) {
    * @param {String} GroupName - Groupname to match with.
    * @returns {Array}
    */
-  this.findLinesWithGroupName = GroupName => {
+  this.findLinesWithGroupName = (GroupName) => {
     return rootRegion.findLinesWithGroupName(GroupName, true);
-  }
+  };
 
   /**
    * Find a list of objects with the specified name, this will
@@ -339,13 +336,13 @@ const Scene = function (containerIn, rendererIn) {
    * @param {String} GroupName - Groupname to match with.
    * @returns {Array}
    */
-  this.findObjectsWithGroupName = GroupName => {
+  this.findObjectsWithGroupName = (GroupName) => {
     return rootRegion.findObjectsWithGroupName(GroupName, true);
-  }
+  };
 
-  this.findObjectsWithAnatomicalId = anatomicalId => {
+  this.findObjectsWithAnatomicalId = (anatomicalId) => {
     return rootRegion.findObjectsWithAnatomicalId(anatomicalId, true);
-  }
+  };
 
   /**
    * Get the bounding box of all zinc objects in list.
@@ -353,19 +350,17 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Array} objectsArray - Groupname to match with.
    * @returns {THREE.Box3}
    */
-  this.getBoundingBoxOfZincObjects = objectsArray => {
+  this.getBoundingBoxOfZincObjects = (objectsArray) => {
     let boundingBox = undefined;
     for (let i = 0; i < objectsArray.length; i++) {
       let box = objectsArray[i].getBoundingBox();
       if (box) {
-        if (!boundingBox)
-          boundingBox = box;
-        else
-          boundingBox.union(box);
+        if (!boundingBox) boundingBox = box;
+        else boundingBox.union(box);
       }
     }
     return boundingBox;
-  }
+  };
 
   /**
    * Convert the vector3 into screen coordinates.
@@ -375,16 +370,16 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Array} objectsArray - Groupname to match with.
    * @returns {THREE.Vector3}
    */
-  this.vectorToScreenXY = point => {
+  this.vectorToScreenXY = (point) => {
     point.project(this.camera);
     let width = getDrawingWidth();
     let height = getDrawingHeight();
-    let widthHalf = (width / 2);
-    let heightHalf = (height / 2);
-    point.x = (point.x * widthHalf) + widthHalf;
-    point.y = - (point.y * heightHalf) + heightHalf;
+    let widthHalf = width / 2;
+    let heightHalf = height / 2;
+    point.x = point.x * widthHalf + widthHalf;
+    point.y = -(point.y * heightHalf) + heightHalf;
     return point;
-  }
+  };
 
   /**
    * Get the screen coordinate of the centroid of provided list of objects.
@@ -392,7 +387,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Array} zincObjects - List of {@link ZincObject}.
    * @returns {THREE.Vector3}
    */
-  this.getObjectsScreenXY = zincObjects => {
+  this.getObjectsScreenXY = (zincObjects) => {
     if (zincObjects && zincObjects.length > 0) {
       let boundingBox = this.getBoundingBoxOfZincObjects(zincObjects);
       const center = new THREE.Vector3();
@@ -400,7 +395,7 @@ const Scene = function (containerIn, rendererIn) {
       return this.vectorToScreenXY(center);
     }
     return undefined;
-  }
+  };
 
   /**
    * Get the screen coordinate of the centroid of all objects
@@ -409,7 +404,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {String} name - List of {@link ZincObject}.
    * @returns {THREE.Vector3}
    */
-  this.getNamedObjectsScreenXY = name => {
+  this.getNamedObjectsScreenXY = (name) => {
     let zincObjects = this.findObjectsWithGroupName(name);
     return this.getObjectsScreenXY(zincObjects);
   };
@@ -420,14 +415,13 @@ const Scene = function (containerIn, rendererIn) {
    * @param {ZincObject} - zinc object ot be added.
    * @returns {THREE.Vector3}
    */
-  this.addZincObject = zincObject => {
+  this.addZincObject = (zincObject) => {
     needsRender = true;
     if (zincObject) {
       rootRegion.addZincObject(zincObject);
-      if (zincCameraControls)
-        zincCameraControls.calculateMaxAllowedDistance(this);
+      if (zincCameraControls) zincCameraControls.calculateMaxAllowedDistance(this);
     }
-  }
+  };
 
   /**
    * Load a glyphset into this scene object.
@@ -441,7 +435,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.loadGlyphsetURL = (metaurl, glyphurl, groupName, finishCallback) => {
     sceneLoader.loadGlyphsetURL(rootRegion, metaurl, glyphurl, groupName, finishCallback);
-  }
+  };
 
   /**
    * Load a pointset into this scene object.
@@ -455,36 +449,43 @@ const Scene = function (containerIn, rendererIn) {
    * once the glyphset is succssfully load in.
    */
   this.loadPointsetURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
-    sceneLoader.loadPointsetURL(rootRegion, url, timeEnabled, morphColour, groupName, finishCallback);
-  }
+    sceneLoader.loadPointsetURL(
+      rootRegion,
+      url,
+      timeEnabled,
+      morphColour,
+      groupName,
+      finishCallback,
+    );
+  };
 
   /**
- * Load lines into this scene object.
- *
- * @param {String} metaurl - Provide informations such as transformations, colours
- * and others for each of the glyph in the glyphsset.
- * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
- * @param {Boolean} morphColour - Indicate if color morphing is enabled.
- * @param {STRING} groupName - name to assign the pointset's groupname to.
- * @param {Function} finishCallback - Callback function which will be called
- * once the glyphset is succssfully load in.
- */
+   * Load lines into this scene object.
+   *
+   * @param {String} metaurl - Provide informations such as transformations, colours
+   * and others for each of the glyph in the glyphsset.
+   * @param {Boolean} timeEnabled - Indicate if  morphing is enabled.
+   * @param {Boolean} morphColour - Indicate if color morphing is enabled.
+   * @param {STRING} groupName - name to assign the pointset's groupname to.
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the glyphset is succssfully load in.
+   */
   this.loadLinesURL = (url, timeEnabled, morphColour, groupName, finishCallback) => {
     sceneLoader.loadLinesURL(rootRegion, url, timeEnabled, morphColour, groupName, finishCallback);
-  }
+  };
 
   /**
-  * Read a STL file into this scene, the geometry will be presented as
-  * {@link Zinc.Geometry}.
-  *
-  * @param {STRING} url - location to the STL file.
-  * @param {STRING} groupName - name to assign the geometry's groupname to.
-  * @param {Function} finishCallback - Callback function which will be called
-  * once the STL geometry is succssfully loaded.
-  */
+   * Read a STL file into this scene, the geometry will be presented as
+   * {@link Zinc.Geometry}.
+   *
+   * @param {STRING} url - location to the STL file.
+   * @param {STRING} groupName - name to assign the geometry's groupname to.
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the STL geometry is succssfully loaded.
+   */
   this.loadSTL = (url, groupName, finishCallback) => {
     sceneLoader.loadSTL(rootRegion, url, groupName, finishCallback);
-  }
+  };
 
   /**
    * Read a OBJ file into this scene, the geometry will be presented as
@@ -497,7 +498,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.loadOBJ = (url, groupName, finishCallback) => {
     sceneLoader.loadOBJ(rootRegion, url, groupName, finishCallback);
-  }
+  };
 
   /**
    * Load a metadata file from the provided URL into this scene. Once
@@ -507,11 +508,11 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Function} finishCallback - Callback function which will be called
    * for each glyphset and geometry that has been written in.
    * @param {options} Optional settings, it can be used to ignore some regions/groups
-    * in the metadata file. Only supports version 1 at this moment.
+   * in the metadata file. Only supports version 1 at this moment.
    */
   this.loadMetadataURL = (url, finishCallback, allCompletedCallback, options) => {
     sceneLoader.loadMetadataURL(rootRegion, url, finishCallback, allCompletedCallback, options);
-  }
+  };
 
   /**
    * Load a legacy model(s) format with the provided URLs and parameters. This only loads the geometry
@@ -520,16 +521,23 @@ const Scene = function (containerIn, rendererIn) {
    * @deprecated
    */
   this.loadModelsURL = (urls, colours, opacities, timeEnabled, morphColour, finishCallback) => {
-    sceneLoader.loadModelsURL(rootRegion. urls, colours, opacities, timeEnabled, morphColour, finishCallback);
-  }
+    sceneLoader.loadModelsURL(
+      rootRegion.urls,
+      colours,
+      opacities,
+      timeEnabled,
+      morphColour,
+      finishCallback,
+    );
+  };
 
   /**
    * Load the viewport from an external location provided by the url.
    * @param {String} URL - address to the file containing viewport information.
    */
-  this.loadViewURL = url => {
+  this.loadViewURL = (url) => {
     sceneLoader.loadViewURL(url);
-  }
+  };
 
   /**
    * Load a legacy file format containing the viewport and its meta file from an external
@@ -541,38 +549,38 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.loadFromViewURL = (jsonFilePrefix, finishCallback) => {
     sceneLoader.loadFromViewURL(jsonFilePrefix, finishCallback);
-  }
+  };
 
   /**
    * Load GLTF into this scene object.
    */
   this.loadGLTF = (url, finishCallback, allCompletedCallback, options) => {
     sceneLoader.loadGLTF(rootRegion, url, finishCallback, allCompletedCallback, options);
-  }
+  };
 
   //Update the directional light for this scene.
   this.updateDirectionalLight = () => {
     needsRender = true;
     zincCameraControls.updateDirectionalLight();
-  }
+  };
 
   /**
    * Add any {THREE.Object} into this scene.
    * @param {THREE.Object} object - to be addded into this scene.
    */
-  this.addObject = object => {
+  this.addObject = (object) => {
     needsRender = true;
     scene.add(object);
-  }
+  };
 
   /**
    * Remove any {THREE.Object} from this scene.
    * @param {THREE.Object} object - to be removed from this scene.
    */
-  this.removeObject = object => {
+  this.removeObject = (object) => {
     needsRender = true;
     scene.remove(object);
-  }
+  };
 
   /**
    * Get the current time of the scene.
@@ -583,11 +591,10 @@ const Scene = function (containerIn, rendererIn) {
       return videoHandler.getCurrentTime(duration);
     }
     const time = rootRegion.getCurrentTime();
-    if (time !== -1)
-      return time;
+    if (time !== -1) return time;
 
     return 0;
-  }
+  };
 
   /**
    * Set the current time of all the geometries and glyphsets of this scene.
@@ -599,7 +606,7 @@ const Scene = function (containerIn, rendererIn) {
       videoHandler.setMorphTime(time, duration);
     }
     rootRegion.setMorphTime(time, true);
-  }
+  };
 
   /**
    * Check if any object in this scene is time varying.
@@ -608,10 +615,10 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.isTimeVarying = () => {
     if (videoHandler && videoHandler.video && !videoHandler.video.error) {
-    	return true;
+      return true;
     }
     return rootRegion.isTimeVarying();
-  }
+  };
 
   /**
    * Update geometries and glyphsets based on the calculated time.
@@ -629,7 +636,7 @@ const Scene = function (containerIn, rendererIn) {
     options.camera = cameraControls;
     //Global markers flag, marker can be set at individual zinc object level
     //overriding this flag.
-    options.displayMarkers =  this.displayMarkers;
+    options.displayMarkers = this.displayMarkers;
     options.markerCluster = markerCluster;
     options.markersList = markerCluster.markers;
     options.ndcToBeUpdated = sharedCamera ? sharedCamera.updated : false;
@@ -638,36 +645,35 @@ const Scene = function (containerIn, rendererIn) {
     if (playAnimation) {
       options.markerCluster.markerUpdateRequired = true;
     }
-	  if (videoHandler) {
-		  if (videoHandler.isReadyToPlay()) {
-			  if (playAnimation) {
+    if (videoHandler) {
+      if (videoHandler.isReadyToPlay()) {
+        if (playAnimation) {
           videoHandler.video.play();
-			  } else {
-				  videoHandler.video.pause();
-			  }
-        const currentTime = videoHandler.video.currentTime /
-          videoHandler.getVideoDuration() * duration;
-			  if (0 == sceneLoader.toBeDownloaded) {
-				  if (!sharedCamera) {
-				    zincCameraControls.setTime(currentTime);
-				    options.ndcToBeUpdated = zincCameraControls.update(0);
+        } else {
+          videoHandler.video.pause();
+        }
+        const currentTime =
+          (videoHandler.video.currentTime / videoHandler.getVideoDuration()) * duration;
+        if (0 == sceneLoader.toBeDownloaded) {
+          if (!sharedCamera) {
+            zincCameraControls.setTime(currentTime);
+            options.ndcToBeUpdated = zincCameraControls.update(0);
             if (options.ndcToBeUpdated) {
               zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
             }
           }
           rootRegion.setMorphTime(currentTime, true);
           rootRegion.renderGeometries(0, 0, playAnimation, cameraControls, options, true);
-			  } else if (!sharedCamera && zincCameraControls.update(0)) {
-				  changed = true;
-				  cameraUpdated = true;
-			  }
-			  //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 6000);
-		  }
-		  //The video texture changes while playing or loading
-		  if (playAnimation || !videoHandler.isReadyToPlay())
-		    changed = true;
-	  } else {
-		  if (0 == sceneLoader.toBeDownloaded) {
+        } else if (!sharedCamera && zincCameraControls.update(0)) {
+          changed = true;
+          cameraUpdated = true;
+        }
+        //console.log(videoHandler.video.currentTime / videoHandler.getVideoDuration() * 6000);
+      }
+      //The video texture changes while playing or loading
+      if (playAnimation || !videoHandler.isReadyToPlay()) changed = true;
+    } else {
+      if (0 == sceneLoader.toBeDownloaded) {
         if (!sharedCamera) {
           options.ndcToBeUpdated = zincCameraControls.update(delta);
           if (options.ndcToBeUpdated) {
@@ -675,16 +681,18 @@ const Scene = function (containerIn, rendererIn) {
           }
         }
         rootRegion.renderGeometries(playRate, delta, playAnimation, cameraControls, options, true);
-		  } else if (!sharedCamera && zincCameraControls.update(0)) {
-			  changed = true;
-			  cameraUpdated = true;
-		  }
+      } else if (!sharedCamera && zincCameraControls.update(0)) {
+        changed = true;
+        cameraUpdated = true;
+      }
     }
     //These are plain properties, check if they have changed
-    if (lastDisplayState.displayMarkers !== this.displayMarkers ||
+    if (
+      lastDisplayState.displayMarkers !== this.displayMarkers ||
       lastDisplayState.displayMinimap !== this.displayMinimap ||
       lastDisplayState.displayMiniAxes !== this.displayMiniAxes ||
-      lastDisplayState.playAnimation !== playAnimation) {
+      lastDisplayState.playAnimation !== playAnimation
+    ) {
       lastDisplayState.displayMarkers = this.displayMarkers;
       lastDisplayState.displayMinimap = this.displayMinimap;
       lastDisplayState.displayMiniAxes = this.displayMiniAxes;
@@ -692,18 +700,18 @@ const Scene = function (containerIn, rendererIn) {
       changed = true;
     }
     //The flag is only cleared when the minimap is drawn
-    if (this.minimapScissor.updateRequired &&
-      (this.displayMinimap || this.displayMiniAxes)) {
+    if (this.minimapScissor.updateRequired && (this.displayMinimap || this.displayMiniAxes)) {
       changed = true;
     }
-    if (!sharedCamera && options.ndcToBeUpdated)
-      cameraUpdated = true;
-    if (options.ndcToBeUpdated ||
+    if (!sharedCamera && options.ndcToBeUpdated) cameraUpdated = true;
+    if (
+      options.ndcToBeUpdated ||
       (playAnimation && this.isTimeVarying()) ||
       //Objects appear as they are loaded
       sceneLoader.toBeDownloaded > 0 ||
       //Clusters are recalculated on a later frame
-      (markerCluster.isEnabled() && markerCluster.markerUpdateRequired)) {
+      (markerCluster.isEnabled() && markerCluster.markerUpdateRequired)
+    ) {
       changed = true;
     }
     //Changes made during this frame, e.g. LOD switching
@@ -712,7 +720,7 @@ const Scene = function (containerIn, rendererIn) {
       needsRender = false;
     }
     return changed;
-  }
+  };
 
   /**
    * Request this scene to be drawn on the next frame, this is only
@@ -721,7 +729,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.invalidate = () => {
     needsRender = true;
-  }
+  };
 
   /**
    * Check if the camera of this scene has been updated during the last
@@ -732,7 +740,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.isCameraUpdated = () => {
     return cameraUpdated;
-  }
+  };
 
   /**
    * Return the internal {THREE.Scene}.
@@ -740,67 +748,78 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.getThreeJSScene = () => {
     return scene;
-  }
+  };
 
   this.setVideoHandler = (videoHandlerIn) => {
     needsRender = true;
-    if (!videoHandler)
-      videoHandler = videoHandlerIn;
-  }
+    if (!videoHandler) videoHandler = videoHandlerIn;
+  };
 
   /**
    * Set a group of scenes into this parent scene. This group of
    * scenes will also be rendered when this scene is rendered.
    * @private
    */
-  this.setAdditionalScenesGroup = scenesGroup => {
+  this.setAdditionalScenesGroup = (scenesGroup) => {
     scene.add(scenesGroup);
-  }
+  };
 
-  let getWindowsPosition = (align, x_offset, y_offset, width, height,
-    renderer_width, renderer_height) => {
+  let getWindowsPosition = (
+    align,
+    x_offset,
+    y_offset,
+    width,
+    height,
+    renderer_width,
+    renderer_height,
+  ) => {
     let x = 0;
     let y = 0;
-    if (align.includes("top")) {
+    if (align.includes('top')) {
       y = renderer_height - height - y_offset;
-    } else if (align.includes("bottom")) {
+    } else if (align.includes('bottom')) {
       y = y_offset;
     } else {
       y = Math.floor((renderer_height - height) / 2.0);
     }
-    if (align.includes("left")) {
+    if (align.includes('left')) {
       x = x_offset;
-    } else if (align.includes("right")) {
-      x = renderer_width - x_offset- width;
+    } else if (align.includes('right')) {
+      x = renderer_width - x_offset - width;
     } else {
       x = Math.floor((renderer_width - width) / 2.0);
     }
-    return {x: x, y: y};
-  }
+    return { x: x, y: y };
+  };
 
-  const renderMinimap = renderer => {
+  const renderMinimap = (renderer) => {
     if (this.displayMinimap || this.displayMiniAxes) {
       renderer.setScissorTest(true);
       renderer.getSize(_markerTarget);
       if (this.minimapScissor.updateRequired) {
-        scissor = getWindowsPosition(this.minimapScissor.align,
+        scissor = getWindowsPosition(
+          this.minimapScissor.align,
           this.minimapScissor.x_offset,
           this.minimapScissor.y_offset,
           this.minimapScissor.width,
           this.minimapScissor.height,
-          _markerTarget.x, _markerTarget.y);
+          _markerTarget.x,
+          _markerTarget.y,
+        );
         this.minimapScissor.updateRequired = false;
       }
       renderer.setScissor(
         scissor.x,
         scissor.y,
         this.minimapScissor.width,
-        this.minimapScissor.height);
+        this.minimapScissor.height,
+      );
       renderer.setViewport(
         scissor.x,
         scissor.y,
         this.minimapScissor.width,
-        this.minimapScissor.height);
+        this.minimapScissor.height,
+      );
       minimap.updateCamera();
       if (this.displayMiniAxes) {
         renderer.render(miniAxesScene, minimap.camera);
@@ -812,22 +831,21 @@ const Scene = function (containerIn, rendererIn) {
       renderer.setScissorTest(false);
       renderer.setViewport(0, 0, _markerTarget.x, _markerTarget.y);
     }
-  }
+  };
 
   /**
    * Render the scene.
    * @private
    */
-  this.render = renderer => {
-    if (this.autoClearFlag)
-      renderer.clear();
+  this.render = (renderer) => {
+    if (this.autoClearFlag) renderer.clear();
     if (stereoEffectFlag && stereoEffect) {
       stereoEffect.render(scene, this.camera);
     } else {
       renderer.render(scene, this.camera);
       renderMinimap(renderer);
     }
-  }
+  };
 
   /**
    * Enable or disable interactive control, this is on by default.
@@ -835,12 +853,10 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Boolean} flag - Indicate either interactive control
    * should be enabled or disabled.
    */
-  this.setInteractiveControlEnable = flag => {
-    if (flag == true)
-      zincCameraControls.enable();
-    else
-      zincCameraControls.disable();
-  }
+  this.setInteractiveControlEnable = (flag) => {
+    if (flag == true) zincCameraControls.enable();
+    else zincCameraControls.disable();
+  };
 
   /**
    * Get the camera control of this scene.
@@ -848,7 +864,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.getZincCameraControls = () => {
     return zincCameraControls;
-  }
+  };
 
   /**
    * Get the internal {THREE.Scene}.
@@ -856,20 +872,20 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.getThreeJSScene = () => {
     return scene;
-  }
+  };
 
   /**
    * Set the default duration value for geometries and glyphsets
    * that are to be loaded into this scene.
    * @param {Number} durationIn - duration of the scene.
    */
-  this.setDuration = durationIn => {
+  this.setDuration = (durationIn) => {
     needsRender = true;
     rootRegion.setDuration(durationIn);
     duration = durationIn;
     zincCameraControls.setPathDuration(durationIn);
     sceneLoader.duration = durationIn;
-  }
+  };
 
   /**
    * Get the default duration value.
@@ -877,14 +893,14 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.getDuration = () => {
     return duration;
-  }
+  };
 
   /**
    * Enable or disable stereo effect of this scene.
    * @param {Boolean} stereoFlag - Indicate either stereo effect control
    * should be enabled or disabled.
    */
-  this.setStereoEffectEnable = stereoFlag => {
+  this.setStereoEffectEnable = (stereoFlag) => {
     needsRender = true;
     if (stereoFlag == true) {
       if (!stereoEffect) {
@@ -894,17 +910,16 @@ const Scene = function (containerIn, rendererIn) {
     rendererIn.setSize(getDrawingWidth(), getDrawingHeight());
     this.camera.updateProjectionMatrix();
     stereoEffectFlag = stereoFlag;
-  }
-
+  };
 
   /**
    * Check rather object is in scene.
    *
    * @return {Boolean}
    */
-  this.objectIsInScene = zincObject => {
+  this.objectIsInScene = (zincObject) => {
     return rootRegion.objectIsInRegion(zincObject, true);
-  }
+  };
 
   /**
    * Rotate the camera view to view the entirety of the
@@ -919,10 +934,16 @@ const Scene = function (containerIn, rendererIn) {
     if (boundingBox) {
       boundingBox.getCenter(_v3);
       const viewport = this.getZincCameraControls().getCurrentViewport();
-      const target = new THREE.Vector3(viewport.targetPosition[0],
-        viewport.targetPosition[1], viewport.targetPosition[2]);
-      const eyePosition = new THREE.Vector3(viewport.eyePosition[0],
-        viewport.eyePosition[1], viewport.eyePosition[2]);
+      const target = new THREE.Vector3(
+        viewport.targetPosition[0],
+        viewport.targetPosition[1],
+        viewport.targetPosition[2],
+      );
+      const eyePosition = new THREE.Vector3(
+        viewport.eyePosition[0],
+        viewport.eyePosition[1],
+        viewport.eyePosition[2],
+      );
       const newVec1 = new THREE.Vector3();
       const newVec2 = new THREE.Vector3();
       newVec1.subVectors(target, eyePosition).normalize();
@@ -931,16 +952,14 @@ const Scene = function (containerIn, rendererIn) {
       newVec3.crossVectors(newVec1, newVec2);
       const angle = newVec1.angleTo(newVec2);
       if (transitionTime > 0) {
-        this.getZincCameraControls().rotateCameraTransition(newVec3,
-          angle, transitionTime);
+        this.getZincCameraControls().rotateCameraTransition(newVec3, angle, transitionTime);
         this.getZincCameraControls().enableCameraTransition();
       } else {
         this.getZincCameraControls().rotateAboutLookAtpoint(newVec3, angle);
       }
       markerCluster.markerUpdateRequired = true;
     }
-  }
-
+  };
 
   /**
    * Translate the camera view to the center of the
@@ -953,15 +972,17 @@ const Scene = function (containerIn, rendererIn) {
   this.translateBoundingBoxToCameraView = (boundingBox, scaleRadius, transitionTime) => {
     if (boundingBox) {
       const oldViewport = this.getZincCameraControls().getCurrentViewport();
-      const viewport = this.getZincCameraControls().getViewportFromBoundingBox(boundingBox, scaleRadius);
+      const viewport = this.getZincCameraControls().getViewportFromBoundingBox(
+        boundingBox,
+        scaleRadius,
+      );
       if (transitionTime > 0) {
-        this.getZincCameraControls().cameraTransition(oldViewport,
-          viewport, transitionTime);
+        this.getZincCameraControls().cameraTransition(oldViewport, viewport, transitionTime);
         this.getZincCameraControls().enableCameraTransition();
       }
       markerCluster.markerUpdateRequired = true;
     }
-  }
+  };
 
   /**
    * Transition the camera into viewing the zinc object with a
@@ -975,23 +996,29 @@ const Scene = function (containerIn, rendererIn) {
       const boundingBox = zincObject.getBoundingBox();
       this.alignBoundingBoxToCameraView(boundingBox, transitionTime);
     }
-  }
+  };
 
   /**
    * Set the camera to point to the centroid of the zinc object.
    *
    * @param {ZincObject} zincObject - the bounding box to target
    */
-  this.setCameraTargetToObject = zincObject => {
+  this.setCameraTargetToObject = (zincObject) => {
     needsRender = true;
     if (this.objectIsInScene(zincObject)) {
       const boundingBox = zincObject.getBoundingBox();
       const viewport = this.getZincCameraControls().getCurrentViewport();
       boundingBox.getCenter(_v3);
-      const target = new THREE.Vector3(viewport.targetPosition[0],
-        viewport.targetPosition[1], viewport.targetPosition[2]);
-      const eyePosition = new THREE.Vector3(viewport.eyePosition[0],
-        viewport.eyePosition[1], viewport.eyePosition[2]);
+      const target = new THREE.Vector3(
+        viewport.targetPosition[0],
+        viewport.targetPosition[1],
+        viewport.targetPosition[2],
+      );
+      const eyePosition = new THREE.Vector3(
+        viewport.eyePosition[0],
+        viewport.eyePosition[1],
+        viewport.eyePosition[2],
+      );
       const newVec1 = new THREE.Vector3();
       const newVec2 = new THREE.Vector3();
       newVec1.subVectors(eyePosition, target);
@@ -1005,7 +1032,7 @@ const Scene = function (containerIn, rendererIn) {
       this.getZincCameraControls().setCurrentCameraSettings(viewport);
       markerCluster.markerUpdateRequired = true;
     }
-  }
+  };
 
   /**
    * Check if stereo effect is enabled.
@@ -1013,21 +1040,21 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.isStereoEffectEnable = () => {
     return stereoEffectFlag;
-  }
+  };
 
   /**
    * Remove a ZincObject from this scene if it presents. This will eventually
    * destroy the object and free up the memory.
    * @param {Zinc.Object} zincObject - object to be removed from this scene.
    */
-  this.removeZincObject = zincObject => {
+  this.removeZincObject = (zincObject) => {
     needsRender = true;
     rootRegion.removeZincObject(zincObject);
     if (zincCameraControls) {
       zincCameraControls.calculateMaxAllowedDistance(this);
     }
     markerCluster.markerUpdateRequired = true;
-  }
+  };
 
   /**
    * Update pickable objects list
@@ -1039,7 +1066,7 @@ const Scene = function (containerIn, rendererIn) {
     }
     rootRegion.getPickableThreeJSObjects(pickableObjectsList, true);
     this.forcePickableObjectsUpdate = false;
-  }
+  };
 
   /**
    * Get all pickable objects.
@@ -1047,12 +1074,11 @@ const Scene = function (containerIn, rendererIn) {
   this.getPickableThreeJSObjects = () => {
     //The list will only be updated if changes have been made
     //in region or a flag has been raise
-    if (this.forcePickableObjectsUpdate ||
-      rootRegion.checkPickableUpdateRequred(true)) {
+    if (this.forcePickableObjectsUpdate || rootRegion.checkPickableUpdateRequred(true)) {
       this.updatePickableThreeJSObjects();
     }
     return pickableObjectsList;
-  }
+  };
 
   /**
    * Get the Normalised coordinates on minimap if mouse event is
@@ -1063,29 +1089,28 @@ const Scene = function (containerIn, rendererIn) {
       const target = new THREE.Vector2();
       renderer.getSize(target);
       let offsetY = target.y - event.clientY;
-      if (((scissor.x + this.minimapScissor.width) > event.clientX) &&
-        (event.clientX > scissor.x) &&
-        ((scissor.y + this.minimapScissor.height) > offsetY) &&
-        (offsetY > scissor.y)) {
-          let x = ((event.clientX - scissor.x) /
-            this.minimapScissor.width) * 2.0  - 1.0;
-          let y = ((offsetY - scissor.y) /
-            this.minimapScissor.height) * 2.0  - 1.0;
-          return {"x": x, "y": y};
+      if (
+        scissor.x + this.minimapScissor.width > event.clientX &&
+        event.clientX > scissor.x &&
+        scissor.y + this.minimapScissor.height > offsetY &&
+        offsetY > scissor.y
+      ) {
+        let x = ((event.clientX - scissor.x) / this.minimapScissor.width) * 2.0 - 1.0;
+        let y = ((offsetY - scissor.y) / this.minimapScissor.height) * 2.0 - 1.0;
+        return { x: x, y: y };
       }
     }
     return undefined;
-  }
+  };
 
   /**
    * Get the coordinates difference of the current viewing
    * point and projected coordinates.
    */
   this.getMinimapDiffFromNormalised = (x, y) => {
-    if (minimap)
-      return minimap.getDiffFromNormalised(x, y);
+    if (minimap) return minimap.getDiffFromNormalised(x, y);
     return undefined;
-  }
+  };
 
   /**
    * Check if the renderer is running on the WebGL 2 fallback backend.
@@ -1094,7 +1119,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.isWebGL2 = () => {
     return rendererIn?.backend?.isWebGLBackend === true;
-  }
+  };
 
   /**
    * Check if the renderer is running on the WebGPU backend.
@@ -1103,7 +1128,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.isWebGPU = () => {
     return rendererIn?.backend?.isWebGPUBackend === true;
-  }
+  };
 
   /**
    * Get the THREE.WebGPURenderer this scene is being drawn with, for code
@@ -1113,7 +1138,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.getRenderer = () => {
     return rendererIn;
-  }
+  };
 
   /**
    * Remove all objects that are created with ZincJS APIs and it will free the memory allocated.
@@ -1130,60 +1155,60 @@ const Scene = function (containerIn, rendererIn) {
       zincCameraControls.calculateMaxAllowedDistance(this);
     }
     markerCluster.markerUpdateRequired = true;
-  }
+  };
 
   /**
    * All time stamp to the metadata TimeStamps field.
    */
   this.addMetadataTimeStamp = (key, time) => {
-    metadata["TimeStamps"][key] = convertDurationObjectTomSec(time);
-  }
+    metadata['TimeStamps'][key] = convertDurationObjectTomSec(time);
+  };
 
   /**
    * Get a specific metadata field.
    */
-  this.getMetadataTag = key => {
+  this.getMetadataTag = (key) => {
     return metadata[key];
-  }
+  };
 
   /**
    * Get all metadata set for the scene.
    */
   this.getMetadata = () => {
     return metadata;
-  }
+  };
 
   /**
    * Set a specific metadata field.
    */
   this.setMetadataTag = (key, value) => {
     metadata[key] = value;
-  }
+  };
 
   /**
    * Remove a specific metadata field.
    */
-  this.removeMetadataTag = key => {
+  this.removeMetadataTag = (key) => {
     delete metadata[key];
-  }
+  };
 
   /**
    * Reset all metadata fields to original value.
    */
   this.resetMetadata = () => {
     metadata = defaultMetadata();
-  }
+  };
 
   /**
    * Reset duration of scene to default value.
    */
   this.resetDuration = () => {
     this.setDuration(defaultDuration);
-  }
+  };
 
   // Turn the object into a readable string {years: years,months: months,
   // weeks: weeks, days: days, hours: hours, mins: mins, secs: secs }
-  const convertDurationObjectToString = duration => {
+  const convertDurationObjectToString = (duration) => {
     return [
       ...(duration.years ? [`${duration.years}years`] : []),
       ...(duration.months ? [`${duration.months}months`] : []),
@@ -1193,37 +1218,45 @@ const Scene = function (containerIn, rendererIn) {
       ...(duration.mins ? [`${duration.mins}mins`] : []),
       ...(duration.secs ? [`${duration.secs}secs`] : []),
     ].join(' ');
-  }
+  };
 
   // Turn the object into a number representing milliesecond {years: years,months: months,
   // weeks: weeks, days: days, hours: hours, mins: mins, secs: secs }
-  const convertDurationObjectTomSec = duration => {
-    return duration.years ? duration.years * 31536000000 : 0 +
-      duration.months ? duration.months * 2592000000 : 0 +
-      duration.weeks ? duration.weeks * 604800000 : 0 +
-      duration.days ? duration.days * 86400000 : 0 +
-      duration.hours ? duration.hours * 3600000 : 0 +
-      duration.mins ? duration.mins * 60000 : 0 +
-      duration.secs ? duration.secs * 1000 : 0;
-  }
+  const convertDurationObjectTomSec = (duration) => {
+    return duration.years
+      ? duration.years * 31536000000
+      : 0 + duration.months
+        ? duration.months * 2592000000
+        : 0 + duration.weeks
+          ? duration.weeks * 604800000
+          : 0 + duration.days
+            ? duration.days * 86400000
+            : 0 + duration.hours
+              ? duration.hours * 3600000
+              : 0 + duration.mins
+                ? duration.mins * 60000
+                : 0 + duration.secs
+                  ? duration.secs * 1000
+                  : 0;
+  };
 
   // Set the readable duration and timer using an object
   // with the following format {years: years,months: months, weeks: weeks, days: days,
   // hours: hours, mins: mins, secs: secs }
-  this.setDurationFromObject = duration => {
+  this.setDurationFromObject = (duration) => {
     const string = convertDurationObjectToString(duration);
     const millisec = convertDurationObjectTomSec(duration);
-    this.setMetadataTag("Duration", string);
+    this.setMetadataTag('Duration', string);
     this.setDuration(millisec);
-  }
+  };
 
   // Set the readable original duration using an object
   // with the following format {years: years,months: months, weeks: weeks, days: days,
   // hours: hours, mins: mins, secs: secs }
-  this.setOriginalDurationFromObject = duration => {
+  this.setOriginalDurationFromObject = (duration) => {
     const string = convertDurationObjectToString(duration);
-    this.setMetadataTag("OriginalDuration", string);
-  }
+    this.setMetadataTag('OriginalDuration', string);
+  };
 
   /**
    * Export the scene in GLTF format, it can either return it in
@@ -1237,7 +1270,7 @@ const Scene = function (containerIn, rendererIn) {
   this.exportGLTF = (binary) => {
     const exporter = new SceneExporter(this);
     return exporter.exportGLTF(binary);
-  }
+  };
 
   /**
    * Get the root region of the scene.
@@ -1246,118 +1279,118 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.getRootRegion = () => {
     return rootRegion;
-  }
+  };
 
   /**
    * Create points in region specified in the path
    *
    */
-  this.createLines = ( regionPath, groupName, coords, colour ) => {
+  this.createLines = (regionPath, groupName, coords, colour) => {
     let region = rootRegion.findChildFromPath(regionPath);
     if (region === undefined) {
       region = rootRegion.createChildFromPath(regionPath);
     }
     return region.createLines(groupName, coords, colour);
-  }
+  };
 
   /**
    * Create points in region specified in the path
    *
    */
-  this.createPoints = ( regionPath, groupName, coords, labels, colour ) => {
+  this.createPoints = (regionPath, groupName, coords, labels, colour) => {
     let region = rootRegion.findChildFromPath(regionPath);
     if (region === undefined) {
       region = rootRegion.createChildFromPath(regionPath);
     }
     return region.createPoints(groupName, coords, labels, colour);
-  }
-
-	/**
-	 * Add a callback function which will be called everytime zinc object is added.
-	 * @param {Function} callbackFunction - callbackFunction to be added.
-	 *
-	 * @return {Number}
-	 */
-	this.addZincObjectAddedCallbacks = callbackFunction => {
-		zincObjectAddedCallbacks_id = zincObjectAddedCallbacks_id + 1;
-		zincObjectAddedCallbacks[zincObjectAddedCallbacks_id] = callbackFunction;
-		return zincObjectAddedCallbacks_id;
-	}
-
-	/**
-	 * Add a callback function which will be called everytime zinc object is removed.
-	 * @param {Function} callbackFunction - callbackFunction to be added.
-	 *
-	 * @return {Number}
-	 */
-	this.addZincObjectRemovedCallbacks = callbackFunction => {
-		zincObjectRemovedCallbacks_id = zincObjectRemovedCallbacks_id + 1;
-		zincObjectRemovedCallbacks[zincObjectRemovedCallbacks_id] = callbackFunction;
-		return zincObjectRemovedCallbacks_id;
-	}
-
-	/**
-	 * Remove a callback function that is previously added to the scene.
-	 * @param {Number} id - identifier of the previously added callback function.
-	 */
-	this.removeZincObjectAddedCallbacks = id => {
-		if (id in zincObjectAddedCallbacks_id) {
-   			delete zincObjectAddedCallbacks[id];
-		}
-	}
-
-	/**
-	 * Remove a callback function that is previously added to the scene.
-	 * @param {Number} id - identifier of the previously added callback function.
-	 */
-	this.removeZincObjectRemovedCallbacks = id => {
-		if (id in zincObjectRemovedCallbacks_id) {
-   			delete zincObjectRemovedCallbacks[id];
-		}
-	}
+  };
 
   /**
-	 * Clear all zinc object callback function
-	 */
-	this.clearZincObjectAddedCallbacks = () => {
-		zincObjectAddedCallbacks = {};
+   * Add a callback function which will be called everytime zinc object is added.
+   * @param {Function} callbackFunction - callbackFunction to be added.
+   *
+   * @return {Number}
+   */
+  this.addZincObjectAddedCallbacks = (callbackFunction) => {
+    zincObjectAddedCallbacks_id = zincObjectAddedCallbacks_id + 1;
+    zincObjectAddedCallbacks[zincObjectAddedCallbacks_id] = callbackFunction;
+    return zincObjectAddedCallbacks_id;
+  };
+
+  /**
+   * Add a callback function which will be called everytime zinc object is removed.
+   * @param {Function} callbackFunction - callbackFunction to be added.
+   *
+   * @return {Number}
+   */
+  this.addZincObjectRemovedCallbacks = (callbackFunction) => {
+    zincObjectRemovedCallbacks_id = zincObjectRemovedCallbacks_id + 1;
+    zincObjectRemovedCallbacks[zincObjectRemovedCallbacks_id] = callbackFunction;
+    return zincObjectRemovedCallbacks_id;
+  };
+
+  /**
+   * Remove a callback function that is previously added to the scene.
+   * @param {Number} id - identifier of the previously added callback function.
+   */
+  this.removeZincObjectAddedCallbacks = (id) => {
+    if (id in zincObjectAddedCallbacks_id) {
+      delete zincObjectAddedCallbacks[id];
+    }
+  };
+
+  /**
+   * Remove a callback function that is previously added to the scene.
+   * @param {Number} id - identifier of the previously added callback function.
+   */
+  this.removeZincObjectRemovedCallbacks = (id) => {
+    if (id in zincObjectRemovedCallbacks_id) {
+      delete zincObjectRemovedCallbacks[id];
+    }
+  };
+
+  /**
+   * Clear all zinc object callback function
+   */
+  this.clearZincObjectAddedCallbacks = () => {
+    zincObjectAddedCallbacks = {};
     zincObjectAddedCallbacks_id = 0;
-	}
+  };
 
   /**
-	 * Clear all zinc object callback function
-	 */
-	this.clearZincObjectRemovedCallbacks = () => {
-		zincObjectRemovedCallbacks = {};
+   * Clear all zinc object callback function
+   */
+  this.clearZincObjectRemovedCallbacks = () => {
+    zincObjectRemovedCallbacks = {};
     zincObjectRemovedCallbacks_id = 0;
-	}
+  };
 
   /**
-	 * Used to trigger zinc object added callback
-	 */
+   * Used to trigger zinc object added callback
+   */
   this.triggerObjectAddedCallback = (zincObject) => {
     for (let key in zincObjectAddedCallbacks) {
       if (zincObjectAddedCallbacks.hasOwnProperty(key)) {
         zincObjectAddedCallbacks[key](zincObject);
       }
     }
-  }
+  };
 
   /**
-	 * Used to trigger zinc object removed callback
-	 */
-  this.triggerObjectRemovedCallback= (zincObject) => {
+   * Used to trigger zinc object removed callback
+   */
+  this.triggerObjectRemovedCallback = (zincObject) => {
     for (let key in zincObjectRemovedCallbacks) {
       if (zincObjectRemovedCallbacks.hasOwnProperty(key)) {
         zincObjectRemovedCallbacks[key](zincObject);
       }
     }
-  }
+  };
 
   /*
-	 * Add temporary points to the scene which can be removed
+   * Add temporary points to the scene which can be removed
    * with clearTemporaryPrimitives method.
-	 */
+   */
   this.addTemporaryPoints = (coords, colour) => {
     needsRender = true;
     const geometry = createPointQuadGeometry(coords.length);
@@ -1376,36 +1409,35 @@ const Scene = function (containerIn, rendererIn) {
     instancePosition.needsUpdate = true;
     tempGroup.add(point);
     return point;
-  }
+  };
 
   /*
-	 * Add temporary lines to the scene which can be removed
+   * Add temporary lines to the scene which can be removed
    * with clearTemporaryPrimitives method.
-	 */
+   */
   this.addTemporaryLines = (coords, colour) => {
     needsRender = true;
     const geometry = createBufferGeometry(coords.length, coords);
-    const material = new THREE.LineBasicMaterial({color:colour});
+    const material = new THREE.LineBasicMaterial({ color: colour });
     const line = new LineSegments(geometry, material);
     tempGroup.add(line);
     return line;
-  }
-
+  };
 
   /*
-	 * Display frustum
-	 */
+   * Display frustum
+   */
   this.enableFrustumDisplay = () => {
     needsRender = true;
     if (this.camera && !cameraHelper) {
       cameraHelper = new THREE.CameraHelper(this.camera);
       scene.add(cameraHelper);
     }
-  }
+  };
 
   /*
-	 * Hide frustum
-	 */
+   * Hide frustum
+   */
   this.disableFrustumDisplay = () => {
     needsRender = true;
     if (cameraHelper) {
@@ -1413,41 +1445,47 @@ const Scene = function (containerIn, rendererIn) {
       cameraHelper.dispose();
       cameraHelper = undefined;
     }
-  }
+  };
 
   /*
-	 * Remove object from temporary objects list
-	 */
+   * Remove object from temporary objects list
+   */
   this.removeTemporaryPrimitive = (object) => {
     needsRender = true;
     tempGroup.remove(object);
     object.geometry.dispose();
     object.material.dispose();
-  }
+  };
 
   /*
-	 * Remove all temporary primitives.
+   * Remove all temporary primitives.
    * Return number of primitives removed;
-	 */
+   */
   this.clearTemporaryPrimitives = () => {
     needsRender = true;
     let i = 0;
     const children = tempGroup.children;
-    children.forEach(child => {
+    children.forEach((child) => {
       child.geometry.dispose();
       child.material.dispose();
       i++;
     });
     tempGroup.clear();
     return i;
-  }
+  };
 
   /*
-	 * Create primitive based on the bounding box of scene and
+   * Create primitive based on the bounding box of scene and
    * add to specify region and group name.
-	 */
-  this.addBoundingBoxPrimitive = (regionPath, group, colour, opacity,
-    visibility, boundingBox = undefined) => {
+   */
+  this.addBoundingBoxPrimitive = (
+    regionPath,
+    group,
+    colour,
+    opacity,
+    visibility,
+    boundingBox = undefined,
+  ) => {
     needsRender = true;
     let region = rootRegion.findChildFromPath(regionPath);
     if (region === undefined) {
@@ -1458,21 +1496,32 @@ const Scene = function (containerIn, rendererIn) {
     const dim = _v3.subVectors(box.max, box.min);
     const boxGeo = new THREE.BoxGeometry(dim.x, dim.y, dim.z);
     const primitive = region.createGeometryFromThreeJSGeometry(
-      group, boxGeo, colour, opacity, visibility, 10000);
-    dim.addVectors(box.min, box.max).multiplyScalar( 0.5 );
+      group,
+      boxGeo,
+      colour,
+      opacity,
+      visibility,
+      10000,
+    );
+    dim.addVectors(box.min, box.max).multiplyScalar(0.5);
     primitive.setPosition(dim.x, dim.y, dim.z);
     return primitive;
-  }
+  };
 
   /*
-	 * Create primitive based on the bounding box of scene and
+   * Create primitive based on the bounding box of scene and
    * add to specify region and group name.
-	 */
-  this.addSlicesPrimitive = (regionPath, groups, colours, opacity,
-    visibility, boundingBox = undefined) => {
+   */
+  this.addSlicesPrimitive = (
+    regionPath,
+    groups,
+    colours,
+    opacity,
+    visibility,
+    boundingBox = undefined,
+  ) => {
     needsRender = true;
-    if (groups && groups.length >= 3 &&
-      colours && colours.length >= 3) {
+    if (groups && groups.length >= 3 && colours && colours.length >= 3) {
       let region = rootRegion.findChildFromPath(regionPath);
       if (region === undefined) {
         region = rootRegion.createChildFromPath(regionPath);
@@ -1480,49 +1529,55 @@ const Scene = function (containerIn, rendererIn) {
       const box = boundingBox ? boundingBox : this.getBoundingBox();
       _v3.set(0.0, 0.0, 0.0);
       const dim = _v3.subVectors(box.max, box.min);
-      const directions = ["x", "y", "z"];
+      const directions = ['x', 'y', 'z'];
       const primitives = [];
       let index = 0;
       directions.forEach((direction) => {
         let planeGeo = undefined;
-        switch(direction) {
+        switch (direction) {
           //YZ plane
-          case "x":
+          case 'x':
             planeGeo = new THREE.PlaneGeometry(dim.z, dim.y);
             planeGeo.rotateY(Math.PI / 2);
             // code block
             break;
           //XZ plane
-          case "y":
+          case 'y':
             planeGeo = new THREE.PlaneGeometry(dim.x, dim.z);
             planeGeo.rotateX(Math.PI / 2);
             // code block
             break;
           //XY plane
-          case "z":
+          case 'z':
             planeGeo = new THREE.PlaneGeometry(dim.x, dim.y);
-              // code block
+            // code block
             break;
           default:
             break;
         }
         const primitive = region.createGeometryFromThreeJSGeometry(
-          groups[index], planeGeo, colours[index], opacity, visibility, 10001);
+          groups[index],
+          planeGeo,
+          colours[index],
+          opacity,
+          visibility,
+          10001,
+        );
         primitives.push(primitive);
         index++;
       });
 
-      dim.addVectors(box.min, box.max).multiplyScalar( 0.5 );
+      dim.addVectors(box.min, box.max).multiplyScalar(0.5);
       primitives.forEach((primitive) => {
         primitive.setPosition(dim.x, dim.y, dim.z);
       });
       return primitives;
     }
-  }
+  };
 
   /*
-	 * Enable marker cluster to work with markers
-	 */
+   * Enable marker cluster to work with markers
+   */
   this.enableMarkerCluster = (flag) => {
     needsRender = true;
     if (flag) {
@@ -1533,17 +1588,17 @@ const Scene = function (containerIn, rendererIn) {
       markerCluster.disable();
     }
     this.forcePickableObjectsUpdate = true;
-  }
+  };
 
   /*
-	 * Destory static axis display object
-	 */
+   * Destory static axis display object
+   */
   this.destroyAxisDisplay = () => {
     needsRender = true;
     this.displayMiniAxes = false;
     if (axisDisplay.main) {
       this.enableAxisDisplay(false, false);
-      axisDisplay.main.forEach(axis => {
+      axisDisplay.main.forEach((axis) => {
         if (axis.dispose) {
           axis.dispose();
         }
@@ -1551,7 +1606,7 @@ const Scene = function (containerIn, rendererIn) {
     }
     if (axisDisplay.mini) {
       this.enableAxisDisplay(false, true);
-      axisDisplay.mini.forEach(axis => {
+      axisDisplay.mini.forEach((axis) => {
         if (axis.dispose) {
           axis.dispose();
         }
@@ -1561,33 +1616,33 @@ const Scene = function (containerIn, rendererIn) {
       main: [],
       mini: [],
     };
-  }
+  };
 
   /*
-	 * Create static axis display object
-	 */
+   * Create static axis display object
+   */
   this.createAxisDisplay = (fitBoundingBox = false) => {
     needsRender = true;
     this.destroyAxisDisplay();
     const XYZ = [
       {
-        name: "x",
+        name: 'x',
         dir: new THREE.Vector3(1, 0, 0),
-        colour: "red",
-        hex: 0xFF5555
+        colour: 'red',
+        hex: 0xff5555,
       },
       {
-        name: "y",
+        name: 'y',
         dir: new THREE.Vector3(0, 1, 0),
-        colour: "green",
-        hex: 0x55FF55
+        colour: 'green',
+        hex: 0x55ff55,
       },
       {
-        name: "z",
+        name: 'z',
         dir: new THREE.Vector3(0, 0, 1),
-        colour: "blue",
-        hex: 0x5555FF
-      }
+        colour: 'blue',
+        hex: 0x5555ff,
+      },
     ];
     const boundingBox = this.getBoundingBox();
     const size = boundingBox.min.distanceTo(boundingBox.max);
@@ -1598,7 +1653,12 @@ const Scene = function (containerIn, rendererIn) {
     XYZ.forEach((xyzObj) => {
       const arrowHelper = new THREE.ArrowHelper(xyzObj.dir, origin, size, xyzObj.hex);
       axisDisplay.main.push(arrowHelper);
-      const miniArrowHelper = new THREE.ArrowHelper(xyzObj.dir, boundingBox.getCenter(_v3), size / 2, xyzObj.hex);
+      const miniArrowHelper = new THREE.ArrowHelper(
+        xyzObj.dir,
+        boundingBox.getCenter(_v3),
+        size / 2,
+        xyzObj.hex,
+      );
       axisDisplay.mini.push(miniArrowHelper);
 
       /*
@@ -1608,30 +1668,30 @@ const Scene = function (containerIn, rendererIn) {
       axisDisplay.mini.push(miniLabel);
       */
 
-      const axesLabel = createNewSpriteText(xyzObj.name, 0.036, xyzObj.colour, "Asap", 120, 700);
+      const axesLabel = createNewSpriteText(xyzObj.name, 0.036, xyzObj.colour, 'Asap', 120, 700);
       const position = xyzObj.dir.clone().multiplyScalar(size).add(origin);
       axesLabel.position.set(position.x, position.y, position.z);
       axisDisplay.main.push(axesLabel);
-    })
-  }
+    });
+  };
 
   /*
-	 * Enable static axis display, createAxisDisplay must be called
+   * Enable static axis display, createAxisDisplay must be called
    * before the axis can be display.
-	 */
+   */
   this.enableAxisDisplay = (enable, miniaxes = false) => {
     needsRender = true;
     if (miniaxes && axisDisplay?.mini?.length) {
       this.displayMiniAxes = enable;
-      axisDisplay.mini.forEach(axis => {
+      axisDisplay.mini.forEach((axis) => {
         enable ? miniAxesScene.add(axis) : miniAxesScene.remove(axis);
       });
     } else if (!miniaxes && axisDisplay.main) {
-      axisDisplay.main.forEach(axis => {
+      axisDisplay.main.forEach((axis) => {
         enable ? scene.add(axis) : scene.remove(axis);
       });
     }
-  }
-}
+  };
+};
 
 export { Scene };

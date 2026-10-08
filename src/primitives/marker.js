@@ -15,7 +15,7 @@ const spriteMaterial = new THREE.SpriteMaterial({
   transparent: true,
   depthTest: false,
   depthWrite: false,
-  sizeAttenuation: false
+  sizeAttenuation: false,
 });
 
 /**
@@ -27,7 +27,7 @@ const spriteMaterial = new THREE.SpriteMaterial({
  * @author Alan Wu
  * @return {Marker}
  */
-const Marker = function(zincObject) {
+const Marker = function (zincObject) {
   if (Object.getPrototypeOf(this) !== ZincObject.prototype) {
     Object.setPrototypeOf(Marker.prototype, ZincObject.prototype);
   }
@@ -49,7 +49,7 @@ const Marker = function(zincObject) {
   let number = undefined;
   let label = undefined;
 
-	let initialise = () => {
+  let initialise = () => {
     sprite = new THREE.Sprite(spriteMaterial);
     sprite.center.set(0.5, 0);
     this.morph.add(sprite);
@@ -57,24 +57,24 @@ const Marker = function(zincObject) {
     this.morph.renderOrder = 10000;
     sprite.scale.set(size[0], size[1], size[2]);
     sprite.userData = this;
-  }
+  };
 
   this.updateVisual = (min, max) => {
     let scale = 1;
     let porportion = 0;
     if (min !== max) {
-      porportion = (1 - (this.ndc.z - min) / (max - min));
-      scale = 0.6 +  porportion * 0.4;
+      porportion = 1 - (this.ndc.z - min) / (max - min);
+      scale = 0.6 + porportion * 0.4;
     }
     this.setSpriteSize(scale);
-  }
+  };
 
-  this.updateNDC = camera => {
+  this.updateNDC = (camera) => {
     this.ndc.copy(this.morph.position);
     this.ndc.project(camera);
     this.ndc.z = Math.min(Math.max(this.ndc.z, 0), 1);
     return this.ndc;
-  }
+  };
 
   /**
    * Set the position of the marker.
@@ -85,17 +85,17 @@ const Marker = function(zincObject) {
    */
   this.setPosition = (x, y, z) => {
     this.morph.position.set(x, y, z);
-  }
+  };
 
   /**
    * Set the size of the marker.
    *
    * @param {Number} size - size to be set.
    */
-  this.setSpriteSize = size => {
+  this.setSpriteSize = (size) => {
     sprite.scale.set(0.015, 0.02, 1);
     sprite.scale.multiplyScalar(size);
-  }
+  };
 
   this.setUserSprite = () => {
     if (userSprite) {
@@ -108,7 +108,7 @@ const Marker = function(zincObject) {
         defaultDisplay = false;
       }
     }
-  }
+  };
 
   this.setImageForUserSprite = (image, size) => {
     if (userSprite) {
@@ -126,17 +126,17 @@ const Marker = function(zincObject) {
       transparent: true,
       depthTest: false,
       depthWrite: false,
-      sizeAttenuation: false
+      sizeAttenuation: false,
     });
     if (!size) {
-      size =  [0.05, 0.05, 1];
+      size = [0.05, 0.05, 1];
     }
     userSprite = new THREE.Sprite(userMaterial);
     userSprite.center.set(0.5, 0);
     userSprite.scale.set(size[0], size[1], size[2]);
     userSprite.userData = this;
     this.setUserSprite();
-  }
+  };
 
   this.setDefaultSprite = () => {
     if (!defaultDisplay) {
@@ -145,14 +145,14 @@ const Marker = function(zincObject) {
       if (userSprite) this.morph.remove(userSprite);
       if (label) this.morph.add(label);
     }
-  }
+  };
 
   this.loadUserSprite = (url, size) => {
     if (url) {
       if (url !== userUrl) {
         userUrl = url;
         const userImage = new Image(128, 128);
-        userImage.crossOrigin = "anonymous"
+        userImage.crossOrigin = 'anonymous';
         userImage.onload = () => {
           this.setImageForUserSprite(userImage, size);
           this.parent?.requestRender?.();
@@ -162,7 +162,7 @@ const Marker = function(zincObject) {
         this.setUserSprite();
       }
     }
-  }
+  };
 
   /**
    * Clean up this object,
@@ -181,14 +181,14 @@ const Marker = function(zincObject) {
       label.material.dispose();
       label = undefined;
     }
-  }
+  };
 
   this.isEnabled = () => {
     return enabled;
-  }
+  };
 
   this.setNumber = (numberIn) => {
-    if (!numberIn || (number != numberIn)) {
+    if (!numberIn || number != numberIn) {
       //remove label
       if (label) {
         this.morph.remove(label);
@@ -199,29 +199,29 @@ const Marker = function(zincObject) {
       }
     }
     if (!label && numberIn) {
-      label = createNewSpriteText(numberIn, 0.012, "black", "Asap", 120, 700);
+      label = createNewSpriteText(numberIn, 0.012, 'black', 'Asap', 120, 700);
       label.renderOrder = 10001;
       this.morph.add(label);
     }
     number = numberIn;
-  }
+  };
 
   this.getNumber = () => {
     return number ? number : 1;
-  }
+  };
 
   /**
    * Set the visibility of this Geometry.
    *
    * @param {Boolean} visible - a boolean flag indicate the visibility to be set
    */
-  this.setVisibility = function(visible) {
+  this.setVisibility = function (visible) {
     if (visible !== this.visible) {
       this.visible = visible;
       this.group.visible = visible;
       if (this.parent.region) this.parent.region.pickableUpdateRequired = true;
     }
-  }
+  };
 
   /**
    * Enable and visualise the marker.
@@ -230,7 +230,7 @@ const Marker = function(zincObject) {
     enabled = true;
     this.morph.visible = true;
     this.visible = true;
-  }
+  };
 
   /**
    * Disable and hide the marker.
@@ -239,10 +239,9 @@ const Marker = function(zincObject) {
     enabled = false;
     this.morph.visible = false;
     this.visible = false;
-  }
+  };
 
-	initialise();
-
-}
+  initialise();
+};
 
 export { Marker };

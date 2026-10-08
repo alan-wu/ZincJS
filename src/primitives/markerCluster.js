@@ -15,7 +15,7 @@ const spriteMaterial = new THREE.SpriteMaterial({
   transparent: true,
   depthTest: false,
   depthWrite: false,
-  sizeAttenuation: false
+  sizeAttenuation: false,
 });
 
 /**
@@ -26,7 +26,7 @@ const spriteMaterial = new THREE.SpriteMaterial({
  * @author Alan Wu
  * @return {Marker}
  */
-const MarkerCluster = function(sceneIn) {
+const MarkerCluster = function (sceneIn) {
   ZincObject.call(this);
   this.texture = texture;
   let sprite = undefined;
@@ -47,15 +47,15 @@ const MarkerCluster = function(sceneIn) {
    *
    * @param {Number} size - size to be set.
    */
-  this.setSpriteSize = sizeIn => {
+  this.setSpriteSize = (sizeIn) => {
     sprite.scale.set(0.015, 0.02, 1);
     sprite.scale.multiplyScalar(sizeIn);
-  }
+  };
 
   this.clear = () => {
     this.group.clear();
     this.markers = {};
-  }
+  };
 
   /**
    * Clean up this object,
@@ -65,7 +65,7 @@ const MarkerCluster = function(sceneIn) {
     if (this.morph) {
       this.morph.clear();
     }
-  }
+  };
 
   const createNewSprite = (index) => {
     //Group is needed to set the position after scaling
@@ -81,35 +81,33 @@ const MarkerCluster = function(sceneIn) {
     localGroup.add(sprite);
     this.group.add(localGroup);
     return {
-      "group": localGroup,
-      "marker": sprite,
-      "label": undefined,
-      "number": 0,
-      "min": [0, 0, 0],
-      "max": [1, 1, 1],
+      group: localGroup,
+      marker: sprite,
+      label: undefined,
+      number: 0,
+      min: [0, 0, 0],
+      max: [1, 1, 1],
     };
-  }
+  };
 
   const activateSpriteForCluster = (sprite, cluster, number) => {
     sprite.group.visible = true;
-    sprite.group.position.set(
-      cluster.coords[0], cluster.coords[1], cluster.coords[2]
-    );
-    if (sprite.label === undefined || (number !== sprite.number)) {
+    sprite.group.position.set(cluster.coords[0], cluster.coords[1], cluster.coords[2]);
+    if (sprite.label === undefined || number !== sprite.number) {
       if (sprite.label) {
         sprite.group.remove(sprite.label);
         releaseTextSprite(sprite.label);
         sprite.label.material.map.dispose();
         sprite.label.material.dispose();
       }
-      sprite.label = createNewSpriteText(number, 0.012, "black", "Asap", 120, 700);
+      sprite.label = createNewSpriteText(number, 0.012, 'black', 'Asap', 120, 700);
       sprite.label.renderOrder = 10001;
       sprite.number = number;
       sprite.group.add(sprite.label);
     }
     sprite.min = cluster.min;
     sprite.max = cluster.max;
-  }
+  };
 
   const drawClusters = (clusters) => {
     let currentIndex = 0;
@@ -133,13 +131,13 @@ const MarkerCluster = function(sceneIn) {
     for (currentIndex; currentIndex < sprites.length; currentIndex++) {
       sprites[currentIndex].group.visible = false;
     }
-  }
+  };
 
   //Get clusters based on the ndc coordinate for each cluster.
   const getCluster = (markersObj, clusters) => {
     let first = true;
-    let newCluster = {members: [], coords: [0,0,0], min: [0, 0, 0], max: [1, 1, 1]};
-    let dist = 0
+    let newCluster = { members: [], coords: [0, 0, 0], min: [0, 0, 0], max: [1, 1, 1] };
+    let dist = 0;
     for (let prop in markersObj) {
       if (first) {
         _v21.set(markersObj[prop].ndc.x, markersObj[prop].ndc.y);
@@ -150,7 +148,7 @@ const MarkerCluster = function(sceneIn) {
           markersObj[prop].morph.position.x,
           markersObj[prop].morph.position.y,
           markersObj[prop].morph.position.z,
-        ]
+        ];
         clusters.push(newCluster);
         delete markersObj[prop];
       } else {
@@ -172,25 +170,25 @@ const MarkerCluster = function(sceneIn) {
     if (first !== true) {
       getCluster(markersObj, clusters);
     }
-  }
+  };
 
   this.calculate = () => {
     if (enabled) {
       const current = Date.now();
-      if ((current - start) > 500) {
+      if (current - start > 500) {
         let clusters = [];
-        getCluster({...this.markers}, clusters);
+        getCluster({ ...this.markers }, clusters);
         drawClusters(clusters);
         scene?.invalidate?.();
         start = Date.now();
         this.markerUpdateRequired = false;
       }
     }
-  }
+  };
 
   this.isEnabled = () => {
     return enabled;
-  }
+  };
 
   /**
    * Enable and visualise the marker.
@@ -198,7 +196,7 @@ const MarkerCluster = function(sceneIn) {
   this.enable = () => {
     enabled = true;
     this.morph.visible = true;
-  }
+  };
 
   /**
    * Disable and hide the marker.
@@ -208,12 +206,11 @@ const MarkerCluster = function(sceneIn) {
     this.morph.visible = false;
     //turn all markers back on
     for (let prop in this.markers) {
-      if (this.markers[prop]?.isMarker &&
-        this.markers[prop].isEnabled()) {
+      if (this.markers[prop]?.isMarker && this.markers[prop].isEnabled()) {
         this.markers[prop].setVisibility(true);
       }
     }
-  }
+  };
 
   this.zoomToCluster = (index) => {
     if (index !== undefined && index > -1) {
@@ -227,7 +224,7 @@ const MarkerCluster = function(sceneIn) {
       }
     }
     return false;
-  }
+  };
 
   this.clusterIsVisible = (index) => {
     if (index !== undefined && index > -1) {
@@ -236,8 +233,8 @@ const MarkerCluster = function(sceneIn) {
       }
     }
     return false;
-  }
-}
+  };
+};
 
 MarkerCluster.prototype = Object.create(ZincObject.prototype);
 export { MarkerCluster };

@@ -13,7 +13,7 @@ const mergeGlyphData = (glyphData) => {
       }
     }
     const fields = ['axis1', 'axis2', 'axis3', 'colors', 'positions', 'scale'];
-    fields.forEach(field => {
+    fields.forEach((field) => {
       if (field in glyphData1) {
         Object.keys(glyphData1[field]).forEach((step) => {
           const len = glyphData2[field][step].length;
@@ -23,15 +23,15 @@ const mergeGlyphData = (glyphData) => {
         });
       }
     });
-  }
+  };
 
   if (glyphData && glyphData.length > 0) {
     while (glyphData.length > 1) {
-      const glyphData2 = glyphData.splice(1,1);
+      const glyphData2 = glyphData.splice(1, 1);
       merge(glyphData[0], glyphData2[0]);
     }
   }
-}
+};
 
 const mergeGeometries = (geometries) => {
   if (geometries && geometries.length > 0) {
@@ -43,9 +43,9 @@ const mergeGeometries = (geometries) => {
     return merged;
   }
   return undefined;
-}
+};
 
-const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback, onErrorCallback) {
+const IndexedSourcesHandler = function (urlIn, crossOrigin, onDownloadedCallback, onErrorCallback) {
   const fileLoader = new FileLoader();
   const jsonLoader = new JSONLoader();
   fileLoader.crossOrigin = crossOrigin;
@@ -61,25 +61,25 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback,
   const processItemDownloaded = (item) => {
     const modelData = data[item.index];
     if (modelData) {
-      if ("GlyphGeometriesURL" in modelData) {
+      if ('GlyphGeometriesURL' in modelData) {
         item.onLoad(modelData);
       } else {
-        let obj = jsonLoader.parse( modelData );
+        let obj = jsonLoader.parse(modelData);
         item.onLoad(obj.geometry, obj.materials);
       }
     } else {
-      processItemError(item, {responseURL: url});
+      processItemError(item, { responseURL: url });
     }
-  }
+  };
 
   const processItemError = (item) => {
     if (item.onError) {
       if (!error) {
-        error = {responseURL: url};
+        error = { responseURL: url };
       }
       item.onError(error);
     }
-  }
+  };
 
   this.downloadCompleted = (args) => {
     try {
@@ -87,17 +87,17 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback,
       downloading = false;
       finished = true;
       if (Array.isArray(data)) {
-        items.forEach(item => processItemDownloaded(item));
+        items.forEach((item) => processItemDownloaded(item));
       } else {
-        items.forEach(item => processItemError(item));
+        items.forEach((item) => processItemError(item));
       }
     } catch {
-      items.forEach(item => processItemError(item));
+      items.forEach((item) => processItemError(item));
     }
-  }
+  };
 
   const errorHandling = () => {
-    return xhr => {
+    return (xhr) => {
       error = xhr;
       finished = true;
       downloading = false;
@@ -107,18 +107,18 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback,
       if (onDownloadError) {
         onDownloadError(xhr);
       }
-    }
-  }
+    };
+  };
 
   const progressHandling = () => {
-    return xhr => {
+    return (xhr) => {
       items.forEach((item) => {
         if (item.onProgress) {
           item.onProgress(xhr);
         }
       });
-    }
-  }
+    };
+  };
 
   this.load = (index, onLoad, onProgress, onError) => {
     const item = {
@@ -141,10 +141,10 @@ const IndexedSourcesHandler = function(urlIn, crossOrigin, onDownloadedCallback,
       downloading = true;
       fileLoader.load(url, onDownloaded, progressHandling(), errorHandling());
     }
-  }
-}
+  };
+};
 
-const MultiSourcesHandler = function(numberIn, onLoadCallback, onErrorCallback, options) {
+const MultiSourcesHandler = function (numberIn, onLoadCallback, onErrorCallback, options) {
   const allData = [];
   const number = numberIn;
   const onLoad = onLoadCallback;
@@ -166,7 +166,7 @@ const MultiSourcesHandler = function(numberIn, onLoadCallback, onErrorCallback, 
     if (onError) {
       onError(...failure);
     }
-  }
+  };
 
   this.itemFailed = (order, args) => {
     if (!failure) {
@@ -176,10 +176,10 @@ const MultiSourcesHandler = function(numberIn, onLoadCallback, onErrorCallback, 
     if (totalDownloaded == number) {
       reportFailure();
     }
-  }
+  };
 
   this.itemDownloaded = (order, args) => {
-    allData[order]= args;
+    allData[order] = args;
     totalDownloaded++;
     if (totalDownloaded == number) {
       if (failure) {
@@ -199,23 +199,23 @@ const MultiSourcesHandler = function(numberIn, onLoadCallback, onErrorCallback, 
           onLoad(geometry, materials);
         } else {
           const glyphData = allData.map((item) => {
-            return JSON.parse(item[0])
+            return JSON.parse(item[0]);
           });
           mergeGlyphData(glyphData);
           onLoad(glyphData[0]);
         }
       }
     }
-  }
-}
+  };
+};
 
 const PrimitivesLoader = function () {
   let concurrentDownloads = 0;
   const MAX_DOWNLOAD = 20;
-  this.crossOrigin = "Anonymous";
+  this.crossOrigin = 'Anonymous';
   const jsonloader = new JSONLoader();
   const fileloader = new FileLoader();
-  fileloader.crossOrigin = "Anonymous";
+  fileloader.crossOrigin = 'Anonymous';
   const waitingList = [];
   //URL to loader pair
   const indexedLoaders = {};
@@ -227,24 +227,28 @@ const PrimitivesLoader = function () {
     //The order here will give us hint on the sequence on merging the primitives
     let order = 0;
     urls.forEach((url) => {
-      const newOptions = options ? {...options} : {};
+      const newOptions = options ? { ...options } : {};
       newOptions.msHandler = msHandler;
       newOptions.order = order;
       order++;
       loadFromSingleSource(url, onLoad, onProgress, onError, newOptions);
     });
-  }
+  };
 
   const handleIndexedSource = (url, onLoad, onProgress, onError, options) => {
-    const newOptions = options ? {...options} : {};
+    const newOptions = options ? { ...options } : {};
     let indexedLoader = indexedLoaders[url];
     if (!indexedLoader) {
       if (MAX_DOWNLOAD > concurrentDownloads) {
         const onLoadCallback = new onFinally(undefined, this, newOptions);
         const onErrorCallback = new onFinally(undefined, this, {});
         ++concurrentDownloads;
-        indexedLoader = new IndexedSourcesHandler(url, this.crossOrigin, onLoadCallback,
-          onErrorCallback);
+        indexedLoader = new IndexedSourcesHandler(
+          url,
+          this.crossOrigin,
+          onLoadCallback,
+          onErrorCallback,
+        );
         indexedLoaders[url] = indexedLoader;
       } else {
         waitingList.push({
@@ -260,10 +264,10 @@ const PrimitivesLoader = function () {
       newOptions.isHandler = indexedLoader;
       indexedLoader.load(options.index, onLoad, onProgress, onError);
     }
-  }
+  };
 
   const loadFromSingleSource = (url, onLoad, onProgress, onError, options) => {
-    if (options && (options.index !== undefined) ) {
+    if (options && options.index !== undefined) {
       handleIndexedSource(url, onLoad, onProgress, onError, options);
     } else {
       //Standard loading
@@ -287,7 +291,7 @@ const PrimitivesLoader = function () {
         });
       }
     }
-  }
+  };
 
   this.load = (url, onLoad, onProgress, onError, options) => {
     if (Array.isArray(url)) {
@@ -295,7 +299,7 @@ const PrimitivesLoader = function () {
     } else {
       loadFromSingleSource(url, onLoad, onProgress, onError, options);
     }
-  }
+  };
 
   this.loadFromWaitingList = () => {
     while (MAX_DOWNLOAD > concurrentDownloads) {
@@ -306,7 +310,7 @@ const PrimitivesLoader = function () {
         return;
       }
     }
-  }
+  };
 
   this.itemRemainingCheck = () => {
     if (waitingList.length === 0 && concurrentDownloads === 0) {
@@ -316,9 +320,9 @@ const PrimitivesLoader = function () {
         }
       }
     }
-  }
+  };
 
-  const onFinally = function(callback, loader, options, isError = false) {
+  const onFinally = function (callback, loader, options, isError = false) {
     return (...args) => {
       --concurrentDownloads;
       if (options?.msHandler) {
@@ -336,13 +340,12 @@ const PrimitivesLoader = function () {
       }
       loader.loadFromWaitingList();
       loader.itemRemainingCheck();
-    }
-  }
+    };
+  };
 
-  this.parse = data => {
+  this.parse = (data) => {
     return jsonloader.parse(data);
-  }
-
-}
+  };
+};
 
 export { PrimitivesLoader };

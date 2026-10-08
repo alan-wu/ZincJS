@@ -55,7 +55,9 @@ beforeAll(async () => {
   navigator.gpu = gpu;
   const adapter = await gpu.requestAdapter();
   const device = await adapter.requestDevice({
-    requiredLimits: { maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage },
+    requiredLimits: {
+      maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage,
+    },
   });
   webgpuRenderer = new THREE.WebGPURenderer({ device });
   await webgpuRenderer.init();
@@ -104,7 +106,12 @@ it('resyncs glyph label position and colour along with instanceMatrix/instanceCo
   let capturedTransform;
   const originalSetTransformation = glyph0.setTransformation;
   glyph0.setTransformation = (position, axis1, axis2, axis3) => {
-    capturedTransform = { position: [...position], axis1: [...axis1], axis2: [...axis2], axis3: [...axis3] };
+    capturedTransform = {
+      position: [...position],
+      axis1: [...axis1],
+      axis2: [...axis2],
+      axis3: [...axis3],
+    };
     return originalSetTransformation(position, axis1, axis2, axis3);
   };
   let capturedColour;
@@ -124,7 +131,10 @@ it('resyncs glyph label position and colour along with instanceMatrix/instanceCo
   const resynced = await waitFor(() => !matrixArray.every((v, i) => v === beforeMatrix[i]));
   expect(resynced, 'instanceMatrix was never resynced').toBe(true);
 
-  expect(capturedTransform, 'Glyph.setTransformation was never called during the resync').toBeDefined();
+  expect(
+    capturedTransform,
+    'Glyph.setTransformation was never called during the resync',
+  ).toBeDefined();
   expect(capturedColour, 'Glyph.setColour was never called during the resync').toBeDefined();
 
   // The captured label position/colour must match the resynced
@@ -172,7 +182,10 @@ it('labels already have the correct colour right after load, before any resync',
   // accurate resync doesn't happen until setMorphTime()/pause is called.
   expect(capturedGlyphs.length).toBe(numberOfVertices);
   const expectedColour = new THREE.Color().setHex(glyphsetMetadata.colors['0'][0]);
-  expect(capturedGlyphs[0].lastColour, 'Glyph.setColour was never called at load time').toBeDefined();
+  expect(
+    capturedGlyphs[0].lastColour,
+    'Glyph.setColour was never called at load time',
+  ).toBeDefined();
   expect(capturedGlyphs[0].lastColour.r).toBeCloseTo(expectedColour.r, 5);
   expect(capturedGlyphs[0].lastColour.g).toBeCloseTo(expectedColour.g, 5);
   expect(capturedGlyphs[0].lastColour.b).toBeCloseTo(expectedColour.b, 5);

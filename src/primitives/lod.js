@@ -47,13 +47,13 @@ const LOD = function (parent) {
         morph: object,
         loaded: true,
         loading: false,
-        url: "",
+        url: '',
       };
       this.levels.splice(l, 0, levelObject);
       object.renderOrder = this._renderOrder;
       //this.add( object );
     }
-  }
+  };
 
   /*
    * This is called once an ondemand level is loaded
@@ -74,7 +74,7 @@ const LOD = function (parent) {
       this.checkTransparentMesh();
       this._parent?.requestRender?.();
     }
-  }
+  };
 
   this.addLevelFromURL = (loader, level, url, index, preload) => {
     this._loader = loader;
@@ -97,34 +97,33 @@ const LOD = function (parent) {
     if (preload) {
       this.loadLevel(l);
     }
-  }
+  };
 
   //load the mesh at index, return true if morph is not ready
   this.loadLevel = (index) => {
     const level = this.levels[index];
-    if (!level.morph && !level.loaded &&
-      !level.loading) {
+    if (!level.morph && !level.loaded && !level.loading) {
       level.loading = true;
-      this._loader.load(level.url, this.lodLoader(level.distance),
-        undefined, undefined, {index: level.index});
+      this._loader.load(level.url, this.lodLoader(level.distance), undefined, undefined, {
+        index: level.index,
+      });
     }
-    return (level.morph === undefined);
-  }
-
+    return level.morph === undefined;
+  };
 
   this.calculateDistance = function (level) {
     this._parent.getBoundingBox();
     const radius = this._parent.radius;
     let distance = 0;
-    if (level === "far") {
+    if (level === 'far') {
       distance = radius * 4.5;
-    } else if (level === "medium") {
+    } else if (level === 'medium') {
       distance = radius * 2.5;
-    } else if (level === "close") {
+    } else if (level === 'close') {
       distance = 0;
     }
     return distance;
-  }
+  };
 
   /**
    * Check if there are multiple levels.
@@ -134,7 +133,7 @@ const LOD = function (parent) {
       return true;
     }
     return false;
-  }
+  };
 
   /**
    * Check if material is transparent, create secondary mesh
@@ -156,8 +155,7 @@ const LOD = function (parent) {
         // THREE.Mesh - for utilities purpose such as rendering
         // transparent surfaces - one for front face and one for back face.
         if (!level.secondaryMesh) {
-          level.secondaryMesh = new THREE.Mesh(level.morph.geometry,
-            this._secondaryMaterial);
+          level.secondaryMesh = new THREE.Mesh(level.morph.geometry, this._secondaryMaterial);
           level.secondaryMesh.renderOrder = level.morph.renderOrder + 1;
           level.secondaryMesh.userData = level.morph.userData;
           level.secondaryMesh.name = level.morph.name;
@@ -184,7 +182,7 @@ const LOD = function (parent) {
         this._material.needsUpdate = true;
       }
     }
-  }
+  };
 
   this.dispose = () => {
     this._disposed = true;
@@ -199,11 +197,11 @@ const LOD = function (parent) {
     if (this._secondaryMaterial) {
       this._secondaryMaterial.dispose();
     }
-  }
+  };
 
   this.getCurrentLevel = () => {
     return this._currentLevel;
-  }
+  };
 
   this.getCurrentMorph = () => {
     const level = this.levels[this._currentLevel];
@@ -211,11 +209,11 @@ const LOD = function (parent) {
       return level.morph;
     }
     return this._parent.morph;
-  }
+  };
 
   /**
- * Loader for lod object
- */
+   * Loader for lod object
+   */
   this.lodLoader = function (distance) {
     return (geometryIn) => {
       if (this._disposed) {
@@ -227,7 +225,7 @@ const LOD = function (parent) {
         localTimeEnabled: this._parent.timeEnabled,
         localMorphColour: this._parent.morphColour,
         isLines: this._parent.isLines,
-      }
+      };
       const geometry = toBufferGeometry(geometryIn, options);
       let mesh = undefined;
       if (this._parent.isGeometry) {
@@ -240,7 +238,7 @@ const LOD = function (parent) {
       geometryIn.dispose();
       this.levelLoaded(mesh, distance);
     };
-  }
+  };
 
   this.updateMorphColorAttribute = (currentOnly) => {
     //Multilayers - set all
@@ -250,8 +248,11 @@ const LOD = function (parent) {
       //morph colour materials now (see applyMorphColorNode's callers), so
       //NodeMaterial doesn't multiply the blend by the static 'color'
       //attribute on top of it.
-      if (this._material.userData && this._material.userData.uniforms &&
-        this._material.userData.uniforms.morphColorMix) {
+      if (
+        this._material.userData &&
+        this._material.userData.uniforms &&
+        this._material.userData.uniforms.morphColorMix
+      ) {
         if (currentOnly) {
           const morph = this.getCurrentMorph();
           updateMorphColorAttribute(morph.geometry, morph);
@@ -264,7 +265,7 @@ const LOD = function (parent) {
         }
       }
     }
-  }
+  };
 
   this.setColour = (colour) => {
     this._material.color = colour;
@@ -272,7 +273,7 @@ const LOD = function (parent) {
       this._secondaryMaterial.color = colour;
     }
     updateGeometryColour();
-  }
+  };
 
   this.setFrustumCulled = (flag) => {
     this.levels.forEach((level) => {
@@ -283,18 +284,18 @@ const LOD = function (parent) {
         level.secondaryMesh.frustumCulled = flag;
       }
     });
-  }
+  };
 
   this.setMaterial = (material) => {
     if (material) {
-      if (!this._material || (this._material.id !== material.id)) {
+      if (!this._material || this._material.id !== material.id) {
         this._material = material;
         if (this._secondaryMaterial) {
           this._secondaryMaterial.dispose();
           this._secondaryMaterial = undefined;
         }
         if (material.transparent || this.levels.some((level) => level.secondaryMesh)) {
-          this._secondaryMaterial = material.clone()
+          this._secondaryMaterial = material.clone();
           this._secondaryMaterial.side = THREE.FrontSide;
           this._secondaryMaterial.transparent = true;
         }
@@ -311,7 +312,7 @@ const LOD = function (parent) {
         });
       }
     }
-  }
+  };
 
   this.setName = (name) => {
     this.levels.forEach((level) => {
@@ -322,7 +323,7 @@ const LOD = function (parent) {
         level.secondaryMesh.name = name;
       }
     });
-  }
+  };
 
   this.setRenderOrder = (order) => {
     this._renderOrder = order;
@@ -334,7 +335,7 @@ const LOD = function (parent) {
         level.secondaryMesh.renderOrder = order;
       }
     });
-  }
+  };
 
   this.setVertexColors = (vertexColors) => {
     this._material.vertexColors = vertexColors;
@@ -342,7 +343,7 @@ const LOD = function (parent) {
     if (this._secondaryMaterial) {
       this._secondaryMaterial.vertexColors = vertexColors;
     }
-  }
+  };
 
   /* Update layers based on the */
   this.update = (camera, center) => {
@@ -363,8 +364,7 @@ const LOD = function (parent) {
             visibleIndex = i;
             levels[i].morph.visible = true;
             optimalIndex = -1;
-          }
-          else {
+          } else {
             optimalIndex = i;
           }
         } else {
@@ -393,7 +393,7 @@ const LOD = function (parent) {
         this._parent?.requestRender?.();
       }
     }
-  }
+  };
 
   this.toggleMarker = (marker, flag) => {
     this.levels.forEach((level) => {
@@ -405,7 +405,7 @@ const LOD = function (parent) {
         }
       }
     });
-  }
+  };
 
   const updateGeometryColour = () => {
     this.levels.forEach((level) => {
@@ -413,7 +413,7 @@ const LOD = function (parent) {
         level.morph.geometry.colorsNeedUpdate = true;
       }
     });
-  }
-}
+  };
+};
 
 export { LOD };

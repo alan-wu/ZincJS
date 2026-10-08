@@ -7,14 +7,14 @@ const listeners = new Set();
 
 const onRenderRequest = (callback) => {
   listeners.add(callback);
-}
+};
 
 const offRenderRequest = (callback) => {
   listeners.delete(callback);
-}
+};
 
 const requestRenderAll = () => {
   listeners.forEach((callback) => callback());
-}
+};
 
 export { onRenderRequest, offRenderRequest, requestRenderAll };

@@ -4,7 +4,6 @@ import { createWebGPUMaterial } from '../tsl/textureSlides.js';
 import { TexturePrimitive } from './texturePrimitive';
 import { updateWorldMatrixFromAncestors } from '../utilities';
 
-
 const cloneData3DTexture = (sourceTex) => {
   const image = sourceTex.image;
   const width = image.width;
@@ -23,7 +22,7 @@ const cloneData3DTexture = (sourceTex) => {
   targetTex.anisotropy = sourceTex.anisotropy;
   targetTex.needsUpdate = true;
   return targetTex;
-}
+};
 
 /**
  * Provides a class which create a texture stacks in a block
@@ -73,10 +72,10 @@ const TextureSlides = function (textureIn) {
    *
    * @param {SLIDE_SETTINGS} slideSettings - An array to each slide settings.
    */
-  this.createSlides = slideSettings => {
+  this.createSlides = (slideSettings) => {
     this.requestRender();
-    slideSettings.forEach(slide => this.createSlide(slide));
-  }
+    slideSettings.forEach((slide) => this.createSlide(slide));
+  };
 
   /**
    * Set the value of the uniforms for a specific mesh in this
@@ -95,20 +94,20 @@ const TextureSlides = function (textureIn) {
     mesh.position.y = 0;
     mesh.position.z = 0;
     switch (settings.direction) {
-      case "x":
+      case 'x':
         const rotation = -Math.PI / 2;
         mesh.rotation.y = rotation;
         uniforms.direction.value = 1;
         uniforms.slide.value.set(settings.value, 0, 0);
         mesh.position.x = settings.value;
         break;
-      case "y":
+      case 'y':
         mesh.rotation.x = Math.PI / 2;
         uniforms.direction.value = 2;
         uniforms.slide.value.set(0, settings.value, 0);
         mesh.position.y = settings.value;
         break;
-      case "z":
+      case 'z':
         uniforms.direction.value = 3;
         uniforms.slide.value.set(0, 0, settings.value);
         mesh.position.z = settings.value;
@@ -117,7 +116,7 @@ const TextureSlides = function (textureIn) {
         break;
     }
     this.boundingBoxUpdateRequired = true;
-  }
+  };
 
   /**
    * Modify the mesh based on a setting
@@ -126,12 +125,10 @@ const TextureSlides = function (textureIn) {
    */
   this.modifySlideSettings = (settings) => {
     this.requestRender();
-    if (settings && settings.id &&
-      settings.id in idTextureMap &&
-      idTextureMap[settings.id]) {
+    if (settings && settings.id && settings.id in idTextureMap && idTextureMap[settings.id]) {
       setUniformSlideSettingsOfMesh(idTextureMap[settings.id], settings);
     }
-  }
+  };
 
   /**
    * Create a slide required for visualisation based on the slide settings.
@@ -141,7 +138,7 @@ const TextureSlides = function (textureIn) {
    * @return {SLIDE_SETTINGS} - Returned settings, it includes the newly
    * created mesh's id.
    */
-  this.createSlide = settings => {
+  this.createSlide = (settings) => {
     this.requestRender();
     if (this.texture && this.texture.isTextureArray && this.texture.isReady()) {
       if (settings && settings.direction && settings.value !== undefined) {
@@ -202,7 +199,7 @@ const TextureSlides = function (textureIn) {
         return slideSettings;
       }
     }
-  }
+  };
 
   /**
    * Return a copy of texture settings used by this object.
@@ -211,7 +208,7 @@ const TextureSlides = function (textureIn) {
    */
   this.getTextureSettings = () => {
     return [...textureSettings];
-  }
+  };
 
   /**
    * Return a copy of texture settings with corresponding id used by this object.
@@ -221,10 +218,10 @@ const TextureSlides = function (textureIn) {
   this.getTextureSettingsWithId = (id) => {
     for (let i = 0; i < textureSettings.length; i++) {
       if (id === textureSettings[i].id) {
-        return {...textureSettings[i]};
+        return { ...textureSettings[i] };
       }
     }
-  }
+  };
 
   /**
    * Get  the array of slides, return them in an array
@@ -234,54 +231,50 @@ const TextureSlides = function (textureIn) {
   this.getSlides = () => {
     if (this.morph) return [...this.morph.children];
     return [];
-  }
+  };
 
   /**
    * Remove a slide, this will dispose the slide and its material.
    *
    * @param {Slide} slide - Slide to be remvoed
    */
-  this.removeSlide = slide => {
+  this.removeSlide = (slide) => {
     this.requestRender();
     if (slide) {
       this.removeSlideWithId(slide.id);
     }
-  }
+  };
 
   /**
-    * Remove a slide, this will dispose the slide and its material.
-    *
-    * @param {Number} id - id of slide to be remvoed
-    */
-  this.removeSlideWithId = id => {
+   * Remove a slide, this will dispose the slide and its material.
+   *
+   * @param {Number} id - id of slide to be remvoed
+   */
+  this.removeSlideWithId = (id) => {
     this.requestRender();
     if (this.morph && id in idTextureMap && idTextureMap[id]) {
       if (this.morph.getObjectById(id)) {
         const slide = idTextureMap[id];
         this.morph.remove(slide);
         slide.clear();
-        if (slide.geometry)
-          slide.geometry.dispose();
-        if (slide.material)
-          slide.material.dispose();
+        if (slide.geometry) slide.geometry.dispose();
+        if (slide.material) slide.material.dispose();
         this.boundingBoxUpdateRequired = true;
       }
-      const index = textureSettings.findIndex(item => item.id === id);
+      const index = textureSettings.findIndex((item) => item.id === id);
       if (index > -1) {
         textureSettings.splice(index, 1);
       }
     }
-  }
+  };
 
   /**
    * Clean up all internal objects.
    */
   this.dispose = () => {
-    this.morph.children.forEach(slide => {
-      if (slide.geometry)
-        slide.geometry.dispose();
-      if (slide.material)
-        slide.material.dispose();
+    this.morph.children.forEach((slide) => {
+      if (slide.geometry) slide.geometry.dispose();
+      if (slide.material) slide.material.dispose();
     });
     if (maskTexture) {
       maskTexture.dispose();
@@ -290,7 +283,7 @@ const TextureSlides = function (textureIn) {
     }
     TexturePrimitive.prototype.dispose.call(this);
     this.boundingBoxUpdateRequired = true;
-  }
+  };
 
   //Expand the boundingbox with slide settings
   const expandBoxWithSettings = (box, settings, vector) => {
@@ -321,7 +314,7 @@ const TextureSlides = function (textureIn) {
           break;
       }
     }
-  }
+  };
 
   /**
    * Get the bounding box of this slides.
@@ -331,19 +324,17 @@ const TextureSlides = function (textureIn) {
    * @return {THREE.Box3}.
    */
   this.getBoundingBox = () => {
-    if (this.morph && this.morph.children && this.morph.visible &&
-      this.boundingBoxUpdateRequired) {
+    if (this.morph && this.morph.children && this.morph.visible && this.boundingBoxUpdateRequired) {
       this.cachedBoundingBox.makeEmpty();
       const vector = new THREE.Vector3(0, 0, 0);
-      this.morph.children.forEach(slide => {
-        expandBoxWithSettings(this.cachedBoundingBox, slide.material.userData.uniforms,
-          vector);
+      this.morph.children.forEach((slide) => {
+        expandBoxWithSettings(this.cachedBoundingBox, slide.material.userData.uniforms, vector);
       });
       this.cachedBoundingBox.applyMatrix4(updateWorldMatrixFromAncestors(this.morph));
       this.boundingBoxUpdateRequired = false;
     }
     return this.cachedBoundingBox;
-  }
+  };
 
   this.applyTransformation = (rotation, position, scale) => {
     this.requestRender();
@@ -364,56 +355,58 @@ const TextureSlides = function (textureIn) {
       0,
       0,
       0,
-      0
+      0,
     );
     const quaternion = new THREE.Quaternion().setFromRotationMatrix(matrix);
     this.morph.position.set(...position);
-    this.morph.quaternion.copy( quaternion );
+    this.morph.quaternion.copy(quaternion);
     this.morph.scale.set(...scale);
     this.morph.updateMatrix();
     this.boundingBoxUpdateRequired = true;
-  }
+  };
 
   this.setRenderOrder = (order) => {
     this.requestRender();
     //multiilayers
     this.morph.renderOrder = order;
-  }
+  };
 
   this.initialise = (textureData, finishCallback) => {
     if (textureData) {
       const locations = textureData.locations;
       if (locations && locations.length > 0) {
-        this.applyTransformation(locations[0].orientation,
-          locations[0].position, locations[0].scale);
-        if ("flipY" in locations[0]) {
+        this.applyTransformation(
+          locations[0].orientation,
+          locations[0].position,
+          locations[0].scale,
+        );
+        if ('flipY' in locations[0]) {
           flipY = locations[0].flipY;
         }
-        if ("flipZ" in locations[0]) {
+        if ('flipZ' in locations[0]) {
           flipZ = locations[0].flipZ;
         }
       }
       this.createSlides(textureData.settings.slides);
-      if (finishCallback != undefined && (typeof finishCallback == 'function')) {
+      if (finishCallback != undefined && typeof finishCallback == 'function') {
         finishCallback(this);
       }
     }
-  }
+  };
 
   this.showEdges = (color) => {
     this.requestRender();
     if (!edgesLine) {
-      const geometry = new THREE.BoxGeometry( 1, 1, 1 );
+      const geometry = new THREE.BoxGeometry(1, 1, 1);
       geometry.translate(0.5, 0.5, 0.5);
-      const edges = new THREE.EdgesGeometry( geometry );
-      edgesLine = new THREE.LineSegments(edges, new THREE.LineBasicMaterial( { color } ) );
-      this.group.add( edgesLine );
+      const edges = new THREE.EdgesGeometry(geometry);
+      edgesLine = new THREE.LineSegments(edges, new THREE.LineBasicMaterial({ color }));
+      this.group.add(edgesLine);
     } else {
       edgesLine.material.color = color;
     }
     edgesLine.visible = true;
-  }
-
+  };
 
   this.setUniformsValue = (name, val) => {
     this.requestRender();
@@ -424,53 +417,53 @@ const TextureSlides = function (textureIn) {
         uniforms[name].value = val;
       }
     });
-  }
+  };
 
   this.isAlphaPixelDiscarded = () => {
     return discardAlpha;
-  }
+  };
 
   this.discardAlphaPixel = (flag) => {
     this.requestRender();
     discardAlpha = flag;
-    this.setUniformsValue("discardAlpha", discardAlpha);
-  }
+    this.setUniformsValue('discardAlpha', discardAlpha);
+  };
 
   this.getBrightness = () => {
     return brightness;
-  }
+  };
 
   this.setBrightness = (brightnessIn) => {
     this.requestRender();
     brightness = brightnessIn;
-    this.setUniformsValue("brightness", brightness);
-  }
+    this.setUniformsValue('brightness', brightness);
+  };
 
   this.getContrast = () => {
     return contrast;
-  }
+  };
 
   this.setContrast = (contrastIn) => {
     this.requestRender();
-    if (contrast >= 0 ) {
+    if (contrast >= 0) {
       contrast = contrastIn;
-      this.setUniformsValue("contrast", contrast);
+      this.setUniformsValue('contrast', contrast);
     }
-  }
+  };
 
   this.getNumberOfChannels = () => {
     return nChannels;
-  }
+  };
 
   this.setNumberOfChannels = (numbersIn) => {
     this.requestRender();
     nChannels = numbersIn;
-    this.setUniformsValue("nChannels", nChannels);
-  }
+    this.setUniformsValue('nChannels', nChannels);
+  };
 
   this.getMask = () => {
     return maskTexture;
-  }
+  };
 
   this.setMask = (maskTextureIn) => {
     this.requestRender();
@@ -479,21 +472,21 @@ const TextureSlides = function (textureIn) {
     this.morph.children.forEach((mesh) => {
       const material = mesh.material;
       if (material.userData.uniforms) {
-      const uniforms = material.userData.uniforms;
+        const uniforms = material.userData.uniforms;
         if (maskTexture) {
           uniforms.mask.value = maskTexture;
         }
       }
     });
-    this.setUniformsValue("maskEnabled", maskEnabled);
-  }
+    this.setUniformsValue('maskEnabled', maskEnabled);
+  };
 
   this.hideEdges = () => {
     this.requestRender();
     if (edgesLine) {
       edgesLine.visible = false;
     }
-  }
+  };
 
   this.updateTimeTexture = () => {
     const maxIndex = this.textureList.length - 1;
@@ -505,7 +498,7 @@ const TextureSlides = function (textureIn) {
       const ratio = iTime - t0;
       this.morph.children.forEach((mesh) => {
         const material = mesh.material;
-        if (material.userData.uniforms)  {
+        if (material.userData.uniforms) {
           const uniforms = material.userData.uniforms;
           if (lt0 !== t0) {
             uniforms.diffuse0.value.image.data = this.textureList[t0].imageData;
@@ -522,7 +515,7 @@ const TextureSlides = function (textureIn) {
       lt1 = t1;
       prevTime = normalisedTime;
     }
-  }
+  };
 
   /**
    * Update the glyphsets if required the render.
@@ -530,34 +523,28 @@ const TextureSlides = function (textureIn) {
   this.setMorphTime = (time) => {
     this.requestRender();
     let newTime = time;
-    if (time > this.duration)
-      newTime = this.duration;
-    else if (0 > time)
-      newTime = 0;
-    else
-      newTime = time;
+    if (time > this.duration) newTime = this.duration;
+    else if (0 > time) newTime = 0;
+    else newTime = time;
     if (newTime != this.inbuildTime) {
       this.inbuildTime = newTime;
       this.updateTimeTexture();
     }
-  }
+  };
 
   /**
    * Update the glyphsets if required the render.
    */
   this.render = (delta, playAnimation, cameraControls, options) => {
-   //console.log("render", delta, playAnimation, this.textureList)
-    if (playAnimation == true && this.timeEnabled &&
-        this.textureList.length > 1) {
+    //console.log("render", delta, playAnimation, this.textureList)
+    if (playAnimation == true && this.timeEnabled && this.textureList.length > 1) {
       let targetTime = this.inbuildTime + delta;
-      if (targetTime > this.duration)
-        targetTime = targetTime - this.duration;
+      if (targetTime > this.duration) targetTime = targetTime - this.duration;
       this.inbuildTime = targetTime;
       this.updateTimeTexture();
     }
-  }
-
-}
+  };
+};
 
 TextureSlides.prototype = Object.create(TexturePrimitive.prototype);
 TextureSlides.prototype.constructor = TextureSlides;

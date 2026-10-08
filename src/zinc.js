@@ -12,10 +12,7 @@ import { TextureArray } from './texture/textureArray';
 import { TextureSlides } from './primitives/textureSlides';
 import { Renderer } from './renderer';
 import { Scene } from './scene';
-import {
-  createPrimitivesFromNIFTI,
-  createTextureFromNIFTI
-} from './loaders/niftiReader';
+import { createPrimitivesFromNIFTI, createTextureFromNIFTI } from './loaders/niftiReader';
 //import { GeometryCSG } from './geometryCSG';
 //import { GlyphsetCSG } from './glyphsetCSG';
 import {
@@ -24,7 +21,7 @@ import {
   SmoothCameraTransition,
   RayCaster,
   CameraAutoTumble,
-  StereoEffect
+  StereoEffect,
 } from './controls';
 import { loadExternalFile, loadExternalFiles } from './utilities';
 
@@ -36,9 +33,9 @@ const version = PACKAGE.version;
  * @namespace
  * @author Alan Wu
  */
-const Zinc = function() {
+const Zinc = function () {
   this.Revision = version;
-  this.defaultMaterialColor = 0xFFFFFF;
+  this.defaultMaterialColor = 0xffffff;
   this.defaultOpacity = 1.0;
   // Assign hoisted modules to the instance
   this.Geometry = Geometry;

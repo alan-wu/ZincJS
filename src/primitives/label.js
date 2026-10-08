@@ -25,16 +25,20 @@ const Label = function (textIn, colourIn) {
   let fontWeight = 500;
   const textHeight = 0.012;
   //The canvas resolution is chosen from the size of the text on screen
-  sprite = createTextSprite(text, textHeight,
-    colourIn ? colourIn.getStyle() : undefined, "Asap", fontWeight);
+  sprite = createTextSprite(
+    text,
+    textHeight,
+    colourIn ? colourIn.getStyle() : undefined,
+    'Asap',
+    fontWeight,
+  );
   sprite.center.x = -0.05;
   sprite.center.y = 0;
   //SpriteText replaces the texture whenever the text, colour or size
   //changes, the settings need to be re-applied to the new texture.
   const applyTextureSettings = () => {
     applyTextSpriteTextureSettings(sprite);
-  }
-
+  };
 
   /**
    * Get the current position in an array containing the x, y and z
@@ -43,10 +47,9 @@ const Label = function (textIn, colourIn) {
    * @return {Array}
    */
   this.getPosition = () => {
-    if (sprite)
-      return [sprite.position.x, sprite.position.y, sprite.position.z];
+    if (sprite) return [sprite.position.x, sprite.position.y, sprite.position.z];
     return [0, 0, 0];
-  }
+  };
 
   /**
    * Set the position of the label in  3D coordinates.
@@ -63,14 +66,14 @@ const Label = function (textIn, colourIn) {
     if (sprite) {
       sprite.position.set(x, y, z);
     }
-  }
+  };
 
   /**
    * Set the colour of the label
    *
    * @param {THREE.Color} colour - colour to be set
    */
-  this.setColour = colourIn => {
+  this.setColour = (colourIn) => {
     if (colourIn) {
       //Changing the colour redraws the canvas and creates a new texture,
       //only do it when the colour has changed.
@@ -81,61 +84,60 @@ const Label = function (textIn, colourIn) {
       }
       colour = colourIn;
     }
-  }
+  };
 
   /**
    * Scale the label.
    *
    * @param {Number} scaling - Scale to be set.
    */
-  this.setScale = scaling => {
-    if (sprite && scaling > 0.0)
-      sprite.scale.set(scaling, scaling, 1.0);
-  }
+  this.setScale = (scaling) => {
+    if (sprite && scaling > 0.0) sprite.scale.set(scaling, scaling, 1.0);
+  };
 
   /**
    * Set depth test for sprite object.
    *
    * @param {Boolean} flag - Enable/disable depth test
    */
-  this.setDepthTest = flag => {
+  this.setDepthTest = (flag) => {
     if (flag && flag !== sprite.material.depthTest) {
       sprite.material.depthTest = flag;
     }
-  }
+  };
 
   /**
    * Set a new text for the label.
    *
    * @param {Number} scaling - Scale to be set.
    */
-  this.setSize = sizeIn => {
+  this.setSize = (sizeIn) => {
     if (sizeIn > 0.0) {
       //Redraw at the resolution matching the new size
       setTextSpriteHeight(sprite, textHeight * sizeIn);
       size = sizeIn;
     }
-  }
+  };
 
   /**
    * Set a new text for the label.
    *
    * @param {Number} scaling - Scale to be set.
    */
-  this.setFontWeight = fontWeightIn => {
+  this.setFontWeight = (fontWeightIn) => {
     if (fontWeightIn && fontWeightIn !== fontWeight) {
       sprite.fontWeight = fontWeightIn;
       applyTextureSettings();
       fontWeight = fontWeightIn;
     }
-  }
+  };
 
   /**
    * Set a new text for the label.
    *
    * @param {Number} scaling - Scale to be set.
    */
-  this.setText = textIn => {
+  this.setText = (textIn) => {
     if (textIn && textIn !== sprite.text) {
       //Force teh texture to update
       const canvas = sprite._canvas;
@@ -158,16 +160,16 @@ const Label = function (textIn, colourIn) {
         sprite.material.map.needsUpdate = true;
       }
     }
-  }
+  };
 
   /**
    * Set visibility of the label.
    *
    * @param {Boolean} flag - Visibility to set
    */
-  this.setVisibility = flag => {
+  this.setVisibility = (flag) => {
     sprite.visible = flag;
-  }
+  };
 
   /**
    * Free up the memory
@@ -186,7 +188,7 @@ const Label = function (textIn, colourIn) {
         sprite._canvas.height = 0;
       }
     }
-  }
+  };
 
   /**
    * Get the intrnal sprite.
@@ -195,7 +197,7 @@ const Label = function (textIn, colourIn) {
    */
   this.getSprite = () => {
     return sprite;
-  }
+  };
 
   /**
    * Get the text.
@@ -204,11 +206,7 @@ const Label = function (textIn, colourIn) {
    */
   this.getString = () => {
     return text;
-  }
-
+  };
 };
 
 export { Label };
-
-
-

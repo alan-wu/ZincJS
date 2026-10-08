@@ -7,8 +7,8 @@ import { updateWorldMatrixFromAncestors } from './utilities';
 let uniqueiId = 0;
 
 const getUniqueId = function () {
-  return "re" + uniqueiId++;
-}
+  return 're' + uniqueiId++;
+};
 
 /**
  * Provides a hierachical structure to objects, Each region
@@ -24,7 +24,7 @@ let Region = function (parentIn, sceneIn) {
   group.matrixAutoUpdate = false;
   group.userData = this;
   let children = [];
-  let name = "";
+  let name = '';
   let zincObjects = [];
   let scene = sceneIn;
   const tMatrix = new THREE.Matrix4();
@@ -37,23 +37,23 @@ let Region = function (parentIn, sceneIn) {
   //Ask the scene to draw the next frame, used by render on demand.
   const requestRender = () => {
     scene?.invalidate?.();
-  }
+  };
 
   /**
    * Hide all primitives belong to this region.
    */
   this.hideAllPrimitives = () => {
-    children.forEach(child => child.hideAllPrimitives());
-    zincObjects.forEach(zincObject => zincObject.setVisibility(false));
-  }
+    children.forEach((child) => child.hideAllPrimitives());
+    zincObjects.forEach((zincObject) => zincObject.setVisibility(false));
+  };
 
   /**
    * Show all primitives belong to this region.
    */
   this.showAllPrimitives = () => {
-    children.forEach(child => child.showAllPrimitives());
-    zincObjects.forEach(zincObject => zincObject.setVisibility(true));
-  }
+    children.forEach((child) => child.showAllPrimitives());
+    zincObjects.forEach((zincObject) => zincObject.setVisibility(true));
+  };
 
   /**
    * Set the visibility and propagate it down the hierarchies
@@ -67,7 +67,7 @@ let Region = function (parentIn, sceneIn) {
       group.visible = flag;
       this.pickableUpdateRequired = true;
     }
-  }
+  };
 
   /**
    * Get the visibility of the region and its children.
@@ -76,7 +76,7 @@ let Region = function (parentIn, sceneIn) {
    */
   this.getVisibility = () => {
     return group.visible;
-  }
+  };
 
   /**
    * Get the {THREE.Group} containing all child regions and their
@@ -86,7 +86,7 @@ let Region = function (parentIn, sceneIn) {
    */
   this.getGroup = () => {
     return group;
-  }
+  };
 
   /**
    * Set the transformation with a {THREE.Matrix4} matrix, this will affect
@@ -95,7 +95,7 @@ let Region = function (parentIn, sceneIn) {
    * @param {THREE.Matrix4} transformation - The transformation matrix
    * used for the transformation.
    */
-  this.setTransformation = transformation => {
+  this.setTransformation = (transformation) => {
     requestRender();
     tMatrix.set(...transformation);
     group.matrix.copy(tMatrix);
@@ -107,7 +107,7 @@ let Region = function (parentIn, sceneIn) {
     this.getAllObjects(true).forEach((zincObject) => {
       zincObject.boundingBoxUpdateRequired = true;
     });
-  }
+  };
 
   /**
    * Set the name of this region.
@@ -116,10 +116,10 @@ let Region = function (parentIn, sceneIn) {
    * and non-empty.
    */
   this.setName = (nameIn) => {
-    if (nameIn && nameIn !== "") {
+    if (nameIn && nameIn !== '') {
       name = nameIn;
     }
-  }
+  };
 
   /**
    * Get the name of this region.
@@ -128,7 +128,7 @@ let Region = function (parentIn, sceneIn) {
    */
   this.getName = () => {
     return name;
-  }
+  };
 
   /**
    * Get the parent region.
@@ -137,7 +137,7 @@ let Region = function (parentIn, sceneIn) {
    */
   this.getParent = () => {
     return parent;
-  }
+  };
 
   /**
    * Get the {@link Scene} this region belongs to.
@@ -146,7 +146,7 @@ let Region = function (parentIn, sceneIn) {
    */
   this.getScene = () => {
     return scene;
-  }
+  };
 
   /**
    * Get the array of each hierarachy from the root region to this region.
@@ -155,18 +155,18 @@ let Region = function (parentIn, sceneIn) {
    */
   this.getFullSeparatedPath = () => {
     const paths = [];
-    if (name !== "") {
+    if (name !== '') {
       paths.push(name);
       for (let p = parent; p !== undefined;) {
         const parentName = p.getName();
-        if (parentName !== "") {
+        if (parentName !== '') {
           paths.unshift(parentName);
         }
         p = p.getParent();
       }
     }
     return paths;
-  }
+  };
 
   /**
    * Get the full paths from the root region to this region.
@@ -177,13 +177,13 @@ let Region = function (parentIn, sceneIn) {
     const paths = this.getFullSeparatedPath();
     if (paths.length > 0) {
       let fullPath = paths.shift();
-      paths.forEach(path => {
-        fullPath = fullPath.concat("/", path);
+      paths.forEach((path) => {
+        fullPath = fullPath.concat('/', path);
       });
       return fullPath;
     }
-    return "";
-  }
+    return '';
+  };
 
   /**
    * Create a new child region with the provided name.
@@ -198,7 +198,7 @@ let Region = function (parentIn, sceneIn) {
     children.push(childRegion);
     group.add(childRegion.getGroup());
     return childRegion;
-  }
+  };
 
   /**
    * Get the child region with matching childName.
@@ -206,16 +206,15 @@ let Region = function (parentIn, sceneIn) {
    *
    * @return {Region}
    */
-  this.getChildWithName = childName => {
+  this.getChildWithName = (childName) => {
     if (childName) {
       const lowerChildName = childName.toLowerCase();
       for (let i = 0; i < children.length; i++) {
-        if (children[i].getName().toLowerCase() === lowerChildName)
-          return children[i];
+        if (children[i].getName().toLowerCase() === lowerChildName) return children[i];
       }
     }
     return undefined;
-  }
+  };
 
   /**
    * Find a child region using the path array.
@@ -224,9 +223,9 @@ let Region = function (parentIn, sceneIn) {
    *
    * @return {Region}
    */
-  this.findChildFromSeparatedPath = pathArray => {
+  this.findChildFromSeparatedPath = (pathArray) => {
     if (pathArray && pathArray.length > 0) {
-      if (pathArray[0] === "") {
+      if (pathArray[0] === '') {
         pathArray.shift();
       }
     }
@@ -240,7 +239,7 @@ let Region = function (parentIn, sceneIn) {
       }
     }
     return this;
-  }
+  };
 
   /**
    * Find the region using the provided relative path.
@@ -251,9 +250,9 @@ let Region = function (parentIn, sceneIn) {
    * @return {Region}
    */
   this.findChildFromPath = (path) => {
-    const pathArray = path.split("/");
+    const pathArray = path.split('/');
     return this.findChildFromSeparatedPath(pathArray);
-  }
+  };
 
   /**
    * Create a new child using the path array. All required new regions
@@ -264,9 +263,9 @@ let Region = function (parentIn, sceneIn) {
    *
    * @return {Region}
    */
-  this.createChildFromSeparatedPath = pathArray => {
+  this.createChildFromSeparatedPath = (pathArray) => {
     if (pathArray.length > 0) {
-      if (pathArray[0] === "") {
+      if (pathArray[0] === '') {
         pathArray.shift();
       }
     }
@@ -279,7 +278,7 @@ let Region = function (parentIn, sceneIn) {
       return childRegion.createChildFromSeparatedPath(pathArray);
     }
     return this;
-  }
+  };
 
   /**
    * Create a new child using the path. All required new regions
@@ -291,10 +290,9 @@ let Region = function (parentIn, sceneIn) {
    * @return {Region}
    */
   this.createChildFromPath = (path) => {
-    const pathArray = path.split("/");
+    const pathArray = path.split('/');
     return this.createChildFromSeparatedPath(pathArray);
-  }
-
+  };
 
   /**
    * Return existing region if it exists, otherwise, create a new
@@ -311,7 +309,7 @@ let Region = function (parentIn, sceneIn) {
       childRegion = this.createChildFromPath(path);
     }
     return childRegion;
-  }
+  };
 
   /**
    * Add a zinc object into this region, the morph will be added
@@ -320,7 +318,7 @@ let Region = function (parentIn, sceneIn) {
    * @param {ZincObject} zincObject - Zinc object to be added into
    * this region.
    */
-  this.addZincObject = zincObject => {
+  this.addZincObject = (zincObject) => {
     requestRender();
     if (zincObject) {
       zincObject.setRegion(this);
@@ -331,8 +329,7 @@ let Region = function (parentIn, sceneIn) {
         scene.triggerObjectAddedCallback(zincObject);
       }
     }
-  }
-
+  };
 
   /**
    * Remove a ZincObject from this region if it presents. This will eventually
@@ -340,7 +337,7 @@ let Region = function (parentIn, sceneIn) {
    *
    * @param {ZincObject} zincObject - object to be removed from this region.
    */
-  this.removeZincObject = zincObject => {
+  this.removeZincObject = (zincObject) => {
     requestRender();
     for (let i = 0; i < zincObjects.length; i++) {
       if (zincObject === zincObjects[i]) {
@@ -354,7 +351,7 @@ let Region = function (parentIn, sceneIn) {
         return;
       }
     }
-  }
+  };
 
   /**
    * Return true if pickable objects require an update.
@@ -369,12 +366,12 @@ let Region = function (parentIn, sceneIn) {
     if (transverse) {
       let flag = false;
       for (let i = 0; i < children.length; i++) {
-         flag = children[i].checkPickableUpdateRequred(transverse);
-         if (flag) return true;
+        flag = children[i].checkPickableUpdateRequred(transverse);
+        if (flag) return true;
       }
     }
     return false;
-  }
+  };
 
   /**
    * Clear the pickable update flag for this region and its descendants,
@@ -385,20 +382,20 @@ let Region = function (parentIn, sceneIn) {
   this.clearPickableUpdateRequired = (transverse) => {
     this.pickableUpdateRequired = false;
     if (transverse) {
-      children.forEach(childRegion => {
+      children.forEach((childRegion) => {
         childRegion.clearPickableUpdateRequired(transverse);
       });
     }
-  }
+  };
 
   /**
    * Get all pickable objects.
    */
-  this.getPickableThreeJSObjects = (objectsList,  transverse) => {
+  this.getPickableThreeJSObjects = (objectsList, transverse) => {
     if (!group.visible) {
       this.clearPickableUpdateRequired(transverse);
     } else {
-      zincObjects.forEach(zincObject => {
+      zincObjects.forEach((zincObject) => {
         if (zincObject.isPickable && zincObject.getGroup() && zincObject.getGroup().visible) {
           let marker = zincObject.marker;
           if (marker && marker.isEnabled()) {
@@ -408,14 +405,14 @@ let Region = function (parentIn, sceneIn) {
         }
       });
       if (transverse) {
-        children.forEach(childRegion => {
+        children.forEach((childRegion) => {
           childRegion.getPickableThreeJSObjects(objectsList, transverse);
         });
       }
       this.pickableUpdateRequired = false;
     }
     return objectsList;
-  }
+  };
 
   /**
    * Set the default duration value for all zinc objects
@@ -423,11 +420,11 @@ let Region = function (parentIn, sceneIn) {
    *
    * @param {Number} durationIn - duration of the scene.
    */
-  this.setDuration = durationIn => {
+  this.setDuration = (durationIn) => {
     duration = durationIn;
-    zincObjects.forEach(zincObject => zincObject.setDuration(durationIn));
-    children.forEach(childRegion => childRegion.setDuration(durationIn));
-  }
+    zincObjects.forEach((zincObject) => zincObject.setDuration(durationIn));
+    children.forEach((childRegion) => childRegion.setDuration(durationIn));
+  };
 
   /**
    * Get the default duration value.
@@ -435,7 +432,7 @@ let Region = function (parentIn, sceneIn) {
    */
   this.getDuration = () => {
     return duration;
-  }
+  };
 
   /**
    * Get the bounding box of all the object in this and child regions only.
@@ -444,13 +441,13 @@ let Region = function (parentIn, sceneIn) {
    *
    * @returns {THREE.Box3}
    */
-  this.getBoundingBox = transverse => {
+  this.getBoundingBox = (transverse) => {
     const boundingBox = new THREE.Box3();
     if (this.accumulateBoundingBox(boundingBox, transverse)) {
       return boundingBox;
     }
     return undefined;
-  }
+  };
 
   /**
    * Expand the target by the bounding box of this region.
@@ -469,12 +466,11 @@ let Region = function (parentIn, sceneIn) {
     }
     if (transverse) {
       for (let i = 0; i < children.length; i++) {
-        if (children[i].accumulateBoundingBox(target, transverse))
-          found = true;
+        if (children[i].accumulateBoundingBox(target, transverse)) found = true;
       }
     }
     return found;
-  }
+  };
 
   /**
    * Clear and dispose all objects belong to this region.
@@ -482,15 +478,15 @@ let Region = function (parentIn, sceneIn) {
    * @param {Boolean} transverse - Clear and dispose child regions as well
    * if this is set to true.
    */
-  this.clear = transverse => {
+  this.clear = (transverse) => {
     requestRender();
     if (transverse) {
-      children.forEach(childRegion => {
+      children.forEach((childRegion) => {
         childRegion.clear(transverse);
         group.remove(childRegion.getGroup());
       });
     }
-    zincObjects.forEach(zincObject => {
+    zincObjects.forEach((zincObject) => {
       group.remove(zincObject.getGroup());
       zincObject.dispose();
     });
@@ -498,7 +494,7 @@ let Region = function (parentIn, sceneIn) {
       children = [];
     }
     zincObjects = [];
-  }
+  };
 
   /**
    * Check if a zincObject is a member of this region.
@@ -516,13 +512,12 @@ let Region = function (parentIn, sceneIn) {
     }
     if (transverse) {
       for (let i = 0; i < children.length; i++) {
-        if (children[i].objectIsInRegion(zincObject, transverse))
-          return true;
+        if (children[i].objectIsInRegion(zincObject, transverse)) return true;
       }
     }
 
     return false;
-  }
+  };
 
   /**
    * A function which iterates through the list of geometries and call the callback
@@ -534,14 +529,12 @@ let Region = function (parentIn, sceneIn) {
    * all child regions if this is set to be true.
    */
   this.forEachGeometry = (callbackFunction, transverse) => {
-    zincObjects.forEach(zincObject => {
-      if (zincObject.isGeometry)
-        callbackFunction(zincObject);
+    zincObjects.forEach((zincObject) => {
+      if (zincObject.isGeometry) callbackFunction(zincObject);
     });
     if (transverse)
-      children.forEach(childRegion => childRegion.forEachGeometry(
-        callbackFunction, transverse));
-  }
+      children.forEach((childRegion) => childRegion.forEachGeometry(callbackFunction, transverse));
+  };
 
   /**
    * A function which iterates through the list of glyphsets and call the callback
@@ -553,14 +546,12 @@ let Region = function (parentIn, sceneIn) {
    * all child regions if this is set to be true.
    */
   this.forEachGlyphset = (callbackFunction, transverse) => {
-    zincObjects.forEach(zincObject => {
-      if (zincObject.isGlyphset)
-        callbackFunction(zincObject);
+    zincObjects.forEach((zincObject) => {
+      if (zincObject.isGlyphset) callbackFunction(zincObject);
     });
     if (transverse)
-      children.forEach(childRegion => childRegion.forEachGlyphset(
-        callbackFunction, transverse));
-  }
+      children.forEach((childRegion) => childRegion.forEachGlyphset(callbackFunction, transverse));
+  };
 
   /**
    * A function which iterates through the list of pointsets and call the callback
@@ -572,49 +563,44 @@ let Region = function (parentIn, sceneIn) {
    * all child regions if this is set to be true.
    */
   this.forEachPointset = (callbackFunction, transverse) => {
-    zincObjects.forEach(zincObject => {
-      if (zincObject.isPointset)
-        callbackFunction(zincObject);
+    zincObjects.forEach((zincObject) => {
+      if (zincObject.isPointset) callbackFunction(zincObject);
     });
     if (transverse)
-      children.forEach(childRegion => childRegion.forEachPointset(
-        callbackFunction, transverse));
-  }
+      children.forEach((childRegion) => childRegion.forEachPointset(callbackFunction, transverse));
+  };
 
   /**
-  * A function which iterates through the list of lines and call the callback
-  * function with the lines as the argument.
-  *
-  * @param {Function} callbackFunction - Callback function with the lines
-  * as an argument.
+   * A function which iterates through the list of lines and call the callback
+   * function with the lines as the argument.
+   *
+   * @param {Function} callbackFunction - Callback function with the lines
+   * as an argument.
    * @param {Boolean} transverse - Also perform the same callback function for
    * all child regions if this is set to be true.
-  */
+   */
   this.forEachLine = (callbackFunction, transverse) => {
-    zincObjects.forEach(zincObject => {
-      if (zincObject.isLines)
-        callbackFunction(zincObject);
+    zincObjects.forEach((zincObject) => {
+      if (zincObject.isLines) callbackFunction(zincObject);
     });
     if (transverse)
-      children.forEach(childRegion => childRegion.forEachLine(
-        callbackFunction, transverse));
-  }
+      children.forEach((childRegion) => childRegion.forEachLine(callbackFunction, transverse));
+  };
 
   this.findObjectsWithAnatomicalId = (anatomicalId, transverse) => {
     const objectsArray = [];
-    zincObjects.forEach(zincObject => {
-      if (zincObject.anatomicalId === anatomicalId)
-        objectsArray.push(zincObject);
+    zincObjects.forEach((zincObject) => {
+      if (zincObject.anatomicalId === anatomicalId) objectsArray.push(zincObject);
     });
     if (transverse) {
-      children.forEach(childRegion => {
+      children.forEach((childRegion) => {
         let childObjects = childRegion.findObjectsWithAnatomicalId(anatomicalId, transverse);
         objectsArray.push(...childObjects);
       });
     }
 
     return objectsArray;
-  }
+  };
 
   /**
    * Find and return all zinc objects in this and child regions with
@@ -627,20 +613,21 @@ let Region = function (parentIn, sceneIn) {
    */
   this.findObjectsWithGroupName = (groupName, transverse) => {
     const objectsArray = [];
-    zincObjects.forEach(zincObject => {
-      const lowerObjectName = zincObject.groupName ? zincObject.groupName.toLowerCase() : zincObject.groupName;
+    zincObjects.forEach((zincObject) => {
+      const lowerObjectName = zincObject.groupName
+        ? zincObject.groupName.toLowerCase()
+        : zincObject.groupName;
       const lowerGroupName = groupName ? groupName.toLowerCase() : groupName;
-      if (lowerObjectName === lowerGroupName)
-        objectsArray.push(zincObject);
+      if (lowerObjectName === lowerGroupName) objectsArray.push(zincObject);
     });
     if (transverse) {
-      children.forEach(childRegion => {
+      children.forEach((childRegion) => {
         let childObjects = childRegion.findObjectsWithGroupName(groupName, transverse);
         objectsArray.push(...childObjects);
       });
     }
     return objectsArray;
-  }
+  };
 
   /**
    * Find and return all geometries in this and child regions with
@@ -653,9 +640,9 @@ let Region = function (parentIn, sceneIn) {
    */
   this.findGeometriesWithGroupName = (groupName, transverse) => {
     const primitivesArray = this.findObjectsWithGroupName(groupName, transverse);
-    const geometriesArray = primitivesArray.filter(primitive => primitive.isGeometry);
+    const geometriesArray = primitivesArray.filter((primitive) => primitive.isGeometry);
     return geometriesArray;
-  }
+  };
 
   /**
    * Find and return all pointsets in this and child regions with
@@ -668,9 +655,9 @@ let Region = function (parentIn, sceneIn) {
    */
   this.findPointsetsWithGroupName = (groupName, transverse) => {
     const primitivesArray = this.findObjectsWithGroupName(groupName, transverse);
-    const pointsetsArray = primitivesArray.filter(primitive => primitive.isPointset);
+    const pointsetsArray = primitivesArray.filter((primitive) => primitive.isPointset);
     return pointsetsArray;
-  }
+  };
 
   /**
    * Find and return all glyphsets in this and child regions with
@@ -683,9 +670,9 @@ let Region = function (parentIn, sceneIn) {
    */
   this.findGlyphsetsWithGroupName = (groupName, transverse) => {
     const primitivesArray = this.findObjectsWithGroupName(groupName, transverse);
-    const glyphsetsArray = primitivesArray.filter(primitive => primitive.isGlyphset);
+    const glyphsetsArray = primitivesArray.filter((primitive) => primitive.isGlyphset);
     return glyphsetsArray;
-  }
+  };
 
   /**
    * Find and return all lines in this and child regions with
@@ -698,9 +685,9 @@ let Region = function (parentIn, sceneIn) {
    */
   this.findLinesWithGroupName = (groupName, transverse) => {
     const primitivesArray = this.findObjectsWithGroupName(groupName, transverse);
-    const linesArray = primitivesArray.filter(primitive => primitive.isLines);
+    const linesArray = primitivesArray.filter((primitive) => primitive.isLines);
     return linesArray;
-  }
+  };
 
   /**
    * Get all zinc objects in this region.
@@ -719,7 +706,7 @@ let Region = function (parentIn, sceneIn) {
       }
     }
     return objectsArray;
-  }
+  };
 
   /**
    * Get all child regions.
@@ -728,16 +715,16 @@ let Region = function (parentIn, sceneIn) {
    * this reigon when this is set to true.
    * @returns {Array}
    */
-   this.getChildRegions = transverse => {
+  this.getChildRegions = (transverse) => {
     const objectsArray = [...children];
     if (transverse) {
-      children.forEach(childRegion => {
+      children.forEach((childRegion) => {
         const childObjects = childRegion.getChildRegions(transverse);
         objectsArray.push(...childObjects);
       });
     }
     return objectsArray;
-  }
+  };
 
   /**
    * Get the current time of the region.
@@ -751,12 +738,11 @@ let Region = function (parentIn, sceneIn) {
     } else {
       for (let i = 0; i < children.length; i++) {
         const time = children[i].getCurrentTime();
-        if (time !== -1)
-          return time;
+        if (time !== -1) return time;
       }
     }
     return -1;
-  }
+  };
 
   /**
    * Set the current time of all the objects of this region.
@@ -766,15 +752,15 @@ let Region = function (parentIn, sceneIn) {
    * this is set to true.
    */
   this.setMorphTime = (time, transverse) => {
-    zincObjects.forEach(zincObject => {
+    zincObjects.forEach((zincObject) => {
       zincObject.setMorphTime(time);
     });
     if (transverse) {
-      children.forEach(childRegion => {
+      children.forEach((childRegion) => {
         childRegion.setMorphTime(time, transverse);
       });
     }
-  }
+  };
 
   /**
    * Check if any object in this region is time varying.
@@ -794,7 +780,7 @@ let Region = function (parentIn, sceneIn) {
     }
 
     return false;
-  }
+  };
 
   /**
    * Update geometries and glyphsets based on the calculated time.
@@ -811,14 +797,13 @@ let Region = function (parentIn, sceneIn) {
         children[i].renderObjects(delta, playAnimation, cameraControls, options, transverse);
       }
     }
-  }
+  };
 
   this.renderGeometries = (playRate, delta, playAnimation, cameraControls, options, transverse) => {
     this.renderObjects(playRate * delta, playAnimation, cameraControls, options, transverse);
     //process markers visibility and size, as long as there are more than
     //one entry in markersList is greater than 1, markers have been enabled.
-    if (options && (playAnimation === false) &&
-      options.markerCluster?.markerUpdateRequired) {
+    if (options && playAnimation === false && options.markerCluster?.markerUpdateRequired) {
       /**
         const markerDepths = Object.values(options.markersList)
           .map((marker) => marker.ndc.z);
@@ -832,12 +817,12 @@ let Region = function (parentIn, sceneIn) {
       */
       options.markerCluster.calculate();
     }
-  }
+  };
 
   /**
    * Update geometries and glyphsets based on the calculated time.
    */
-  this.createPoints = ( groupName, coords, labels, colour ) => {
+  this.createPoints = (groupName, coords, labels, colour) => {
     let isNew = false;
     const zincObjects = this.findObjectsWithGroupName(groupName, false);
     const index = zincObjects.findIndex((zincObject) => zincObject.isPointset);
@@ -851,12 +836,12 @@ let Region = function (parentIn, sceneIn) {
       this.pickableUpdateRequired = true;
     }
     return { zincObject: pointset, isNew };
-  }
+  };
 
   /**
    * Update geometries and glyphsets based on the calculated time.
    */
-  this.createLines = ( groupName, coords, colour ) => {
+  this.createLines = (groupName, coords, colour) => {
     let isNew = false;
     const zincObjects = this.findObjectsWithGroupName(groupName, false);
     const index = zincObjects.findIndex((zincObject) => zincObject.isLines);
@@ -870,25 +855,30 @@ let Region = function (parentIn, sceneIn) {
       this.pickableUpdateRequired = true;
     }
     return { zincObject: lines, isNew };
-  }
+  };
 
   /**
    * Add a new geometry
    */
   this.createGeometryFromThreeJSGeometry = (
-    groupName, geometry, colour, opacity, visibility, renderOrder) => {
+    groupName,
+    geometry,
+    colour,
+    opacity,
+    visibility,
+    renderOrder,
+  ) => {
     const zincGeometry = new Geometry();
     const material = new THREE.MeshPhongMaterial({
-      color : colour,
-      transparent : true,
-      opacity : opacity,
-      side : THREE.DoubleSide
+      color: colour,
+      transparent: true,
+      opacity: opacity,
+      side: THREE.DoubleSide,
     });
-    zincGeometry.createMesh(
-      geometry,
-      material,
-      {localTimeEnabled: false, localMorphColour: false,},
-    );
+    zincGeometry.createMesh(geometry, material, {
+      localTimeEnabled: false,
+      localMorphColour: false,
+    });
     if (zincGeometry.getMorph()) {
       zincGeometry.setVisibility(false);
       zincGeometry.setName(groupName);
@@ -897,7 +887,7 @@ let Region = function (parentIn, sceneIn) {
       return zincGeometry;
     }
     return undefined;
-  }
-}
+  };
+};
 
 export { Region };

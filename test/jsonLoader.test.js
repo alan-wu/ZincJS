@@ -33,8 +33,17 @@ describe('JSONLoader BufferGeometry construction', () => {
       metadata: { formatVersion: 3 },
       vertices: [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 2, 0, 0],
       faces: [
-        bit(0, 1), 0, 1, 2, 3, 5, // quad with hasMaterial, materialIndex 5
-        bit(1), 0, 1, 4, 7,       // triangle with hasMaterial, materialIndex 7
+        bit(0, 1),
+        0,
+        1,
+        2,
+        3,
+        5, // quad with hasMaterial, materialIndex 5
+        bit(1),
+        0,
+        1,
+        4,
+        7, // triangle with hasMaterial, materialIndex 7
       ],
     };
     const geometry = parseToBufferGeometry(json);
@@ -60,9 +69,13 @@ describe('JSONLoader BufferGeometry construction', () => {
     };
     const geometry = parseToBufferGeometry(json, { localTimeEnabled: true });
     expect(geometry.morphAttributes.position.length).toBe(2);
-    expect(Array.from(geometry.morphAttributes.position[1].array)).toEqual([5, 5, 5, 6, 5, 5, 6, 6, 5]);
+    expect(Array.from(geometry.morphAttributes.position[1].array)).toEqual([
+      5, 5, 5, 6, 5, 5, 6, 6, 5,
+    ]);
     expect(geometry.morphAttributes.normal.length).toBe(2);
-    expect(Array.from(geometry.morphAttributes.normal[0].array)).toEqual([0, 0, 1, 0, 0, 1, 0, 0, 1]);
+    expect(Array.from(geometry.morphAttributes.normal[0].array)).toEqual([
+      0, 0, 1, 0, 0, 1, 0, 0, 1,
+    ]);
   });
 
   it('builds morphAttributes.color from morphColors', () => {
@@ -72,14 +85,13 @@ describe('JSONLoader BufferGeometry construction', () => {
     //copyMorphColorsToIndexedBufferGeometry/getColorsRGB) - and every
     //group of 3 consecutive vertices shares one such colour entry, so a
     //6-vertex, 2-triangle geometry needs exactly 2 colour entries.
-    const red = 0xff0000, green = 0x00ff00;
+    const red = 0xff0000,
+      green = 0x00ff00;
     const json = {
       metadata: { formatVersion: 3 },
       vertices: [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 2, 0, 0, 2, 1, 0],
       faces: [bit(), 0, 1, 2, bit(), 3, 4, 5],
-      morphColors: [
-        { name: 'c0', colors: [red, red, red, green, green, green] },
-      ],
+      morphColors: [{ name: 'c0', colors: [red, red, red, green, green, green] }],
     };
     const geometry = parseToBufferGeometry(json, { localMorphColour: true });
     expect(geometry.morphAttributes.color.length).toBe(1);

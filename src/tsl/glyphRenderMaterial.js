@@ -1,5 +1,12 @@
 import * as THREE from 'three/webgpu';
-import { Fn, instanceIndex, positionGeometry, materialColor, materialOpacity, vec4 } from 'three/tsl';
+import {
+  Fn,
+  instanceIndex,
+  positionGeometry,
+  materialColor,
+  materialOpacity,
+  vec4,
+} from 'three/tsl';
 import { NODE_MATERIAL_CLASSES } from './morphColorMaterial';
 
 /**
@@ -26,7 +33,8 @@ import { NODE_MATERIAL_CLASSES } from './morphColorMaterial';
 function createGlyphInstancedMaterial(sourceMaterial, glyphCompute) {
   let material = sourceMaterial;
   if (!material || !material.isNodeMaterial) {
-    const NodeMaterialClass = (sourceMaterial && NODE_MATERIAL_CLASSES[sourceMaterial.type]) || THREE.MeshPhongNodeMaterial;
+    const NodeMaterialClass =
+      (sourceMaterial && NODE_MATERIAL_CLASSES[sourceMaterial.type]) || THREE.MeshPhongNodeMaterial;
     material = new NodeMaterialClass();
     if (sourceMaterial) material.copy(sourceMaterial);
   }
@@ -35,7 +43,8 @@ function createGlyphInstancedMaterial(sourceMaterial, glyphCompute) {
 
   material.positionNode = Fn(() => {
     const idx = instanceIndex;
-    return position.element(idx)
+    return position
+      .element(idx)
       .add(axis1.element(idx).mul(positionGeometry.x))
       .add(axis2.element(idx).mul(positionGeometry.y))
       .add(axis3.element(idx).mul(positionGeometry.z));
