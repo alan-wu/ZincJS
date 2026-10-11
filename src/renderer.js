@@ -168,6 +168,7 @@ const Renderer = function (containerIn) {
           if (adapter) {
             parameters.requiredLimits = {
               maxTextureArrayLayers: adapter.limits.maxTextureArrayLayers,
+              maxTextureDimension2D: adapter.limits.maxTextureDimension2D,
               maxStorageBuffersPerShaderStage: adapter.limits.maxStorageBuffersPerShaderStage,
             };
           }
