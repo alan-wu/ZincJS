@@ -646,7 +646,16 @@ const Renderer = function (containerIn) {
     }
     clock.update();
     const delta = clock.getDelta();
-    let changed = currentScene.renderGeometries(playRate, delta, this.playAnimation);
+    //Objects are only updated on every frame when render on demand is off
+    //or the renderer itself has requested a frame, e.g. on resize
+    const forceUpdate = !renderOnDemand || needsRender;
+    let changed = currentScene.renderGeometries(
+      playRate,
+      delta,
+      this.playAnimation,
+      undefined,
+      forceUpdate,
+    );
     if (additionalActiveScenes.length > 0) {
       //Additional scenes are displayed with the current scene's camera
       sharedCamera.controls = currentScene.getZincCameraControls();
@@ -654,7 +663,9 @@ const Renderer = function (containerIn) {
     }
     for (let i = 0; i < additionalActiveScenes.length; i++) {
       const sceneItem = additionalActiveScenes[i];
-      if (sceneItem.renderGeometries(playRate, delta, this.playAnimation, sharedCamera))
+      if (
+        sceneItem.renderGeometries(playRate, delta, this.playAnimation, sharedCamera, forceUpdate)
+      )
         changed = true;
     }
     for (let key in preRenderCallbackFunctions) {

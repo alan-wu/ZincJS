@@ -289,8 +289,46 @@ describe('Render on demand', () => {
     framesDrawn();
   });
 
+  it('only updates the objects when something may have changed', () => {
+    const zincGeometry = createGeometry(false);
+    scene.getRootRegion().addZincObject(zincGeometry);
+    framesDrawn();
+    const objectRender = vi.spyOn(zincGeometry, 'render');
+    const updates = () => {
+      objectRender.mockClear();
+      framesDrawn();
+      return objectRender.mock.calls.length;
+    };
+    expect(updates()).toBe(0);
+    scene.invalidate();
+    expect(updates()).toBe(1);
+    renderer.invalidate();
+    expect(updates()).toBe(1);
+    scene.resetView();
+    expect(updates()).toBe(1);
+    //Markers must be toggled on the same frame
+    scene.displayMarkers = !scene.displayMarkers;
+    expect(updates()).toBeGreaterThan(0);
+    scene.displayMarkers = !scene.displayMarkers;
+    updates();
+    expect(updates()).toBe(0);
+    objectRender.mockRestore();
+    scene.getRootRegion().removeZincObject(zincGeometry);
+    framesDrawn();
+  });
+
   it('draws every frame again once disabled', () => {
     renderer.setRenderOnDemand(false);
     expect(framesDrawn()).toBe(3);
+  });
+
+  it('updates the objects every frame when disabled', () => {
+    const zincGeometry = createGeometry(false);
+    scene.getRootRegion().addZincObject(zincGeometry);
+    const objectRender = vi.spyOn(zincGeometry, 'render');
+    framesDrawn();
+    expect(objectRender).toHaveBeenCalledTimes(3);
+    objectRender.mockRestore();
+    scene.getRootRegion().removeZincObject(zincGeometry);
   });
 });

@@ -624,11 +624,25 @@ const Scene = function (containerIn, rendererIn) {
    * Update geometries and glyphsets based on the calculated time.
    * @private
    */
-  this.renderGeometries = (playRate, delta, playAnimation, sharedCamera) => {
+  this.renderGeometries = (playRate, delta, playAnimation, sharedCamera, forceUpdate) => {
     //Anything requested since the last frame
     let changed = needsRender;
     needsRender = false;
     cameraUpdated = false;
+    //These are plain properties, check if they have changed before
+    //the objects are updated so markers are toggled on this frame
+    if (
+      lastDisplayState.displayMarkers !== this.displayMarkers ||
+      lastDisplayState.displayMinimap !== this.displayMinimap ||
+      lastDisplayState.displayMiniAxes !== this.displayMiniAxes ||
+      lastDisplayState.playAnimation !== playAnimation
+    ) {
+      lastDisplayState.displayMarkers = this.displayMarkers;
+      lastDisplayState.displayMinimap = this.displayMinimap;
+      lastDisplayState.displayMiniAxes = this.displayMiniAxes;
+      lastDisplayState.playAnimation = playAnimation;
+      changed = true;
+    }
     //Additional active scenes are displayed with the current scene's camera
     const cameraControls = sharedCamera ? sharedCamera.controls : zincCameraControls;
     //Reused on every frame to avoid allocations
@@ -680,24 +694,22 @@ const Scene = function (containerIn, rendererIn) {
             zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
           }
         }
-        rootRegion.renderGeometries(playRate, delta, playAnimation, cameraControls, options, true);
+        //Walking every object is costly for large scenes, only do it when
+        //something may have changed, LOD and markers depend on the camera
+        if (
+          forceUpdate ||
+          changed ||
+          options.ndcToBeUpdated ||
+          playAnimation ||
+          //Clusters are recalculated during the walk
+          (markerCluster.isEnabled() && markerCluster.markerUpdateRequired)
+        ) {
+          rootRegion.renderGeometries(playRate, delta, playAnimation, cameraControls, options, true);
+        }
       } else if (!sharedCamera && zincCameraControls.update(0)) {
         changed = true;
         cameraUpdated = true;
       }
-    }
-    //These are plain properties, check if they have changed
-    if (
-      lastDisplayState.displayMarkers !== this.displayMarkers ||
-      lastDisplayState.displayMinimap !== this.displayMinimap ||
-      lastDisplayState.displayMiniAxes !== this.displayMiniAxes ||
-      lastDisplayState.playAnimation !== playAnimation
-    ) {
-      lastDisplayState.displayMarkers = this.displayMarkers;
-      lastDisplayState.displayMinimap = this.displayMinimap;
-      lastDisplayState.displayMiniAxes = this.displayMiniAxes;
-      lastDisplayState.playAnimation = playAnimation;
-      changed = true;
     }
     //The flag is only cleared when the minimap is drawn
     if (this.minimapScissor.updateRequired && (this.displayMinimap || this.displayMiniAxes)) {
