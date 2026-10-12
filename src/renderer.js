@@ -38,7 +38,6 @@ const Renderer = function (containerIn) {
   let contextLostCallbackFunctions_id = 0;
   let contextRestoredCallbackFunctions = {};
   let contextRestoredCallbackFunctions_id = 0;
-  let animated_id = undefined;
   let cameraOrtho = undefined,
     sceneOrtho = undefined,
     logoSprite = undefined;
@@ -179,6 +178,8 @@ const Renderer = function (containerIn) {
       }
       renderer = new THREE.WebGPURenderer(parameters);
       await renderer.init();
+      //animate() may have been called before the renderer was ready
+      if (isRendering) renderer.setAnimationLoop(this.render);
       //GPU glyph animation requires the WebGPU backend, the WebGL fallback
       //cannot index storage buffers freely.
       setGlyphComputeSupported(renderer.backend?.isWebGPUBackend === true);
@@ -378,22 +379,13 @@ const Renderer = function (containerIn) {
     currentScene.updateDirectionalLight();
   };
 
-  let runAnimation = () => {
-    if (isRendering) {
-      animated_id = requestAnimationFrame(runAnimation);
-      this.render();
-    } else {
-      cancelAnimationFrame(animated_id);
-      animated_id = undefined;
-    }
-  };
-
   /**
    * Stop the animation and renderer to get into the render loop.
    */
   this.stopAnimate = () => {
     if (isRendering) {
       isRendering = false;
+      renderer?.setAnimationLoop(null);
     }
   };
 
@@ -405,7 +397,10 @@ const Renderer = function (containerIn) {
       clock.reset();
       isRendering = true;
       needsRender = true;
-      runAnimation();
+      //WebGPURenderer always runs its own requestAnimationFrame loop which
+      //updates the node frame and the per frame info, render from that loop
+      //instead of running a second one.
+      renderer?.setAnimationLoop(this.render);
     }
   };
 
@@ -767,7 +762,6 @@ const Renderer = function (containerIn) {
    * Dispose all memory allocated, this will effetively destroy all scenes.
    */
   this.dispose = () => {
-    if (isRendering) cancelAnimationFrame(animated_id);
     for (const key in sceneMap) {
       if (sceneMap.hasOwnProperty(key)) {
         sceneMap[key].clearAll();

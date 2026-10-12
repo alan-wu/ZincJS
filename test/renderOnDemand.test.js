@@ -317,6 +317,19 @@ describe('Render on demand', () => {
     framesDrawn();
   });
 
+  it('renders from the WebGPURenderer animation loop', async () => {
+    const threeRenderer = renderer.getThreeJSRenderer();
+    expect(threeRenderer.getAnimationLoop()).toBe(null);
+    renderer.animate();
+    const loop = threeRenderer.getAnimationLoop();
+    expect(loop).toBe(renderer.render);
+    drawSpy.mockClear();
+    loop(0, undefined);
+    expect(drawSpy).toHaveBeenCalledTimes(1);
+    renderer.stopAnimate();
+    expect(threeRenderer.getAnimationLoop()).toBe(null);
+  });
+
   it('draws every frame again once disabled', () => {
     renderer.setRenderOnDemand(false);
     expect(framesDrawn()).toBe(3);
