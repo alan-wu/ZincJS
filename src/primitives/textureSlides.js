@@ -336,6 +336,21 @@ const TextureSlides = function (textureIn) {
     return this.cachedBoundingBox;
   };
 
+
+  /**
+   * Get the normalised coordinates of a point in world coordinates.
+   * The returned values can be used as the value of {@link SLIDE_SETTINGS}.
+   * Values within [0, 1] are inside the texture box.
+   *
+   * @param {Array} position - World coordinates [x, y, z].
+   * @return {Array} - Normalised coordinates [x, y, z].
+   */
+  this.getPositionInBox = (position) => {
+    const matrix = updateWorldMatrixFromAncestors(this.morph).clone().invert();
+    const vector = new THREE.Vector3(...position).applyMatrix4(matrix);
+    return vector.toArray();
+  };
+
   this.applyTransformation = (rotation, position, scale) => {
     this.requestRender();
     const matrix = new THREE.Matrix4();
