@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { mergeGeometries } from '../utilities';
+import { extractVertices, getTubeLinesGeometry } from '../utilities';
 import { ZincObject } from './zincObject';
 
 /**
@@ -31,12 +31,21 @@ const TubeLines = function () {
   this.createLineSegment = (geometryIn, materialIn, options) => {
     if (geometryIn && materialIn) {
       dataIn = { geometryIn, materialIn, options };
-      const geometry = getTubeLinesGeometry(extractVertices(geometryIn));
+      const { radius, radialSegments, smooth } = geometryConfig;
+      const geometry = getTubeLinesGeometry(extractVertices(geometryIn), radius, radialSegments, smooth);
       const material = new THREE.MeshStandardMaterial({ color: materialIn.color });
       const mesh = new THREE.Mesh(geometry, material);
       this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
     }
   };
+
+  /**
+   * Return the settings used for creating the tube line.
+   *
+   */
+  this.getGeometryConfig = () => {
+    return geometryConfig;
+  }
 
   /**
    * Set the width for the lines.
@@ -90,51 +99,11 @@ const TubeLines = function () {
       mesh.geometry.dispose();
 
       geometryConfig = Object.assign(geometryConfig, { radius, radialSegments });
-      mesh.geometry = getTubeLinesGeometry(extractVertices(geometryIn));
+      mesh.geometry = getTubeLinesGeometry(extractVertices(geometryIn),
+        radius, radialSegments, geometryConfig.smooth);
     }
   };
 
-  /**
-   * Read the position attribute of a BufferGeometry into an array of
-   * THREE.Vector3, since TubeGeometry/CatmullRomCurve3/LineCurve3 need
-   * actual Vector3 instances to work with, not a flat typed array.
-   *
-   * @param {THREE.BufferGeometry} geometry
-   * @returns {Array}
-   */
-  const extractVertices = (geometry) => {
-    const position = geometry.getAttribute('position');
-    const vertices = [];
-    for (let i = 0; i < position.count; i++) {
-      vertices.push(new THREE.Vector3().fromBufferAttribute(position, i));
-    }
-    return vertices;
-  };
-
-  /**
-   * Get merged geometry from list of geometry vertices
-   *
-   * @param {Array} vertices - An array of THREE.Vector3 vertices.
-   * @returns {Object}
-   */
-  const getTubeLinesGeometry = (vertices) => {
-    const { radius, radialSegments, smooth } = geometryConfig;
-    let finalGeometry;
-    if (smooth) {
-      const curve = new THREE.CatmullRomCurve3(vertices);
-      finalGeometry = new THREE.TubeGeometry(curve, vertices.length, radius, radialSegments, false);
-    } else {
-      const geometries = [];
-      for (let i = 0; i + 1 < vertices.length; i = i + 2) {
-        const curve = new THREE.LineCurve3(vertices[i], vertices[i + 1]);
-        const tubeGeometry = new THREE.TubeGeometry(curve, 1, radius, radialSegments, false);
-        geometries.push(tubeGeometry);
-      }
-      finalGeometry = mergeGeometries(geometries, true);
-      geometries.forEach((g) => g.dispose());
-    }
-    return finalGeometry;
-  };
 };
 
 TubeLines.prototype = Object.create(ZincObject.prototype);

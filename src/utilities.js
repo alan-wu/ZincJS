@@ -31,6 +31,23 @@ function createNewURL(target, reference) {
   }
 }
 
+/**
+ * Read the position attribute of a BufferGeometry into an array of
+ * THREE.Vector3, since TubeGeometry/CatmullRomCurve3/LineCurve3 need
+ * actual Vector3 instances to work with, not a flat typed array.
+ *
+ * @param {THREE.BufferGeometry} geometry
+ * @returns {Array}
+ */
+const extractVertices = (geometry) => {
+  const position = geometry.getAttribute('position');
+  const vertices = [];
+  for (let i = 0; i < position.count; i++) {
+    vertices.push(new THREE.Vector3().fromBufferAttribute(position, i));
+  }
+  return vertices;
+};
+
 /*
  * Compute the world matrix of an object from its ancestors and return it.
  * three.js only recomputes world matrices flagged by matrixWorldNeedsUpdate,
@@ -84,6 +101,30 @@ function getBoundingBox(mesh, cachedBox, b1, v1, v2) {
   }
   cachedBox.applyMatrix4(updateWorldMatrixFromAncestors(mesh));
 }
+
+/**
+ * Create tube line geometry based on lines geometry, radius, segments and smooth.
+ *
+ * @param {Array} vertices - An array of THREE.Vector3 vertices.
+ * @returns {Object}
+ */
+function getTubeLinesGeometry(vertices, radius, radialSegments, smooth) {
+  let finalGeometry;
+  if (smooth) {
+    const curve = new THREE.CatmullRomCurve3(vertices);
+    finalGeometry = new THREE.TubeGeometry(curve, vertices.length, radius, radialSegments, false);
+  } else {
+    const geometries = [];
+    for (let i = 0; i + 1 < vertices.length; i = i + 2) {
+      const curve = new THREE.LineCurve3(vertices[i], vertices[i + 1]);
+      const tubeGeometry = new THREE.TubeGeometry(curve, 1, radius, radialSegments, false);
+      geometries.push(tubeGeometry);
+    }
+    finalGeometry = mergeGeometries(geometries, true);
+    geometries.forEach((g) => g.dispose());
+  }
+  return finalGeometry;
+};
 
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {
@@ -908,8 +949,10 @@ export {
   createBufferGeometry,
   createNewSpriteText,
   createNewURL,
+  extractVertices,
   getBoundingBox,
   getCircularTexture,
+  getTubeLinesGeometry,
   keepIndexType,
   updateWorldMatrixFromAncestors,
   useStandardIndexType,
