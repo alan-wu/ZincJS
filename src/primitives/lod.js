@@ -28,6 +28,9 @@ const LOD = function (parent) {
   this._parent = parent;
   //Levels loaded after dispose are discarded
   this._disposed = false;
+  this._dirty = true;
+  this._bandMin = 0;
+  this._bandMax = -1;
 
   /*
    * Add a level of LOD at the specified distance
@@ -352,50 +355,35 @@ const LOD = function (parent) {
   /* Update layers based on the */
   this.update = (camera, center) => {
     const levels = this.levels;
-    if (levels.length > 1) {
-      const distance = camera.cameraObject.position.distanceTo(center);
-      let visibleIndex = -1;
-      let optimalIndex = -1;
-      let i, l;
-      //Found a visible index that is within range of the LOD
-      for (i = 0, l = levels.length; i < l; i++) {
-        if (distance >= levels[i].distance) {
-          //Check if a level is loading
-          if (levels[i].morph) {
-            if (visibleIndex > -1 && levels[visibleIndex].morph) {
-              levels[visibleIndex].morph.visible = false;
-            }
-            visibleIndex = i;
-            levels[i].morph.visible = true;
-            optimalIndex = -1;
-          } else {
-            optimalIndex = i;
-          }
-        } else {
-          break;
-        }
-      }
-      if (optimalIndex > -1) {
-        this.loadLevel(optimalIndex);
-      }
-      for (; i < l; i++) {
-        if (levels[i].morph) {
-          //Set visibility of other morph to false
-          //and set the closest lod to true if
-          //none is found
-          if (visibleIndex > -1) {
-            levels[i].morph.visible = false;
-          } else {
-            levels[i].morph.visible = true;
-            visibleIndex = i;
-          }
-        }
-      }
-      if (this._currentLevel != visibleIndex) {
-        this._currentLevel = visibleIndex;
-        this.checkTransparentMesh();
-        this._parent?.requestRender?.();
-      }
+    const l = levels.length;
+    if (l < 2) return;
+    const distance = camera.cameraObject.position.distanceTo(center);
+
+    // Still in the same band and nothing new has loaded
+    if (!this._dirty && distance >= this._bandMin && distance < this._bandMax) return;
+    this._dirty = false;
+
+    // Furthest level whose threshold has been passed (levels are sorted by distance)
+    let target = -1;
+    while (target + 1 < l && distance >= levels[target + 1].distance) target++;
+    this._bandMin = target >= 0 ? levels[target].distance : -Infinity;
+    this._bandMax = target + 1 < l ? levels[target + 1].distance : Infinity;
+
+    if (target > -1 && !levels[target].morph) this.loadLevel(target);
+
+    // Show the nearest loaded level at or below target, else the nearest loaded one above
+    let visible = -1;
+    for (let i = target; i >= 0 && visible < 0; i--) if (levels[i].morph) visible = i;
+    for (let i = target + 1; i < l && visible < 0; i++) if (levels[i].morph) visible = i;
+
+    for (let i = 0; i < l; i++) {
+      if (levels[i].morph) levels[i].morph.visible = i === visible;
+    }
+
+    if (this._currentLevel !== visible) {
+      this._currentLevel = visible;
+      this.checkTransparentMesh();
+      this._parent?.requestRender?.();
     }
   };
 
