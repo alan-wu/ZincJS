@@ -52,6 +52,9 @@ const Marker = function (zincObject) {
   let initialise = () => {
     sprite = new THREE.Sprite(spriteMaterial);
     sprite.center.set(0.5, 0);
+    //Culling sphere ignores sizeAttenuation: false, it may cull sprite
+    //and label independently
+    sprite.frustumCulled = false;
     this.morph.add(sprite);
     this.morph.position.set(0, 0, 0);
     this.morph.renderOrder = 10000;
@@ -133,6 +136,7 @@ const Marker = function (zincObject) {
     }
     userSprite = new THREE.Sprite(userMaterial);
     userSprite.center.set(0.5, 0);
+    userSprite.frustumCulled = false;
     userSprite.scale.set(size[0], size[1], size[2]);
     userSprite.userData = this;
     this.setUserSprite();
@@ -201,6 +205,7 @@ const Marker = function (zincObject) {
     if (!label && numberIn) {
       label = createNewSpriteText(numberIn, 0.012, 'black', 'Asap', 120, 700);
       label.renderOrder = 10001;
+      label.frustumCulled = false;
       this.morph.add(label);
     }
     number = numberIn;

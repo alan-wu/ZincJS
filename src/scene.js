@@ -704,7 +704,14 @@ const Scene = function (containerIn, rendererIn) {
           //Clusters are recalculated during the walk
           (markerCluster.isEnabled() && markerCluster.markerUpdateRequired)
         ) {
-          rootRegion.renderGeometries(playRate, delta, playAnimation, cameraControls, options, true);
+          rootRegion.renderGeometries(
+            playRate,
+            delta,
+            playAnimation,
+            cameraControls,
+            options,
+            true,
+          );
         }
       } else if (!sharedCamera && zincCameraControls.update(0)) {
         changed = true;

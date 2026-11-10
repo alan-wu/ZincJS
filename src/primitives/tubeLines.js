@@ -32,7 +32,12 @@ const TubeLines = function () {
     if (geometryIn && materialIn) {
       dataIn = { geometryIn, materialIn, options };
       const { radius, radialSegments, smooth } = geometryConfig;
-      const geometry = getTubeLinesGeometry(extractVertices(geometryIn), radius, radialSegments, smooth);
+      const geometry = getTubeLinesGeometry(
+        extractVertices(geometryIn),
+        radius,
+        radialSegments,
+        smooth,
+      );
       const material = new THREE.MeshStandardMaterial({ color: materialIn.color });
       const mesh = new THREE.Mesh(geometry, material);
       this.setMesh(mesh, options.localTimeEnabled, options.localMorphColour);
@@ -45,7 +50,7 @@ const TubeLines = function () {
    */
   this.getGeometryConfig = () => {
     return geometryConfig;
-  }
+  };
 
   /**
    * Set the width for the lines.
@@ -99,11 +104,14 @@ const TubeLines = function () {
       mesh.geometry.dispose();
 
       geometryConfig = Object.assign(geometryConfig, { radius, radialSegments });
-      mesh.geometry = getTubeLinesGeometry(extractVertices(geometryIn),
-        radius, radialSegments, geometryConfig.smooth);
+      mesh.geometry = getTubeLinesGeometry(
+        extractVertices(geometryIn),
+        radius,
+        radialSegments,
+        geometryConfig.smooth,
+      );
     }
   };
-
 };
 
 TubeLines.prototype = Object.create(ZincObject.prototype);

@@ -74,6 +74,9 @@ const MarkerCluster = function (sceneIn) {
     const sprite = new THREE.Sprite(spriteMaterial);
     sprite.clusterIndex = index;
     sprite.center.set(0.5, 0);
+    //Culling sphere ignores sizeAttenuation: false, it may cull sprite
+    //and label independently
+    sprite.frustumCulled = false;
     sprite.position.set(0, 0, 0);
     sprite.renderOrder = 10000;
     sprite.scale.set(size[0], size[1], size[2]);
@@ -102,6 +105,7 @@ const MarkerCluster = function (sceneIn) {
       }
       sprite.label = createNewSpriteText(number, 0.012, 'black', 'Asap', 120, 700);
       sprite.label.renderOrder = 10001;
+      sprite.label.frustumCulled = false;
       sprite.number = number;
       sprite.group.add(sprite.label);
     }

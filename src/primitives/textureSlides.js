@@ -336,7 +336,6 @@ const TextureSlides = function (textureIn) {
     return this.cachedBoundingBox;
   };
 
-
   /**
    * Get the normalised coordinates of a point in world coordinates.
    * The returned values can be used as the value of {@link SLIDE_SETTINGS}.

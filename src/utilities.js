@@ -124,7 +124,7 @@ function getTubeLinesGeometry(vertices, radius, radialSegments, smooth) {
     geometries.forEach((g) => g.dispose());
   }
   return finalGeometry;
-};
+}
 
 //Convenient function
 function loadExternalFile(url, data, callback, errorCallback) {

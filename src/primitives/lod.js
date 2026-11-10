@@ -1,5 +1,11 @@
 import * as THREE from 'three/webgpu';
-import { keepIndexType, extractVertices, getTubeLinesGeometry, toBufferGeometry, updateMorphColorAttribute } from '../utilities';
+import {
+  keepIndexType,
+  extractVertices,
+  getTubeLinesGeometry,
+  toBufferGeometry,
+  updateMorphColorAttribute,
+} from '../utilities';
 import { LineSegments } from '../three/line/LineSegments';
 
 /**
@@ -237,7 +243,12 @@ const LOD = function (parent) {
         mesh = new LineSegments(geometry, material);
       } else if (this._parent.isTubeLines) {
         const { radius, radialSegments, smooth } = this._parent.getGeometryConfig();
-        const tubeGeometry = getTubeLinesGeometry(extractVertices(geometry), radius, radialSegments, smooth);
+        const tubeGeometry = getTubeLinesGeometry(
+          extractVertices(geometry),
+          radius,
+          radialSegments,
+          smooth,
+        );
         mesh = new THREE.Mesh(tubeGeometry, material);
       }
       mesh.userData = this._parent;
