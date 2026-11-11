@@ -181,6 +181,7 @@ const MarkerCluster = function (sceneIn) {
       const current = Date.now();
       if (current - start > 500) {
         let clusters = [];
+        //Make a shallow copy of the markers array
         getCluster({ ...this.markers }, clusters);
         drawClusters(clusters);
         scene?.invalidate?.();
