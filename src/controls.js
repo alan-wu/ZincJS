@@ -135,6 +135,12 @@ const CameraControls = function (object, domElement, renderer, scene) {
   let hasUpdated = false;
   let ndcControl = undefined;
   let maxDist = 0;
+  /**
+   * When true, near and far clipping planes are recalculated after every
+   * camera change so the whole scene bounding sphere stays inside the frustum.
+   */
+  this.autoClippingPlanes = true;
+
   const viewports = {
     default: new Viewport(),
   };
@@ -152,8 +158,9 @@ const CameraControls = function (object, domElement, renderer, scene) {
   //of 6 times the radius of the current scene and
   //the current distance between scene centroid and the postion
   //of the camera.
-  this.calculateMaxAllowedDistance = (scene) => {
-    const box = scene.getBoundingBox();
+  //An already computed bounding box can be provided to avoid recalculation.
+  this.calculateMaxAllowedDistance = (scene, boundingBox) => {
+    const box = boundingBox ? boundingBox : scene.getBoundingBox();
     if (box) {
       box.getBoundingSphere(sceneSphere);
       maxDist = sceneSphere.radius * 6;
@@ -164,45 +171,38 @@ const CameraControls = function (object, domElement, renderer, scene) {
       maxDist = currentDist > maxDist ? currentDist * 1.5 : maxDist;
     } else {
       maxDist = 0;
+      sceneSphere.makeEmpty();
     }
   };
 
-  const updateNearAndFarPlane = (travalDist) => {
-    const ratio = 0.001;
-    _a.copy(this.cameraObject.position);
-    const length = _a.sub(this.cameraObject.target).length();
-    this.cameraObject.near = Math.max(0.0001, length * ratio);
-    this.cameraObject.far = this.cameraObject.near * 10000;
-    /*
-    const near_far_minimum_ratio = 0.0001;
-    //const minNear = near_far_minimum_ratio * this.cameraObject.far;
-    const minNear = 0.0001;
-    if (minNear < (this.cameraObject.near + travalDist + this.near_plane_fly_debt)) {
-      if (this.near_plane_fly_debt != 0.0)	{
-        this.near_plane_fly_debt += travalDist;
-        if (this.near_plane_fly_debt > 0.0) {
-          this.cameraObject.near += this.near_plane_fly_debt;
-          this.cameraObject.far += this.near_plane_fly_debt;
-          this.near_plane_fly_debt = 0.0;
-        }
-        else {
-          this.cameraObject.near += travalDist;
-          this.cameraObject.far += travalDist;
-        }
-      }
+  //Fit the near and far planes to the scene bounding sphere along the
+  //current view direction. Falls back to a distance based estimate when
+  //the scene is empty.
+  const updateNearAndFarPlane = () => {
+    if (!this.autoClippingPlanes || !this.cameraObject) return;
+    _a.copy(this.cameraObject.target).sub(this.cameraObject.position);
+    const distToTarget = _a.length();
+    let near, far;
+    if (sceneSphere.radius > 0) {
+      if (distToTarget > 0) _a.divideScalar(distToTarget);
+      else this.cameraObject.getWorldDirection(_a);
+      _b.copy(sceneSphere.center).sub(this.cameraObject.position);
+      const d = _b.dot(_a);
+      const r = sceneSphere.radius;
+      far = Math.max(d + r, distToTarget) * 1.05;
+      if (!(far > 0)) far = Math.max(r, 0.0001);
+      near = Math.max(d - r, far * 1e-5, distToTarget * 0.01);
+      if (near >= far) near = far * 1e-5;
+    } else {
+      near = Math.max(0.0001, distToTarget * 0.001);
+      far = near * 10000;
     }
-    else {
-      //if (this.near_plane_fly_debt == 0.0 ) {
-      if (this.cameraObject.near !== 0.0001) {
-        const diff = this.cameraObject.near - minNear;
-        this.cameraObject.near = minNear;
-        this.cameraObject.far -= diff;
-        this.near_plane_fly_debt -= diff;
-      } else {
-        this.near_plane_fly_debt += travalDist;
-      }
+    if (near !== this.cameraObject.near || far !== this.cameraObject.far) {
+      this.cameraObject.near = near;
+      this.cameraObject.far = far;
+      this.cameraObject.updateProjectionMatrix();
+      hasUpdated = true;
     }
-    */
   };
 
   /**
@@ -793,7 +793,6 @@ const CameraControls = function (object, domElement, renderer, scene) {
         if (checkTravelDistance()) {
           this.cameraObject.position.copy(_tempEye);
           this.updateDirectionalLight();
-          updateNearAndFarPlane(travalDist);
           hasUpdated = true;
         }
       }
@@ -1187,6 +1186,8 @@ const CameraControls = function (object, domElement, renderer, scene) {
       this.cameraObject.lookAt(this.cameraObject.target);
     }
 
+    if (updated || hasUpdated) updateNearAndFarPlane();
+
     updated = updated || hasUpdated;
     hasUpdated = false;
 
@@ -1274,6 +1275,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
     );
     this.cameraObject.up.set(viewport.upVector[0], viewport.upVector[1], viewport.upVector[2]);
     this.cameraObject.updateProjectionMatrix();
+    updateNearAndFarPlane();
     this.updateDirectionalLight();
   };
 
@@ -1304,6 +1306,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
         newViewport.upVector[2],
       );
     this.cameraObject.updateProjectionMatrix();
+    updateNearAndFarPlane();
     this.updateDirectionalLight();
     hasUpdated = true;
   };
@@ -1608,8 +1611,9 @@ const SmoothCameraTransition = function (
   const enabled = true;
   const updateLightWithPathFlag = true;
   let completed = false;
-  targetCamera.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
-  targetCamera.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
+  targetCamera.cameraObject.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
+  targetCamera.cameraObject.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
+  targetCamera.cameraObject.updateProjectionMatrix();
   targetCamera.cameraObject.up.set(
     endingViewport.upVector[0],
     endingViewport.upVector[1],

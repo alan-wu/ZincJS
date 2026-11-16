@@ -232,6 +232,7 @@ const Scene = function (containerIn, rendererIn) {
   this.viewAllWithBoundingBox = (boundingBox) => {
     needsRender = true;
     if (boundingBox) {
+      zincCameraControls.calculateMaxAllowedDistance(this, boundingBox);
       const viewport = zincCameraControls.getViewportFromBoundingBox(boundingBox, 1.0);
       zincCameraControls.setCurrentCameraSettings(viewport);
       zincCameraControls.calculateHeightPerPixelAtZeroDepth(getDrawingHeight());
