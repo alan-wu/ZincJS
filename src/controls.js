@@ -132,6 +132,8 @@ const CameraControls = function (object, domElement, renderer, scene) {
   const _rel_eye = new THREE.Vector3();
   const sceneSphere = new THREE.Sphere();
   const _tempEye = new THREE.Vector3();
+  const _rotAxis = new THREE.Vector3();
+  const _viewDir = new THREE.Vector3();
   let hasUpdated = false;
   let ndcControl = undefined;
   let maxDist = 0;
@@ -493,6 +495,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
   const onDocumentTouchMove = (event) => {
     event.preventDefault();
     event.stopPropagation();
+    if (!rect) return;
     const len = event.touches.length;
     if (len == 1) {
       this.pointer_x = event.touches[0].clientX - rect.left;
@@ -507,8 +510,8 @@ const CameraControls = function (object, domElement, renderer, scene) {
       if (this._state === STATE.TOUCH_PAN) {
         for (let i = 0; i < 3; i++) {
           if (event.touches[i].identifier == this.targetTouchId) {
-            this.pointer_x = event.touches[0].clientX - rect.left;
-            this.pointer_y = event.touches[0].clientY - rect.top;
+            this.pointer_x = event.touches[i].clientX - rect.left;
+            this.pointer_y = event.touches[i].clientY - rect.top;
           }
         }
       }
@@ -561,10 +564,16 @@ const CameraControls = function (object, domElement, renderer, scene) {
   const onDocumentWheelEvent = (event) => {
     updateRect(false);
     this._state = STATE.SCROLL;
-    let changes = 0;
-    if (event.deltaY > 0) changes = this.zoomRate;
-    else if (event.deltaY < 0) changes = this.zoomRate * -1;
-    zoomSize = zoomSize + changes;
+    //Normalise the wheel delta to pixels, one mouse wheel notch is
+    //roughly 100 pixels and maps to one zoomRate step. Trackpads send
+    //many small deltas and therefore zoom proportionally slower.
+    let pixels = event.deltaY;
+    if (event.deltaMode === 1) pixels *= 33;
+    else if (event.deltaMode === 2) pixels *= rect?.height || 800;
+    //Trackpad pinch arrives as a wheel event with ctrlKey and small deltas
+    if (event.ctrlKey) pixels *= 10;
+    const steps = Math.max(-3, Math.min(3, pixels / 100));
+    zoomSize = zoomSize + this.zoomRate * steps;
     event.preventDefault();
     event.stopImmediatePropagation();
   };
@@ -626,7 +635,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
   };
 
   const translate = () => {
-    if (typeof this.cameraObject !== 'undefined') {
+    if (typeof this.cameraObject !== 'undefined' && rect) {
       const height = rect.height;
       const distance = this.cameraObject.position.distanceTo(this.cameraObject.target);
       let fact = 0.0;
@@ -657,11 +666,29 @@ const CameraControls = function (object, domElement, renderer, scene) {
     this.previous_pointer_y = this.pointer_y;
   };
 
-  this.getVectorsFromRotateAboutLookAtPoints = (axis, angle) => {
-    axis.normalize();
+  this.getVectorsFromRotateAboutLookAtPoints = (axisIn, angle) => {
     _v.copy(this.cameraObject.position).sub(this.cameraObject.target);
     _rel_eye.copy(_v);
     _v.normalize();
+    //Work on a copy, the caller's axis is left untouched
+    const axis = _rotAxis.copy(axisIn);
+    if (!(axis.lengthSq() > 1e-20)) {
+      if (!(Math.abs(angle) > 1e-12)) {
+        //Nothing to rotate
+        _v.copy(this.cameraObject.position);
+        _a.copy(this.cameraObject.up);
+        return { position: _v, up: _a };
+      }
+      //Degenerate axis (e.g. cross product of parallel vectors), any
+      //axis perpendicular to the eye offset gives a valid rotation.
+      axis.copy(this.cameraObject.up).addScaledVector(_v, -this.cameraObject.up.dot(_v));
+      if (!(axis.lengthSq() > 1e-20)) {
+        axis.set(1, 0, 0);
+        if (Math.abs(_v.x) > 0.9) axis.set(0, 1, 0);
+        axis.addScaledVector(_v, -axis.dot(_v));
+      }
+    }
+    axis.normalize();
     if (0.8 < Math.abs(_v.dot(axis))) {
       _v.copy(this.cameraObject.up);
     }
@@ -709,6 +736,19 @@ const CameraControls = function (object, domElement, renderer, scene) {
     this.cameraObject.position.copy(returned_values.position);
     this.updateDirectionalLight();
     this.cameraObject.up.copy(returned_values.up);
+    orthonormaliseUp();
+  };
+
+  //Keep the up vector a unit vector perpendicular to the view direction,
+  //this removes any drift accumulated from repeated rotations.
+  const orthonormaliseUp = () => {
+    _viewDir.copy(this.cameraObject.target).sub(this.cameraObject.position);
+    if (_viewDir.lengthSq() > 0) {
+      _viewDir.normalize();
+      const up = this.cameraObject.up;
+      const length = up.addScaledVector(_viewDir, -up.dot(_viewDir)).length();
+      if (length > 1e-10) up.divideScalar(length);
+    }
   };
 
   const tumble = () => {
@@ -727,10 +767,13 @@ const CameraControls = function (object, domElement, renderer, scene) {
         if (tangent_dist > 0) {
           const dx = (-delta_y * 1.0) / tangent_dist;
           const dy = (delta_x * 1.0) / tangent_dist;
+          //d is the distance of the pointer from the trackball centre perpendicular
+          //to the drag direction, dragging near the edge rolls about the view axis.
           let d = 0;
-          // Do not allow rotation on other direction around the origin if rotateMode is not free
-          if (rotateMode === ROTATE_DIRECTION.FREE) {
-            let d =
+          // Do not allow rotation on other direction around the origin if rotateMode is not free.
+          // Keyboard rotation has no meaningful pointer position, so it never rolls.
+          if (rotateMode === ROTATE_DIRECTION.FREE && this._state !== STATE.KEYBOARD_ROTATE) {
+            d =
               dx * (this.pointer_x - 0.5 * (width - 1)) +
               dy * (0.5 * (height - 1) - this.pointer_y);
             if (d > radius) {
@@ -744,7 +787,11 @@ const CameraControls = function (object, domElement, renderer, scene) {
           const phi = Math.acos(d / radius) - 0.5 * Math.PI;
           const angle = (this.tumble_rate * tangent_dist) / radius;
           _a.copy(this.cameraObject.position).sub(this.cameraObject.target).normalize();
-          _b.copy(this.cameraObject.up).normalize();
+          //Screen up must be perpendicular to the view, otherwise the axis
+          //picks up an unintended roll component.
+          _b.copy(this.cameraObject.up).addScaledVector(_a, -this.cameraObject.up.dot(_a));
+          if (_b.lengthSq() < 1e-20) _b.copy(this.cameraObject.up);
+          _b.normalize();
           _c.copy(_b).cross(_a).normalize().multiplyScalar(dx);
           _b.multiplyScalar(dy);
           _axis.addVectors(_c, _b).multiplyScalar(Math.cos(phi));
@@ -778,13 +825,16 @@ const CameraControls = function (object, domElement, renderer, scene) {
 
   this.changeZoomByValue = (delta_y) => {
     if (typeof this.cameraObject !== 'undefined') {
-      const height = rect.height;
+      const height = getDrawingHeight();
+      if (!(height > 0)) return;
       const a = _v.copy(this.cameraObject.position);
       a.sub(this.cameraObject.target);
       const dist = a.length();
       const dy = (1.5 * delta_y) / height;
       const travalDist = dist * dy;
-      if (dist + travalDist > 0.01) {
+      //Closest allowed distance to the target scales with the scene
+      const minDist = sceneSphere.radius > 0 ? Math.max(1e-6, sceneSphere.radius * 1e-4) : 0.01;
+      if (dist + travalDist > minDist) {
         a.normalize();
         _tempEye.copy(this.cameraObject.position);
         _tempEye.x += a.x * travalDist;
@@ -797,6 +847,14 @@ const CameraControls = function (object, domElement, renderer, scene) {
         }
       }
     }
+  };
+
+  //Height of the drawing area, rect is set asynchronously so fall back to
+  //the element size before it is available.
+  const getDrawingHeight = () => {
+    if (rect?.height > 0) return rect.height;
+    if (this.domElement?.clientHeight > 0) return this.domElement.clientHeight;
+    return typeof window !== 'undefined' ? window.innerHeight : 0;
   };
 
   const flyZoom = () => {
