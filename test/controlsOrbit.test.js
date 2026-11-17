@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { it, expect } from 'vitest';
 import { CameraControls } from '../src/controls';
+import { InstancedPoints } from '../src/three/InstancedPoints';
 
 const makeBox = (half) =>
   new THREE.Box3(new THREE.Vector3(-half, -half, -half), new THREE.Vector3(half, half, half));
@@ -133,5 +134,117 @@ it('does not roll when dragging through the trackball centre', () => {
     drag(controls, domElement, [199.5, 210], [199.5, 190]);
     expect(Math.abs(camera.up.x)).toBeLessThan(1e-10);
     expect(Math.abs(camera.position.y)).toBeGreaterThan(1);
+  });
+});
+
+it('rotateAboutPoint at the target matches rotateAboutLookAtpoint', () => {
+  const a = setup();
+  const b = setup();
+  const axis = new THREE.Vector3(0.2, 1, 0.4);
+  a.controls.rotateAboutLookAtpoint(axis, 0.7);
+  b.controls.rotateAboutPoint(axis, 0.7, b.camera.target.clone());
+  expect(b.camera.position.distanceTo(a.camera.position)).toBeLessThan(1e-9);
+  expect(b.camera.up.distanceTo(a.camera.up)).toBeLessThan(1e-9);
+  expect(b.camera.target.distanceTo(a.camera.target)).toBeLessThan(1e-9);
+});
+
+// A small cube off to the side of the camera target
+const setupWithMesh = (pivotOnPick) => {
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 4), new THREE.MeshBasicMaterial());
+  mesh.position.set(10, 0, 0);
+  mesh.updateMatrixWorld();
+  const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 2000);
+  const scene = {
+    getBoundingBox: () => makeBox(12),
+    getNormalisedMinimapCoordinates: () => undefined,
+    getPickableThreeJSObjects: () => [mesh],
+  };
+  const domElement = document.createElement('div');
+  const controls = new CameraControls(camera, domElement, undefined, scene);
+  controls.pivotOnPick = pivotOnPick;
+  controls.calculateMaxAllowedDistance(scene);
+  controls.setCurrentCameraSettings({
+    eyePosition: [0, 0, 50],
+    targetPosition: [0, 0, 0],
+    upVector: [0, 1, 0],
+  });
+  controls.update(0);
+  camera.updateMatrixWorld();
+  return { camera, controls, domElement };
+};
+
+const toScreen = (camera, point) => {
+  camera.updateMatrixWorld();
+  const ndc = point.clone().project(camera);
+  return new THREE.Vector2(((ndc.x + 1) * 400) / 2, ((1 - ndc.y) * 400) / 2);
+};
+
+// Point on the front face of the cube, used as the drag start
+const facePoint = new THREE.Vector3(10, 0, 2);
+
+it('orbits around the picked point when pivotOnPick is enabled', () => {
+  withCanvasRect(() => {
+    const { camera, controls, domElement } = setupWithMesh(true);
+    const start = toScreen(camera, facePoint);
+    const eyeToPivot = camera.position.distanceTo(facePoint);
+    drag(controls, domElement, [start.x, start.y], [start.x + 40, start.y]);
+    const after = toScreen(camera, facePoint);
+    // The picked point stays fixed on screen and at the same distance
+    expect(after.distanceTo(start)).toBeLessThan(1e-3);
+    expect(camera.position.distanceTo(facePoint)).toBeCloseTo(eyeToPivot, 6);
+    expect(camera.position.distanceTo(new THREE.Vector3(0, 0, 50))).toBeGreaterThan(1);
+  });
+});
+
+it('orbits around the target when pivotOnPick is disabled or nothing is hit', () => {
+  withCanvasRect(() => {
+    const { camera, controls, domElement } = setupWithMesh(false);
+    const start = toScreen(camera, facePoint);
+    drag(controls, domElement, [start.x, start.y], [start.x + 40, start.y]);
+    expect(toScreen(camera, facePoint).distanceTo(start)).toBeGreaterThan(1);
+    expect(camera.target.length()).toBeLessThan(1e-9);
+  });
+  withCanvasRect(() => {
+    const { camera, controls, domElement } = setupWithMesh(true);
+    // Start the drag on empty space
+    drag(controls, domElement, [50, 200], [90, 200]);
+    expect(camera.target.length()).toBeLessThan(1e-9);
+    expect(camera.position.distanceTo(camera.target)).toBeCloseTo(50, 6);
+  });
+});
+
+it('picks a pointset as the pivot within its drawn point size', () => {
+  withCanvasRect(() => {
+    // One point drawn with a pick radius of 1 world unit (10 px * 0.1)
+    const points = new InstancedPoints(
+      new THREE.PlaneGeometry(1, 1),
+      new THREE.MeshBasicMaterial(),
+      1,
+    );
+    points.pointPositions = new Float32Array([10, 0, 0]);
+    points.pointSize = 10;
+    points.sizePerPixel = 0.1;
+    points.updateMatrixWorld();
+    const camera = new THREE.PerspectiveCamera(40, 1, 0.1, 2000);
+    const scene = {
+      getBoundingBox: () => makeBox(12),
+      getNormalisedMinimapCoordinates: () => undefined,
+      getPickableThreeJSObjects: () => [points],
+    };
+    const domElement = document.createElement('div');
+    const controls = new CameraControls(camera, domElement, undefined, scene);
+    controls.pivotOnPick = true;
+    controls.calculateMaxAllowedDistance(scene);
+    controls.setCurrentCameraSettings({
+      eyePosition: [0, 0, 50],
+      targetPosition: [0, 0, 0],
+      upVector: [0, 1, 0],
+    });
+    controls.update(0);
+    // Start half a world unit away from the point centre, inside its drawn size
+    const start = toScreen(camera, new THREE.Vector3(10, 0.5, 0));
+    drag(controls, domElement, [start.x, start.y], [start.x + 40, start.y]);
+    // Orbiting about the point moves the camera target away from the origin
+    expect(camera.target.length()).toBeGreaterThan(0.1);
   });
 });

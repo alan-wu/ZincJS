@@ -134,6 +134,16 @@ const CameraControls = function (object, domElement, renderer, scene) {
   const _tempEye = new THREE.Vector3();
   const _rotAxis = new THREE.Vector3();
   const _viewDir = new THREE.Vector3();
+  const _pivot = new THREE.Vector3();
+  const _quat = new THREE.Quaternion();
+  const _ndc = new THREE.Vector2();
+  let pivotRaycaster = undefined;
+  let pivotActive = false;
+  /**
+   * When true, a rotation started on the model orbits around the picked
+   * point instead of the camera target. Defaults to false.
+   */
+  this.pivotOnPick = true;
   let hasUpdated = false;
   let ndcControl = undefined;
   let maxDist = 0;
@@ -417,6 +427,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
       this.pointer_y_start = this.pointer_y;
       this.previous_pointer_x = this.pointer_x;
       this.previous_pointer_y = this.pointer_y;
+      if (this._state === STATE.ROTATE) setPivotFromPointer(event.clientX, event.clientY);
     } else {
       currentMode = MODE.MINIMAP;
       let translation = this.scene.getMinimapDiffFromNormalised(
@@ -451,6 +462,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
 
   const onDocumentMouseUp = (event) => {
     this._state = STATE.NONE;
+    pivotActive = false;
     if (currentMode == MODE.MINIMAP) currentMode = MODE.DEFAULT;
     if (zincRayCaster !== undefined) {
       if (
@@ -464,11 +476,68 @@ const CameraControls = function (object, domElement, renderer, scene) {
 
   const onDocumentMouseLeave = (event) => {
     this._state = STATE.NONE;
+    pivotActive = false;
+  };
+
+  const isVisibleInScene = (object) => {
+    while (object) {
+      if (object.visible === false) return false;
+      object = object.parent;
+    }
+    return true;
+  };
+
+  //Raycast at the pointer and use the closest visible hit on the model as
+  //the pivot of the coming rotation. Rotation falls back to the camera
+  //target when nothing is hit.
+  const setPivotFromPointer = (clientX, clientY) => {
+    pivotActive = false;
+    if (!this.pivotOnPick || !rect || !this.scene?.getPickableThreeJSObjects) return;
+    const objects = this.scene.getPickableThreeJSObjects();
+    if (!objects || objects.length === 0) return;
+    if (!pivotRaycaster) pivotRaycaster = new THREE.Raycaster();
+    //Line threshold is a world distance.
+    pivotRaycaster.params.Line.threshold = sceneSphere.radius > 0 ? sceneSphere.radius * 2e-3 : 0.1;
+    //Points threshold is a multiplier of the drawn point size in
+    //InstancedPoints (pointSize * sizePerPixel), same as RayCaster.
+    pivotRaycaster.params.Points.threshold = 1;
+    this.getNDCFromDocumentCoords(clientX, clientY, _ndc);
+    this.cameraObject.updateMatrixWorld();
+    pivotRaycaster.setFromCamera(_ndc, this.cameraObject);
+    const hits = pivotRaycaster.intersectObjects(objects, true);
+    for (const hit of hits) {
+      const userData = hit.object.userData;
+      if (userData && (userData.isMarkerCluster || userData.isMarker)) continue;
+      if (!isVisibleInScene(hit.object)) continue;
+      _pivot.copy(hit.point);
+      pivotActive = true;
+      return;
+    }
+  };
+
+  /**
+   * Rotate the camera, including its target, about an arbitrary point.
+   *
+   * @param {THREE.Vector3} axis - The rotational axis, left unmodified.
+   * @param {Number} angle - Angle in radians.
+   * @param {THREE.Vector3} point - Centre of the rotation.
+   */
+  this.rotateAboutPoint = (axis, angle, point) => {
+    _rotAxis.copy(axis);
+    if (!(_rotAxis.lengthSq() > 1e-20) || !(Math.abs(angle) > 0)) return;
+    hasUpdated = true;
+    _quat.setFromAxisAngle(_rotAxis.normalize(), angle);
+    this.cameraObject.position.sub(point).applyQuaternion(_quat).add(point);
+    this.cameraObject.target.sub(point).applyQuaternion(_quat).add(point);
+    this.cameraObject.up.applyQuaternion(_quat);
+    orthonormaliseUp();
+    this.updateDirectionalLight();
   };
 
   const onDocumentTouchStart = (event) => {
     updateRect(false);
     const len = event.touches.length;
+    pivotActive = false;
     if (len == 1) {
       this._state = STATE.TOUCH_ROTATE;
       this.pointer_x = event.touches[0].clientX - rect?.left;
@@ -477,6 +546,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
       this.pointer_y_start = this.pointer_y;
       this.previous_pointer_x = this.pointer_x;
       this.previous_pointer_y = this.pointer_y;
+      setPivotFromPointer(event.touches[0].clientX, event.touches[0].clientY);
     } else if (len == 2) {
       this._state = STATE.TOUCH_ZOOM;
       const dx = event.touches[0].clientX - event.touches[1].clientX;
@@ -523,6 +593,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
     this.touchZoomDistanceStart = this.touchZoomDistanceEnd = 0;
     this.targetTouchId = -1;
     this._state = STATE.NONE;
+    pivotActive = false;
     //A single finger tap, the lifted touch is in changedTouches
     if (
       previousState === STATE.TOUCH_ROTATE &&
@@ -797,7 +868,8 @@ const CameraControls = function (object, domElement, renderer, scene) {
           _axis.addVectors(_c, _b).multiplyScalar(Math.cos(phi));
           _a.multiplyScalar(Math.sin(phi));
           _axis.add(_a);
-          this.rotateAboutLookAtpoint(_axis, -angle);
+          if (pivotActive) this.rotateAboutPoint(_axis, -angle, _pivot);
+          else this.rotateAboutLookAtpoint(_axis, -angle);
         }
       }
     }
