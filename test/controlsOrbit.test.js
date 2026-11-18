@@ -248,3 +248,79 @@ it('picks a pointset as the pivot within its drawn point size', () => {
     expect(camera.target.length()).toBeGreaterThan(0.1);
   });
 });
+
+it('uses the pivot as the trackball centre and line of sight', () => {
+  withCanvasRect(() => {
+    const { camera, controls, domElement } = setupWithMesh(true);
+    const start = toScreen(camera, facePoint);
+    // The pivot is off-centre, a vertical drag starting on it must tilt about
+    // an axis perpendicular to the line of sight to the pivot, with no roll.
+    const up0 = camera.up.clone();
+    const sight = camera.position.clone().sub(facePoint);
+    const sideways = up0.clone().cross(sight).normalize();
+    drag(controls, domElement, [start.x, start.y], [start.x, start.y - 40]);
+    expect(Math.abs(camera.up.dot(sideways))).toBeLessThan(1e-6);
+    expect(camera.position.distanceTo(new THREE.Vector3(0, 0, 50))).toBeGreaterThan(1);
+    expect(toScreen(camera, facePoint).distanceTo(start)).toBeLessThan(1e-3);
+  });
+});
+
+// Render the overlay into a fake renderer and return the drawn scene.
+const renderOverlay = (controls) => {
+  let drawn = undefined;
+  controls.renderOverlay({ render: (scene, camera) => (drawn = { scene, camera }) });
+  return drawn;
+};
+
+it('shows the trackball gizmo at the pivot while rotating about it', () => {
+  withCanvasRect(() => {
+    const { camera, controls, domElement } = setupWithMesh(true);
+    const start = toScreen(camera, facePoint);
+    domElement.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, clientX: start.x, clientY: start.y }),
+    );
+    domElement.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: start.x + 10, clientY: start.y }),
+    );
+    expect(controls.update(0)).toBe(true);
+    const drawn = renderOverlay(controls);
+    expect(drawn).toBeDefined();
+    // The camera facing ring is drawn at the trackball radius around the pivot
+    let outerRing = undefined;
+    drawn.scene.traverse((object) => {
+      if (object.isLine && object.material.color.getHex() === 0x555555) outerRing = object;
+    });
+    const pivotOnScreen = toScreen(camera, facePoint);
+    const edge = new THREE.Vector3(1, 0, 0).applyMatrix4(outerRing.matrixWorld);
+    const radiusPixels = toScreen(camera, edge).distanceTo(pivotOnScreen);
+    // Half of the 200 pixel trackball radius by default
+    expect(radiusPixels).toBeGreaterThan(100 * 0.95);
+    expect(radiusPixels).toBeLessThan(100 * 1.05);
+    // The overlay camera encloses the gizmo
+    expect(drawn.camera.near).toBeGreaterThan(0);
+    expect(drawn.camera.far).toBeGreaterThan(drawn.camera.near);
+
+    // Releasing the mouse hides it and asks for a render
+    domElement.dispatchEvent(
+      new MouseEvent('mouseup', { clientX: start.x + 10, clientY: start.y }),
+    );
+    expect(controls.update(0)).toBe(true);
+    expect(renderOverlay(controls)).toBeUndefined();
+  });
+});
+
+it('does not show the trackball gizmo without a pivot or when disabled', () => {
+  withCanvasRect(() => {
+    const { controls, domElement } = setupWithMesh(true);
+    // Empty space, no pivot
+    drag(controls, domElement, [50, 200], [90, 200]);
+    expect(controls.getTrackballGizmo()).toBeUndefined();
+  });
+  withCanvasRect(() => {
+    const { camera, controls, domElement } = setupWithMesh(true);
+    controls.showTrackballGizmo = false;
+    const start = toScreen(camera, facePoint);
+    drag(controls, domElement, [start.x, start.y], [start.x + 10, start.y]);
+    expect(controls.getTrackballGizmo()).toBeUndefined();
+  });
+});

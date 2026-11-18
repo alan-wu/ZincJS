@@ -863,6 +863,7 @@ const Scene = function (containerIn, rendererIn) {
       stereoEffect.render(scene, this.camera);
     } else {
       renderer.render(scene, this.camera);
+      zincCameraControls?.renderOverlay(renderer);
       renderMinimap(renderer);
     }
   };

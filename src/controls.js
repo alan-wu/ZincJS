@@ -1,4 +1,5 @@
 import * as THREE from 'three/webgpu';
+import { TrackballGizmo } from './trackballGizmo';
 
 /**
  * Object with containg viewport information used in ZincJS.
@@ -139,11 +140,23 @@ const CameraControls = function (object, domElement, renderer, scene) {
   const _ndc = new THREE.Vector2();
   let pivotRaycaster = undefined;
   let pivotActive = false;
+  let pivotScreenX = 0;
+  let pivotScreenY = 0;
   /**
    * When true, a rotation started on the model orbits around the picked
    * point instead of the camera target. Defaults to false.
    */
   this.pivotOnPick = true;
+  /**
+   * Show trackball graphics while rotating about a picked pivot.
+   */
+  this.showTrackballGizmo = true;
+  /**
+   * Size of the trackball gizmo relative to the trackball radius used for
+   * rotation. It only changes the graphics, not how the rotation behaves.
+   */
+  this.trackballGizmoScale = 0.5;
+  let trackballGizmo = undefined;
   let hasUpdated = false;
   let ndcControl = undefined;
   let maxDist = 0;
@@ -510,6 +523,10 @@ const CameraControls = function (object, domElement, renderer, scene) {
       if (userData && (userData.isMarkerCluster || userData.isMarker)) continue;
       if (!isVisibleInScene(hit.object)) continue;
       _pivot.copy(hit.point);
+      //The hit lies on the ray through the pointer and rotating about it
+      //keeps it fixed on screen, so the pointer is the trackball centre.
+      pivotScreenX = clientX - rect.left;
+      pivotScreenY = clientY - rect.top;
       pivotActive = true;
       return;
     }
@@ -844,9 +861,11 @@ const CameraControls = function (object, domElement, renderer, scene) {
           // Do not allow rotation on other direction around the origin if rotateMode is not free.
           // Keyboard rotation has no meaningful pointer position, so it never rolls.
           if (rotateMode === ROTATE_DIRECTION.FREE && this._state !== STATE.KEYBOARD_ROTATE) {
-            d =
-              dx * (this.pointer_x - 0.5 * (width - 1)) +
-              dy * (0.5 * (height - 1) - this.pointer_y);
+            //The trackball is centred on the pivot when there is one,
+            //otherwise on the centre of the viewport.
+            const centreX = pivotActive ? pivotScreenX : 0.5 * (width - 1);
+            const centreY = pivotActive ? pivotScreenY : 0.5 * (height - 1);
+            d = dx * (this.pointer_x - centreX) + dy * (centreY - this.pointer_y);
             if (d > radius) {
               d = radius;
             } else {
@@ -857,7 +876,10 @@ const CameraControls = function (object, domElement, renderer, scene) {
           }
           const phi = Math.acos(d / radius) - 0.5 * Math.PI;
           const angle = (this.tumble_rate * tangent_dist) / radius;
-          _a.copy(this.cameraObject.position).sub(this.cameraObject.target).normalize();
+          //Forward (and roll) axis is the line of sight to the rotation centre
+          _a.copy(this.cameraObject.position)
+            .sub(pivotActive ? _pivot : this.cameraObject.target)
+            .normalize();
           //Screen up must be perpendicular to the view, otherwise the axis
           //picks up an unintended roll component.
           _b.copy(this.cameraObject.up).addScaledVector(_a, -this.cameraObject.up.dot(_a));
@@ -1317,11 +1339,59 @@ const CameraControls = function (object, domElement, renderer, scene) {
     }
 
     if (updated || hasUpdated) updateNearAndFarPlane();
+    if (updateTrackballGizmo()) updated = true;
 
     updated = updated || hasUpdated;
     hasUpdated = false;
 
     return updated;
+  };
+
+  //Show the trackball gizmo while rotating about a picked pivot.
+  //Return true if a render is needed to show or hide it.
+  const updateTrackballGizmo = () => {
+    const show =
+      this.showTrackballGizmo &&
+      pivotActive &&
+      rect?.height > 0 &&
+      (this._state === STATE.ROTATE || this._state === STATE.TOUCH_ROTATE);
+    if (show) {
+      if (!trackballGizmo) trackballGizmo = new TrackballGizmo();
+      this.cameraObject.updateMatrixWorld();
+      //Scaled from the trackball radius in tumble()
+      trackballGizmo.update(
+        this.cameraObject,
+        _pivot,
+        0.25 * (rect.width + rect.height) * this.trackballGizmoScale,
+        rect.height,
+      );
+      trackballGizmo.visible = true;
+      return true;
+    }
+    if (trackballGizmo?.visible) {
+      trackballGizmo.visible = false;
+      return true;
+    }
+    return false;
+  };
+
+  /**
+   * Get the trackball gizmo, it is only created once it has been shown.
+   *
+   * @return {TrackballGizmo|undefined}
+   */
+  this.getTrackballGizmo = () => {
+    return trackballGizmo;
+  };
+
+  /**
+   * Draw graphics owned by the camera control, such as the trackball
+   * gizmo, on top of the rendered scene.
+   *
+   * @param {THREE.WebGPURenderer} renderer
+   */
+  this.renderOverlay = (renderer) => {
+    if (trackballGizmo) trackballGizmo.render(renderer, this.cameraObject);
   };
 
   /**
