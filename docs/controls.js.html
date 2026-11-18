@@ -27,6 +27,7 @@
     <section>
         <article>
             <pre class="prettyprint source linenums"><code>import * as THREE from 'three/webgpu';
+import { TrackballGizmo } from './trackballGizmo';
 
 /**
  * Object with containg viewport information used in ZincJS.
@@ -160,9 +161,39 @@ const CameraControls = function (object, domElement, renderer, scene) {
   const _rel_eye = new THREE.Vector3();
   const sceneSphere = new THREE.Sphere();
   const _tempEye = new THREE.Vector3();
+  const _rotAxis = new THREE.Vector3();
+  const _viewDir = new THREE.Vector3();
+  const _pivot = new THREE.Vector3();
+  const _quat = new THREE.Quaternion();
+  const _ndc = new THREE.Vector2();
+  let pivotRaycaster = undefined;
+  let pivotActive = false;
+  let pivotScreenX = 0;
+  let pivotScreenY = 0;
+  /**
+   * When true, a rotation started on the model orbits around the picked
+   * point instead of the camera target. Defaults to false.
+   */
+  this.pivotOnPick = true;
+  /**
+   * Show trackball graphics while rotating about a picked pivot.
+   */
+  this.showTrackballGizmo = true;
+  /**
+   * Size of the trackball gizmo relative to the trackball radius used for
+   * rotation. It only changes the graphics, not how the rotation behaves.
+   */
+  this.trackballGizmoScale = 0.5;
+  let trackballGizmo = undefined;
   let hasUpdated = false;
   let ndcControl = undefined;
   let maxDist = 0;
+  /**
+   * When true, near and far clipping planes are recalculated after every
+   * camera change so the whole scene bounding sphere stays inside the frustum.
+   */
+  this.autoClippingPlanes = true;
+
   const viewports = {
     default: new Viewport(),
   };
@@ -180,8 +211,9 @@ const CameraControls = function (object, domElement, renderer, scene) {
   //of 6 times the radius of the current scene and
   //the current distance between scene centroid and the postion
   //of the camera.
-  this.calculateMaxAllowedDistance = (scene) => {
-    const box = scene.getBoundingBox();
+  //An already computed bounding box can be provided to avoid recalculation.
+  this.calculateMaxAllowedDistance = (scene, boundingBox) => {
+    const box = boundingBox ? boundingBox : scene.getBoundingBox();
     if (box) {
       box.getBoundingSphere(sceneSphere);
       maxDist = sceneSphere.radius * 6;
@@ -192,45 +224,38 @@ const CameraControls = function (object, domElement, renderer, scene) {
       maxDist = currentDist > maxDist ? currentDist * 1.5 : maxDist;
     } else {
       maxDist = 0;
+      sceneSphere.makeEmpty();
     }
   };
 
-  const updateNearAndFarPlane = (travalDist) => {
-    const ratio = 0.001;
-    _a.copy(this.cameraObject.position);
-    const length = _a.sub(this.cameraObject.target).length();
-    this.cameraObject.near = Math.max(0.0001, length * ratio);
-    this.cameraObject.far = this.cameraObject.near * 10000;
-    /*
-    const near_far_minimum_ratio = 0.0001;
-    //const minNear = near_far_minimum_ratio * this.cameraObject.far;
-    const minNear = 0.0001;
-    if (minNear &lt; (this.cameraObject.near + travalDist + this.near_plane_fly_debt)) {
-      if (this.near_plane_fly_debt != 0.0)	{
-        this.near_plane_fly_debt += travalDist;
-        if (this.near_plane_fly_debt > 0.0) {
-          this.cameraObject.near += this.near_plane_fly_debt;
-          this.cameraObject.far += this.near_plane_fly_debt;
-          this.near_plane_fly_debt = 0.0;
-        }
-        else {
-          this.cameraObject.near += travalDist;
-          this.cameraObject.far += travalDist;
-        }
-      }
+  //Fit the near and far planes to the scene bounding sphere along the
+  //current view direction. Falls back to a distance based estimate when
+  //the scene is empty.
+  const updateNearAndFarPlane = () => {
+    if (!this.autoClippingPlanes || !this.cameraObject) return;
+    _a.copy(this.cameraObject.target).sub(this.cameraObject.position);
+    const distToTarget = _a.length();
+    let near, far;
+    if (sceneSphere.radius > 0) {
+      if (distToTarget > 0) _a.divideScalar(distToTarget);
+      else this.cameraObject.getWorldDirection(_a);
+      _b.copy(sceneSphere.center).sub(this.cameraObject.position);
+      const d = _b.dot(_a);
+      const r = sceneSphere.radius;
+      far = Math.max(d + r, distToTarget) * 1.05;
+      if (!(far > 0)) far = Math.max(r, 0.0001);
+      near = Math.max(d - r, far * 1e-5, distToTarget * 0.01);
+      if (near >= far) near = far * 1e-5;
+    } else {
+      near = Math.max(0.0001, distToTarget * 0.001);
+      far = near * 10000;
     }
-    else {
-      //if (this.near_plane_fly_debt == 0.0 ) {
-      if (this.cameraObject.near !== 0.0001) {
-        const diff = this.cameraObject.near - minNear;
-        this.cameraObject.near = minNear;
-        this.cameraObject.far -= diff;
-        this.near_plane_fly_debt -= diff;
-      } else {
-        this.near_plane_fly_debt += travalDist;
-      }
+    if (near !== this.cameraObject.near || far !== this.cameraObject.far) {
+      this.cameraObject.near = near;
+      this.cameraObject.far = far;
+      this.cameraObject.updateProjectionMatrix();
+      hasUpdated = true;
     }
-    */
   };
 
   /**
@@ -443,6 +468,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
       this.pointer_y_start = this.pointer_y;
       this.previous_pointer_x = this.pointer_x;
       this.previous_pointer_y = this.pointer_y;
+      if (this._state === STATE.ROTATE) setPivotFromPointer(event.clientX, event.clientY);
     } else {
       currentMode = MODE.MINIMAP;
       let translation = this.scene.getMinimapDiffFromNormalised(
@@ -477,6 +503,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
 
   const onDocumentMouseUp = (event) => {
     this._state = STATE.NONE;
+    pivotActive = false;
     if (currentMode == MODE.MINIMAP) currentMode = MODE.DEFAULT;
     if (zincRayCaster !== undefined) {
       if (
@@ -490,11 +517,72 @@ const CameraControls = function (object, domElement, renderer, scene) {
 
   const onDocumentMouseLeave = (event) => {
     this._state = STATE.NONE;
+    pivotActive = false;
+  };
+
+  const isVisibleInScene = (object) => {
+    while (object) {
+      if (object.visible === false) return false;
+      object = object.parent;
+    }
+    return true;
+  };
+
+  //Raycast at the pointer and use the closest visible hit on the model as
+  //the pivot of the coming rotation. Rotation falls back to the camera
+  //target when nothing is hit.
+  const setPivotFromPointer = (clientX, clientY) => {
+    pivotActive = false;
+    if (!this.pivotOnPick || !rect || !this.scene?.getPickableThreeJSObjects) return;
+    const objects = this.scene.getPickableThreeJSObjects();
+    if (!objects || objects.length === 0) return;
+    if (!pivotRaycaster) pivotRaycaster = new THREE.Raycaster();
+    //Line threshold is a world distance.
+    pivotRaycaster.params.Line.threshold = sceneSphere.radius > 0 ? sceneSphere.radius * 2e-3 : 0.1;
+    //Points threshold is a multiplier of the drawn point size in
+    //InstancedPoints (pointSize * sizePerPixel), same as RayCaster.
+    pivotRaycaster.params.Points.threshold = 1;
+    this.getNDCFromDocumentCoords(clientX, clientY, _ndc);
+    this.cameraObject.updateMatrixWorld();
+    pivotRaycaster.setFromCamera(_ndc, this.cameraObject);
+    const hits = pivotRaycaster.intersectObjects(objects, true);
+    for (const hit of hits) {
+      const userData = hit.object.userData;
+      if (userData &amp;&amp; (userData.isMarkerCluster || userData.isMarker)) continue;
+      if (!isVisibleInScene(hit.object)) continue;
+      _pivot.copy(hit.point);
+      //The hit lies on the ray through the pointer and rotating about it
+      //keeps it fixed on screen, so the pointer is the trackball centre.
+      pivotScreenX = clientX - rect.left;
+      pivotScreenY = clientY - rect.top;
+      pivotActive = true;
+      return;
+    }
+  };
+
+  /**
+   * Rotate the camera, including its target, about an arbitrary point.
+   *
+   * @param {THREE.Vector3} axis - The rotational axis, left unmodified.
+   * @param {Number} angle - Angle in radians.
+   * @param {THREE.Vector3} point - Centre of the rotation.
+   */
+  this.rotateAboutPoint = (axis, angle, point) => {
+    _rotAxis.copy(axis);
+    if (!(_rotAxis.lengthSq() > 1e-20) || !(Math.abs(angle) > 0)) return;
+    hasUpdated = true;
+    _quat.setFromAxisAngle(_rotAxis.normalize(), angle);
+    this.cameraObject.position.sub(point).applyQuaternion(_quat).add(point);
+    this.cameraObject.target.sub(point).applyQuaternion(_quat).add(point);
+    this.cameraObject.up.applyQuaternion(_quat);
+    orthonormaliseUp();
+    this.updateDirectionalLight();
   };
 
   const onDocumentTouchStart = (event) => {
     updateRect(false);
     const len = event.touches.length;
+    pivotActive = false;
     if (len == 1) {
       this._state = STATE.TOUCH_ROTATE;
       this.pointer_x = event.touches[0].clientX - rect?.left;
@@ -503,6 +591,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
       this.pointer_y_start = this.pointer_y;
       this.previous_pointer_x = this.pointer_x;
       this.previous_pointer_y = this.pointer_y;
+      setPivotFromPointer(event.touches[0].clientX, event.touches[0].clientY);
     } else if (len == 2) {
       this._state = STATE.TOUCH_ZOOM;
       const dx = event.touches[0].clientX - event.touches[1].clientX;
@@ -521,6 +610,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
   const onDocumentTouchMove = (event) => {
     event.preventDefault();
     event.stopPropagation();
+    if (!rect) return;
     const len = event.touches.length;
     if (len == 1) {
       this.pointer_x = event.touches[0].clientX - rect.left;
@@ -535,8 +625,8 @@ const CameraControls = function (object, domElement, renderer, scene) {
       if (this._state === STATE.TOUCH_PAN) {
         for (let i = 0; i &lt; 3; i++) {
           if (event.touches[i].identifier == this.targetTouchId) {
-            this.pointer_x = event.touches[0].clientX - rect.left;
-            this.pointer_y = event.touches[0].clientY - rect.top;
+            this.pointer_x = event.touches[i].clientX - rect.left;
+            this.pointer_y = event.touches[i].clientY - rect.top;
           }
         }
       }
@@ -548,6 +638,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
     this.touchZoomDistanceStart = this.touchZoomDistanceEnd = 0;
     this.targetTouchId = -1;
     this._state = STATE.NONE;
+    pivotActive = false;
     //A single finger tap, the lifted touch is in changedTouches
     if (
       previousState === STATE.TOUCH_ROTATE &amp;&amp;
@@ -589,10 +680,16 @@ const CameraControls = function (object, domElement, renderer, scene) {
   const onDocumentWheelEvent = (event) => {
     updateRect(false);
     this._state = STATE.SCROLL;
-    let changes = 0;
-    if (event.deltaY > 0) changes = this.zoomRate;
-    else if (event.deltaY &lt; 0) changes = this.zoomRate * -1;
-    zoomSize = zoomSize + changes;
+    //Normalise the wheel delta to pixels, one mouse wheel notch is
+    //roughly 100 pixels and maps to one zoomRate step. Trackpads send
+    //many small deltas and therefore zoom proportionally slower.
+    let pixels = event.deltaY;
+    if (event.deltaMode === 1) pixels *= 33;
+    else if (event.deltaMode === 2) pixels *= rect?.height || 800;
+    //Trackpad pinch arrives as a wheel event with ctrlKey and small deltas
+    if (event.ctrlKey) pixels *= 10;
+    const steps = Math.max(-3, Math.min(3, pixels / 100));
+    zoomSize = zoomSize + this.zoomRate * steps;
     event.preventDefault();
     event.stopImmediatePropagation();
   };
@@ -654,7 +751,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
   };
 
   const translate = () => {
-    if (typeof this.cameraObject !== 'undefined') {
+    if (typeof this.cameraObject !== 'undefined' &amp;&amp; rect) {
       const height = rect.height;
       const distance = this.cameraObject.position.distanceTo(this.cameraObject.target);
       let fact = 0.0;
@@ -685,11 +782,29 @@ const CameraControls = function (object, domElement, renderer, scene) {
     this.previous_pointer_y = this.pointer_y;
   };
 
-  this.getVectorsFromRotateAboutLookAtPoints = (axis, angle) => {
-    axis.normalize();
+  this.getVectorsFromRotateAboutLookAtPoints = (axisIn, angle) => {
     _v.copy(this.cameraObject.position).sub(this.cameraObject.target);
     _rel_eye.copy(_v);
     _v.normalize();
+    //Work on a copy, the caller's axis is left untouched
+    const axis = _rotAxis.copy(axisIn);
+    if (!(axis.lengthSq() > 1e-20)) {
+      if (!(Math.abs(angle) > 1e-12)) {
+        //Nothing to rotate
+        _v.copy(this.cameraObject.position);
+        _a.copy(this.cameraObject.up);
+        return { position: _v, up: _a };
+      }
+      //Degenerate axis (e.g. cross product of parallel vectors), any
+      //axis perpendicular to the eye offset gives a valid rotation.
+      axis.copy(this.cameraObject.up).addScaledVector(_v, -this.cameraObject.up.dot(_v));
+      if (!(axis.lengthSq() > 1e-20)) {
+        axis.set(1, 0, 0);
+        if (Math.abs(_v.x) > 0.9) axis.set(0, 1, 0);
+        axis.addScaledVector(_v, -axis.dot(_v));
+      }
+    }
+    axis.normalize();
     if (0.8 &lt; Math.abs(_v.dot(axis))) {
       _v.copy(this.cameraObject.up);
     }
@@ -737,6 +852,19 @@ const CameraControls = function (object, domElement, renderer, scene) {
     this.cameraObject.position.copy(returned_values.position);
     this.updateDirectionalLight();
     this.cameraObject.up.copy(returned_values.up);
+    orthonormaliseUp();
+  };
+
+  //Keep the up vector a unit vector perpendicular to the view direction,
+  //this removes any drift accumulated from repeated rotations.
+  const orthonormaliseUp = () => {
+    _viewDir.copy(this.cameraObject.target).sub(this.cameraObject.position);
+    if (_viewDir.lengthSq() > 0) {
+      _viewDir.normalize();
+      const up = this.cameraObject.up;
+      const length = up.addScaledVector(_viewDir, -up.dot(_viewDir)).length();
+      if (length > 1e-10) up.divideScalar(length);
+    }
   };
 
   const tumble = () => {
@@ -755,12 +883,17 @@ const CameraControls = function (object, domElement, renderer, scene) {
         if (tangent_dist > 0) {
           const dx = (-delta_y * 1.0) / tangent_dist;
           const dy = (delta_x * 1.0) / tangent_dist;
+          //d is the distance of the pointer from the trackball centre perpendicular
+          //to the drag direction, dragging near the edge rolls about the view axis.
           let d = 0;
-          // Do not allow rotation on other direction around the origin if rotateMode is not free
-          if (rotateMode === ROTATE_DIRECTION.FREE) {
-            let d =
-              dx * (this.pointer_x - 0.5 * (width - 1)) +
-              dy * (0.5 * (height - 1) - this.pointer_y);
+          // Do not allow rotation on other direction around the origin if rotateMode is not free.
+          // Keyboard rotation has no meaningful pointer position, so it never rolls.
+          if (rotateMode === ROTATE_DIRECTION.FREE &amp;&amp; this._state !== STATE.KEYBOARD_ROTATE) {
+            //The trackball is centred on the pivot when there is one,
+            //otherwise on the centre of the viewport.
+            const centreX = pivotActive ? pivotScreenX : 0.5 * (width - 1);
+            const centreY = pivotActive ? pivotScreenY : 0.5 * (height - 1);
+            d = dx * (this.pointer_x - centreX) + dy * (centreY - this.pointer_y);
             if (d > radius) {
               d = radius;
             } else {
@@ -771,14 +904,22 @@ const CameraControls = function (object, domElement, renderer, scene) {
           }
           const phi = Math.acos(d / radius) - 0.5 * Math.PI;
           const angle = (this.tumble_rate * tangent_dist) / radius;
-          _a.copy(this.cameraObject.position).sub(this.cameraObject.target).normalize();
-          _b.copy(this.cameraObject.up).normalize();
+          //Forward (and roll) axis is the line of sight to the rotation centre
+          _a.copy(this.cameraObject.position)
+            .sub(pivotActive ? _pivot : this.cameraObject.target)
+            .normalize();
+          //Screen up must be perpendicular to the view, otherwise the axis
+          //picks up an unintended roll component.
+          _b.copy(this.cameraObject.up).addScaledVector(_a, -this.cameraObject.up.dot(_a));
+          if (_b.lengthSq() &lt; 1e-20) _b.copy(this.cameraObject.up);
+          _b.normalize();
           _c.copy(_b).cross(_a).normalize().multiplyScalar(dx);
           _b.multiplyScalar(dy);
           _axis.addVectors(_c, _b).multiplyScalar(Math.cos(phi));
           _a.multiplyScalar(Math.sin(phi));
           _axis.add(_a);
-          this.rotateAboutLookAtpoint(_axis, -angle);
+          if (pivotActive) this.rotateAboutPoint(_axis, -angle, _pivot);
+          else this.rotateAboutLookAtpoint(_axis, -angle);
         }
       }
     }
@@ -806,13 +947,16 @@ const CameraControls = function (object, domElement, renderer, scene) {
 
   this.changeZoomByValue = (delta_y) => {
     if (typeof this.cameraObject !== 'undefined') {
-      const height = rect.height;
+      const height = getDrawingHeight();
+      if (!(height > 0)) return;
       const a = _v.copy(this.cameraObject.position);
       a.sub(this.cameraObject.target);
       const dist = a.length();
       const dy = (1.5 * delta_y) / height;
       const travalDist = dist * dy;
-      if (dist + travalDist > 0.01) {
+      //Closest allowed distance to the target scales with the scene
+      const minDist = sceneSphere.radius > 0 ? Math.max(1e-6, sceneSphere.radius * 1e-4) : 0.01;
+      if (dist + travalDist > minDist) {
         a.normalize();
         _tempEye.copy(this.cameraObject.position);
         _tempEye.x += a.x * travalDist;
@@ -821,11 +965,18 @@ const CameraControls = function (object, domElement, renderer, scene) {
         if (checkTravelDistance()) {
           this.cameraObject.position.copy(_tempEye);
           this.updateDirectionalLight();
-          updateNearAndFarPlane(travalDist);
           hasUpdated = true;
         }
       }
     }
+  };
+
+  //Height of the drawing area, rect is set asynchronously so fall back to
+  //the element size before it is available.
+  const getDrawingHeight = () => {
+    if (rect?.height > 0) return rect.height;
+    if (this.domElement?.clientHeight > 0) return this.domElement.clientHeight;
+    return typeof window !== 'undefined' ? window.innerHeight : 0;
   };
 
   const flyZoom = () => {
@@ -1215,10 +1366,60 @@ const CameraControls = function (object, domElement, renderer, scene) {
       this.cameraObject.lookAt(this.cameraObject.target);
     }
 
+    if (updated || hasUpdated) updateNearAndFarPlane();
+    if (updateTrackballGizmo()) updated = true;
+
     updated = updated || hasUpdated;
     hasUpdated = false;
 
     return updated;
+  };
+
+  //Show the trackball gizmo while rotating about a picked pivot.
+  //Return true if a render is needed to show or hide it.
+  const updateTrackballGizmo = () => {
+    const show =
+      this.showTrackballGizmo &amp;&amp;
+      pivotActive &amp;&amp;
+      rect?.height > 0 &amp;&amp;
+      (this._state === STATE.ROTATE || this._state === STATE.TOUCH_ROTATE);
+    if (show) {
+      if (!trackballGizmo) trackballGizmo = new TrackballGizmo();
+      this.cameraObject.updateMatrixWorld();
+      //Scaled from the trackball radius in tumble()
+      trackballGizmo.update(
+        this.cameraObject,
+        _pivot,
+        0.25 * (rect.width + rect.height) * this.trackballGizmoScale,
+        rect.height,
+      );
+      trackballGizmo.visible = true;
+      return true;
+    }
+    if (trackballGizmo?.visible) {
+      trackballGizmo.visible = false;
+      return true;
+    }
+    return false;
+  };
+
+  /**
+   * Get the trackball gizmo, it is only created once it has been shown.
+   *
+   * @return {TrackballGizmo|undefined}
+   */
+  this.getTrackballGizmo = () => {
+    return trackballGizmo;
+  };
+
+  /**
+   * Draw graphics owned by the camera control, such as the trackball
+   * gizmo, on top of the rendered scene.
+   *
+   * @param {THREE.WebGPURenderer} renderer
+   */
+  this.renderOverlay = (renderer) => {
+    if (trackballGizmo) trackballGizmo.render(renderer, this.cameraObject);
   };
 
   /**
@@ -1302,6 +1503,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
     );
     this.cameraObject.up.set(viewport.upVector[0], viewport.upVector[1], viewport.upVector[2]);
     this.cameraObject.updateProjectionMatrix();
+    updateNearAndFarPlane();
     this.updateDirectionalLight();
   };
 
@@ -1332,6 +1534,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
         newViewport.upVector[2],
       );
     this.cameraObject.updateProjectionMatrix();
+    updateNearAndFarPlane();
     this.updateDirectionalLight();
     hasUpdated = true;
   };
@@ -1636,8 +1839,9 @@ const SmoothCameraTransition = function (
   const enabled = true;
   const updateLightWithPathFlag = true;
   let completed = false;
-  targetCamera.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
-  targetCamera.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
+  targetCamera.cameraObject.near = Math.min(startingViewport.nearPlane, endingViewport.nearPlane);
+  targetCamera.cameraObject.far = Math.max(startingViewport.farPlane, endingViewport.farPlane);
+  targetCamera.cameraObject.updateProjectionMatrix();
   targetCamera.cameraObject.up.set(
     endingViewport.upVector[0],
     endingViewport.upVector[1],
@@ -2261,13 +2465,13 @@ export {
 </div>
 
 <nav>
-    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#extractVertices">extractVertices</a></li><li><a href="global.html#getTubeLinesGeometry">getTubeLinesGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Namespaces</h3><ul><li><a href="Zinc.html">Zinc</a></li></ul><h3>Classes</h3><ul><li><a href="CameraControls.html">CameraControls</a></li><li><a href="Geometry.html">Geometry</a></li><li><a href="Glyph.html">Glyph</a></li><li><a href="Glyphset.html">Glyphset</a></li><li><a href="GlyphsetCSG.html">GlyphsetCSG</a></li><li><a href="LOD.html">LOD</a></li><li><a href="Label.html">Label</a></li><li><a href="Lines.html">Lines</a></li><li><a href="Lines2.html">Lines2</a></li><li><a href="Marker.html">Marker</a></li><li><a href="MarkerCluster.html">MarkerCluster</a></li><li><a href="Minimap.html">Minimap</a></li><li><a href="Pointset.html">Pointset</a></li><li><a href="Region.html">Region</a></li><li><a href="Renderer.html">Renderer</a></li><li><a href="Scene.html">Scene</a></li><li><a href="SceneExporter.html">SceneExporter</a></li><li><a href="SceneLoader.html">SceneLoader</a></li><li><a href="Texture.html">Texture</a></li><li><a href="TextureArray.html">TextureArray</a></li><li><a href="TexturePrimitive.html">TexturePrimitive</a></li><li><a href="TextureSlides.html">TextureSlides</a></li><li><a href="TubeLines.html">TubeLines</a></li><li><a href="VideoHandler.html">VideoHandler</a></li><li><a href="Viewport.html">Viewport</a></li><li><a href="ZincObject.html">ZincObject</a></li></ul><h3>Global</h3><ul><li><a href="global.html#ModifiedDeviceOrientationControls">ModifiedDeviceOrientationControls</a></li><li><a href="global.html#StereoCameraZoomFixed">StereoCameraZoomFixed</a></li><li><a href="global.html#StereoEffect">StereoEffect</a></li><li><a href="global.html#createBufferGeometry">createBufferGeometry</a></li><li><a href="global.html#createPointQuadGeometry">createPointQuadGeometry</a></li><li><a href="global.html#createTextSprite">createTextSprite</a></li><li><a href="global.html#extractColorFrames">extractColorFrames</a></li><li><a href="global.html#extractPositionFrames">extractPositionFrames</a></li><li><a href="global.html#extractStaticColorFrame">extractStaticColorFrame</a></li><li><a href="global.html#extractVertices">extractVertices</a></li><li><a href="global.html#getTubeLinesGeometry">getTubeLinesGeometry</a></li><li><a href="global.html#mergeAttributes">mergeAttributes</a></li><li><a href="global.html#mergeGeometries">mergeGeometries</a></li><li><a href="global.html#releaseTextSprite">releaseTextSprite</a></li><li><a href="global.html#render">render</a></li><li><a href="global.html#setTextPixelsPerUnit">setTextPixelsPerUnit</a></li><li><a href="global.html#setTextSpriteHeight">setTextSpriteHeight</a></li><li><a href="global.html#update">update</a></li></ul>
 </nav>
 
 <br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Nov 11 2026 15:21:40 GMT+1300 (New Zealand Daylight Time)
+    Documentation generated by <a href="https://github.com/jsdoc/jsdoc">JSDoc 4.0.5</a> on Wed Nov 18 2026 20:08:57 GMT+1300 (New Zealand Daylight Time)
 </footer>
 
 <script> prettyPrint(); </script>
