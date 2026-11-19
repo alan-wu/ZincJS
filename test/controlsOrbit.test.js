@@ -293,9 +293,10 @@ it('shows the trackball gizmo at the pivot while rotating about it', () => {
     const pivotOnScreen = toScreen(camera, facePoint);
     const edge = new THREE.Vector3(1, 0, 0).applyMatrix4(outerRing.matrixWorld);
     const radiusPixels = toScreen(camera, edge).distanceTo(pivotOnScreen);
-    // Half of the 200 pixel trackball radius by default
-    expect(radiusPixels).toBeGreaterThan(100 * 0.95);
-    expect(radiusPixels).toBeLessThan(100 * 1.05);
+    // The 200 pixel trackball radius scaled by trackballGizmoScale
+    const expected = 200 * controls.trackballGizmoScale;
+    expect(radiusPixels).toBeGreaterThan(expected * 0.95);
+    expect(radiusPixels).toBeLessThan(expected * 1.05);
     // The overlay camera encloses the gizmo
     expect(drawn.camera.near).toBeGreaterThan(0);
     expect(drawn.camera.far).toBeGreaterThan(drawn.camera.near);
@@ -376,5 +377,45 @@ it('does not show the trackball gizmo when disabled', () => {
     domElement.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
     controls.update(0);
     expect(controls.getTrackballGizmo()).toBeUndefined();
+  });
+});
+
+it('does not show the trackball gizmo for clicks or small jitter', () => {
+  withCanvasRect(() => {
+    const { camera, controls, domElement } = setupWithMesh(true);
+    const start = toScreen(camera, facePoint);
+    // A click on the model, held for a few frames without moving
+    domElement.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, clientX: start.x, clientY: start.y }),
+    );
+    controls.update(0);
+    controls.update(0);
+    domElement.dispatchEvent(new MouseEvent('mouseup', { clientX: start.x, clientY: start.y }));
+    controls.update(0);
+    expect(controls.getTrackballGizmo()).toBeUndefined();
+
+    // A selection with a little hand jitter, then a real drag
+    domElement.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, clientX: start.x, clientY: start.y }),
+    );
+    domElement.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: start.x + 2, clientY: start.y }),
+    );
+    controls.update(0);
+    expect(renderOverlay(controls)).toBeUndefined();
+    domElement.dispatchEvent(
+      new MouseEvent('mousemove', { clientX: start.x + 12, clientY: start.y }),
+    );
+    controls.update(0);
+    expect(renderOverlay(controls)).toBeDefined();
+    domElement.dispatchEvent(
+      new MouseEvent('mouseup', { clientX: start.x + 12, clientY: start.y }),
+    );
+    controls.update(0);
+
+    // The next click starts from no movement again
+    domElement.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 200 }));
+    controls.update(0);
+    expect(renderOverlay(controls)).toBeUndefined();
   });
 });

@@ -161,6 +161,14 @@ const CameraControls = function (object, domElement, renderer, scene) {
    * wheel zoom, wheel events are too short to show it otherwise.
    */
   this.trackballGizmoLinger = 600;
+  /**
+   * Pixels the pointer must travel before a drag counts as rotating,
+   * panning or zooming and shows the trackball gizmo, so clicks and
+   * selections do not flash it.
+   */
+  this.trackballGizmoDragThreshold = 3;
+  //Movement accumulated by the current gesture in pixels
+  let gestureMovement = 0;
   let lastWheelTime = -Infinity;
   let trackballGizmo = undefined;
   let hasUpdated = false;
@@ -425,6 +433,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
 
   const onDocumentMouseDown = (event) => {
     updateRect(false);
+    gestureMovement = 0;
     // Check if mouse event hapens inside the minimap
     let minimapCoordinates = undefined;
     if (currentMode === MODE.DEFAULT)
@@ -559,6 +568,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
 
   const onDocumentTouchStart = (event) => {
     updateRect(false);
+    gestureMovement = 0;
     const len = event.touches.length;
     pivotActive = false;
     if (len == 1) {
@@ -730,6 +740,10 @@ const CameraControls = function (object, domElement, renderer, scene) {
   };
 
   const translate = () => {
+    gestureMovement += Math.hypot(
+      this.pointer_x - this.previous_pointer_x,
+      this.pointer_y - this.previous_pointer_y,
+    );
     if (typeof this.cameraObject !== 'undefined' && rect) {
       const height = rect.height;
       const distance = this.cameraObject.position.distanceTo(this.cameraObject.target);
@@ -859,6 +873,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
         if (rotateMode === ROTATE_DIRECTION.FREE || rotateMode === ROTATE_DIRECTION.VERTICAL)
           delta_y = this.previous_pointer_y - this.pointer_y;
         const tangent_dist = Math.sqrt(delta_x * delta_x + delta_y * delta_y);
+        gestureMovement += tangent_dist;
         if (tangent_dist > 0) {
           const dx = (-delta_y * 1.0) / tangent_dist;
           const dy = (delta_x * 1.0) / tangent_dist;
@@ -960,6 +975,7 @@ const CameraControls = function (object, domElement, renderer, scene) {
 
   const flyZoom = () => {
     const delta_y = calculateZoomDelta();
+    gestureMovement += Math.abs(delta_y);
     this.changeZoomByValue(delta_y);
 
     if (this._state === STATE.ZOOM) {
@@ -1276,6 +1292,8 @@ const CameraControls = function (object, domElement, renderer, scene) {
    */
   this.update = (timeChanged) => {
     const delta = timeChanged * playRate;
+    //A new gesture starts from no movement
+    if (this._state === STATE.NONE) gestureMovement = 0;
     let controlEnabled = enabled;
     let updated = true;
     if (currentMode === MODE.PATH) {
@@ -1359,8 +1377,11 @@ const CameraControls = function (object, domElement, renderer, scene) {
   //It is centred on the picked pivot while rotating about it, otherwise on
   //the camera target, for any user rotation, panning or zooming.
   const updateTrackballGizmo = () => {
+    //Only once the gesture has actually moved the camera, a click or a
+    //selection must not flash it. Wheel events always zoom.
     const interacting =
-      this._state !== STATE.NONE || performance.now() - lastWheelTime < this.trackballGizmoLinger;
+      (this._state !== STATE.NONE && gestureMovement > this.trackballGizmoDragThreshold) ||
+      performance.now() - lastWheelTime < this.trackballGizmoLinger;
     const show =
       this.showTrackballGizmo && currentMode === MODE.DEFAULT && interacting && rect?.height > 0;
     if (show) {
