@@ -309,18 +309,72 @@ it('shows the trackball gizmo at the pivot while rotating about it', () => {
   });
 });
 
-it('does not show the trackball gizmo without a pivot or when disabled', () => {
-  withCanvasRect(() => {
-    const { controls, domElement } = setupWithMesh(true);
-    // Empty space, no pivot
-    drag(controls, domElement, [50, 200], [90, 200]);
-    expect(controls.getTrackballGizmo()).toBeUndefined();
+// Screen position of the gizmo centre, where its pivot dot is drawn.
+const gizmoCentreOnScreen = (drawn, camera) => {
+  let dot = undefined;
+  drawn.scene.traverse((object) => {
+    if (object.isMesh) dot = object;
   });
+  return toScreen(camera, dot.getWorldPosition(new THREE.Vector3()));
+};
+
+it('shows the trackball gizmo on the camera target when rotating on empty space', () => {
+  withCanvasRect(() => {
+    const { camera, controls, domElement } = setupWithMesh(true);
+    domElement.dispatchEvent(new MouseEvent('mousedown', { button: 0, clientX: 50, clientY: 200 }));
+    domElement.dispatchEvent(new MouseEvent('mousemove', { clientX: 90, clientY: 200 }));
+    controls.update(0);
+    const drawn = renderOverlay(controls);
+    expect(drawn).toBeDefined();
+    const centre = gizmoCentreOnScreen(drawn, camera);
+    expect(centre.distanceTo(toScreen(camera, camera.target))).toBeLessThan(1e-3);
+  });
+});
+
+it('shows the trackball gizmo on the camera target while panning', () => {
+  withCanvasRect(() => {
+    const { camera, controls, domElement } = setupWithMesh(true);
+    domElement.dispatchEvent(
+      new MouseEvent('mousedown', { button: 0, shiftKey: true, clientX: 200, clientY: 200 }),
+    );
+    domElement.dispatchEvent(new MouseEvent('mousemove', { clientX: 240, clientY: 200 }));
+    controls.update(0);
+    // The target has moved with the pan and the gizmo follows it
+    expect(camera.target.length()).toBeGreaterThan(1e-3);
+    const drawn = renderOverlay(controls);
+    expect(drawn).toBeDefined();
+    const centre = gizmoCentreOnScreen(drawn, camera);
+    expect(centre.distanceTo(toScreen(camera, camera.target))).toBeLessThan(1e-3);
+    domElement.dispatchEvent(new MouseEvent('mouseup', { clientX: 240, clientY: 200 }));
+    controls.update(0);
+    expect(renderOverlay(controls)).toBeUndefined();
+  });
+});
+
+it('keeps the trackball gizmo visible briefly after a wheel zoom', async () => {
+  let controls = undefined;
+  withCanvasRect(() => {
+    const setupResult = setupWithMesh(true);
+    controls = setupResult.controls;
+    controls.trackballGizmoLinger = 40;
+    setupResult.domElement.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
+    expect(controls.update(0)).toBe(true);
+  });
+  expect(renderOverlay(controls)).toBeDefined();
+  await new Promise((resolve) => setTimeout(resolve, 80));
+  // Hiding it once the time has passed asks for a render
+  expect(controls.update(0)).toBe(true);
+  expect(renderOverlay(controls)).toBeUndefined();
+});
+
+it('does not show the trackball gizmo when disabled', () => {
   withCanvasRect(() => {
     const { camera, controls, domElement } = setupWithMesh(true);
     controls.showTrackballGizmo = false;
     const start = toScreen(camera, facePoint);
     drag(controls, domElement, [start.x, start.y], [start.x + 10, start.y]);
+    domElement.dispatchEvent(new WheelEvent('wheel', { deltaY: -100 }));
+    controls.update(0);
     expect(controls.getTrackballGizmo()).toBeUndefined();
   });
 });
