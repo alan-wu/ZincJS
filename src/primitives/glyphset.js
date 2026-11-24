@@ -40,6 +40,8 @@ const Glyphset = function () {
   let labelsOn = false;
   let scaleFactors = [0, 0, 0];
   let repeat_mode = 'NONE';
+  //Metadata as read in, used for exporting
+  let glyphsetMetadata = undefined;
   this.ready = false;
   let morphColours = false;
   let morphVertices = false;
@@ -160,7 +162,74 @@ const Glyphset = function () {
    * geometry is loaded.
    */
   this.load = (glyphsetData, glyphURL, finishCallback, isInline, displayLabels) => {
+    setGlyphsetData(glyphsetData);
+    const loader = new JSONLoader();
+    if (isInline) {
+      var object = loader.parse(glyphURL);
+      meshloader(finishCallback, displayLabels)(object.geometry, object.materials);
+      object.geometry.dispose();
+    } else {
+      loader.crossOrigin = 'Anonymous';
+      loader.load(glyphURL, meshloader(finishCallback, displayLabels));
+    }
+  };
+
+  /**
+   * Same as {@link Glyphset#load} but with the geometry and material of the
+   * glyph provided directly, e.g. from a glTF file.
+   *
+   * @param {Object} glyphsetData - contains the informations about the glyphs,
+   * same format as {@link Glyphset#load}.
+   * @param {THREE.BufferGeometry} geometry - Geometry of the glyph, it will
+   * be disposed once copied.
+   * @param {THREE.Material} material - Material of the glyph.
+   * @param {Function} finishCallback - Called once the glyphs are created.
+   * @param {Boolean} displayLabels - Display the labels if available.
+   */
+  this.loadFromGeometry = (glyphsetData, geometry, material, finishCallback, displayLabels) => {
+    setGlyphsetData(glyphsetData);
+    meshloader(finishCallback, displayLabels)(geometry, material ? [material] : undefined);
+  };
+
+  /**
+   * Get the glyphset data in the same format read by {@link Glyphset#load}.
+   *
+   * @return {Object|undefined} Undefined if this glyphset is not created
+   * from glyphset data.
+   */
+  this.getGlyphsetData = () => {
+    if (!glyphsetMetadata || !positions) return undefined;
+    return {
+      metadata: { ...glyphsetMetadata },
+      positions,
+      axis1: axis1s,
+      axis2: axis2s,
+      axis3: axis3s,
+      scale: scales,
+      colors,
+      label: labels,
+    };
+  };
+
+  /**
+   * Create the object for exporting, see {@link ZincObject#createExportObject}.
+   * The glyphs are exported as an instanced mesh showing their current
+   * state, the animation is kept in the glyphset data for zinc.
+   */
+  this.createExportObject = function () {
+    const object = ZincObject.prototype.createExportObject.call(this);
+    //glTF always applies the vertex colours of the glyph, zinc only does
+    //when the material uses them.
+    const material = this.morph ? this.morph.material : undefined;
+    if (object && !(material && material.vertexColors)) {
+      object.geometry.deleteAttribute('color');
+    }
+    return object;
+  };
+
+  const setGlyphsetData = (glyphsetData) => {
     disposed = false;
+    glyphsetMetadata = glyphsetData.metadata;
     axis1s = glyphsetData.axis1;
     axis2s = glyphsetData.axis2;
     axis3s = glyphsetData.axis3;
@@ -216,18 +285,9 @@ const Glyphset = function () {
         glyphCompute = undefined;
       }
     }
-    const loader = new JSONLoader();
     this.geometry = new THREE.BufferGeometry();
     const instancedMesh = new THREE.InstancedMesh(this.geometry, undefined, numberOfVertices);
     this.setMorph(instancedMesh);
-    if (isInline) {
-      var object = loader.parse(glyphURL);
-      meshloader(finishCallback, displayLabels)(object.geometry, object.materials);
-      object.geometry.dispose();
-    } else {
-      loader.crossOrigin = 'Anonymous';
-      loader.load(glyphURL, meshloader(finishCallback, displayLabels));
-    }
   };
 
   /**

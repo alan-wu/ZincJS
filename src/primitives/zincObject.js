@@ -1,5 +1,11 @@
 import * as THREE from 'three/webgpu';
-import { createBufferGeometry, getBoundingBox, removeVertexAtIndex } from '../utilities';
+import {
+  copyMatrixForExport,
+  createBufferGeometry,
+  createExportGeometry,
+  getBoundingBox,
+  removeVertexAtIndex,
+} from '../utilities';
 import { LOD } from './lod';
 import { Marker } from './marker';
 
@@ -220,6 +226,49 @@ ZincObject.prototype.setMesh = function (mesh, localTimeEnabled, localMorphColou
     this.initiateMorphColor();
   }
   this.boundingBoxUpdateRequired = true;
+};
+
+/**
+ * Create a standard three.js object representing this zinc object for
+ * exporting (see {@link SceneExporter}). It shares the buffers with the
+ * current mesh but leaves out everything only used for rendering in zinc,
+ * such as markers, labels and the back face mesh of transparent surfaces.
+ *
+ * @return {THREE.Object3D|undefined} Undefined if there is nothing to export.
+ */
+ZincObject.prototype.createExportObject = function () {
+  const morph = this.getMorph();
+  if (!morph || !morph.geometry || !morph.geometry.isBufferGeometry) return undefined;
+  const geometry = createExportGeometry(morph.geometry);
+  let object = undefined;
+  if (morph.isInstancedMesh) {
+    object = new THREE.InstancedMesh(geometry, morph.material, morph.count);
+    object.instanceMatrix = morph.instanceMatrix;
+    object.instanceColor = morph.instanceColor;
+  } else if (morph.isLineSegments) {
+    object = new THREE.LineSegments(geometry, morph.material);
+  } else if (morph.isLine) {
+    object = new THREE.Line(geometry, morph.material);
+  } else if (morph.isPoints) {
+    object = new THREE.Points(geometry, morph.material);
+  } else if (morph.isMesh) {
+    object = new THREE.Mesh(geometry, morph.material);
+  }
+  if (object) {
+    object.name = morph.name;
+    copyMatrixForExport(morph, object);
+    //Current state of the morph
+    if (morph.morphTargetDictionary && object.morphTargetDictionary) {
+      for (const name in object.morphTargetDictionary) {
+        const index = morph.morphTargetDictionary[name];
+        if (index !== undefined) {
+          object.morphTargetInfluences[object.morphTargetDictionary[name]] =
+            morph.morphTargetInfluences[index];
+        }
+      }
+    }
+  }
+  return object;
 };
 
 /**
