@@ -513,6 +513,75 @@ describe('glTF export and load', () => {
     ]);
   });
 
+  //Skeletons are not supported, skinned meshes are loaded in the pose of the
+  //file with their vertices moved by the bones.
+  it('loads skinned meshes in the pose of the file', async () => {
+    const THREE = Zinc.THREE;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute([0, 0, 0, 1, 1, 0, 0, 2, 0], 3),
+    );
+    geometry.setAttribute(
+      'normal',
+      new THREE.Float32BufferAttribute([0, 0, 1, 1, 0, 0, 0, 0, 1], 3),
+    );
+    //The first vertex follows the root bone, the others the second bone
+    geometry.setAttribute(
+      'skinIndex',
+      new THREE.Uint16BufferAttribute([0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], 4),
+    );
+    geometry.setAttribute(
+      'skinWeight',
+      new THREE.Float32BufferAttribute([1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0], 4),
+    );
+    const rootBone = new THREE.Bone();
+    const bone = new THREE.Bone();
+    bone.position.set(0, 1, 0);
+    rootBone.add(bone);
+    const skinned = new THREE.SkinnedMesh(geometry, new THREE.MeshStandardMaterial());
+    skinned.name = 'skinned';
+    //The skeleton is scaled like the armatures of many files
+    const armature = new THREE.Group();
+    armature.scale.set(2, 2, 2);
+    armature.add(skinned, rootBone);
+    armature.updateMatrixWorld(true);
+    skinned.bind(new THREE.Skeleton([rootBone, bone]));
+    //Pose - the second bone turns a quarter around z
+    bone.rotation.z = Math.PI / 2;
+    armature.updateMatrixWorld(true);
+    const glb = await new GLTFExporter().parseAsync(armature, { binary: true });
+    const parsed = await new Promise((resolve, reject) =>
+      new GLTFLoader().parse(glb, '', resolve, reject),
+    );
+    expect(parsed.scene.getObjectByProperty('type', 'SkinnedMesh')).toBeDefined();
+    const target = renderer.createScene('skinnedTarget');
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    await new GLTFToZincJSLoader().parseGLTF(parsed, target.getRootRegion());
+    const warnings = warn.mock.calls.map((call) => String(call[0]));
+    warn.mockRestore();
+    expect(warnings.filter((m) => m.includes('Skeletons are not supported')).length).toBe(1);
+    const zincGeometry = findObject(target.getRootRegion(), 'skinned');
+    expect(zincGeometry.isGeometry).toBe(true);
+    const morph = zincGeometry.getMorph();
+    expect(morph.isSkinnedMesh).toBeFalsy();
+    expect(morph.geometry.getAttribute('skinIndex')).toBeUndefined();
+    target.getThreeJSScene().updateMatrixWorld(true);
+    const world = (attribute, i, w) => {
+      const v = new THREE.Vector3().fromBufferAttribute(attribute, i);
+      return w ? v.applyMatrix4(morph.matrixWorld) : v.transformDirection(morph.matrixWorld);
+    };
+    const expectClose = (vector, expected) =>
+      vector.toArray().forEach((value, i) => expect(value).toBeCloseTo(expected[i], 5));
+    const positions = morph.geometry.getAttribute('position');
+    expectClose(world(positions, 0, true), [0, 0, 0]);
+    expectClose(world(positions, 1, true), [0, 4, 0]);
+    expectClose(world(positions, 2, true), [-2, 2, 0]);
+    const normals = morph.geometry.getAttribute('normal');
+    expectClose(world(normals, 0, false), [0, 0, 1]);
+    expectClose(world(normals, 1, false), [0, 1, 0]);
+  });
+
   it('loads morphing lines back', async () => {
     const THREE = Zinc.THREE;
     const geometry = new THREE.BufferGeometry();

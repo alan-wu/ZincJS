@@ -1,4 +1,4 @@
-import { BufferGeometry, Matrix4, Vector3 } from 'three/webgpu';
+import { BufferAttribute, BufferGeometry, Matrix4, Mesh, Vector3, Vector4 } from 'three/webgpu';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Geometry } from '../primitives/geometry';
 import { Glyphset } from '../primitives/glyphset';
@@ -20,8 +20,60 @@ const getZincMetadata = (object) => {
 const isLines = (object) =>
   object.type === 'LineSegments' || object.type === 'Line' || object.type === 'LineLoop';
 
-const isRenderable = (object) =>
-  object.type === 'Mesh' || isLines(object) || object.type === 'Points';
+//Skinned meshes are loaded in the pose of the file, without their skeleton
+const isMesh = (object) => object.type === 'Mesh' || object.type === 'SkinnedMesh';
+
+const isRenderable = (object) => isMesh(object) || isLines(object) || object.type === 'Points';
+
+/*
+ * Create a mesh with the vertices and normals of a skinned mesh moved by
+ * its bones in their current pose, zinc does not support skeletons. Morph
+ * targets must be absolute, they are moved the same way.
+ */
+const bakeSkinnedMesh = (object) => {
+  const source = object.geometry;
+  const geometry = new BufferGeometry();
+  geometry.name = source.name;
+  geometry.setIndex(source.index);
+  const position = new Vector3();
+  const direction = new Vector4();
+  const bake = (attribute, isDirection) => {
+    const baked = new BufferAttribute(new Float32Array(attribute.count * 3), 3);
+    baked.name = attribute.name;
+    for (let i = 0; i < attribute.count; i++) {
+      if (isDirection) {
+        direction.set(attribute.getX(i), attribute.getY(i), attribute.getZ(i), 0);
+        object.applyBoneTransform(i, direction);
+        position.set(direction.x, direction.y, direction.z).normalize();
+      } else {
+        position.fromBufferAttribute(attribute, i);
+        object.applyBoneTransform(i, position);
+      }
+      baked.setXYZ(i, position.x, position.y, position.z);
+    }
+    return baked;
+  };
+  for (const name in source.attributes) {
+    const attribute = source.attributes[name];
+    if (name === 'position') geometry.setAttribute(name, bake(attribute, false));
+    else if (name === 'normal') geometry.setAttribute(name, bake(attribute, true));
+    else if (name !== 'skinIndex' && name !== 'skinWeight') geometry.setAttribute(name, attribute);
+  }
+  for (const name in source.morphAttributes) {
+    geometry.morphAttributes[name] = source.morphAttributes[name].map((attribute) => {
+      if (name === 'position') return bake(attribute, false);
+      if (name === 'normal') return bake(attribute, true);
+      return attribute;
+    });
+  }
+  geometry.morphTargetsRelative = false;
+  source.groups.forEach((group) => {
+    geometry.addGroup(group.start, group.count, group.materialIndex);
+  });
+  const mesh = new Mesh(geometry, object.material);
+  mesh.name = object.name;
+  return mesh;
+};
 
 /*
  * Geometry of the lines of object as non indexed line segments, which is
@@ -137,7 +189,9 @@ const resolveGlyphsets = async (gltf) => {
  * "extras.zinc" of their nodes, it is used to restore the regions, groupNames,
  * anatomicalIds and durations. Other glTF files are loaded with named nodes
  * mapped to regions and each mesh, lines and points mapped to a zinc object,
- * line strips and line loops are converted to line segments.
+ * line strips and line loops are converted to line segments. Skinned meshes
+ * are loaded in the pose of the file, skeletons and their animations are not
+ * supported.
  *
  * @class
  * @author Alan Wu
@@ -211,7 +265,7 @@ const GLTFToZincJSLoader = function () {
    */
   const createZincObject = (object, region, regionNode, metadata, finishCallback) => {
     let zincObject = undefined;
-    if (object.type === 'Mesh') {
+    if (isMesh(object)) {
       zincObject = new Geometry();
     } else if (isLines(object)) {
       zincObject = new Lines();
@@ -240,7 +294,7 @@ const GLTFToZincJSLoader = function () {
       });
     } else {
       //Children are loaded separately
-      const mesh = object.clone(false);
+      const mesh = object.isSkinnedMesh ? bakeSkinnedMesh(object) : object.clone(false);
       if (localMorphColour && !zincObject.isPointset) applyMorphColourMaterial(mesh);
       zincObject.setMesh(mesh, localTimeEnabled, localMorphColour);
     }
@@ -348,6 +402,17 @@ const GLTFToZincJSLoader = function () {
    */
   this.parseGLTFObjects = (object, region, depth, finishCallback, glyphsets) => {
     object.updateMatrixWorld(true);
+    //Once for the file, not for each skinned mesh
+    let skinnedMeshes = 0;
+    object.traverse((child) => {
+      if (child.isSkinnedMesh) skinnedMeshes++;
+    });
+    if (skinnedMeshes > 0) {
+      console.warn(
+        `GLTFToZincJSLoader: Skeletons are not supported, ${skinnedMeshes} skinned mesh(es) ` +
+          'are loaded in the pose of the file without their skeleton and its animations.',
+      );
+    }
     if (depth !== 0) {
       parseNode(object, region, object.parent ? object.parent : object, finishCallback, glyphsets);
     } else {
