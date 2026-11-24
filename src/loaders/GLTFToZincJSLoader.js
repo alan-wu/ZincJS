@@ -1,4 +1,4 @@
-import { Matrix4, Vector3 } from 'three/webgpu';
+import { BufferGeometry, Matrix4, Vector3 } from 'three/webgpu';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Geometry } from '../primitives/geometry';
 import { Glyphset } from '../primitives/glyphset';
@@ -16,8 +16,50 @@ const getZincMetadata = (object) => {
   return zinc && typeof zinc === 'object' && zinc.type ? zinc : undefined;
 };
 
+//Line strips (Line) and line loops are converted to line segments
+const isLines = (object) =>
+  object.type === 'LineSegments' || object.type === 'Line' || object.type === 'LineLoop';
+
 const isRenderable = (object) =>
-  object.type === 'Mesh' || object.type === 'LineSegments' || object.type === 'Points';
+  object.type === 'Mesh' || isLines(object) || object.type === 'Points';
+
+/*
+ * Geometry of the lines of object as non indexed line segments, which is
+ * what zinc lines use. Line strips connect each vertex to the next one and
+ * line loops also connect the last vertex to the first one.
+ */
+const toLineSegmentsGeometry = (object) => {
+  const geometry = object.geometry;
+  const source = geometry.index;
+  if (object.type === 'LineSegments' && !source) return geometry;
+  const position = geometry.getAttribute('position');
+  const count = source ? source.count : position.count;
+  const vertex = (i) => (source ? source.getX(i) : i);
+  const indices = [];
+  if (object.type === 'LineSegments') {
+    for (let i = 0; i < count; i++) indices.push(vertex(i));
+  } else {
+    for (let i = 0; i + 1 < count; i++) indices.push(vertex(i), vertex(i + 1));
+    if (object.type === 'LineLoop' && count > 2) indices.push(vertex(count - 1), vertex(0));
+  }
+  //Shares the attributes, toNonIndexed creates the new ones
+  const indexed = new BufferGeometry();
+  for (const name in geometry.attributes) indexed.setAttribute(name, geometry.attributes[name]);
+  indexed.morphAttributes = geometry.morphAttributes;
+  indexed.morphTargetsRelative = geometry.morphTargetsRelative;
+  indexed.setIndex(indices);
+  const segments = indexed.toNonIndexed();
+  //zinc builds its animation from the names of the morph targets
+  for (const name in geometry.morphAttributes) {
+    geometry.morphAttributes[name].forEach((attribute, i) => {
+      if (segments.morphAttributes[name] && segments.morphAttributes[name][i]) {
+        segments.morphAttributes[name][i].name = attribute.name;
+      }
+    });
+  }
+  segments.name = geometry.name;
+  return segments;
+};
 
 const findRenderable = (object) => {
   if (isRenderable(object)) return object;
@@ -94,8 +136,8 @@ const resolveGlyphsets = async (gltf) => {
  * Files exported by {@link SceneExporter} carry zinc information in the
  * "extras.zinc" of their nodes, it is used to restore the regions, groupNames,
  * anatomicalIds and durations. Other glTF files are loaded with named nodes
- * mapped to regions and each mesh, line segments and points mapped to a zinc
- * object.
+ * mapped to regions and each mesh, lines and points mapped to a zinc object,
+ * line strips and line loops are converted to line segments.
  *
  * @class
  * @author Alan Wu
@@ -171,7 +213,7 @@ const GLTFToZincJSLoader = function () {
     let zincObject = undefined;
     if (object.type === 'Mesh') {
       zincObject = new Geometry();
-    } else if (object.type === 'LineSegments') {
+    } else if (isLines(object)) {
       zincObject = new Lines();
     } else if (object.type === 'Points') {
       zincObject = new Pointset();
@@ -192,7 +234,7 @@ const GLTFToZincJSLoader = function () {
     if (zincObject.isLines) {
       //Same as lines loaded from json, a clone of THREE.LineSegments would
       //lose the morph targets bindings - Line.copy does not copy them.
-      zincObject.createLineSegment(object.geometry, object.material, {
+      zincObject.createLineSegment(toLineSegmentsGeometry(object), object.material, {
         localTimeEnabled,
         localMorphColour,
       });

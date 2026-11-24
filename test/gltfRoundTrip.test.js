@@ -452,6 +452,67 @@ describe('glTF export and load', () => {
       zincTriangle.getBoundingBox(),
     );
   });
+  it('converts line strips, line loops and indexed lines to line segments', async () => {
+    const THREE = Zinc.THREE;
+    const createGeometry = (values) => {
+      const geometry = new THREE.BufferGeometry();
+      geometry.setAttribute('position', new THREE.Float32BufferAttribute(values, 3));
+      return geometry;
+    };
+    const corners = [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0];
+    const material = new THREE.LineBasicMaterial({ color: 0xff0000 });
+    const root = new THREE.Group();
+    //Morphing line strip, the last corner moves up
+    const stripGeometry = createGeometry(corners);
+    stripGeometry.morphAttributes.position = [corners, [0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 5]].map(
+      (values) => new THREE.Float32BufferAttribute(values, 3),
+    );
+    const strip = new THREE.Line(stripGeometry, material);
+    strip.name = 'strip';
+    strip.morphTargetDictionary = { step000001: 0, step000002: 1 };
+    strip.morphTargetInfluences = [0, 0];
+    const loop = new THREE.LineLoop(createGeometry(corners), material);
+    loop.name = 'loop';
+    //Indexed line segments, the two diagonals
+    const indexedGeometry = createGeometry(corners);
+    indexedGeometry.setIndex([0, 2, 1, 3]);
+    const indexed = new THREE.LineSegments(indexedGeometry, material);
+    indexed.name = 'indexed';
+    root.add(strip, loop, indexed);
+    //Line segments, line loop and line strip
+    const json = await new GLTFExporter().parseAsync(root);
+    expect(json.meshes.map((mesh) => mesh.primitives[0].mode).sort()).toEqual([1, 2, 3]);
+    const glb = await new GLTFExporter().parseAsync(root, { binary: true });
+    const parsed = await new Promise((resolve, reject) =>
+      new GLTFLoader().parse(glb, '', resolve, reject),
+    );
+    const target = renderer.createScene('lineTypesTarget');
+    await new GLTFToZincJSLoader().parseGLTF(parsed, target.getRootRegion());
+    const positionsOf = (name, attribute) => {
+      const zincLines = findObject(target.getRootRegion(), name);
+      expect(zincLines.isLines).toBe(true);
+      const geometry = zincLines.getMorph().geometry;
+      expect(geometry.index).toBeNull();
+      return Array.from(
+        (attribute ? attribute(geometry) : geometry.getAttribute('position')).array,
+      );
+    };
+    const p = (i) => corners.slice(i * 3, i * 3 + 3);
+    const segments = (...pairs) => pairs.flatMap(([a, b]) => [...p(a), ...p(b)]);
+    expect(positionsOf('strip')).toEqual(segments([0, 1], [1, 2], [2, 3]));
+    //The loop is closed with a segment from the last vertex to the first
+    expect(positionsOf('loop')).toEqual(segments([0, 1], [1, 2], [2, 3], [3, 0]));
+    expect(positionsOf('indexed')).toEqual(segments([0, 2], [1, 3]));
+    //Morph targets follow the vertices and keep their names
+    const stripLines = findObject(target.getRootRegion(), 'strip');
+    expect(stripLines.timeEnabled).toBe(true);
+    const targets = stripLines.getMorph().geometry.morphAttributes.position;
+    expect(targets.map((attribute) => attribute.name)).toEqual(['step000001', 'step000002']);
+    expect(Array.from(targets[1].array)).toEqual([
+      0, 0, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 0, 0, 1, 5,
+    ]);
+  });
+
   it('loads morphing lines back', async () => {
     const THREE = Zinc.THREE;
     const geometry = new THREE.BufferGeometry();
