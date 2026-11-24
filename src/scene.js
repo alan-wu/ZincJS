@@ -81,6 +81,8 @@ const Scene = function (containerIn, rendererIn) {
   this.camera = undefined;
   let duration = 6000;
   let zincCameraControls = undefined;
+  //Views provided to this scene, e.g. from the metadata, see getViews
+  let providedViews = undefined;
   this.sceneName = undefined;
   let stereoEffectFlag = false;
   let stereoEffect = undefined;
@@ -194,10 +196,39 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.loadView = (settings) => {
     needsRender = true;
+    if (!providedViews) recordViews('default', { default: settings });
     const viewPort = new Viewport();
     viewPort.setFromObject(settings);
     zincCameraControls.setCurrentCameraSettings(viewPort);
     return true;
+  };
+
+  //Keep a plain copy of the views provided
+  const recordViews = (defaultView, entries) => {
+    const recorded = providedViews ? providedViews.Entries : {};
+    for (const [name, settings] of Object.entries(entries)) {
+      recorded[name] = {
+        nearPlane: settings.nearPlane,
+        farPlane: settings.farPlane,
+        eyePosition: settings.eyePosition ? [...settings.eyePosition] : undefined,
+        targetPosition: settings.targetPosition ? [...settings.targetPosition] : undefined,
+        upVector: settings.upVector ? [...settings.upVector] : undefined,
+      };
+    }
+    providedViews = { Default: defaultView, Entries: recorded };
+  };
+
+  /**
+   * Get the views provided to this scene with {@link Scene#setupMultipleViews}
+   * or {@link Scene#loadView}, e.g. the views in the metadata. They are in
+   * the same format as the inline views of the metadata -
+   * { Default: name, Entries: { name: { nearPlane, farPlane, eyePosition,
+   * targetPosition, upVector } } }.
+   *
+   * @return {Object|undefined} Undefined if no view has been provided.
+   */
+  this.getViews = () => {
+    return providedViews;
   };
 
   /**
@@ -206,6 +237,7 @@ const Scene = function (containerIn, rendererIn) {
    * @param {Zinc.Viewport} viewData - Viewport data to be loaded.
    */
   this.setupMultipleViews = (defaultView, entries) => {
+    recordViews(defaultView, entries);
     for (const [name, settings] of Object.entries(entries)) {
       const viewport = new Viewport();
       viewport.setFromObject(settings);
@@ -1166,6 +1198,7 @@ const Scene = function (containerIn, rendererIn) {
    */
   this.clearAll = () => {
     needsRender = true;
+    providedViews = undefined;
     markerCluster.clear();
     rootRegion.clear(true);
     this.clearZincObjectAddedCallbacks();

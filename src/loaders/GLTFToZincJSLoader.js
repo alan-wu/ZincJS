@@ -1,4 +1,4 @@
-import { Matrix4 } from 'three/webgpu';
+import { Matrix4, Vector3 } from 'three/webgpu';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader';
 import { Geometry } from '../primitives/geometry';
 import { Glyphset } from '../primitives/glyphset';
@@ -333,6 +333,79 @@ const GLTFToZincJSLoader = function () {
     return true;
   };
 
+  /*
+   * Viewport of a standard camera, it looks down its -z axis with +y up.
+   * There is no target position, it is put on the view line next to the
+   * centre of the scene.
+   */
+  const getViewportFromCamera = (scene, camera) => {
+    const eye = new Vector3().setFromMatrixPosition(camera.matrixWorld);
+    const direction = new Vector3(0, 0, -1).transformDirection(camera.matrixWorld);
+    const up = new Vector3(0, 1, 0).transformDirection(camera.matrixWorld);
+    let distance = 0;
+    const box = scene.getBoundingBox();
+    if (box) {
+      const centre = box.getCenter(new Vector3());
+      distance = centre.clone().sub(eye).dot(direction);
+      if (!(distance > 0)) distance = box.min.distanceTo(box.max) / 2;
+    }
+    if (!(distance > 0)) distance = 1;
+    const target = eye.clone().addScaledVector(direction, distance);
+    return {
+      nearPlane: camera.near,
+      farPlane: camera.far,
+      eyePosition: eye.toArray(),
+      targetPosition: target.toArray(),
+      upVector: up.toArray(),
+    };
+  };
+
+  /**
+   * Apply the views in a glTF loaded by GLTFLoader to scene - the views
+   * exported by {@link SceneExporter} and the current viewport when it was
+   * exported, or the first camera of files from other software.
+   *
+   * @param {Scene} scene - Scene to apply the views to.
+   * @param {Object} gltf - Result of GLTFLoader.
+   * @param {Object} options - Set options.viewAll to false to keep the
+   * current viewport, the views are still added to the scene.
+   * @return {Boolean} true if the glTF contains any view.
+   */
+  this.applyViews = (scene, gltf, options) => {
+    gltf.scene.updateMatrixWorld(true);
+    let views = undefined;
+    let current = undefined;
+    let camera = undefined;
+    gltf.scene.traverse((object) => {
+      const metadata = getZincMetadata(object);
+      if (metadata && metadata.type === 'rootRegion' && metadata.views && metadata.views.Entries) {
+        if (!views) views = metadata.views;
+      } else if (metadata && metadata.type === 'view' && metadata.eyePosition) {
+        if (!current) current = metadata;
+      }
+      if (object.isCamera && !camera) camera = object;
+    });
+    if (!current && camera) current = getViewportFromCamera(scene, camera);
+    if (!views && !current) return false;
+    const cameraControls = scene.getZincCameraControls();
+    if (views) {
+      scene.setupMultipleViews(views.Default, views.Entries);
+    }
+    if (current) {
+      const viewport = cameraControls.getCurrentViewport();
+      viewport.setFromObject(current);
+      if (!views) {
+        //Same as setCamera, reset view returns to it
+        cameraControls.addViewport('default', viewport);
+        cameraControls.setDefaultViewport('default');
+      }
+      if (!options || options.viewAll !== false) cameraControls.setCurrentCameraSettings(viewport);
+    } else if (!options || options.viewAll !== false) {
+      scene.resetView();
+    }
+    return true;
+  };
+
   this.setCamera = (scene) => {
     scene.viewAll();
     const cameraControls = scene.getZincCameraControls();
@@ -379,7 +452,9 @@ const GLTFToZincJSLoader = function () {
           .parseGLTF(gltf, region, finishCallback, isCancelled)
           .then((completed) => {
             if (!completed) return;
-            if (!options || options.viewAll !== false) _this.setCamera(scene);
+            if (!_this.applyViews(scene, gltf, options)) {
+              if (!options || options.viewAll !== false) _this.setCamera(scene);
+            }
             allCompleted();
           })
           .catch(onError);

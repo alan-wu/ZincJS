@@ -257,7 +257,12 @@ class GLTFAnimationPlugin {
  * specific information is stored in the "extras.zinc" of these nodes, which
  * is read by {@link GLTFToZincJSLoader} and safely ignored by other software:
  *
- * - region: { type: 'rootRegion' | 'region', name, duration }
+ * - region: { type: 'rootRegion' | 'region', name, duration }, the root
+ *   region also has views when views have been provided to the scene, e.g.
+ *   from the metadata, see {@link Scene#getViews}.
+ * - view: { type: 'view', nearPlane, farPlane, eyePosition, targetPosition,
+ *   upVector } on the node of a standard camera, the current viewport when
+ *   exported.
  * - zinc object: { type: 'geometry' | 'lines' | 'pointset' | 'glyphset' | ...,
  *   groupName, anatomicalId, duration, timeEnabled, morphColour }
  * - glyphset: also { glyphset: { metadata, label, displayLabels, globalScale,
@@ -333,6 +338,10 @@ const SceneExporter = function (sceneIn) {
         duration: region.getDuration(),
       },
     };
+    //Views provided to the scene, e.g. from the metadata
+    if (isRoot && scene.getViews && scene.getViews()) {
+      node.userData.zinc.views = scene.getViews();
+    }
     copyMatrixForExport(group, node);
     region.getAllObjects(false).forEach((zincObject) => {
       const childNode = createZincObjectNode(zincObject, channels, glyphsetNodes);
@@ -343,6 +352,36 @@ const SceneExporter = function (sceneIn) {
       if (childNode) node.add(childNode);
     });
     return node;
+  };
+
+  /*
+   * The current viewport as a standard camera, its extras.zinc keeps the
+   * viewport as a glTF camera has no target position.
+   */
+  const createViewCamera = () => {
+    const cameraControls = scene.getZincCameraControls ? scene.getZincCameraControls() : undefined;
+    if (!cameraControls || !scene.camera) return undefined;
+    const viewport = cameraControls.getCurrentViewport();
+    const near = viewport.nearPlane > 0 ? viewport.nearPlane : 1e-6;
+    const far = viewport.farPlane > near ? viewport.farPlane : near * 2;
+    const aspect = scene.camera.aspect > 0 ? scene.camera.aspect : 1;
+    const camera = new THREE.PerspectiveCamera(scene.camera.fov, aspect, near, far);
+    camera.name = 'zinc_view';
+    camera.position.fromArray(viewport.eyePosition);
+    camera.up.fromArray(viewport.upVector);
+    camera.lookAt(new THREE.Vector3().fromArray(viewport.targetPosition));
+    camera.updateMatrix();
+    camera.userData = {
+      zinc: {
+        type: 'view',
+        nearPlane: viewport.nearPlane,
+        farPlane: viewport.farPlane,
+        eyePosition: viewport.eyePosition,
+        targetPosition: viewport.targetPosition,
+        upVector: viewport.upVector,
+      },
+    };
+    return camera;
   };
 
   /**
@@ -376,8 +415,10 @@ const SceneExporter = function (sceneIn) {
       exporter.register((writer) => new GLTFGlyphsetPlugin(writer, glyphsetNodes));
       exporter.register((writer) => new GLTFAnimationPlugin(writer, channels));
       const options = { binary, onlyVisible: true };
+      //The camera is in world coordinates, next to the root region
+      const camera = createViewCamera();
       try {
-        return await exporter.parseAsync(root, options);
+        return await exporter.parseAsync(camera ? [root, camera] : root, options);
       } catch (error) {
         console.error('Unable to export GLTF.', error);
         throw error;
