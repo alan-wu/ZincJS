@@ -760,6 +760,74 @@ function useStandardIndexType(object) {
   };
 }
 
+/*
+ * Frame rate of the animations in exported files, each time step of a zinc
+ * object is a frame.
+ */
+const EXPORT_ANIMATION_FPS = 10;
+
+/*
+ * Copy the local transformation of source onto target, used to build the
+ * objects passed to GLTFExporter.
+ */
+function copyMatrixForExport(source, target) {
+  if (source.matrixAutoUpdate) source.updateMatrix();
+  target.matrix.copy(source.matrix);
+  target.matrix.decompose(target.position, target.quaternion, target.scale);
+  target.matrixAutoUpdate = false;
+}
+
+/*
+ * glTF morph targets are written from the position (and normal) morph
+ * attributes only, colour morph targets are attached to them (see
+ * sceneExporter.js). Add position targets with no displacement when the
+ * geometry only morphs its colours so the colour animation can be exported.
+ */
+function fillPositionMorphTargets(geometry) {
+  const morphColours = geometry.morphAttributes.color;
+  const position = geometry.getAttribute('position');
+  if (!morphColours || !position || geometry.morphAttributes.position) return;
+  geometry.morphAttributes.position = morphColours.map((colour) => {
+    //Absolute targets share the base positions
+    const attribute = geometry.morphTargetsRelative
+      ? new THREE.Float32BufferAttribute(new Float32Array(position.count * position.itemSize), 3)
+      : new THREE.BufferAttribute(position.array, position.itemSize, position.normalized);
+    attribute.name = colour.name;
+    return attribute;
+  });
+}
+
+/*
+ * Create a geometry for export sharing the buffers of geometry, leaving out
+ * the attributes only used for rendering in zinc and the morph targets
+ * glTF can not represent.
+ */
+function createExportGeometry(geometry) {
+  const exportGeometry = new THREE.BufferGeometry();
+  exportGeometry.name = geometry.name;
+  exportGeometry.setIndex(geometry.index);
+  for (const name in geometry.attributes) {
+    //morphTarget0/1 and morphColor0/1 are inputs of zinc's shaders
+    if (!/^morph(Target|Color)\d+$/.test(name)) {
+      exportGeometry.setAttribute(name, geometry.attributes[name]);
+    }
+  }
+  for (const name in geometry.morphAttributes) {
+    //glTF morph targets are offsets of an attribute, they can not exist
+    //without it
+    if (geometry.attributes[name] && geometry.morphAttributes[name].length > 0) {
+      exportGeometry.morphAttributes[name] = geometry.morphAttributes[name];
+    }
+  }
+  exportGeometry.morphTargetsRelative = geometry.morphTargetsRelative;
+  geometry.groups.forEach((group) => {
+    exportGeometry.addGroup(group.start, group.count, group.materialIndex);
+  });
+  exportGeometry.setDrawRange(geometry.drawRange.start, geometry.drawRange.count);
+  fillPositionMorphTargets(exportGeometry);
+  return exportGeometry;
+}
+
 //Shared by all pointsets
 let circularTexture = undefined;
 
@@ -946,7 +1014,11 @@ export {
   copyVector2sArray,
   copyVector3sArray,
   copyVector4sArray,
+  copyMatrixForExport,
+  EXPORT_ANIMATION_FPS,
   createBufferGeometry,
+  createExportGeometry,
+  fillPositionMorphTargets,
   createNewSpriteText,
   createNewURL,
   extractVertices,

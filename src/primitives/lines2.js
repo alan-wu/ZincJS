@@ -3,6 +3,7 @@ import { Lines } from './lines';
 import { LineSegments2 } from '../three/line/LineSegments2';
 //import { LineMaterial } from '../three/line/LineMaterial';
 import { LineSegmentsGeometry } from '../three/line/LineSegmentsGeometry';
+import { copyMatrixForExport } from '../utilities';
 
 /**
  * Provides an object which stores lines.
@@ -190,6 +191,40 @@ const Lines2 = function () {
       }
     }
     return positions;
+  };
+
+  /**
+   * Create a THREE.LineSegments object for exporting, the instanced quads
+   * used for rendering wide lines can not be represented in other software.
+   * See {@link ZincObject#createExportObject}.
+   */
+  this.createExportObject = function () {
+    const mesh = this.getMorph();
+    //Each segment has two vertices
+    const length = Math.floor(this.drawRange / 2) * 6;
+    if (!mesh || length === 0) return undefined;
+    const geometry = new THREE.BufferGeometry();
+    geometry.setAttribute(
+      'position',
+      new THREE.Float32BufferAttribute(positions.slice(0, length), 3),
+    );
+    const colours = mesh.geometry.getAttribute('instanceColorStart');
+    if (colours && colours.data.array.length >= length) {
+      geometry.setAttribute(
+        'color',
+        new THREE.Float32BufferAttribute(colours.data.array.slice(0, length), 3),
+      );
+    }
+    const material = new THREE.LineBasicMaterial({
+      color: mesh.material.color,
+      opacity: mesh.material.opacity,
+      transparent: mesh.material.transparent,
+      vertexColors: geometry.getAttribute('color') !== undefined,
+    });
+    const lines = new THREE.LineSegments(geometry, material);
+    lines.name = mesh.name;
+    copyMatrixForExport(mesh, lines);
+    return lines;
   };
 
   /**
