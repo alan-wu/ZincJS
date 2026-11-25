@@ -313,7 +313,7 @@ const GLTFToZincJSLoader = function () {
       if (metadata.duration !== undefined) zincObject.setDuration(metadata.duration);
     }
     if (finishCallback != undefined && typeof finishCallback == 'function')
-      finishCallback(zincObject);
+      finishCallback(zincObject, { inlineObject: true });
   };
 
   /*
@@ -338,7 +338,7 @@ const GLTFToZincJSLoader = function () {
     region.addZincObject(glyphset);
     if (metadata.anatomicalId !== undefined) glyphset.setAnatomicalId(metadata.anatomicalId);
     if (finishCallback != undefined && typeof finishCallback == 'function')
-      finishCallback(glyphset);
+      finishCallback(glyphset, { inlineObject: true });
   };
 
   /*
@@ -526,11 +526,22 @@ const GLTFToZincJSLoader = function () {
    *
    * @param {String} url - URL to the GLTF file
    * @param {Function} finishCallback - Callback function which will be called
-   * once the glyphset is succssfully load in.
+   * with each zinc object in the file once it is loaded, or with
+   * { type: 'Error', error } if the file can not be loaded. The second
+   * argument is { inlineObject: true } - the call is for an object in the
+   * file and not for the file itself, see allCompletedCallback.
    * @param {Function} allCompletedCallback - Called once everything is loaded
    * or the load has failed.
-   * @param {Object} options - Set options.viewAll to false to keep the
-   * current viewport.
+   * @param {Object} options - Optional settings for the views.
+   * @param {Boolean} options.viewAll - Set to false to keep the current
+   * viewport, the views in the file are still added to the scene.
+   * @param {Boolean|Function} options.applyViews - Set to false, or a
+   * function returning false once the file is loaded, to leave the views and
+   * viewport of the scene untouched.
+   * @param {Boolean} options.viewAllFallback - Set to false to not view all
+   * when the file does not have any view.
+   * @param {Function} options.onViewsApplied - Called when the views in the
+   * file have been applied to the scene.
    * @param {Function} isCancelled - Optional function returning true if this
    * load has been cancelled, the loaded content will be discarded.
    */
@@ -547,7 +558,7 @@ const GLTFToZincJSLoader = function () {
       if (isCancelled && isCancelled()) return;
       console.error(`There is an issue loading the glTF file: ${url}.`, error);
       if (finishCallback != undefined && typeof finishCallback == 'function')
-        finishCallback({ type: 'Error', error });
+        finishCallback({ type: 'Error', error }, { inlineObject: true });
       allCompleted();
     };
 
@@ -559,8 +570,18 @@ const GLTFToZincJSLoader = function () {
           .parseGLTF(gltf, region, finishCallback, isCancelled)
           .then((completed) => {
             if (!completed) return;
-            if (!_this.applyViews(scene, gltf, options)) {
-              if (!options || options.viewAll !== false) _this.setCamera(scene);
+            let useViews = options ? options.applyViews : undefined;
+            if (typeof useViews === 'function') useViews = useViews();
+            if (useViews !== false) {
+              if (_this.applyViews(scene, gltf, options)) {
+                if (options && typeof options.onViewsApplied === 'function')
+                  options.onViewsApplied();
+              } else if (
+                !options ||
+                (options.viewAll !== false && options.viewAllFallback !== false)
+              ) {
+                _this.setCamera(scene);
+              }
             }
             allCompleted();
           })

@@ -27,6 +27,8 @@ const SceneLoader = function (sceneIn) {
   this.toBeDownloaded = 0;
   this.progressMap = {};
   let viewLoaded = false;
+  //The metadata being loaded provides the views, they may not be loaded yet
+  let viewExpected = false;
   let errorDownload = false;
   let generation = 0;
   const primitivesLoader = new PrimitivesLoader();
@@ -41,6 +43,7 @@ const SceneLoader = function (sceneIn) {
     this.toBeDownloaded = 0;
     this.progressMap = {};
     viewLoaded = false;
+    viewExpected = false;
     errorDownload = false;
   };
 
@@ -102,6 +105,7 @@ const SceneLoader = function (sceneIn) {
   };
 
   let loadMultipleViews = (referenceURL, views) => {
+    viewExpected = true;
     const defaultView = views.Default;
     if (views.Inline) {
       scene.setupMultipleViews(defaultView, views.Entries);
@@ -726,8 +730,8 @@ const SceneLoader = function (sceneIn) {
   //allCompletedCallback is called
   const metaFinishCallback = function (numberOfDownloaded, finishCallback, allCompletedCallback) {
     let downloadedItem = 0;
-    return (zincObject) => {
-      downloadedItem = downloadedItem + 1;
+    return (zincObject, options) => {
+      if (!options?.inlineObject) downloadedItem = downloadedItem + 1;
       if (zincObject && finishCallback != undefined && typeof finishCallback == 'function') {
         finishCallback(zincObject);
       }
@@ -1247,6 +1251,20 @@ const SceneLoader = function (sceneIn) {
             options,
           );
           break;
+        case 'glTF':
+          //Each object in the file is passed to finishCallback, the file
+          //is counted as downloaded once all of them are loaded. The views
+          //of the metadata take precedence over the ones in the file, and
+          //view all is left to the end of the metadata.
+          this.loadGLTF(region, newURL, finishCallback, finishCallback, {
+            ...options,
+            applyViews: () => !viewExpected && !viewLoaded,
+            viewAllFallback: false,
+            onViewsApplied: () => {
+              viewLoaded = true;
+            },
+          });
+          break;
         case 'Texture':
           this.loadTextureURL(region, newURL, groupName, finishCallback, options);
           break;
@@ -1270,6 +1288,7 @@ const SceneLoader = function (sceneIn) {
       }
       switch (item.Type) {
         case 'View':
+          viewExpected = true;
           if (isInline) {
             scene.setupMultipleViews('default', { default: newURL });
             viewLoaded = true;
@@ -1291,19 +1310,23 @@ const SceneLoader = function (sceneIn) {
    *
    * @param {String} url - URL to the GLTF file
    * @param {Function} finishCallback - Callback function which will be called
-   * once the glyphset is succssfully load in.
+   * with each zinc object in the file once it is loaded, or with
+   * { type: 'Error' } if the file can not be loaded.
+   * @param {Function} allCompletedCallback - Called once the file is loaded
+   * or has failed to load.
+   * @param {Object} options - See {@link GLTFToZincJSLoader#load}.
    */
   this.loadGLTF = (region, url, finishCallback, allCompletedCallback, options) => {
     const loader = new GLTFToZincJSLoader();
-    loader.load(
-      scene,
-      region,
-      url,
-      finishCallback,
-      allCompletedCallback,
-      options,
-      createStaleCheck(),
-    );
+    const isStale = createStaleCheck();
+    this.toBeDownloaded += 1;
+    const allCompleted = () => {
+      //The counter is reset when the loads are cancelled
+      if (!isStale()) --this.toBeDownloaded;
+      if (allCompletedCallback != undefined && typeof allCompletedCallback == 'function')
+        allCompletedCallback();
+    };
+    loader.load(scene, region, url, finishCallback, allCompleted, options, isStale);
   };
 
   let loadRegions = (currentRegion, referenceURL, regions, callback) => {
@@ -1388,7 +1411,8 @@ const SceneLoader = function (sceneIn) {
             array[i].Type === 'Glyph' ||
             array[i].Type === 'Points' ||
             array[i].Type === 'Lines' ||
-            array[i].Type === 'Texture')
+            array[i].Type === 'Texture' ||
+            array[i].Type === 'glTF')
         ) {
           count++;
         }
@@ -1490,6 +1514,7 @@ const SceneLoader = function (sceneIn) {
         scene.resetMetadata();
         scene.resetDuration();
         viewLoaded = false;
+        viewExpected = false;
         if (Array.isArray(metadata)) {
           loadVersionOne(
             targetRegion,
