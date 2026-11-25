@@ -2,12 +2,20 @@ import * as THREE from 'three/webgpu';
 import { Label } from './label';
 import { InstancedPoints } from '../three/InstancedPoints';
 import { ZincObject } from './zincObject';
-import { getCircularTexture, toBufferGeometry, updateWorldMatrixFromAncestors } from '../utilities';
+import {
+  copyMatrixForExport,
+  fillPositionMorphTargets,
+  getCircularTexture,
+  toBufferGeometry,
+  updateWorldMatrixFromAncestors,
+} from '../utilities';
 import { createInstancedPointsMaterial } from '../tsl/pointsMaterial';
 
 //Maximum number of points a programmatically built (addPoints) Pointset can
 //hold - the InstancedMesh backing it is allocated once with this capacity.
 const DEFAULT_CAPACITY = 500;
+//Discards the transparent corners of the round point texture
+const DEFAULT_ALPHA_TEST = 0.5;
 
 /**
  * Build the shared quad geometry every point instance is drawn with plus
@@ -182,7 +190,8 @@ const Pointset = function () {
       material.opacity = materialIn.opacity;
     }
     material.transparent = !!materialIn.transparent;
-    material.alphaTest = materialIn.alphaTest !== undefined ? materialIn.alphaTest : 0.5;
+    material.alphaTest =
+      materialIn.alphaTest !== undefined ? materialIn.alphaTest : DEFAULT_ALPHA_TEST;
 
     const mesh = new InstancedPoints(quadGeometry, material, numberOfPoints);
     mesh.count = numberOfPoints;
@@ -216,11 +225,74 @@ const Pointset = function () {
    * into this Pointset's instanced mesh representation.
    */
   this.setMesh = (mesh, localTimeEnabled, localMorphColour) => {
-    this.createMesh(mesh.geometry, mesh.material, { localTimeEnabled, localMorphColour });
+    //Only the positions, colours and opacity are taken from the mesh, this
+    //pointset decides how the points look.
+    const source = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material;
+    const material = new THREE.PointsMaterial({ alphaTest: DEFAULT_ALPHA_TEST });
+    if (source) {
+      if (source.color) material.color.copy(source.color);
+      if (source.opacity !== undefined) {
+        material.opacity = source.opacity;
+        material.transparent = source.opacity < 1;
+      }
+    }
+    this.createMesh(mesh.geometry, material, { localTimeEnabled, localMorphColour });
+    //Its values are copied into the material of the points
+    material.dispose();
     const newMesh = this.getMorph();
     if (newMesh) {
       newMesh.name = mesh.name;
     }
+  };
+
+  /**
+   * Create a THREE.Points object for exporting, the instanced quads used
+   * for rendering can not be represented in other software.
+   * See {@link ZincObject#createExportObject}.
+   */
+  this.createExportObject = () => {
+    const mesh = this.getMorph();
+    if (!mesh || !mesh.count) return undefined;
+    const length = mesh.count * 3;
+    const createAttribute = (array, name) => {
+      const attribute = new THREE.Float32BufferAttribute(array.slice(0, length), 3);
+      attribute.name = name;
+      return attribute;
+    };
+    //Names follow the pattern zinc uses to build its animation clip
+    const frameName = (i) => 'time' + String(i).padStart(6, '0');
+    const geometry = new THREE.BufferGeometry();
+    const positions = morphVertices ? positionFrames[0] : mesh.pointPositions;
+    geometry.setAttribute('position', createAttribute(positions, ''));
+    if (morphColours && colorFrames) {
+      geometry.setAttribute('color', createAttribute(colorFrames[0], ''));
+    } else if (mesh.instanceColor) {
+      geometry.setAttribute('color', createAttribute(mesh.instanceColor.array, ''));
+    }
+    if (morphVertices) {
+      geometry.morphAttributes.position = positionFrames.map((frame, i) =>
+        createAttribute(frame, frameName(i)),
+      );
+    }
+    if (morphColours && colorFrames) {
+      geometry.morphAttributes.color = colorFrames.map((frame, i) =>
+        createAttribute(frame, frameName(i)),
+      );
+    }
+    geometry.morphTargetsRelative = false;
+    fillPositionMorphTargets(geometry);
+    const material = new THREE.PointsMaterial({
+      color: mesh.material.color,
+      opacity: mesh.material.opacity,
+      transparent: mesh.material.transparent,
+      size: mesh.material.size ?? 1,
+      sizeAttenuation: false,
+      vertexColors: geometry.getAttribute('color') !== undefined,
+    });
+    const points = new THREE.Points(geometry, material);
+    points.name = mesh.name;
+    copyMatrixForExport(mesh, points);
+    return points;
   };
 
   const addLabel = (index, coord, labelText, colourHex) => {
@@ -272,7 +344,7 @@ const Pointset = function () {
         const quadGeometry = createPointQuadGeometry(DEFAULT_CAPACITY);
         const material = createInstancedPointsMaterial(getCircularTexture());
         material.color.set(colour);
-        material.alphaTest = 0.5;
+        material.alphaTest = DEFAULT_ALPHA_TEST;
         mesh = new InstancedPoints(quadGeometry, material, DEFAULT_CAPACITY);
         mesh.pointPositions = quadGeometry.getAttribute('instancePosition').array;
         mesh.count = 0;
