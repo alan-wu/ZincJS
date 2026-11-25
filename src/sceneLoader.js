@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { GLTFToZincJSLoader } from './loaders/GLTFToZincJSLoader';
 import { OBJLoader } from './loaders/OBJLoader';
+import { PLYLoader } from './loaders/PLYLoader';
 import { PrimitivesLoader } from './loaders/primitivesLoader';
 import { STLLoader } from './loaders/STLLoader';
 import { Geometry } from './primitives/geometry';
@@ -571,6 +572,40 @@ const SceneLoader = function (sceneIn) {
   };
 
   /**
+   * Read a PLY file into this scene. Files containing faces are presented as
+   * {@link Zinc.Geometry}, files with vertices only are presented as
+   * {@link Zinc.Pointset}. Per vertex colours are used when available.
+   *
+   * @param {STRING} url - location to the PLY file.
+   * @param {STRING} groupName - name to assign the primitive's groupname to.
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the PLY primitive is succssfully loaded.
+   */
+  this.loadPLY = (region, url, groupName, finishCallback) => {
+    this.toBeDownloaded += 1;
+    const loader = new PLYLoader();
+    loader.crossOrigin = 'Anonymous';
+    loader.load(
+      url,
+      plyloader(
+        region,
+        Zinc.defaultMaterialColor,
+        Zinc.defaultOpacity,
+        false,
+        false,
+        groupName,
+        undefined,
+        undefined,
+        {},
+        finishCallback,
+        false,
+      ),
+      this.onProgress(url),
+      this.onError(finishCallback),
+    );
+  };
+
+  /**
    * Load a geometry into this scene, this is a subsequent called from
    * {@link Zinc.Scene#loadMetadataURL}, although it can be used to read
    * in geometry into the scene externally.
@@ -579,7 +614,7 @@ const SceneLoader = function (sceneIn) {
    * @param {Boolean} timeEnabled - Indicate if geometry morphing is enabled.
    * @param {Boolean} morphColour - Indicate if color morphing is enabled.
    * @param {STRING} groupName - name to assign the geometry's groupname to.
-   * @param {STRING} fileFormat - name supported formats are STL, OBJ and JSON.
+   * @param {STRING} fileFormat - name supported formats are STL, OBJ, PLY and JSON.
    * @param {Function} finishCallback - Callback function which will be called
    * once the geometry is succssfully loaded in.
    */
@@ -604,6 +639,29 @@ const SceneLoader = function (sceneIn) {
     let localMorphColour = 0;
     if (morphColour != undefined) localMorphColour = morphColour ? true : false;
     let loader = primitivesLoader;
+    if (fileFormat == 'PLY') {
+      loader = new PLYLoader();
+      loader.crossOrigin = 'Anonymous';
+      loader.load(
+        url,
+        plyloader(
+          region,
+          colour,
+          opacity,
+          localTimeEnabled,
+          localMorphColour,
+          groupName,
+          anatomicalId,
+          renderOrder,
+          options ? options : {},
+          finishCallback,
+          false,
+        ),
+        this.onProgress(url),
+        this.onError(finishCallback),
+      );
+      return;
+    }
     if (fileFormat == 'STL' || fileFormat == 'OBJ') {
       const typedLoader = fileFormat == 'STL' ? meshloader : objloader;
       loader = fileFormat == 'STL' ? new STLLoader() : new OBJLoader();
@@ -712,6 +770,29 @@ const SceneLoader = function (sceneIn) {
     let isInline = options && options.isInline ? options.isInline : false;
     let anatomicalId = options && options.anatomicalId ? options.anatomicalId : undefined;
     let renderOrder = options && 'renderOrder' in options ? options.renderOrder : undefined;
+    if (options && options.fileFormat == 'PLY') {
+      const loader = new PLYLoader();
+      loader.crossOrigin = 'Anonymous';
+      loader.load(
+        url,
+        plyloader(
+          region,
+          Zinc.defaultMaterialColor,
+          Zinc.defaultOpacity,
+          localTimeEnabled,
+          localMorphColour,
+          groupName,
+          anatomicalId,
+          renderOrder,
+          options,
+          finishCallback,
+          true,
+        ),
+        this.onProgress(url),
+        this.onError(finishCallback),
+      );
+      return;
+    }
     if (isInline) {
       const object = primitivesLoader.parse(url);
       pointsetloader(
@@ -960,6 +1041,81 @@ const SceneLoader = function (sceneIn) {
       //meshloader decrements the counter once per mesh
       this.toBeDownloaded += meshes.length - 1;
       meshes.forEach((mesh) => onMeshLoaded(mesh.geometry));
+    };
+  };
+
+  //Internal loader for PLY files. PLYLoader returns a single BufferGeometry,
+  //it is indexed when the file contains faces, otherwise it is a point cloud.
+  //Faces are presented as a zinc geometry unless forcePoints is set,
+  //point clouds are always presented as a zinc pointset.
+  const plyloader = (
+    region,
+    colour,
+    opacity,
+    localTimeEnabled,
+    localMorphColour,
+    groupName,
+    anatomicalId,
+    renderOrder,
+    options,
+    finishCallback,
+    forcePoints,
+  ) => {
+    let hasColours = false;
+    //Surfaces default to a single material colour, enable per vertex
+    //colour when the file provides it.
+    const onSurfaceLoaded = (zincGeometry) => {
+      if (zincGeometry && hasColours) zincGeometry.setVertexColors(true);
+      if (finishCallback != undefined && typeof finishCallback == 'function') {
+        finishCallback(zincGeometry);
+      }
+    };
+    //Create both loaders now so their stale checks capture the current
+    //generation rather than the one at download completion.
+    const onPointsLoaded = pointsetloader(
+      region,
+      localTimeEnabled,
+      localMorphColour,
+      groupName,
+      anatomicalId,
+      renderOrder,
+      finishCallback,
+    );
+    const onMeshLoaded = meshloader(
+      region,
+      colour,
+      opacity,
+      localTimeEnabled,
+      localMorphColour,
+      groupName,
+      anatomicalId,
+      renderOrder,
+      options,
+      onSurfaceLoaded,
+    );
+    return (geometry) => {
+      hasColours = geometry.hasAttribute('color');
+      //PLYLoader keeps integer colours (e.g. uchar) as normalized integer
+      //attributes, zinc primitives expect float colours in the 0-1 range.
+      const colorAttribute = geometry.getAttribute('color');
+      if (colorAttribute && colorAttribute.normalized) {
+        const colors = new Float32Array(colorAttribute.count * colorAttribute.itemSize);
+        for (let i = 0; i < colorAttribute.count; i++) {
+          for (let j = 0; j < colorAttribute.itemSize; j++) {
+            colors[i * colorAttribute.itemSize + j] = colorAttribute.getComponent(i, j);
+          }
+        }
+        geometry.setAttribute(
+          'color',
+          new THREE.Float32BufferAttribute(colors, colorAttribute.itemSize),
+        );
+      }
+      if (forcePoints || !geometry.index) {
+        onPointsLoaded(geometry);
+        return;
+      }
+      if (!geometry.hasAttribute('normal')) geometry.computeVertexNormals();
+      onMeshLoaded(geometry);
     };
   };
 

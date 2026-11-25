@@ -534,6 +534,20 @@ const Scene = function (containerIn, rendererIn) {
   };
 
   /**
+   * Read a PLY file into this scene. Files containing faces are presented as
+   * {@link Zinc.Geometry}, files with vertices only are presented as
+   * {@link Zinc.Pointset}.
+   *
+   * @param {STRING} url - location to the PLY file.
+   * @param {STRING} groupName - name to assign the primitive's groupname to.
+   * @param {Function} finishCallback - Callback function which will be called
+   * once the PLY primitive is succssfully loaded.
+   */
+  this.loadPLY = (url, groupName, finishCallback) => {
+    sceneLoader.loadPLY(rootRegion, url, groupName, finishCallback);
+  };
+
+  /**
    * Load a metadata file from the provided URL into this scene. Once
    * succssful scene proceeds to read each items into scene for visualisations.
    *
